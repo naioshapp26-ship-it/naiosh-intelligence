@@ -1,0 +1,215 @@
+
+<div class="app" id="app" dir="rtl" lang="ar">
+  <aside class="side" id="side" aria-label="القائمة الرئيسية"></aside>
+  <div class="main">
+    <header class="top" id="top"></header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+<div id="tour"></div>
+<div id="toast" aria-live="polite"></div>
+
+<script data-app="">
+document.documentElement.lang = 'ar';
+document.documentElement.dir = 'rtl';
+
+/* ================= icons ================= */
+const P = {
+  home:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  ask:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z',
+  consult:'M9 3h6v3H9z M7 4.5H5v16.5h14V4.5h-2 M8.5 11h7 M8.5 15h5',
+  data:'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+  questionnaire:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6 M12 17v.01',
+  diagnosis:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.5-4.5 M8 11h2l1-2 1.5 4 1-2h1.5',
+  foresight:'M3 17l6-6 4 4 8-8 M15 7h6v6',
+  risks:'M12 3l10 18H2z M12 10v5 M12 18v.01',
+  solutions:'M12 3l9 5-9 5-9-5z M3 12l9 5 9-5 M3 16.5l9 5 9-5',
+  decision:'M12 3v18 M6 21h12 M4 7h16 M7 7l-3 7a3 3 0 0 0 6 0z M17 7l-3 7a3 3 0 0 0 6 0z',
+  execution:'M5 21V4 M5 4h12l-2.5 4L17 12H5',
+  impact:'M3 13a9 9 0 0 1 18 0 M12 13l4-4 M7 18h10',
+  learning:'M4 12a8 8 0 0 1 14-5.3L20 9 M20 4v5h-5 M20 12a8 8 0 0 1-14 5.3L4 15 M4 20v-5h5',
+  knowledge:'M4 19V5a2 2 0 0 1 2-2h14v14H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14 M9 7h7',
+  agents:'M7 7h10v10H7z M10 10h4v4h-4z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
+  reports:'M6 3h9l5 5v13H6z M14 3v6h6 M9 13h8 M9 17h6',
+  integration:'M5 5h5v5H5z M14 14h5v5h-5z M14 5h5v5h-5z M5 14h5v5H5z M10 7.5h4 M16.5 10v4 M10 16.5h4 M7.5 10v4',
+  governance:'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z M9 12l2 2 4-4',
+  architecture:'M3 21h18 M5 21V10l7-6 7 6v11 M9 21v-6h6v6 M3 10h18',
+  search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.5-4.5',
+  bell:'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z M10 20.5a2 2 0 0 0 4 0',
+  check:'M5 12.5l4.5 4.5L19 7.5', x:'M7 7l10 10 M17 7L7 17', warn:'M12 7v6 M12 17v.01', dotc:'M12 12h.01',
+  chev:'M15 6l-6 6 6 6', menu:'M4 7h16 M4 12h16 M4 17h16', plus:'M12 5v14 M5 12h14',
+  play:'M7 4l13 8-13 8z', reset:'M4 12a8 8 0 1 0 2.3-5.7 M4 4v5h5', mic:'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3',
+  clip:'M20 11.5l-8.2 8.2a5 5 0 0 1-7-7L13 4.5a3.3 3.3 0 0 1 4.7 4.7l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.5-7.5',
+  bulb:'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z',
+  chart:'M4 20V10 M10 20V4 M16 20v-7 M22 20H2', clock:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7v5l3 2',
+  fwd:'M9 6l6 6-6 6',
+  coin:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M15 8.6c-.6-.9-1.7-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.2-1.6 M12 5.4v1.7 M12 17v1.6',
+  request:'M6 3h9l5 5v13H6z M14 3v6h6 M9 17v-3 M12 17v-6 M15 17v-4',
+  settings:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M19.4 13.5l1.6 1.2-2 3.4-1.9-.7a7.5 7.5 0 0 1-2.1 1.2L14.7 21h-4l-.3-2.4a7.5 7.5 0 0 1-2.1-1.2l-1.9.7-2-3.4 1.6-1.2a7.6 7.6 0 0 1 0-2.4L4.4 9.9l2-3.4 1.9.7a7.5 7.5 0 0 1 2.1-1.2L10.7 3h4l.3 2.4a7.5 7.5 0 0 1 2.1 1.2l1.9-.7 2 3.4-1.6 1.2a7.6 7.6 0 0 1 0 2.4z',
+  trash:'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13',
+  quality:'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z M8 12h8 M8 9h8 M8 15h5',
+  context:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 11.5v1',
+  analysis:'M4 20V4 M4 20h16 M8 16l3-4 3 2 5-7',
+  rootcause:'M12 3v6 M12 9l-5 5 M12 9l5 5 M7 14v4 M17 14v4 M12 9v9 M5 21h4 M15 21h4 M10 21h4',
+  whatif:'M4 6h10 M18 6h2 M4 12h4 M12 12h8 M4 18h12 M20 18h0 M14 4v4 M8 10v4 M16 16v4',
+  memory:'M8 4h8l3 3v13H5V7z M9 10h6 M9 14h6 M9 18h3',
+  ledger:'M5 3h11l3 3v15H5z M8 8h8 M8 12h8 M8 16h5 M15 15l1.5 1.5L19 14',
+  back:'M14 6l6 6-6 6 M20 12H5', up:'M12 19V5 M6 11l6-6 6 6', down:'M12 5v14 M6 13l6 6 6-6', copy:'M8 8h12v12H8z M4 16V4h12'
+};
+const ic = (n, s = 18, extra = '') => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="${P[n] || ''}"/></svg>`;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct = (v) => Math.round(v) + '%';
+const confColor = (v) => v >= 80 ? 'var(--green)' : v >= 65 ? 'var(--yellow)' : 'var(--orange)';
+const nowTime = () => { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+
+/* ================= state ================= */
+const DEFAULT_Q = 'لاحظت انخفاضًا في أداء الفرع الشمالي خلال الربع الأخير. ما السبب، وما أفضل حل؟';
+function freshState() {
+  return {
+    route: 'home', menu: false, hist: [],
+    q: DEFAULT_Q, askStage: 0, askShown: 0,
+    qi: 0, ans: {}, qDone: false,
+    cause: 'c1', sc: 'base', risk: 'R-01', sol: 1, dataSel: 'LMS',
+    choice: null, why: '', decided: false, req: null, reqDone: null, requests: [],
+    measured: false, lessonApproved: false,
+    consultTab: 'all', setTab: 'identity', kq: '', reports: [], govTab: 'rules', archTab: 'map',
+    tour: { on: CFG.identity.tourDefault !== false, i: 0 },
+    audit: [
+      { t: '18:42', who: 'محرك الشذوذ', what: 'اكتشف انحرافًا غير طبيعي في مؤشر أداء الفرع الشمالي (−17%)', kind: 'sys' },
+      { t: '18:43', who: 'نظام الإنذار المبكر', what: 'أصدر تنبيهًا حرجًا وفتح استشارة استباقية CNS-001', kind: 'sys' },
+      { t: '18:50', who: 'موصل خدمة العملاء', what: 'فشل المزامنة — المصدر غير متصل', kind: 'warn' }
+    ]
+  };
+}
+let S = freshState();
+function log(who, what, kind = 'user') { S.audit.unshift({ t: nowTime(), who, what, kind }); }
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.innerHTML = ''; }, 2600);
+}
+
+/* derived consultation status */
+function cnsStage() {
+  if (S.lessonApproved) return { name: 'التعلم', idx: 12 };
+  if (S.measured) return { name: 'قياس الأثر', idx: 11 };
+  if (S.decided) return { name: 'التنفيذ', idx: 10 };
+  if (S.qDone) return { name: 'التحليل والحلول', idx: 4 };
+  if (S.askStage === 1) return { name: 'الاستبيان', idx: 2 };
+  return { name: 'إنذار مبكر', idx: 0 };
+}
+const diagConf = () => S.qDone ? 81 : 58;
+
+/* ================= navigation ================= */
+const NAV = [
+  { t: 'القيادة', items: [['home','مركز القيادة','01'],['ask','اسأل نايوش','02'],['request','طلب تحليل بيانات',''],['consult','مركز الاستشارات','']] },
+  { t: 'البيانات والسياق', items: [['data','مركز ذكاء البيانات','03'],['quality','جودة البيانات','04'],['context','محرك السياق','05'],['questionnaire','الاستبيان الذكي','06']] },
+  { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
+  { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
+  { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
+  { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
+];
+const TITLES = {
+  home: ['مركز القيادة التنفيذي', 'لوحة القيادة'], ask: ['بوابة الدخول الذكية', 'اسأل نايوش Intelligence'],
+  consult: ['الاستشارات', 'مركز الاستشارات'], data: ['البيانات · الحوكمة والجودة والتتبع', 'مركز ذكاء البيانات'],
+  questionnaire: ['CNS-001 · استكمال البيانات', 'الاستبيان الذكي'], diagnosis: ['CNS-001 · لماذا حدث؟', 'التحليل والتشخيص'],
+  foresight: ['CNS-001 · ماذا قد يحدث؟', 'التنبؤ والاستشراف'], risks: ['CNS-001 · المخاطر والفرص والمرونة', 'المخاطر والفرص'],
+  solutions: ['CNS-001 · NAIOSH SOLUTION STUDIO', 'استوديو الحلول'], decision: ['CNS-001 · التوصية ← القرار البشري', 'مركز القرار'],
+  execution: ['CNS-001 · من القرار إلى الإجراء', 'مركز التنفيذ'], impact: ['CNS-001 · هل نجح الحل؟', 'قياس الأثر'],
+  learning: ['الذاكرة المؤسسية', 'التعلم المؤسسي'], knowledge: ['NAIOSH KNOWS · RAG', 'قاعدة المعرفة'],
+  agents: ['المنسّق والوكلاء المحكومون', 'الذكاء الاصطناعي والوكلاء'], reports: ['التقارير الذكية', 'التقارير'],
+  integration: ['NAIOSH Integration Hub', 'مركز التكامل'], governance: ['الصلاحيات · القواعد · التدقيق', 'الحوكمة والتدقيق'],
+  architecture: ['الوثائق الهندسية 2 → 5.10', 'المعمارية والوثائق'],
+  settings: ['التحكم في المحتوى والبيانات', 'الإعدادات'],
+  request: ['نموذج مربوط بالمنظومة', 'طلب تحليل بيانات'],
+  quality: ['DIA-04 · بوابة جودة البيانات', 'جودة البيانات'], context: ['DIA-05 · لا تحليل بلا سياق', 'محرك السياق'],
+  analysis: ['DIA-07 · الأنماط والمقارنات والعلاقات', 'التحليل والأنماط'], rootcause: ['DIA-09 · لماذا حدث فعلًا؟', 'السبب الجذري'],
+  whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
+  ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات']
+};
+function counts() {
+  return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
+}
+function renderSide() {
+  const c = counts();
+  const groups = NAV.map(g => `
+    <div class="nav-g">
+      ${g.t ? `<h4>${g.t}</h4>` : ''}
+      ${g.items.filter(([id]) => id !== 'settings' && (id === 'home' || modOn(id))).map(([id, label, code]) => `
+        <button type="button" data-go="${id}" ${effRoute() === id ? 'aria-current="page"' : ''}>
+          ${ic(id, 18)}<span>${label}</span>${c[id] ? `<span class="cnt num">${c[id]}</span>` : ''}${code ? `<span class="dia-code">${code}</span>` : ''}
+        </button>`).join('')}
+    </div>`).join('');
+  document.getElementById('side').innerHTML = `
+    <button type="button" class="brand" data-go="home" aria-label="الرئيسية">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#16161A" stroke="#2A2A31"/><path d="M17 7 L26 17 L17 27 L8 17 Z" fill="none" stroke="#FF2E4D" stroke-width="2"/><path d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z" fill="#FFCD11"/></svg>
+      <span><b>NAIOSH</b><small>INTELLIGENCE</small></span>
+    </button>
+    <nav class="nav">${groups}</nav>
+    <div class="side-foot" style="display:flex;flex-direction:column;gap:8px">
+      <button type="button" data-go="settings" ${effRoute() === 'settings' ? 'aria-current="page"' : ''} class="btn block" style="justify-content:flex-start;gap:11px;min-height:44px;padding:0 14px;${effRoute() === 'settings' ? 'background:rgba(255,46,77,.12);border-color:var(--redline);color:#fff' : 'background:var(--surface);border-color:var(--line2)'}">${ic('settings', 18, `style="color:${effRoute() === 'settings' ? 'var(--red)' : 'var(--yellow)'}"`)}<span style="font-weight:600">الإعدادات</span><span class="faint" style="font-size:11px;margin-inline-start:auto">التحكم والإدخال · 24</span></button>
+      <div class="gov-pill">${ic('governance', 18, 'style="stroke:var(--green)"')}<div><b>بوابة الحوكمة مفعّلة</b><span>القاعدة الذهبية 5.4.18</span></div></div>
+    </div>`;
+}
+function renderTop() {
+  const [crumb, title] = TITLES[effRoute()] || ['', ''];
+  document.getElementById('top').innerHTML = `
+    <button type="button" class="icon-btn menu-btn" data-act="menu" aria-label="فتح القائمة">${ic('menu', 20)}</button>
+    ${effRoute() !== 'home' || (S.hist||[]).length ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back',16)}<span>رجوع</span></button>` : ''}
+    <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
+    <label class="search">${ic('search', 16, 'style="color:var(--faint)"')}<input id="global-search" type="search" aria-label="البحث الموحّد" placeholder="ابحث في الاستشارات، البيانات، المخاطر، الحلول، المعرفة…"></label>
+    <div class="top-end">
+      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      <button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>
+      <button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
+      <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
+      <span class="avatar" aria-hidden="true">${esc(CFG.identity.userInitial || '')}</span>
+      <span class="who"><b>د. عدنان</b><span>صاحب قرار · الإدارة العليا</span></span>
+    </div>`;
+}
+
+/* ================= consultation stepper ================= */
+const STEPS = ['المشكلة','البيانات','الاستبيان','التحليل','التشخيص','التنبؤ','المخاطر','الحلول','التوصية','القرار','التنفيذ','الأثر','التعلم'];
+function stepper(cur) {
+  return `<ol class="stepper" aria-label="مراحل الاستشارة CNS-001">${STEPS.map((l, i) => {
+    const cls = i < cur ? 'done' : i === cur ? 'now' : '';
+    return `<li class="${cls}" ${i === cur ? 'aria-current="step"' : ''}><span class="d">${i < cur ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P.check}"/></svg>` : i + 1}</span><span class="l">${l}</span></li>`;
+  }).join('')}</ol>`;
+}
+
+/* ================= presenter tour ================= */
+const TOUR = [
+  { r: 'home', t: 'النظام يكتشف المشكلة قبل أن يسأل أحد', d: 'محرك الشذوذ رصد انخفاضًا غير طبيعي في أداء الفرع الشمالي، وأصدر تنبيهًا حرجًا وفتح استشارة استباقية.' },
+  { r: 'ask', t: 'اسأل بلغتك الطبيعية', d: 'اضغط «ابدأ التحليل» وشاهد المنسّق يفهم النية ويفحص الصلاحيات والبيانات والمعرفة قبل أن يجيب.' },
+  { r: 'data', t: 'لا ذكاء قبل جودة البيانات', d: 'اضغط على «التدريب LMS»: الاكتمال 58% فالبوابة تطلب البيانات بدل التخمين. عقد البيانات يوقف التحليل النهائي.' },
+  { r: 'questionnaire', t: 'اسأل فقط ما ينقص', d: 'أجب عن 6 أسئلة. اختر «هذا الفرع فقط» في السؤال الأول وشاهد السؤال الثاني يتغيّر، والثقة ترتفع.' },
+  { r: 'diagnosis', t: 'أسباب محتملة، لا أحكام', d: 'اضغط على أي سبب لترى أدلته ومستوى موثوقيتها. إجاباتك في الاستبيان تظهر هنا كأدلة.' },
+  { r: 'foresight', t: 'ماذا قد يحدث؟', d: 'ثلاثة سيناريوهات مع احتمال كل منها ومؤشر الإنذار المبكر، وما يجب فعله الآن.' },
+  { r: 'risks', t: 'المخاطر والفرص معًا', d: 'اضغط على خطر في المصفوفة: الخطر الكامن، الضوابط، الخطر المتبقي، والمعالجة المقترحة.' },
+  { r: 'solutions', t: 'بدائل مقارنة، لا حل واحد', d: 'لكل حل درجة ملاءمة ودرجة ثقة منفصلتان. اختر الحل الذي تريد رفعه للقرار.' },
+  { r: 'decision', t: 'الإنسان يقرر', d: 'اختر قرارك واكتب المبرر، فلا قرار بلا مبرر. بوابة الحوكمة تحققت من السياق والمصدر والدليل.' },
+  { r: 'execution', t: 'القرار يتحول إلى إجراءات', d: 'خطة التنفيذ تولّدت من قرارك. اضغط «محاكاة مرور 30 يومًا» لقياس النتيجة.' },
+  { r: 'impact', t: 'هل نجح الحل؟', d: 'المتوقع مقابل الفعلي عبر سبعة مستويات، من «هل تم القرار؟» إلى «ما الذي يجب أن يتغير؟».' },
+  { r: 'learning', t: 'المؤسسة تتعلم', d: 'اعتمد الدرس المستفاد عبر بوابة الحوكمة ليدخل الذاكرة المؤسسية. ثم عُد إلى الرئيسية: الحلقة اكتملت.' }
+];
+function renderTour() {
+  const el = document.getElementById('tour');
+  if (!S.tour.on) { el.innerHTML = (window.NAIOSH_SERVER && typeof svCan === 'function' && !svCan('config.edit')) ? '' : `<button type="button" class="btn sm y tour-min" data-act="tour-open" aria-label="العرض الموجّه" title="العرض الموجّه">${ic('play', 14)}<span class="tour-lbl">العرض الموجّه</span></button>`; return; }
+  const i = S.tour.i, st = TOUR[i];
+  el.innerHTML = `<section class="tour" aria-label="العرض الموجّه">
+    <div class="row between nowrap"><span class="eyebrow">PRESENTER GUIDE · ${i + 1}/${TOUR.length}</span>
+      <button type="button" class="btn link sm" data-act="tour-close">إخفاء</button></div>
+    <div class="bar" style="height:4px"><i style="width:${((i + 1) / TOUR.length) * 100}%"></i></div>
+    <h2 style="font-family:var(--f-display);font-size:17px">${st.t}</h2>
+    <p style="font-size:13.5px;line-height:1.75;color:var(--fg2)">${st.d}</p>
+    <div class="row between nowrap">
+      <button type="button" class="btn sm" data-act="tour-reset" title="إعادة العرض من البداية">${ic('reset', 14)}من البداية</button>
+      <div class="row nowrap">
+        <button type="button" class="btn sm" data-act="tour-prev" ${i === 0 ? 'aria-disabled="true"' : ''}>السابق</button>
+        <button type="button" class="btn sm primary" data-act="tour-next">${i === TOUR.length - 1 ? 'إنهاء' : 'التالي'}</button>
+      </div>
+    </div>
+  </section>`;
+}
+</script>

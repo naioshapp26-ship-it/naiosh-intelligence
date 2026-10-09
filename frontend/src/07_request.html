@@ -1,0 +1,290 @@
+
+<script data-app="">
+/* ================= REQUEST DATA ANALYSIS ================= */
+const RQ_TYPES = [
+  { id: 'desc', label: 'وصفي', icon: 'chart', q: 'ماذا حدث؟', agents: ['AG07'], need: ['مؤشرات الأداء التاريخية', 'البيانات التشغيلية للفترة', 'التقارير الدورية'] },
+  { id: 'diag', label: 'تشخيصي', icon: 'diagnosis', q: 'لماذا حدث؟', agents: ['AG07', 'AG08'], need: ['الأحداث والتغييرات خلال الفترة', 'بيانات العمليات والتبعيات', 'المؤشرات ذات الصلة', 'حالات سابقة مشابهة'] },
+  { id: 'pred', label: 'تنبؤي', icon: 'foresight', q: 'ماذا سيحدث؟', agents: ['AG09'], need: ['بيانات تاريخية 12 شهرًا فأكثر', 'سلاسل زمنية منتظمة', 'المحرّكات المؤثرة', 'الموسمية والعوامل الخارجية'] },
+  { id: 'fore', label: 'استشرافي وسيناريوهات', icon: 'ask', q: 'ماذا يمكن أن يحدث؟', agents: ['AG10', 'AG14'], need: ['اتجاهات السوق والقطاع', 'الإشارات الضعيفة المرصودة', 'الافتراضات الأساسية'] },
+  { id: 'feas', label: 'دراسة جدوى اقتصادية', icon: 'coin', q: 'هل المشروع مجدٍ اقتصاديًا؟', sub: 'صافي القيمة الحالية · العائد · نقطة التعادل', agents: ['AG07', 'AG09', 'AG14', 'AG11', 'AG15'], need: ['تكاليف الاستثمار الأولية', 'التكاليف التشغيلية المتوقعة', 'حجم السوق والطلب المتوقع', 'التسعير والإيرادات المتوقعة', 'مصادر التمويل وشروطه'] },
+  { id: 'risk', label: 'تحليل مخاطر', icon: 'risks', q: 'ما الذي يهددنا وكيف نعالجه؟', sub: 'الاحتمال · الأثر · الضوابط · المعالجة', agents: ['AG11', 'AG14'], need: ['سجل المخاطر الحالي', 'الحوادث والخسائر السابقة', 'الضوابط القائمة وفعاليتها', 'مؤشرات الإنذار المبكر'] },
+  { id: 'opp', label: 'فرص ونمو', icon: 'bulb', q: 'أين الفرص غير المستغلة؟', agents: ['AG12'], need: ['بيانات السوق والطلب', 'القدرات والموارد المتاحة'] },
+  { id: 'presc', label: 'توجيهي وحلول', icon: 'solutions', q: 'ماذا ينبغي أن نفعل؟', agents: ['AG13', 'AG15', 'AG17'], need: ['الأهداف المطلوبة', 'القيود: الميزانية والوقت', 'الموارد المتاحة', 'الحلول التي جُرّبت سابقًا'] },
+  { id: 'cmp', label: 'مقارنة', icon: 'integration', q: 'ما الأفضل والأسوأ؟', agents: ['AG07'], need: ['بيانات الوحدات المقارنة', 'معايير المقارنة', 'فترة زمنية موحدة'] },
+  { id: 'imp', label: 'قياس أثر', icon: 'impact', q: 'هل نجح ما نفذناه؟', agents: ['AG18'], need: ['خط الأساس قبل التنفيذ', 'النتيجة المتوقعة', 'النتيجة الفعلية'] }
+];
+const RQ_CURRENCY = [['JOD','دينار أردني'],['SAR','ريال سعودي'],['AED','درهم إماراتي'],['USD','دولار أمريكي'],['CAD','دولار كندي'],['EUR','يورو']];
+const RQ_PTYPE = [['new','مشروع جديد'],['expand','توسعة قائمة'],['branch','فرع أو موقع جديد'],['product','منتج أو خدمة جديدة'],['tech','استثمار تقني']];
+const RQ_RISKCATS = ['تشغيلية','مالية','سوقية وتنافسية','قانونية وامتثال','تقنية وأمن معلومات','سلامة مهنية','سمعة','موارد بشرية','سلاسل الإمداد'];
+const RQ_DOMAINS = [['D01','الاستراتيجية'],['D02','الحوكمة'],['D03','الأعمال'],['D04','المالية'],['D05','التشغيل'],['D06','رأس المال البشري'],['D07','السوق والعملاء'],['D08','المخاطر والسلامة'],['D09','التقنية والذكاء الاصطناعي'],['D10','المعرفة والتعليم'],['D11','القانون والامتثال'],['D12','الاستدامة والمستقبل']];
+const RQ_SYSTEMS = ['ERP','الموارد البشرية HR','إدارة العملاء CRM','المواهب','التدريب LMS','التعليم','السلامة','المالية','التسويق','المبيعات','الشؤون القانونية','العمليات','خدمة العملاء','ملفات خارجية'];
+const RQ_ROLES = ['صاحب قرار','مدير قطاع','مدير فرع','مستشار','محلل بيانات','مدير نظام','عميل'];
+const RQ_OUTPUTS = ['تقرير تنفيذي','تقرير تحليلي','موجز قرار','لوحة مؤشرات','عرض تقديمي'];
+const RQ_CONTACT = ['هاتف','واتساب','بريد إلكتروني','محادثة المنظومة'];
+const RQ_CLASS = [['public','عام'],['internal','داخلي'],['conf','سري'],['restricted','مقيّد']];
+const RQ_PRIORITY = [['حرجة','حرجة'],['عالية','عالية'],['متوسطة','متوسطة'],['منخفضة','منخفضة']];
+const RQ_LEVEL = [['D1','تشغيلي'],['D3','تكتيكي'],['D5','استراتيجي'],['D7','حرج — يتطلب الإدارة العليا']];
+function freshReq() {
+  return { name: '', phone: '', email: '', org: '', branch: '', role: 'صاحب قرار', systems: [], domain: '', types: [], title: '', question: '', since: '', where: '', who: '', tried: '', decision: '', kpi: '', from: '', to: '', have: [], files: [], videos: [], link: '', capex: '', currency: 'JOD', horizon: '5', ptype: 'new', riskCats: [], riskAppetite: 'متوسط', cls: 'internal', priority: 'متوسطة', level: 'D3', due: '', outputs: ['موجز قرار'], contact: 'بريد إلكتروني', consent: false };
+}
+let RQ_ERR = {};
+const RQ_VIDEO_URLS = {};
+const RQ_FILE_OBJ = {};   // key → File (used to upload real files in server mode)
+function rqContract() {
+  const r = S.req, sel = RQ_TYPES.filter(t => r.types.includes(t.id));
+  const need = [...new Set(sel.flatMap(t => t.need))];
+  const have = need.filter(n => r.have.includes(n));
+  const base = need.length ? have.length / need.length : 0;
+  const bonus = Math.min(0.1, (r.files.length || (r.videos || []).length ? 0.05 : 0) + (r.systems.length >= 2 ? 0.05 : 0));
+  const suff = need.length ? Math.min(100, Math.round((base + bonus) * 100)) : 0;
+  const agents = [...new Set(['AG01','AG02','AG03','AG04','AG06', ...sel.flatMap(t => t.agents), 'AG16'])];
+  const missing = need.filter(n => !r.have.includes(n));
+  return { sel, need, have, missing, suff, agents };
+}
+function rqField(id, label, html, req, hint) {
+  const err = RQ_ERR[id];
+  return `<div class="stack" style="gap:6px;min-width:0">
+    <label for="rq-${id}" style="font-size:13px;font-weight:600">${label}${req ? ' <span style="color:var(--red)" aria-hidden="true">*</span>' : ''}</label>
+    ${html}
+    ${hint ? `<span class="faint" style="font-size:11.5px;line-height:1.6">${hint}</span>` : ''}
+    ${err ? `<span id="rq-${id}-err" style="font-size:12px;color:#FF6B81">${err}</span>` : ''}
+  </div>`;
+}
+const rqInput = (id, type = 'text', ph = '', extra = '') => `<input id="rq-${id}" type="${type}" data-req="${id}" value="${esc(S.req[id])}" placeholder="${ph}" ${RQ_ERR[id] ? `aria-invalid="true" aria-describedby="rq-${id}-err" style="border-color:#FF6B81"` : ''} ${extra}>`;
+const rqArea = (id, ph = '', rows = 3) => `<textarea id="rq-${id}" data-req="${id}" rows="${rows}" placeholder="${ph}" ${RQ_ERR[id] ? `aria-invalid="true" aria-describedby="rq-${id}-err" style="border-color:#FF6B81"` : ''}>${esc(S.req[id])}</textarea>`;
+const rqSelect = (id, opts) => `<select id="rq-${id}" data-req="${id}" data-req-live="1" style="min-height:44px;background:var(--bg);border:1px solid ${RQ_ERR[id] ? '#FF6B81' : 'var(--line2)'};border-radius:10px;padding:0 10px;width:100%">${opts.map(([v, l]) => `<option value="${esc(v)}" ${S.req[id] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+const rqChecks = (id, items, cols = 3) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(${cols === 2 ? 220 : 160}px,1fr));gap:8px">${items.map((it, i) => { const on = S.req[id].includes(it); return `<label class="row nowrap" style="min-height:44px;gap:10px;padding:0 12px;border-radius:10px;cursor:pointer;background:${on ? 'var(--redbg)' : 'var(--raised)'};border:1px solid ${on ? 'var(--red)' : 'var(--line2)'}"><input type="checkbox" id="rq-${id}-${i}" data-req-multi="${id}" value="${esc(it)}" ${on ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--action)"><span style="font-size:13px">${it}</span></label>`; }).join('')}</div>`;
+const rqRadios = (id, items) => `<div class="row" role="radiogroup" aria-label="${id === 'riskAppetite' ? 'درجة تقبّل المخاطر' : 'طريقة التواصل'}" style="gap:8px">${items.map((it, i) => { const on = S.req[id] === it; return `<label class="chip" style="min-height:40px;padding:0 14px;cursor:pointer;${on ? 'background:var(--redbg);border-color:var(--red);color:#fff' : ''}"><input type="radio" name="rq-${id}" id="rq-${id}-${i}" data-req="${id}" data-req-live="1" value="${esc(it)}" ${on ? 'checked' : ''} style="accent-color:var(--action)">${it}</label>`; }).join('')}</div>`;
+function rqSection(n, title, desc, body) {
+  return `<section class="card" aria-labelledby="rq-sec-${n}">
+    <div class="row nowrap" style="align-items:flex-start;gap:12px"><span class="mono" style="flex-shrink:0;width:30px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:var(--yellowbg);border:1px solid var(--yellowline);color:var(--yellow);font-size:12px">${n}</span>
+      <div class="stack" style="gap:2px"><h2 id="rq-sec-${n}" class="h-sec">${title}</h2><span class="muted" style="font-size:12.5px;line-height:1.6">${desc}</span></div></div>
+    ${body}
+  </section>`;
+}
+function rqPanel() {
+  const c = rqContract(), r = S.req, sc = c.suff >= 80 ? 'var(--greenfg)' : c.suff >= 50 ? 'var(--yellow)' : 'var(--orangefg)';
+  const dom = RQ_DOMAINS.find(d => d[0] === r.domain);
+  const next = !c.sel.length ? 'اختر نوع التحليل لتظهر البيانات المطلوبة.' : c.suff >= 80 ? 'البيانات كافية مبدئيًا: يبدأ التحليل مباشرة بعد التحقق من الجودة.' : 'سيولّد نايوش استبيانًا ذكيًا قصيرًا يسأل فقط عن البيانات الناقصة.';
+  return `<div class="card" style="gap:12px">
+    <div class="row between"><h2 class="h-sec">عقد البيانات المبدئي</h2><span class="eyebrow">LIVE · AI DATA CONTRACT</span></div>
+    <dl class="kv" style="margin:0;font-size:12.5px">
+      <dt>النية</dt><dd>${c.sel.length ? c.sel.map(t => t.label).join(' + ') : '<span class="faint">—</span>'}</dd>
+      <dt>المجال</dt><dd>${dom ? dom[0] + ' ' + dom[1] : '<span class="faint">—</span>'}</dd>
+      <dt>الأنظمة</dt><dd>${r.systems.length ? esc(r.systems.join('، ')) : '<span class="faint">—</span>'}</dd>
+      <dt>الفترة</dt><dd>${r.from || r.to ? esc((r.from || '…') + ' ← ' + (r.to || '…')) : '<span class="faint">—</span>'}</dd>
+      <dt>التصنيف</dt><dd>${(RQ_CLASS.find(x => x[0] === r.cls) || ['', ''])[1]}</dd>
+      ${r.types.includes('feas') ? `<dt>الجدوى</dt><dd>${(RQ_PTYPE.find(x => x[0] === r.ptype) || ['', ''])[1]}${r.capex ? ' · ' + esc(r.capex) + ' ' + r.currency : ''} · ${r.horizon} سنوات</dd>` : ''}
+      ${r.types.includes('risk') ? `<dt>المخاطر</dt><dd>${r.riskCats.length ? esc(r.riskCats.join('، ')) : 'كل الفئات'} · تقبّل ${r.riskAppetite}</dd>` : ''}
+    </dl>
+    <div class="sub" style="background:var(--sunk)">
+      <div class="row between"><span style="font-size:12.5px;font-weight:600">كفاية البيانات المتوقعة</span><span class="big" style="font-size:22px;color:${sc}">${c.need.length ? c.suff + '%' : '—'}</span></div>
+      <span class="bar" style="height:6px"><i style="width:${c.suff}%;background:${sc}"></i></span>
+      <span class="faint" style="font-size:11.5px">${c.have.length} من ${c.need.length} عناصر مطلوبة متوفرة${r.files.length ? ' · ' + r.files.length + ' ملف مرفق' : ''}${(r.videos || []).length ? ' · ' + r.videos.length + ' فيديو' : ''}</span>
+    </div>
+    ${c.missing.length ? `<div class="stack" style="gap:5px"><span class="lbl">ناقص — سيُسأل عنه في الاستبيان الذكي</span>${c.missing.map(m => `<span class="row nowrap" style="font-size:12.5px">${ic('x', 13, 'style="color:#FF5C74;stroke-width:2.6"')}${m}</span>`).join('')}</div>` : ''}
+    <div class="stack" style="gap:6px"><span class="lbl">الوكلاء الذين سيعملون على الطلب</span><div class="row" style="gap:5px">${c.agents.map(a => `<span class="chip mono" style="font-size:11px;padding:3px 8px">${a}</span>`).join('')}</div></div>
+    <div class="banner ${c.sel.length && c.suff >= 80 ? 'g' : 'y'}" style="font-size:12.5px;line-height:1.65">${next}</div>
+    <span class="faint" style="font-size:11.5px;line-height:1.65">لا يُرسل إلى الذكاء الاصطناعي إلا ما تسمح به صلاحياتك، وبالحد الأدنى اللازم للتحليل. كل استنتاج سيُعرض مع درجة الثقة ومصدره.</span>
+  </div>`;
+}
+VIEWS.request = () => {
+  if (!S.req) S.req = freshReq();
+  if (!S.req.videos) S.req.videos = [];
+  if (!S.req.riskCats) Object.assign(S.req, { capex: '', currency: 'JOD', horizon: '5', ptype: 'new', riskCats: [], riskAppetite: 'متوسط' });
+  if (S.reqDone) {
+    const q = (S.requests || []).find(x => x.ref === S.reqDone);
+    if (q) return `<section class="card good" style="gap:16px">
+      <div class="row nowrap" style="gap:14px"><span style="width:52px;height:52px;flex-shrink:0;border-radius:26px;background:rgba(47,210,122,.16);display:flex;align-items:center;justify-content:center;color:var(--green)">${ic('check', 26, 'style="stroke-width:2.4"')}</span>
+        <div class="stack" style="gap:3px"><span class="mono" style="color:var(--yellow);font-size:13px">${q.ref}</span><h2 class="title-l">استلمنا طلب التحليل: ${esc(q.title)}</h2></div></div>
+      <div class="grid g4">${[['نوع التحليل', q.typesLabel], ['المجال', q.domainLabel], ['كفاية البيانات', q.suff + '%'], ['المرفقات', (q.files || 0) + ' ملف · ' + (q.videos || 0) + ' فيديو']].map(([l, v]) => `<div class="sub" style="background:var(--sunk)"><span class="lbl">${l}</span><b style="font-size:14px">${esc(v)}</b></div>`).join('')}</div>
+      <div class="stack" style="gap:6px"><b style="font-size:13.5px">ماذا سيحدث الآن؟</b>
+        ${['سُجّل الطلب في مركز الاستشارات وسجل التدقيق.', 'بوابة الصلاحيات تتحقق من نطاق الوصول وتصنيف البيانات.', q.suff >= 80 ? 'البيانات كافية مبدئيًا: يبدأ فحص الجودة ثم التحليل.' : `البيانات الناقصة (${q.missing}) ستُطلب عبر استبيان ذكي قصير.`, 'تصلك النتيجة كـ' + q.output + ' مع درجة الثقة والأدلة، والقرار النهائي لك.'].map((t, i) => `<div class="row nowrap" style="font-size:13px;align-items:flex-start"><span class="mono" style="color:var(--yellow);width:18px">${i + 1}</span><span>${t}</span></div>`).join('')}</div>
+      <div class="row">
+        <button type="button" class="btn primary" data-go="${q.suff >= 80 ? 'diagnosis' : 'questionnaire'}">${q.suff >= 80 ? 'متابعة التحليل' : 'استكمال البيانات الناقصة'}</button>
+        <button type="button" class="btn" data-go="consult">مركز الاستشارات</button>
+        <button type="button" class="btn link" data-act="rq-new">طلب جديد</button>
+      </div>
+    </section>${rqRecent()}`;
+  }
+  const r = S.req, c = rqContract();
+  const needList = c.need.length ? `<div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">البيانات المطلوبة لهذا التحليل — حدّد ما يتوفر لديك</span>${rqChecks('have', c.need, 2)}</div>`
+    : `<div class="empty" style="padding:16px"><span class="muted" style="font-size:13px">اختر نوع التحليل في القسم 3 لتظهر هنا البيانات التي يحتاجها.</span></div>`;
+  const errCount = Object.keys(RQ_ERR).length;
+  return `
+  <section class="card" style="gap:6px">
+    <div class="row between" style="align-items:flex-start">
+      <div class="stack" style="gap:4px"><span class="eyebrow">DATA ANALYSIS REQUEST · مربوط بالمنظومة</span><h2 class="title-xl">طلب تحليل بيانات</h2>
+        <p class="lead">صِف ما تريد معرفته، واختر الأنظمة ونوع التحليل. نايوش يبني عقد البيانات تلقائيًا، ويحدد ما ينقص، ثم يطلبه منك باستبيان قصير بدل التخمين.</p></div>
+      <span class="chip">الحقول المعلّمة <span style="color:var(--red)">*</span> مطلوبة</span>
+    </div>
+  </section>
+  ${errCount ? `<div class="banner r" role="alert">${ic('warn', 18, 'style="color:#FF6B81"')}<span>يرجى استكمال ${errCount} ${errCount === 1 ? 'حقل' : 'حقول'} قبل الإرسال.</span></div>` : ''}
+  <form id="rq-form" novalidate class="split wide" style="align-items:start">
+    <div class="stack" style="gap:16px">
+      ${rqSection(1, 'مقدّم الطلب', 'لربط الطلب بهويتك وصلاحياتك ونطاق البيانات المسموح لك.', `<div class="grid g3">
+        ${rqField('name', 'الاسم الكامل', rqInput('name', 'text', 'مثال: م. سارة أحمد', 'autocomplete="name"'), true)}
+        ${rqField('phone', 'الجوال', rqInput('phone', 'tel', '+962 7X XXX XXXX', 'dir="ltr" autocomplete="tel" style="text-align:right"'), false)}
+        ${rqField('email', 'البريد الإلكتروني', rqInput('email', 'email', 'name@company.com', 'dir="ltr" autocomplete="email" style="text-align:right"'), false, 'أدخل الجوال أو البريد على الأقل.')}
+        ${rqField('org', 'الجهة أو المنظمة', rqInput('org', 'text', 'اسم الجهة'), false)}
+        ${rqField('branch', 'الفرع أو الإدارة', rqInput('branch', 'text', 'مثال: الفرع الشمالي'), false)}
+        ${rqField('role', 'دورك', rqSelect('role', RQ_ROLES.map(x => [x, x])), false)}
+      </div>`)}
+      ${rqSection(2, 'الأنظمة والمجال', 'من أين تأتي البيانات، وإلى أي مجال في القاموس الرئيسي ينتمي الطلب.', `
+        <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">الأنظمة المصدر <span class="faint" style="font-weight:400">— اختر كل ما يرتبط بالطلب</span></span>${rqChecks('systems', RQ_SYSTEMS)}</div>
+        <div class="grid g2">${rqField('domain', 'المجال الرئيسي', rqSelect('domain', [['', 'اختر المجال…'], ...RQ_DOMAINS.map(([c, l]) => [c, c + ' · ' + l])]), true)}
+        ${rqField('kpi', 'المؤشر المرتبط (إن وجد)', rqInput('kpi', 'text', 'مثال: مؤشر أداء الفرع، معدل التحويل'), false)}</div>`)}
+      ${rqSection(3, 'نوع التحليل المطلوب', 'يمكن اختيار أكثر من نوع. كل نوع يحدد البيانات المطلوبة والوكلاء الذين يعملون عليه.', `
+        <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px" ${RQ_ERR.types ? 'aria-invalid="true"' : ''}>${RQ_TYPES.map((t, i) => { const on = r.types.includes(t.id); return `<label style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;cursor:pointer;background:${on ? 'var(--redbg)' : 'var(--raised)'};border:1.5px solid ${on ? 'var(--red)' : RQ_ERR.types ? '#FF6B81' : 'var(--line2)'}">
+          <span class="row nowrap" style="gap:10px"><input type="checkbox" id="rq-types-${i}" data-req-multi="types" value="${t.id}" ${on ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;accent-color:var(--action)"><span style="width:34px;height:34px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${on ? 'rgba(255,46,77,.16)' : 'var(--sunk)'};color:${on ? 'var(--red)' : 'var(--yellow)'}">${ic(t.icon, 19)}</span><b style="font-size:14px;line-height:1.4">${t.label}</b></span>
+          <span class="muted" style="font-size:12px;padding-inline-start:28px">${t.q}</span>${t.sub ? `<span class="faint" style="font-size:11px;padding-inline-start:28px">${t.sub}</span>` : ''}</label>`; }).join('')}</div>
+        ${RQ_ERR.types ? `<span style="font-size:12px;color:#FF6B81">${RQ_ERR.types}</span>` : ''}
+        ${r.types.includes('feas') ? `<div class="sub" style="gap:12px;border-color:var(--yellowline);background:var(--yellowbg)"><div class="row nowrap">${ic('coin', 18, 'style="color:var(--yellow)"')}<b style="font-size:13.5px">تفاصيل دراسة الجدوى الاقتصادية</b></div>
+          <div class="grid g2">
+            ${rqField('ptype', 'نوع المشروع', rqSelect('ptype', RQ_PTYPE), false)}
+            ${rqField('capex', 'حجم الاستثمار المتوقع', rqInput('capex', 'text', 'مثال: 250,000', 'inputmode="decimal" dir="ltr" style="text-align:right"'), false, 'تقدير أولي يكفي — يُدقَّق أثناء الدراسة.')}
+            ${rqField('currency', 'العملة', rqSelect('currency', RQ_CURRENCY), false)}
+            ${rqField('horizon', 'أفق الدراسة بالسنوات', rqSelect('horizon', [['3','3 سنوات'],['5','5 سنوات'],['7','7 سنوات'],['10','10 سنوات']]), false)}
+          </div>
+          <span class="faint" style="font-size:12px;line-height:1.65">المخرجات: صافي القيمة الحالية، معدل العائد الداخلي، فترة الاسترداد، نقطة التعادل، وتحليل حساسية بثلاثة سيناريوهات.</span></div>` : ''}
+        ${r.types.includes('risk') ? `<div class="sub" style="gap:12px;border-color:var(--redline);background:var(--redbg)"><div class="row nowrap">${ic('risks', 18, 'style="color:var(--red)"')}<b style="font-size:13.5px">نطاق تحليل المخاطر</b></div>
+          <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">فئات المخاطر المطلوب تحليلها</span>${rqChecks('riskCats', RQ_RISKCATS)}</div>
+          <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">درجة تقبّل المخاطر لدى الجهة</span>${rqRadios('riskAppetite', ['منخفض','متوسط','مرتفع'])}</div>
+          <span class="faint" style="font-size:12px;line-height:1.65">المخرجات: مصفوفة الاحتمال والأثر، الخطر الكامن والمتبقي بعد الضوابط، سرعة الخطر، مؤشرات الإنذار المبكر، وخطة المعالجة.</span></div>` : ''}`)}
+      ${rqSection(4, 'السؤال والمشكلة', 'كلما كان الوصف أدق، قلّت الأسئلة التي سيطرحها نايوش لاحقًا.', `<div class="grid g2">
+        ${'<div style="grid-column:1/-1">' + rqField('title', 'عنوان الطلب', rqInput('title', 'text', 'مثال: تحليل انخفاض أداء الفرع الشمالي'), true) + '</div>'}
+        ${'<div style="grid-column:1/-1">' + rqField('question', 'ما السؤال الذي تريد إجابته؟', rqArea('question', 'اكتب السؤال بلغتك: ماذا حدث؟ ولماذا يهمك الآن؟', 4), true) + '</div>'}
+        ${rqField('since', 'متى بدأت المشكلة أو الحاجة؟', rqInput('since', 'date', '', 'dir="ltr"'), false)}
+        ${rqField('where', 'أين تحدث؟', rqInput('where', 'text', 'الفرع، القسم، القناة، المنتج…'), false)}
+        ${rqField('who', 'من المتأثر؟', rqInput('who', 'text', 'العملاء، الموظفون، فريق محدد…'), false)}
+        ${rqField('tried', 'ما الذي جُرّب سابقًا؟', rqInput('tried', 'text', 'إجراءات أو حلول سابقة ونتيجتها'), false)}
+        ${'<div style="grid-column:1/-1">' + rqField('decision', 'ما القرار الذي سيدعمه هذا التحليل؟', rqArea('decision', 'مثال: اختيار خطة لاستعادة الأداء خلال 90 يومًا', 2), false, 'يساعد على ترتيب الحلول وفق ما تحتاجه فعلًا.') + '</div>'}
+      </div>`)}
+      ${rqSection(5, 'البيانات والمرفقات', 'نايوش يطابق ما لديك مع ما يحتاجه التحليل، ويقيس الجودة قبل أي تحليل.', `
+        <div class="grid g2">${rqField('from', 'بداية الفترة', rqInput('from', 'date', '', 'dir="ltr"'), false)}${rqField('to', 'نهاية الفترة', rqInput('to', 'date', '', 'dir="ltr"'), false)}</div>
+        ${needList}
+        <div class="grid g2">
+          <div class="stack" style="gap:6px"><label for="rq-files" style="font-size:13px;font-weight:600">إرفاق ملفات</label>
+            <label for="rq-files" class="row nowrap" style="min-height:52px;gap:10px;padding:0 14px;border-radius:10px;border:1px dashed var(--line3);background:var(--sunk);cursor:pointer">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">Excel · CSV · PDF · صور</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">اختر ملفات</span></label>
+            <input id="rq-files" type="file" multiple accept=".xlsx,.xls,.csv,.pdf,.png,.jpg,.jpeg,.docx" style="position:absolute;width:1px;height:1px;opacity:0">
+            ${r.files.length ? `<div class="stack" style="gap:4px">${r.files.map((f, i) => `<div class="row nowrap" style="font-size:12.5px;padding:6px 10px;border-radius:8px;background:var(--raised)">${ic('reports', 14, 'style="color:var(--muted)"')}<span style="flex-grow:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.n)}</span><span class="mono faint" style="font-size:11px">${f.s}</span><button type="button" class="btn link sm" data-act="rq-rmfile" data-k="${i}" aria-label="إزالة ${esc(f.n)}" style="min-height:28px;color:#FF6B81">إزالة</button></div>`).join('')}</div>` : ''}
+          </div>
+          ${rqField('link', 'رابط لمصدر بيانات أو لوحة (اختياري)', rqInput('link', 'url', 'https://', 'dir="ltr" style="text-align:right"'), false)}
+        </div>
+        <div class="stack" style="gap:6px"><label for="rq-videos" style="font-size:13px;font-weight:600">إرفاق فيديو</label>
+          <label for="rq-videos" class="row nowrap" style="min-height:56px;gap:10px;padding:0 14px;border-radius:10px;border:1px dashed var(--line3);background:var(--sunk);cursor:pointer">${ic('play', 18, 'style="color:var(--yellow)"')}<span class="stack" style="gap:1px"><span style="font-size:13px">شرح المشكلة بالفيديو، تسجيل شاشة، أو لقطات من الموقع</span><span class="faint" style="font-size:11.5px">MP4 · MOV · WEBM — حتى 500 MB للملف</span></span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">اختر فيديو</span></label>
+          <input id="rq-videos" type="file" multiple accept="video/*" style="position:absolute;width:1px;height:1px;opacity:0">
+          ${RQ_ERR.videos ? `<span style="font-size:12px;color:#FF6B81">${RQ_ERR.videos}</span>` : ''}
+          ${r.videos.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">${r.videos.map((v, i) => `<div class="sub" style="padding:8px;gap:8px">
+            ${RQ_VIDEO_URLS[v.key] ? `<video src="${RQ_VIDEO_URLS[v.key]}" controls preload="metadata" playsinline style="width:100%;max-width:100%;aspect-ratio:16/9;border-radius:8px;background:#000"></video>` : `<div style="aspect-ratio:16/9;border-radius:8px;background:var(--sunk);display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:12px;text-align:center;padding:8px">المعاينة متاحة عند الإرفاق فقط</div>`}
+            <div class="row nowrap" style="font-size:12.5px"><span style="flex-grow:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.n)}</span><button type="button" class="btn link sm" data-act="rq-rmvideo" data-k="${i}" aria-label="إزالة ${esc(v.n)}" style="min-height:28px;color:#FF6B81">إزالة</button></div>
+            <span class="mono faint" style="font-size:11px">${v.s}${v.d ? ' · ' + v.d : ''}</span></div>`).join('')}</div>` : ''}
+        </div>
+        ${rqField('cls', 'تصنيف سرية البيانات', `<div class="row" style="gap:8px">${RQ_CLASS.map(([v, l], i) => { const on = r.cls === v; return `<label class="chip" style="min-height:40px;padding:0 14px;cursor:pointer;${on ? 'background:var(--redbg);border-color:var(--red);color:#fff' : ''}"><input type="radio" name="rq-cls" id="rq-cls-${i}" data-req="cls" data-req-live="1" value="${v}" ${on ? 'checked' : ''} style="accent-color:var(--action)">${l}</label>`; }).join('')}</div>`, false, 'البيانات المصنفة «سري» أو «مقيّد» تمر بموافقة إضافية ولا تُرسل كاملة إلى الذكاء الاصطناعي.')}`)}
+      ${rqSection(6, 'الأولوية والتسليم', 'يحدد مستوى القرار متطلبات الأدلة والمراجعة والموافقة.', `<div class="grid g3">
+        ${rqField('priority', 'الأولوية', rqSelect('priority', RQ_PRIORITY), false)}
+        ${rqField('level', 'مستوى القرار', rqSelect('level', RQ_LEVEL), false)}
+        ${rqField('due', 'الموعد المطلوب للنتيجة', rqInput('due', 'date', '', 'dir="ltr"'), false)}
+      </div>
+      <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">شكل المخرج المطلوب</span>${rqChecks('outputs', RQ_OUTPUTS)}</div>
+      <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">طريقة التواصل المفضلة</span>${rqRadios('contact', RQ_CONTACT)}</div>
+      <label class="row nowrap" style="align-items:flex-start;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:var(--raised);border:1px solid ${RQ_ERR.consent ? '#FF6B81' : 'var(--line2)'}">
+        <input type="checkbox" id="rq-consent" data-req="consent" data-req-live="1" ${r.consent ? 'checked' : ''} style="width:20px;height:20px;margin-top:2px;accent-color:var(--action)" ${RQ_ERR.consent ? 'aria-invalid="true"' : ''}>
+        <span style="font-size:13px;line-height:1.7">أوافق على استخدام البيانات المرتبطة بهذا الطلب للتحليل فقط، وفق صلاحياتي وسياسة الحوكمة، مع تسجيل كل وصول في سجل التدقيق. <span style="color:var(--red)">*</span></span>
+      </label>
+      ${RQ_ERR.consent ? `<span style="font-size:12px;color:#FF6B81">${RQ_ERR.consent}</span>` : ''}
+      <div class="row"><button type="submit" class="btn primary" style="min-width:220px">${ic('ask', 16)}إرسال طلب التحليل</button><button type="button" class="btn" data-act="rq-clear">مسح النموذج</button></div>`)}
+    </div>
+    <aside class="stack" style="gap:16px;position:sticky;top:calc(80px + env(safe-area-inset-top,0px))" id="rq-panel">${rqPanel()}</aside>
+  </form>
+  ${rqRecent()}`;
+};
+function rqRecent() {
+  const list = S.requests || [];
+  return `<section class="card"><div class="row between"><h2 class="h-sec">طلباتي الأخيرة</h2><span class="lbl">${list.length} طلب</span></div>
+    ${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>المرجع</th><th>العنوان</th><th>نوع التحليل</th><th>الكفاية</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>${list.map(q => `<tr><td class="mono" style="color:var(--yellow);font-size:12px">${q.ref}</td><td><b>${esc(q.title)}</b></td><td class="soft">${esc(q.typesLabel)}</td><td class="mono" style="color:${confColor(q.suff)}">${q.suff}%</td><td><span class="chip">${q.status}</span></td><td class="faint" style="font-size:12px">${q.date}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted" style="font-size:13px">لا توجد طلبات بعد. الطلبات التي ترسلها تظهر هنا وفي مركز الاستشارات.</p>'}
+  </section>`;
+}
+function rqRefreshPanel() { const p = document.getElementById('rq-panel'); if (p) p.innerHTML = brandify(rqPanel()); save(); }
+function rqRerender(focusId) { render(); if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ preventScroll: true }); } }
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.req || el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT') return;
+  if (!S.req) S.req = freshReq();
+  S.req[el.dataset.req] = el.value;
+  if (RQ_ERR[el.dataset.req]) { delete RQ_ERR[el.dataset.req]; }
+  rqRefreshPanel();
+});
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset) return;
+  if (!S.req) S.req = freshReq();
+  if (el.dataset.reqMulti) {
+    const k = el.dataset.reqMulti, arr = S.req[k];
+    if (el.checked) { if (!arr.includes(el.value)) arr.push(el.value); } else S.req[k] = arr.filter(x => x !== el.value);
+    if (k === 'types') { delete RQ_ERR.types; const need = new Set(rqContract().need); S.req.have = S.req.have.filter(h => need.has(h)); }
+    rqRerender(el.id); return;
+  }
+  if (el.dataset.req && el.dataset.reqLive) { S.req[el.dataset.req] = el.type === 'checkbox' ? el.checked : el.value; delete RQ_ERR[el.dataset.req]; rqRerender(el.id); return; }
+  if (el.id === 'rq-videos' && el.files) {
+    const fmt = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+    delete RQ_ERR.videos;
+    const big = [];
+    Array.from(el.files).forEach(f => {
+      if (!/^video\//.test(f.type) && !/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(f.name)) { big.push(f.name + ' (ليس فيديو)'); return; }
+      if (f.size > 500 * 1048576) { big.push(f.name + ' (أكبر من 500 MB)'); return; }
+      const key = 'v' + Date.now() + Math.random().toString(36).slice(2, 6);
+      const item = { key, n: f.name, s: fmt(f.size), d: '' };
+      RQ_FILE_OBJ[key] = f;
+      try { RQ_VIDEO_URLS[key] = URL.createObjectURL(f); } catch (e2) {}
+      S.req.videos.push(item);
+      if (RQ_VIDEO_URLS[key]) {
+        const probe = document.createElement('video'); probe.preload = 'metadata';
+        probe.onloadedmetadata = () => { const t = Math.round(probe.duration || 0); if (t) { item.d = Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); if (S.route === 'request') rqRerender(); } };
+        probe.src = RQ_VIDEO_URLS[key];
+      }
+    });
+    if (big.length) RQ_ERR.videos = 'لم يُرفق: ' + big.join('، ');
+    rqRerender('rq-videos'); return;
+  }
+  if (el.id === 'rq-files' && el.files) {
+    const fmt = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+    Array.from(el.files).forEach(f => { const key = 'f' + Date.now() + Math.random().toString(36).slice(2, 6); RQ_FILE_OBJ[key] = f; S.req.files.push({ key, n: f.name, s: fmt(f.size) }); });
+    el.value = '';
+    rqRerender('rq-files');
+  }
+});
+document.addEventListener('submit', (e) => {
+  if (e.target.id !== 'rq-form') return;
+  e.preventDefault();
+  const r = S.req; RQ_ERR = {};
+  if (!r.name.trim()) RQ_ERR.name = 'أدخل الاسم الكامل.';
+  if (!r.phone.trim() && !r.email.trim()) RQ_ERR.email = 'أدخل رقم الجوال أو البريد الإلكتروني للتواصل.';
+  else if (r.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email.trim())) RQ_ERR.email = 'البريد الإلكتروني غير صحيح — مثال: name@company.com';
+  if (!r.domain) RQ_ERR.domain = 'اختر المجال الرئيسي للطلب.';
+  if (!r.types.length) RQ_ERR.types = 'اختر نوع تحليل واحدًا على الأقل.';
+  if (!r.title.trim()) RQ_ERR.title = 'أضف عنوانًا قصيرًا للطلب.';
+  if (!r.question.trim()) RQ_ERR.question = 'اكتب السؤال الذي تريد إجابته.';
+  if (!r.consent) RQ_ERR.consent = 'الموافقة على استخدام البيانات مطلوبة لبدء التحليل.';
+  const order = ['name','email','domain','types','title','question','consent'];
+  const first = order.find(k => RQ_ERR[k]);
+  if (first) { render(); const el = document.getElementById(first === 'types' ? 'rq-types-0' : 'rq-' + first); if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center' }); } return; }
+  const c = rqContract(), dom = RQ_DOMAINS.find(d => d[0] === r.domain);
+  if (window.NAIOSH_SERVER && typeof serverSubmitRequest === 'function') { serverSubmitRequest(r, c, dom); return; }
+  S.requests = S.requests || [];
+  const ref = 'DAR-2026-' + String(101 + S.requests.length).padStart(3, '0');
+  const d = new Date();
+  S.requests.unshift({ ref, title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
+  log(r.name.trim(), `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`);
+  log('المنسّق', `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, 'sys');
+  S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
+  toast('أُرسل الطلب ' + ref);
+  render(); window.scrollTo(0, 0);
+});
+function requestHandle(act, k) {
+  if (act === 'rq-new') { S.reqDone = null; S.req = freshReq(); RQ_ERR = {}; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'rq-clear') { Object.keys(RQ_VIDEO_URLS).forEach(k2 => { try { URL.revokeObjectURL(RQ_VIDEO_URLS[k2]); } catch (e) {} delete RQ_VIDEO_URLS[k2]; }); S.req = freshReq(); RQ_ERR = {}; render(); toast('مُسح النموذج'); return true; }
+  if (act === 'rq-rmfile') { S.req.files.splice(+k, 1); render(); return true; }
+  if (act === 'rq-rmvideo') { const v = S.req.videos.splice(+k, 1)[0]; if (v && RQ_VIDEO_URLS[v.key]) { try { URL.revokeObjectURL(RQ_VIDEO_URLS[v.key]); } catch (e) {} delete RQ_VIDEO_URLS[v.key]; } render(); return true; }
+  return false;
+}
+</script>

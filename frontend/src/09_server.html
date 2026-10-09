@@ -1,0 +1,431 @@
+<script data-app="">
+/* ================= Server mode (active only when served by the NAIOSH backend) =================
+   Sign-in, shared settings, per-user progress, real uploads, decision ledger and audit trail. */
+window.SERVER_ROUTES = new Set(['inbox', 'users', 'account']);
+let ME = null, ROLE_LABELS = {}, SV = { inbox: null, inboxStatuses: {}, canManage: false, inboxSel: null, detail: {}, users: null, filter: 'all', busy: false };
+const svCan = (p) => !!ME && (ME.perms.includes('*') || ME.perms.includes(p));
+
+async function api(method, url, body) {
+  const opt = { method, headers: { 'X-Naiosh': '1' }, credentials: 'same-origin' };
+  if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  let res;
+  try { res = await fetch(url, opt); } catch (e) { const err = new Error('تعذّر الاتصال بالخادم — تحقق من الإنترنت.'); err.status = 0; throw err; }
+  let data = null; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    if (res.status === 401 && ME) { location.reload(); }
+    const err = new Error((data && data.message) || 'حدث خطأ (' + res.status + ')'); err.status = res.status; err.code = data && data.error; err.errors = data && data.errors; throw err;
+  }
+  return data;
+}
+
+function uploadOne(file, kind, onProgress) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', '/api/uploads');
+    x.setRequestHeader('X-Naiosh', '1');
+    x.setRequestHeader('X-Upload-Kind', kind);
+    x.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+    x.setRequestHeader('Content-Type', 'application/octet-stream');
+    x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded); };
+    x.onload = () => {
+      let d = null; try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status >= 200 && x.status < 300) resolve(d); else reject(new Error((d && d.message) || ('تعذّر رفع ' + file.name)));
+    };
+    x.onerror = () => reject(new Error('انقطع الاتصال أثناء رفع ' + file.name));
+    x.send(file);
+  });
+}
+
+/* ---------- full-screen gate (sign-in, forced password change, loading) ---------- */
+function gate(html) {
+  let g = document.getElementById('sv-gate');
+  if (!g) { g = document.createElement('div'); g.id = 'sv-gate'; g.setAttribute('dir', 'rtl'); g.setAttribute('lang', 'ar'); document.body.appendChild(g); }
+  g.innerHTML = html; g.style.display = 'flex';
+  const f = g.querySelector('input'); if (f) f.focus();
+}
+function closeGate() { const g = document.getElementById('sv-gate'); if (g) g.remove(); }
+function gateBrand(id) {
+  const i = (id || {});
+  return `<div class="row nowrap" style="gap:12px;margin-bottom:6px">
+    <svg width="44" height="44" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#16161A" stroke="#2A2A31"/><path d="M17 7 L26 17 L17 27 L8 17 Z" fill="none" stroke="${(i.theme && i.theme.red) || '#FF2E4D'}" stroke-width="2"/><path d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z" fill="${(i.theme && i.theme.yellow) || '#FFCD11'}"/></svg>
+    <div class="stack" style="gap:0"><b style="font-family:'Readex Pro',sans-serif;letter-spacing:.18em;font-size:18px">${esc(i.brandEn || 'NAIOSH')}</b><span class="faint" style="font-size:11px;letter-spacing:.3em">${esc(i.brandSub || 'INTELLIGENCE')}</span></div></div>`;
+}
+async function showLogin(msg) {
+  let id = {}; try { id = await api('GET', '/api/public/identity'); } catch (e) {}
+  gate(`<form class="card sv-gate-card" id="sv-login-form" novalidate>
+    ${gateBrand(id)}
+    <div class="stack" style="gap:4px"><h1 class="title-xl" style="font-size:24px">تسجيل الدخول</h1><p class="muted" style="font-size:13.5px">${esc(id.brandAr || 'منظومة نايوش للذكاء المؤسسي')} — الدخول للمستخدمين المصرّح لهم فقط.</p></div>
+    <label class="stack" style="gap:6px"><span class="lbl">البريد الإلكتروني</span><input type="email" id="sv-email" autocomplete="username" required dir="ltr"></label>
+    <label class="stack" style="gap:6px"><span class="lbl">كلمة المرور</span><input type="password" id="sv-pass" autocomplete="current-password" required dir="ltr"></label>
+    <p id="sv-login-err" role="alert" style="color:#FF6B81;font-size:13px;min-height:18px">${esc(msg || '')}</p>
+    <button type="submit" class="btn primary block" style="min-height:48px">دخول</button>
+    <p class="faint" style="font-size:11.5px;line-height:1.7">كل دخول يُسجَّل في سجل التدقيق. نسيت كلمة المرور؟ تواصل مع مدير النظام.</p>
+  </form>`);
+}
+function showForcedPassword() {
+  gate(`<form class="card sv-gate-card" id="sv-force-form" novalidate>
+    ${gateBrand({})}
+    <div class="stack" style="gap:4px"><h1 class="title-xl" style="font-size:22px">اختر كلمة مرور جديدة</h1><p class="muted" style="font-size:13.5px">مرحبًا ${esc(ME.name)} — هذا أول دخول لك أو أُعيد تعيين كلمة مرورك. 10 أحرف على الأقل، حروف وأرقام.</p></div>
+    <label class="stack" style="gap:6px"><span class="lbl">كلمة المرور الحالية (المؤقتة)</span><input type="password" id="sv-cur" autocomplete="current-password" dir="ltr"></label>
+    <label class="stack" style="gap:6px"><span class="lbl">كلمة المرور الجديدة</span><input type="password" id="sv-new" autocomplete="new-password" dir="ltr"></label>
+    <label class="stack" style="gap:6px"><span class="lbl">تأكيد كلمة المرور الجديدة</span><input type="password" id="sv-new2" autocomplete="new-password" dir="ltr"></label>
+    <p id="sv-force-err" role="alert" style="color:#FF6B81;font-size:13px;min-height:18px"></p>
+    <div class="row"><button type="submit" class="btn primary" style="flex:1;min-height:48px">حفظ والمتابعة</button><button type="button" class="btn" data-sv-logout="1">خروج</button></div>
+  </form>`);
+}
+
+/* ---------- mapping ---------- */
+function mapReq(q) {
+  return { id: q.id, ref: q.ref, title: q.title, typesLabel: q.typesLabel, domain: '', domainLabel: q.domainLabel, suff: q.suff ?? 0, priority: q.priority, missing: q.missing, output: q.output, files: q.files, videos: q.videos, status: q.statusLabel, owner: q.owner, date: String(q.createdAt || '').slice(0, 10) };
+}
+function hhmm(iso) { const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function dt(iso) { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' }) + ' · ' + hhmm(iso); }
+const fmtSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+
+async function refreshRequests() {
+  try { const d = await api('GET', '/api/requests'); SV.inbox = d.requests; SV.inboxStatuses = d.statuses; SV.canManage = d.canManage; S.requests = d.requests.filter(q => q.mine).map(mapReq); }
+  catch (e) { /* keep local list */ }
+}
+async function refreshAudit() {
+  try {
+    const d = await api('GET', '/api/audit?limit=300');
+    S.audit = d.entries.map(e => ({ t: hhmm(e.at), who: e.actor, what: e.detail || e.action, kind: e.kind === 'security' ? 'warn' : e.kind }));
+    SV.auditScope = d.scope;
+  } catch (e) {}
+}
+
+/* ---------- views ---------- */
+function svNoAccess() { return `<section class="card"><h2 class="h-sec">لا تملك صلاحية هذه الصفحة</h2><p class="muted" style="font-size:13.5px">تواصل مع مدير النظام لمنحك الدور المناسب.</p></section>`; }
+const STATUS_TAG = { new: 't-i', collecting: 't-m', ready: 't-s', analyzing: 't-h', review: 't-i', done: 't-s', rejected: 't-c' };
+
+function svInboxView() {
+  if (!svCan('requests.viewAll')) return svNoAccess();
+  if (!SV.inbox) return `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`;
+  const list = SV.filter === 'all' ? SV.inbox : SV.inbox.filter(q => q.status === SV.filter);
+  const counts = {}; SV.inbox.forEach(q => counts[q.status] = (counts[q.status] || 0) + 1);
+  const sel = SV.inboxSel && SV.detail[SV.inboxSel];
+  const tabs = [['all', 'الكل', SV.inbox.length], ...Object.entries(SV.inboxStatuses).map(([k, l]) => [k, l, counts[k] || 0])].filter(t => t[0] === 'all' || t[2]);
+  return `
+  <section class="card" style="gap:6px">
+    <span class="eyebrow">DATA ANALYSIS REQUESTS · INBOX</span>
+    <h2 class="title-xl" style="font-size:22px">صندوق طلبات التحليل</h2>
+    <p class="muted" style="font-size:13.5px">كل الطلبات المرسلة من نموذج «طلب تحليل بيانات» مع مرفقاتها. ${SV.canManage ? 'يمكنك تغيير الحالة وإضافة ملاحظة — يصل التحديث لصاحب الطلب ويُسجَّل في التدقيق.' : 'عرض فقط — تغيير الحالة للمحللين والمستشارين.'}</p>
+  </section>
+  <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${SV.filter === k}" data-act="sv-filter" data-k="${k}">${l} <span class="mono faint">${n}</span></button>`).join('')}</div>
+  <section class="grid" style="grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start" id="sv-inbox-grid">
+    <div class="card" style="padding:0">${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>المرجع</th><th>العنوان</th><th>مقدّم الطلب</th><th>الكفاية</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>
+      ${list.map(q => `<tr class="click" tabindex="0" data-act="sv-open" data-k="${q.id}" ${SV.inboxSel === q.id ? 'style="background:rgba(255,46,77,.08)"' : ''}><td class="mono" style="color:var(--yellow);font-size:12px">${esc(q.ref)}</td><td><b>${esc(q.title)}</b><div class="faint" style="font-size:11.5px">${esc(q.typesLabel)}${q.files || q.videos ? ` · ${q.files} ملف · ${q.videos} فيديو` : ''}</div></td><td class="soft">${esc(q.owner)}</td><td class="mono" style="color:${confColor(q.suff || 0)}">${q.suff ?? '—'}%</td><td><span class="tag ${STATUS_TAG[q.status] || 't-n'}">${esc(q.statusLabel)}</span></td><td class="faint" style="font-size:12px">${String(q.createdAt).slice(0, 10)}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p class="muted" style="padding:18px;font-size:13.5px">لا توجد طلبات بهذه الحالة.</p>'}</div>
+    <div class="stack" style="gap:16px">${sel ? svDetail(sel) : `<div class="card"><p class="muted" style="font-size:13.5px">اختر طلبًا من القائمة لعرض تفاصيله ومرفقاته.</p></div>`}</div>
+  </section>`;
+}
+function svDetail(q) {
+  const p = q.payload || {};
+  const rows = [['السؤال', p.question], ['منذ متى', p.since], ['أين يظهر', p.where], ['من المتأثر', p.who], ['ما الذي جُرّب', p.tried], ['القرار المرتبط', p.decision], ['المؤشر', p.kpi], ['الفترة', [p.from, p.to].filter(Boolean).join(' → ')], ['الأنظمة', (p.systems || []).join('، ')], ['المخرجات', (p.outputs || []).join('، ')], ['الأولوية', p.priority], ['مستوى القرار', p.level], ['الموعد المطلوب', p.due], ['التصنيف', p.cls], ['رابط', p.link], ['رأس المال', p.capex ? p.capex + ' ' + (p.currency || '') : ''], ['فئات المخاطر', (p.riskCats || []).join('، ')]].filter(r => r[1]);
+  return `<div class="card" style="gap:12px">
+    <div class="row between"><span class="mono" style="color:var(--yellow)">${esc(q.ref)}</span><span class="tag ${STATUS_TAG[q.status] || 't-n'}">${esc(q.statusLabel)}</span></div>
+    <h3 style="font-size:17px">${esc(q.title)}</h3>
+    <p class="soft" style="font-size:13px">${esc(p.name)}${p.org ? ' · ' + esc(p.org) : ''} · ${esc(p.email || '')} ${esc(p.phone || '')} · تواصل: ${esc(p.contact || '—')}</p>
+    <div class="stack" style="gap:6px">${rows.map(([l, v]) => `<div class="row nowrap" style="align-items:flex-start;gap:10px;font-size:13px"><span class="faint" style="min-width:96px">${l}</span><span style="white-space:pre-wrap">${esc(v)}</span></div>`).join('')}</div>
+    <div class="sub"><span class="lbl">البيانات الناقصة حسب عقد البيانات</span><span style="font-size:13px">${esc(q.missing)}</span></div>
+  </div>
+  <div class="card" style="gap:10px"><h3 class="h-sec">المرفقات (${q.files.length})</h3>
+    ${q.files.length ? q.files.map(f => f.kind === 'video' && /^video\/(mp4|webm|quicktime)$/.test(f.mime)
+      ? `<div class="stack" style="gap:6px"><video controls preload="metadata" src="/api/files/${f.id}?inline=1" style="width:100%;border-radius:10px;background:#000;max-height:280px"></video><a class="btn sm" href="/api/files/${f.id}" download>${ic('play', 14)}${esc(f.name)} · ${fmtSize(f.size)}</a></div>`
+      : `<a class="list-btn" href="/api/files/${f.id}" download style="align-items:center">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
+  </div>
+  ${SV.canManage ? `<form class="card" id="sv-status-form" style="gap:10px"><h3 class="h-sec">تحديث الحالة</h3>
+    <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <textarea id="sv-note" rows="2" placeholder="ملاحظة لصاحب الطلب أو للفريق (اختياري)"></textarea>
+    <button type="submit" class="btn primary">حفظ التحديث</button></form>` : ''}
+  <div class="card" style="gap:8px"><h3 class="h-sec">السجل</h3>${q.events.map(e => `<div class="row nowrap" style="gap:10px;font-size:12.5px;align-items:flex-start"><span class="mono faint" style="min-width:110px">${dt(e.at)}</span><span>${esc(e.by || '')}: ${e.from ? esc(e.from) + ' ← ' : ''}${esc(e.to || '')}${e.note ? ' — ' + esc(e.note) : ''}</span></div>`).join('')}</div>`;
+}
+
+function svUsersView() {
+  if (!svCan('users.manage')) return svNoAccess();
+  if (!SV.users) return `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`;
+  const roleOpts = (cur) => Object.entries(ROLE_LABELS).map(([k, l]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${l}</option>`).join('');
+  return `
+  <section class="card" style="gap:6px"><span class="eyebrow">USERS · ROLES · ACCESS</span><h2 class="title-xl" style="font-size:22px">المستخدمون والصلاحيات</h2>
+    <p class="muted" style="font-size:13.5px">أضف المستخدمين وحدّد أدوارهم. المستخدم الجديد يختار كلمة مرور خاصة به عند أول دخول. الإيقاف ينهي جلساته فورًا، وكل تغيير يُسجَّل في التدقيق.</p></section>
+  <section class="grid" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start" id="sv-users-grid">
+    <div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>آخر دخول</th><th></th></tr></thead><tbody>
+      ${SV.users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.id === ME.id ? ' <span class="chip" style="font-size:10.5px">أنت</span>' : ''}</td><td class="mono soft" style="font-size:12px" dir="ltr">${esc(u.email)}</td>
+        <td><select data-sv-role="${u.id}" aria-label="دور ${esc(u.name)}" style="min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;color:var(--fg);padding:0 8px">${roleOpts(u.role)}</select></td>
+        <td><span class="tag ${u.active ? 't-s' : 't-n'}">${u.active ? 'فعّال' : 'موقوف'}</span>${u.mustChange ? ' <span class="faint" style="font-size:11px">بانتظار أول دخول</span>' : ''}</td>
+        <td class="faint" style="font-size:12px">${u.lastLogin ? dt(u.lastLogin) : '—'}</td>
+        <td><div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="sv-toggle" data-k="${u.id}">${u.active ? 'إيقاف' : 'تفعيل'}</button><button type="button" class="btn sm" data-act="sv-reset" data-k="${u.id}">كلمة مرور جديدة</button></div></td></tr>`).join('')}
+    </tbody></table></div></div>
+    <form class="card" id="sv-user-form" style="gap:10px" novalidate><h3 class="h-sec">إضافة مستخدم</h3>
+      <label class="stack" style="gap:6px"><span class="lbl">الاسم الكامل</span><input type="text" id="sv-u-name" required></label>
+      <label class="stack" style="gap:6px"><span class="lbl">البريد الإلكتروني</span><input type="email" id="sv-u-email" dir="ltr" required></label>
+      <label class="stack" style="gap:6px"><span class="lbl">الدور</span><select id="sv-u-role" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${roleOpts('client')}</select></label>
+      <label class="stack" style="gap:6px"><span class="lbl">كلمة مرور مؤقتة (10 أحرف على الأقل، حروف وأرقام)</span><input type="text" id="sv-u-pass" dir="ltr" autocomplete="off" value="${svTempPass()}"></label>
+      <p id="sv-u-err" role="alert" style="color:#FF6B81;font-size:12.5px;min-height:16px"></p>
+      <button type="submit" class="btn primary">إضافة المستخدم</button>
+      <p class="faint" style="font-size:11.5px;line-height:1.7">أرسل للمستخدم البريد وكلمة المرور المؤقتة بطريقة آمنة. سيُطلب منه تغييرها عند أول دخول.</p>
+    </form>
+  </section>`;
+}
+function svTempPass() { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', d = '23456789'; let s = ''; const r = new Uint32Array(12); crypto.getRandomValues(r); for (let i = 0; i < 12; i++) s += (i % 4 === 3 ? d : a)[r[i] % (i % 4 === 3 ? d.length : a.length)]; return s; }
+
+function svAccountView() {
+  return `
+  <section class="card" style="gap:6px"><span class="eyebrow">ACCOUNT</span><h2 class="title-xl" style="font-size:22px">حسابي</h2>
+    <div class="row" style="gap:18px;font-size:13.5px"><span><span class="faint">الاسم: </span><b>${esc(ME.name)}</b></span><span><span class="faint">البريد: </span><span dir="ltr">${esc(ME.email)}</span></span><span><span class="faint">الدور: </span><b>${esc(ME.roleLabel)}</b></span></div></section>
+  <section class="grid g2" style="align-items:start">
+    <form class="card" id="sv-pass-form" style="gap:10px" novalidate><h3 class="h-sec">تغيير كلمة المرور</h3>
+      <label class="stack" style="gap:6px"><span class="lbl">كلمة المرور الحالية</span><input type="password" id="sv-p-cur" autocomplete="current-password" dir="ltr"></label>
+      <label class="stack" style="gap:6px"><span class="lbl">كلمة المرور الجديدة</span><input type="password" id="sv-p-new" autocomplete="new-password" dir="ltr"></label>
+      <p id="sv-p-err" role="alert" style="color:#FF6B81;font-size:12.5px;min-height:16px"></p>
+      <button type="submit" class="btn primary">حفظ كلمة المرور</button>
+      <p class="faint" style="font-size:11.5px">تغيير كلمة المرور يُنهي جلساتك على الأجهزة الأخرى.</p></form>
+    <div class="card" style="gap:10px"><h3 class="h-sec">الجلسة</h3><p class="muted" style="font-size:13px">تنتهي الجلسة تلقائيًا بعد فترة من عدم الاستخدام.</p><button type="button" class="btn" data-act="sv-logout">${ic('back', 16)}تسجيل الخروج</button></div>
+  </section>`;
+}
+
+/* ---------- actions ---------- */
+async function serverHandle(act, k) {
+  switch (act) {
+    case 'sv-filter': SV.filter = k; render(); return true;
+    case 'sv-open': {
+      SV.inboxSel = +k; render();
+      try { const d = await api('GET', '/api/requests/' + k); SV.detail[+k] = d.request; } catch (e) { toast(e.message); }
+      render(); const g = document.getElementById('sv-inbox-grid'); if (g && innerWidth < 900) g.lastElementChild.scrollIntoView({ block: 'start' });
+      return true;
+    }
+    case 'sv-toggle': {
+      const u = SV.users.find(x => x.id === +k); if (!u) return true;
+      try { await api('PATCH', '/api/users/' + k, { active: !u.active }); toast(u.active ? 'أُوقف الحساب وانتهت جلساته' : 'فُعّل الحساب'); await svLoadUsers(); } catch (e) { toast(e.message); }
+      return true;
+    }
+    case 'sv-reset': {
+      const u = SV.users.find(x => x.id === +k); if (!u) return true;
+      const pw = prompt('كلمة مرور مؤقتة جديدة لـ ' + u.name + ' (10 أحرف على الأقل، حروف وأرقام):', svTempPass());
+      if (!pw) return true;
+      try { await api('PATCH', '/api/users/' + k, { password: pw }); toast('عُيّنت كلمة المرور — سيُطلب تغييرها عند الدخول'); await svLoadUsers(); } catch (e) { toast(e.message); }
+      return true;
+    }
+    case 'sv-logout': svLogout(); return true;
+  }
+  return false;
+}
+async function svLogout() { try { await api('POST', '/api/auth/logout'); } catch (e) {} location.href = '/'; }
+async function svLoadUsers() { try { const d = await api('GET', '/api/users'); SV.users = d.users; ROLE_LABELS = d.roles; } catch (e) { toast(e.message); } if (S.route === 'users') render(); }
+
+document.addEventListener('click', (e) => { if (e.target.closest('[data-sv-logout]')) svLogout(); });
+document.addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset && el.dataset.svRole) {
+    try { await api('PATCH', '/api/users/' + el.dataset.svRole, { role: el.value }); toast('حُدّث الدور'); } catch (err) { toast(err.message); }
+    svLoadUsers();
+  }
+});
+document.addEventListener('submit', async (e) => {
+  const f = e.target; if (!f.id || !f.id.startsWith('sv-')) return;
+  e.preventDefault();
+  const v = (id) => (document.getElementById(id) || {}).value || '';
+  const btn = f.querySelector('button[type=submit]'); if (btn) btn.disabled = true;
+  try {
+    if (f.id === 'sv-login-form') {
+      const err = document.getElementById('sv-login-err');
+      if (!v('sv-email') || !v('sv-pass')) { err.textContent = 'أدخل البريد الإلكتروني وكلمة المرور.'; return; }
+      try { await api('POST', '/api/auth/login', { email: v('sv-email'), password: v('sv-pass') }); location.reload(); }
+      catch (x) { err.textContent = x.message; document.getElementById('sv-pass').select(); }
+    }
+    if (f.id === 'sv-force-form') {
+      const err = document.getElementById('sv-force-err');
+      if (v('sv-new') !== v('sv-new2')) { err.textContent = 'كلمتا المرور الجديدتان غير متطابقتين.'; return; }
+      try { await api('POST', '/api/auth/password', { current: v('sv-cur'), next: v('sv-new') }); location.reload(); } catch (x) { err.textContent = x.message; }
+    }
+    if (f.id === 'sv-pass-form') {
+      const err = document.getElementById('sv-p-err');
+      try { await api('POST', '/api/auth/password', { current: v('sv-p-cur'), next: v('sv-p-new') }); toast('تم تغيير كلمة المرور'); f.reset(); err.textContent = ''; } catch (x) { err.textContent = x.message; }
+    }
+    if (f.id === 'sv-user-form') {
+      const err = document.getElementById('sv-u-err');
+      try {
+        await api('POST', '/api/users', { name: v('sv-u-name'), email: v('sv-u-email'), role: v('sv-u-role'), password: v('sv-u-pass') });
+        toast('أُضيف المستخدم'); await svLoadUsers();
+      } catch (x) { err.textContent = x.errors ? Object.values(x.errors).join(' ') : x.message; }
+    }
+    if (f.id === 'sv-status-form') {
+      const id = SV.inboxSel;
+      try {
+        await api('PATCH', '/api/requests/' + id, { status: v('sv-status'), note: v('sv-note') });
+        toast('حُدّث الطلب'); await refreshRequests();
+        const d = await api('GET', '/api/requests/' + id); SV.detail[id] = d.request; render();
+      } catch (x) { toast(x.message); }
+    }
+  } finally { if (btn && document.body.contains(btn)) btn.disabled = false; }
+});
+
+/* ---------- request submission with real uploads ---------- */
+function svProgress(pct, label) {
+  const el = document.getElementById('toast');
+  el.innerHTML = `<div class="toast" role="status" style="min-width:280px"><div style="margin-bottom:8px">${esc(label)}</div><div style="height:6px;border-radius:3px;background:#2A2A31;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--yellow);transition:width .2s"></div></div></div>`;
+}
+async function serverSubmitRequest(r, c, dom) {
+  if (SV.busy) return; SV.busy = true;
+  const items = [...(r.files || []).map(f => ({ f, kind: 'file' })), ...(r.videos || []).map(f => ({ f, kind: 'video' }))];
+  const missing = items.filter(x => !RQ_FILE_OBJ[x.f.key]);
+  if (missing.length) { SV.busy = false; RQ_ERR.videos = 'أعد إرفاق: ' + missing.map(x => x.f.n).join('، ') + ' (أُغلقت الصفحة بعد اختيارها).'; render(); return; }
+  const total = items.reduce((a, x) => a + RQ_FILE_OBJ[x.f.key].size, 0) || 1;
+  let doneBytes = 0; const ids = [];
+  try {
+    for (const x of items) {
+      const file = RQ_FILE_OBJ[x.f.key];
+      const res = await uploadOne(file, x.kind, (loaded) => svProgress(Math.round((doneBytes + loaded) / total * 100), 'جارٍ رفع المرفقات… ' + x.f.n));
+      doneBytes += file.size; ids.push(res.id);
+    }
+    svProgress(100, 'جارٍ إرسال الطلب…');
+    const { files, videos, ...payload } = r;
+    const summary = { typesLabel: c.sel.map(t => t.label).join(' + '), domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, missing: c.missing.slice(0, 3).join('، ') || '—', output: r.outputs[0] || 'تقرير تحليلي' };
+    const d = await api('POST', '/api/requests', { payload, summary, uploads: ids });
+    const ref = d.request.ref;
+    S.requests = [mapReq(d.request), ...(S.requests || []).filter(q => q.ref !== ref)];
+    S.audit.unshift({ t: nowTime(), who: 'المنسّق', what: `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, kind: 'sys' }, { t: nowTime(), who: ME.name, what: `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`, kind: 'user' });
+    S.audit = S.audit.slice(0, 300);
+    S.reqDone = ref; S.req = freshReq();
+    Object.keys(RQ_FILE_OBJ).forEach(k => delete RQ_FILE_OBJ[k]);
+    Object.keys(RQ_VIDEO_URLS).forEach(k => { try { URL.revokeObjectURL(RQ_VIDEO_URLS[k]); } catch (e) {} delete RQ_VIDEO_URLS[k]; });
+    toast('أُرسل الطلب ' + ref + (ids.length ? ' مع ' + ids.length + ' مرفق' : ''));
+    render(); window.scrollTo(0, 0);
+    refreshRequests();
+  } catch (e) {
+    if (e.errors) { RQ_ERR = { ...e.errors }; render(); }
+    toast(e.message || 'تعذّر إرسال الطلب');
+  } finally { SV.busy = false; }
+}
+
+/* ---------- boot ---------- */
+async function serverBoot() {
+  const app = document.getElementById('app'); app.style.visibility = 'hidden';
+  let me;
+  try { me = await api('GET', '/api/auth/me'); }
+  catch (e) { if (e.status === 401) { await showLogin(); return; } gate(`<div class="card sv-gate-card"><h1 class="title-xl" style="font-size:20px">تعذّر الاتصال بالخادم</h1><p class="muted">${esc(e.message)}</p><button type="button" class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>`); return; }
+  ME = me.user; ROLE_LABELS = me.roles || {};
+  if (ME.mustChange) { showForcedPassword(); return; }
+
+  try { const c = await api('GET', '/api/config'); CFG = mergeCfg(CFG_DEFAULT, c.cfg || {}); } catch (e) {}
+  CFG_DIRTY = false; try { localStorage.removeItem('naiosh-cfg-draft'); } catch (e) {}
+  try {
+    const st = await api('GET', '/api/state');
+    S = Object.assign(freshState(), st.state || {}, { menu: false });
+    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false;
+    if (S.askStage === 1) S.askShown = ASK_STEPS.length;
+  } catch (e) { S = freshState(); }
+  if (S.req) { S.req.files = []; S.req.videos = []; }
+  await Promise.all([refreshRequests(), svCan('audit.view') ? refreshAudit() : Promise.resolve()]);
+
+  CAN_EDIT = svCan('config.edit'); READONLY = !CAN_EDIT;
+  installServerOverrides();
+  closeGate(); app.style.visibility = '';
+  render();
+}
+
+function installServerOverrides() {
+  // navigation entries for server features
+  const last = NAV[NAV.length - 1];
+  if (svCan('requests.viewAll')) last.items.splice(0, 0, ['inbox', 'صندوق طلبات التحليل', '']);
+  if (svCan('users.manage')) last.items.splice(svCan('requests.viewAll') ? 1 : 0, 0, ['users', 'المستخدمون والصلاحيات', '']);
+  Object.assign(TITLES, { inbox: ['DAR · كل الطلبات ومرفقاتها', 'صندوق طلبات التحليل'], users: ['الأدوار · الصلاحيات · الحسابات', 'المستخدمون والصلاحيات'], account: ['الحساب والأمان', 'حسابي'] });
+  Object.assign(P, { inbox: 'M3 13l3-8h12l3 8v6H3z M3 13h5l1.5 2.5h5L16 13h5', users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1 M16 3.5a4 4 0 0 1 0 7.5 M22 21v-1a6 6 0 0 0-4-5.6', account: 'M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z M4 21a8 8 0 0 1 16 0' });
+  VIEWS.inbox = svInboxView; VIEWS.users = svUsersView; VIEWS.account = svAccountView;
+
+  // the signed-in user replaces the demo persona everywhere on screen
+  const _brandify = brandify;
+  brandify = function (h) {
+    const I = CFG.identity, su = I.user, sr = I.role, si = I.userInitial;
+    I.user = ME.name; I.role = ME.roleLabel;
+    try { return _brandify(h); } finally { I.user = su; I.role = sr; I.userInitial = si; }
+  };
+  const _renderTop = renderTop;
+  renderTop = function () {
+    _renderTop();
+    const who = document.querySelector('#top .who'), av = document.querySelector('#top .avatar');
+    if (who) who.outerHTML = `<button type="button" class="who sv-who" data-go="account" title="حسابي"><b>${esc(ME.name)}</b><span>${esc(ME.roleLabel)}</span></button>`;
+    if (av) av.textContent = (ME.name.replace(/^د\.\s*/, '').trim()[0] || '؟');
+  };
+
+  // per-user progress is saved on the server
+  let saveTimer = null;
+  save = function () {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { const { menu, audit, ...keep } = S; api('PUT', '/api/state', { state: keep }).catch(() => {}); }, 1200);
+  };
+  window.addEventListener('beforeunload', () => {
+    if (!saveTimer) return; const { menu, audit, ...keep } = S;
+    try { fetch('/api/state', { method: 'PUT', keepalive: true, headers: { 'X-Naiosh': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ state: keep }) }); } catch (e) {}
+  });
+
+  // every event goes to the tamper-evident audit trail
+  let remoteLog = true;
+  const _log = log;
+  log = function (who, what, kind = 'user') {
+    _log(kind === 'user' ? ME.name : who, what, kind);
+    if (remoteLog) api('POST', '/api/audit', { who, what, kind }).catch(() => {});
+  };
+
+  // settings are published to everyone through the API
+  publishCfg = async function () {
+    if (!CAN_EDIT) { toast('نشر الإعدادات لمدير النظام فقط.'); return; }
+    PUBLISHING = true; render();
+    try { await api('PUT', '/api/config', { cfg: CFG }); CFG_DIRTY = false; clearDraft(); toast('نُشرت الإعدادات — يراها الآن كل المستخدمين'); }
+    catch (e) { toast(e.message); }
+    PUBLISHING = false; render();
+  };
+  detectEditor = async function () {};
+
+  const _go = go;
+  go = function (r) {
+    _go(r);
+    if (r === 'inbox') refreshRequests().then(() => { if (S.route === 'inbox') render(); });
+    if (r === 'users') svLoadUsers();
+    if (r === 'governance' || r === 'consult' || r === 'request') {
+      Promise.all([r === 'governance' ? refreshAudit() : null, r !== 'governance' ? refreshRequests() : null]).then(() => { if (S.route === r) render(); });
+    }
+  };
+
+  const _handle = handle;
+  handle = function (act, k, el) {
+    if (act && act.startsWith('sv-')) { serverHandle(act, k, el); return; }
+    if (act === 'd-submit') {
+      if (!svCan('decisions.create')) { toast('اعتماد القرار يتطلب صلاحية «صاحب قرار» — لا قرار بلا صلاحية.'); return; }
+      const was = S.decided; remoteLog = false;
+      try { _handle(act, k, el); } finally { remoteLog = true; }
+      if (!was && S.decided) {
+        api('POST', '/api/decisions', { consultation: 'CNS-001', choice: S.choice, choiceLabel: choiceLabel(), solution: solSel().name, rationale: S.why })
+          .then(d => { S.lastDecisionRef = d.ref; toast('سُجّل القرار ' + d.ref + ' في سجل القرارات'); save(); })
+          .catch(e => { S.decided = false; render(); toast('لم يُسجّل القرار: ' + e.message); });
+      }
+      return;
+    }
+    if (act === 'gov-tab' && k === 'audit') { _handle(act, k, el); refreshAudit().then(() => { if (S.route === 'governance') render(); }); return; }
+    if (act === 'tour-reset') { const keepReq = S.requests; _handle(act, k, el); S.requests = keepReq; render(); return; }
+    return _handle(act, k, el);
+  };
+
+  // audit integrity check on the governance → audit tab
+  const _gov = VIEWS.governance;
+  VIEWS.governance = function () {
+    let h = _gov();
+    if (S.govTab === 'audit') {
+      h += `<div class="card row between" style="gap:10px"><div class="stack" style="gap:2px"><b>السجل محفوظ على الخادم ومحمي بسلسلة تجزئة (SHA-256)</b><span class="faint" style="font-size:12px">${SV.auditScope === 'own' ? 'تعرض أحداثك فقط — العرض الكامل للحوكمة والتدقيق والإدارة.' : 'أي تعديل على قاعدة البيانات يكسر السلسلة ويظهر هنا.'}</span></div>${svCan('audit.verify') ? '<button type="button" class="btn sm" id="sv-verify">تحقق من سلامة السجل</button>' : ''}</div>`;
+    }
+    return h;
+  };
+  document.addEventListener('click', async (e) => {
+    if (!e.target.closest('#sv-verify')) return;
+    try { const d = await api('GET', '/api/audit/verify'); toast(d.ok ? `السجل سليم — ${d.count} حدث دون أي تعديل` : `تحذير: انكسار في السلسلة عند الحدث ${d.brokenAt}`); refreshAudit().then(render); } catch (x) { toast(x.message); }
+  });
+}
+</script>
+<style>
+#sv-gate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(900px 500px at 70% -10%,rgba(255,46,77,.14),transparent 60%),radial-gradient(700px 400px at 10% 110%,rgba(255,205,17,.08),transparent 60%),#0B0B0D;overflow:auto;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--fg,#F4F4F6)}
+.sv-gate-card{width:100%;max-width:420px;gap:14px}
+.sv-who{display:flex;flex-direction:column;align-items:flex-start;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:2px 4px;border-radius:8px;text-align:right}
+a.list-btn{text-decoration:none;color:inherit}
+.sv-who:hover{background:rgba(255,255,255,.04)}
+@media (max-width:900px){#sv-inbox-grid,#sv-users-grid{grid-template-columns:minmax(0,1fr)!important}}
+</style>

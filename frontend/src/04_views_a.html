@@ -1,0 +1,315 @@
+
+<script data-app="">
+const VIEWS = {};
+
+/* ================= HOME ================= */
+function nextRoute() {
+  if (S.askStage !== 1) return ['ask', 'ابدأ بسؤال نايوش'];
+  if (!S.qDone) return ['questionnaire', 'استكمل البيانات الناقصة'];
+  if (!S.decided) return ['decision', 'راجع التوصية واتخذ القرار'];
+  if (!S.measured) return ['execution', 'تابع التنفيذ'];
+  if (!S.lessonApproved) return ['learning', 'اعتمد الدرس المستفاد'];
+  return ['impact', 'راجع الأثر المحقق'];
+}
+VIEWS.home = () => {
+  const st = cnsStage(), [nr, nl] = nextRoute();
+  const perf = S.measured ? impactOf().act : 64;
+  const CM = { g: 'var(--green)', b: 'var(--blue)', r: 'var(--red)', o: 'var(--orange)', y: 'var(--yellow)' };
+  const kpis = CFG.kpis.map(k => {
+    let v = String(k.value ?? ''), sub = k.sub || '', bar = +k.bar || 0, c = CM[k.color] || CM.y, r = k.route || 'home';
+    if (k.auto === 'consult') sub = 'CNS-001 في: ' + st.name;
+    if (k.auto === 'decisions' && S.decided) { const n = parseInt(v, 10); if (!isNaN(n)) v = String(Math.max(0, n - 1)); }
+    if (k.auto === 'perf') { v = String(perf); bar = perf; if (S.measured) { sub = 'تعافٍ +' + (perf - 64) + ' بعد التنفيذ'; c = CM.g; r = 'impact'; } }
+    return [k.label, v, sub, bar, c, r];
+  });
+  const command = CFG.command.map(k => { let v = String(k.value ?? ''); if (k.auto === 'decisions' && S.decided) { const n = parseInt(v, 10); if (!isNaN(n)) v = String(Math.max(0, n - 1)); } return [CM[k.color] || CM.y, k.label, v, k.route || 'home', CM[k.color] || CM.y]; });
+  const LVL = { c: ['t-c','حرج'], h: ['t-h','مرتفع'], m: ['t-m','متوسط'], s: ['t-s','فرصة'], i: ['t-i','معلومة'] };
+  const a1 = S.measured ? ['t-s', 'تعافٍ', 'تعافى مؤشر أداء الفرع الشمالي من 64 إلى ' + impactOf().act + ' بعد تنفيذ القرار DEC-2026-041', 'قياس الأثر · اليوم', 'impact']
+    : S.decided ? ['t-i', 'قيد المعالجة', 'انخفاض أداء الفرع الشمالي — خطة التنفيذ AP-2026-077 قيد التنفيذ', 'مركز التنفيذ · مالك: م. ليلى', 'execution']
+    : ['t-c', 'حرج', 'انخفاض غير طبيعي في مؤشر الأداء — الفرع الشمالي (−17% خلال 6 أسابيع)', 'محرك الشذوذ · ثقة 81% · CNS-001', S.askStage === 1 ? nr : 'ask'];
+  const alerts = [a1, ...CFG.alerts.map(x => [(LVL[x.level] || LVL.i)[0], (LVL[x.level] || LVL.i)[1], x.title, x.meta, x.route || 'home'])];
+  return `
+  <section class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,340px)">
+    <div class="card" style="gap:14px">
+      <div class="stack" style="gap:4px">
+        <h2 class="title-xl">${esc(CFG.identity.greeting || '')}، د. عدنان</h2>
+        <p class="lead">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p>
+      </div>
+      <button type="button" data-go="ask" class="row nowrap" style="min-height:56px;padding:6px 8px 6px 6px;padding-inline-start:18px;border-radius:14px;background:var(--bg);border:1px solid #3A1C22;color:var(--faint);text-align:right;width:100%">
+        ${ic('ask', 20, 'style="color:var(--red)"')}<span style="flex-grow:1;font-size:15px">اسأل نايوش Intelligence… مثلًا: لماذا انخفض أداء الفرع الشمالي؟</span>
+        <span class="btn primary sm" style="pointer-events:none">ابدأ التحليل</span>
+      </button>
+      <div class="row"><button type="button" class="chip" data-go="request" style="color:var(--yellow);border-color:rgba(255,205,17,.35)">${ic('request', 14)}طلب تحليل بيانات</button>${['حل مشكلة','تحليل أداء','توقع المستقبل','اكتشاف خطر','البحث عن فرصة','اقتراح حل'].map((x, i) => `<button type="button" class="chip" data-go="${['ask','ask','foresight','risks','risks','solutions'][i]}">${x}</button>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">ما الذي يحتاج انتباهك؟</h2><span class="eyebrow">COMMAND CENTER</span></div>
+      ${command.map(([c,l,v,r,fc]) => `<button type="button" class="list-btn" data-go="${r}" style="align-items:center;padding:9px 12px"><span class="dot" style="background:${c}"></span><span style="flex-grow:1;font-size:13px">${l}</span><span class="big" style="font-size:19px;color:${fc}">${v}</span></button>`).join('')}
+    </div>
+  </section>
+  ${typeof homeIntel === "function" ? homeIntel() : ""}
+
+  <section class="card" style="gap:12px">
+    <div class="row between">
+      <div class="stack" style="gap:2px"><span class="eyebrow">PROACTIVE CONSULTATION · CNS-001</span><h2 class="h-sec">انخفاض أداء الفرع الشمالي — المرحلة الآن: <span style="color:var(--yellow)">${st.name}</span></h2></div>
+      <button type="button" class="btn primary sm" data-go="${nr}">${nl}${ic('chev', 16)}</button>
+    </div>
+    ${stepper(st.idx)}
+  </section>
+
+  <section class="grid g4" aria-label="المؤشرات الرئيسية">
+    ${kpis.map(([l, v, s, b, c, r]) => `<button type="button" class="kpi" data-go="${r}"><span class="lbl" style="color:var(--muted)">${l}</span><span class="row nowrap" style="align-items:baseline;gap:8px"><span class="v">${v}</span><span class="faint" style="font-size:11.5px">${s}</span></span><span class="bar" style="height:4px"><i style="width:${b}%;background:${c}"></i></span></button>`).join('')}
+  </section>
+
+  <section class="split wide">
+    <div class="card">
+      <div class="row between" style="align-items:flex-start">
+        <div class="stack" style="gap:2px"><h2 class="h-sec">مؤشر أداء الفروع — آخر 12 أسبوعًا</h2><span class="lbl">المصدر: ERP + HR · آخر مزامنة قبل 8 دقائق · جودة البيانات 87%</span></div>
+        <div class="row" style="font-size:12px;color:var(--muted)"><span class="row nowrap" style="gap:6px"><span style="width:14px;height:3px;background:var(--red)"></span>الفرع الشمالي</span><span class="row nowrap" style="gap:6px"><span style="width:14px;height:3px;background:#6E6E78"></span>متوسط الفروع</span></div>
+      </div>
+      <svg class="chart" viewBox="0 0 640 230" role="img" aria-label="انخفاض مؤشر أداء الفرع الشمالي من 80 إلى 64 بينما بقي متوسط الفروع قرب 80">
+        <g stroke="var(--line)"><line x1="40" y1="50" x2="620" y2="50"/><line x1="40" y1="90" x2="620" y2="90"/><line x1="40" y1="130" x2="620" y2="130"/><line x1="40" y1="170" x2="620" y2="170"/><line x1="40" y1="210" x2="620" y2="210" stroke="var(--line2)"/></g>
+        <text x="8" y="54">80</text><text x="8" y="134">70</text><text x="8" y="214">60</text>
+        <rect x="355" y="10" width="265" height="200" fill="#FF2E4D" opacity=".05"/>
+        <path d="M40 50 L92.7 42 L145.5 58 L198.2 50 L250.9 66 L303.6 74 L356.4 98 L409.1 122 L461.8 138 L514.5 154 L567.3 170 L620 178 L620 210 L40 210 Z" fill="#FF2E4D" opacity=".08"/>
+        <path d="M40 66 L92.7 66 L145.5 58 L198.2 58 L250.9 66 L303.6 58 L356.4 58 L409.1 50 L461.8 58 L514.5 50 L567.3 50 L620 50" fill="none" stroke="#6E6E78" stroke-width="2" stroke-dasharray="5 5"/>
+        <path d="M40 50 L92.7 42 L145.5 58 L198.2 50 L250.9 66 L303.6 74 L356.4 98 L409.1 122 L461.8 138 L514.5 154 L567.3 170 L620 178" fill="none" stroke="#FF2E4D" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="356.4" cy="98" r="6" fill="#0B0B0D" stroke="#FFCD11" stroke-width="2.5"/><circle cx="620" cy="178" r="5" fill="#FF2E4D"/>
+      </svg>
+      <div class="banner ${S.measured ? 'g' : S.decided ? 'g' : 'y'}">
+        ${ic(S.measured || S.decided ? 'check' : 'risks', 18, `style="color:${S.measured || S.decided ? 'var(--green)' : 'var(--yellow)'}"`)}
+        <span style="flex:1 1 260px">${S.measured ? 'بعد التنفيذ: عاد المؤشر إلى ' + impactOf().act + ' (الهدف ' + impactOf().exp + '). تحقق ' + impactOf().ratio + '% من التحسن المتوقع.' : S.decided ? 'القرار DEC-2026-041 مسجّل، وخطة التنفيذ جارية. المؤشر تحت المراقبة الأسبوعية.' : 'انحراف غير طبيعي بدأ في الأسبوع السابع: الفرع الشمالي أدنى من المتوسط بـ 16 نقطة، ولا يزال ينخفض.'}</span>
+        <button type="button" class="btn sm y" data-go="${S.measured ? 'impact' : S.decided ? 'execution' : 'diagnosis'}">${S.measured ? 'الأثر' : S.decided ? 'التنفيذ' : 'لماذا؟'}</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">تنبيهات الذكاء</h2><span class="lbl">تحديث مباشر</span></div>
+      ${alerts.map(([t, l, title, meta, r]) => `<button type="button" class="list-btn" data-go="${r}"><span class="tag ${t}" style="margin-top:2px">${l}</span><span class="stack" style="gap:4px;flex-grow:1"><span style="font-size:13.5px;line-height:1.55">${title}</span><span class="faint" style="font-size:11.5px">${meta}</span></span>${ic('chev', 16, 'style="color:var(--ghost);margin-top:3px"')}</button>`).join('')}
+    </div>
+  </section>`;
+};
+
+/* ================= ASK ================= */
+let askTimer = null;
+const ASK_STEPS = [
+  ['AG01', 'فهم النية', 'النية: تشخيص + صناعة حل · المجال D05 التشغيل ← D06 رأس المال البشري', 0],
+  ['AG02', 'فهم السياق', 'الفرع الشمالي · الربع الثالث 2026 · 3 قرارات سابقة ذات صلة', 0],
+  ['GATE', 'بوابة الصلاحيات', 'مسموح: بيانات الفرع والقطاع · حُجب حقلان سريّان (الرواتب)', 0],
+  ['AG03', 'اكتشاف البيانات', '8 مصادر · 1,284,500 سجل · ERP ‏+ HR ‏+ CRM ‏+ التدريب', 0],
+  ['AG04', 'جودة البيانات', 'الجودة 87% · تمرير مع تنبيه (بيانات HR متأخرة 9 أيام)', 0],
+  ['AG06', 'استرجاع المعرفة', '14 مرجعًا · حالتان مشابهتان · موثوقية L3', 0],
+  ['CONTRACT', 'عقد البيانات', 'كفاية البيانات 62% — غير كافية لتشخيص موثوق. التحليل النهائي موقوف.', 1]
+];
+VIEWS.ask = () => {
+  const run = S.askStage === 1, done = run && S.askShown >= ASK_STEPS.length;
+  const ex = [['حل مشكلة','#FF5C74','أريد معرفة سبب انخفاض مبيعات الفرع.'],['تحليل أداء','var(--bluefg)','لماذا انخفض مؤشر الأداء في قطاع التشغيل؟'],['توقع','var(--yellow)','ما المتوقع خلال الأشهر الستة القادمة؟'],['خطر','var(--orangefg)','هل هناك خطر متوقع على أداء الموظفين؟'],['فرصة','var(--greenfg)','أين توجد فرص النمو غير المستغلة؟'],['بيانات','var(--soft)','ما البيانات التي تنقصنا لاتخاذ القرار؟']];
+  const idle = `
+    <div class="stack" style="gap:6px">
+      <h2 class="title-xl">كيف يمكنني مساعدتك؟</h2>
+      <p class="lead">اكتب سؤالك أو المشكلة التي تريد تحليلها. نايوش يحدد بنفسه إن كانت تحتاج بيانات، أو استبيانًا، أو تحليلًا، أو استشرافًا، أو صناعة حل.</p>
+    </div>
+    <div class="card hot" style="padding:0;gap:0">
+      <label for="ask-q" class="lbl" style="padding:16px 20px 0">سؤالك أو المشكلة</label>
+      <textarea id="ask-q" data-model="q" rows="4" style="border:0;background:transparent;font-size:16px;padding:8px 20px 12px;resize:none">${esc(S.q)}</textarea>
+      <div class="row" style="padding:12px 14px;border-top:1px solid var(--line)">
+        <button type="button" class="btn sm" data-act="ask-voice" title="إملاء صوتي">${ic('mic', 16)}${S.listening ? 'يستمع…' : 'صوت'}</button>
+        <button type="button" class="btn sm" data-go="request" title="إرفاق ملفات أو فيديو عبر طلب تحليل بيانات">${ic('clip', 16)}ملف</button>
+        <button type="button" class="btn sm" data-go="data" title="اختيار مصدر البيانات">${ic('data', 16)}بيانات</button>
+        <span class="faint" style="margin-inline-start:auto;font-size:12px">النطاق: الفرع الشمالي · قطاع التشغيل</span>
+        <button type="button" class="btn primary" data-act="ask-start">ابدأ التحليل</button>
+      </div>
+    </div>
+    <div class="stack"><span class="lbl">أمثلة — اضغط لتجربتها</span>
+      <div class="row">${ex.map(([t, c, q], i) => `<button type="button" class="chip" data-act="ask-ex" data-i="${i}"><b style="color:${c};font-size:11px">${t}</b>${q}</button>`).join('')}</div>
+    </div>
+    <div class="grid g4">${[['فهم السؤال','يحدد النية والمجال ونوع التحليل والمخرج المطلوب.'],['فحص البيانات','يبحث في الأنظمة المصرح بها ويقيس جودتها وكفايتها.'],['استكمال الناقص','إن نقصت البيانات يسأل فقط ما يلزم، سؤالًا واحدًا في كل مرة.'],['تحليل وحلول','تشخيص، استشراف، بدائل مقارنة، وتوصية تنتظر قرارك.']].map(([t, d], i) => `<div class="sub"><span class="mono" style="color:var(--yellow);font-size:12px">0${i + 1}</span><b style="font-size:14px">${t}</b><span class="muted" style="font-size:12.5px;line-height:1.65">${d}</span></div>`).join('')}</div>`;
+  const running = `
+    <div class="sub row nowrap" style="align-items:flex-start;flex-direction:row">
+      <span class="avatar" style="width:30px;height:30px;font-size:13px">${esc(CFG.identity.userInitial || '')}</span>
+      <p style="flex-grow:1;font-size:15px;line-height:1.7">${esc(S.q)}</p>
+      <button type="button" class="btn sm" data-act="ask-reset">سؤال جديد</button>
+    </div>
+    <div class="card" style="gap:2px">
+      <div class="row between" style="padding-bottom:8px"><h2 class="h-sec">مسار المنسّق — كيف يفكّر نايوش الآن</h2><span class="eyebrow">ORCHESTRATION PLAN · ${Math.min(S.askShown, ASK_STEPS.length)}/${ASK_STEPS.length}</span></div>
+      ${ASK_STEPS.map(([code, t, d, w], i) => {
+        if (i > S.askShown) return '';
+        const ok = i < S.askShown, col = ok ? (w ? 'var(--orange)' : 'var(--green)') : 'var(--yellow)';
+        return `<div class="row nowrap orch-row" style="padding:9px 2px;border-top:1px solid #1E1E24;gap:12px">
+          <span style="width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:${ok ? (w ? 'rgba(255,138,31,.18)' : 'rgba(47,210,122,.16)') : 'rgba(255,205,17,.16)'};color:${col}">${ic(ok ? (w ? 'warn' : 'check') : 'dotc', 13, 'style="stroke-width:3"')}</span>
+          <span class="mono faint" style="width:68px;font-size:11px">${code}</span>
+          <b style="width:150px;flex-shrink:0;font-size:13.5px">${t}</b>
+          <span class="orch-d" style="flex-grow:1;font-size:13px;color:${ok ? (w ? 'var(--orangefg)' : 'var(--muted)') : 'var(--ghost)'}">${ok ? d : 'جارٍ التنفيذ…'}</span></div>`;
+      }).join('')}
+    </div>
+    ${done ? `<div class="card warn">
+      <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
+        <div class="stack" style="gap:6px"><h3 class="title-l" style="font-size:19px">أستطيع إعطاء تحليل أولي، لكن درجة الثقة منخفضة.</h3>
+          <p style="font-size:14px;line-height:1.75;color:var(--fg2)">البيانات المتاحة تكفي لوصف ما حدث، لكنها لا تكفي لتشخيص السبب بثقة، لأنني أفتقد ثلاثة عناصر أساسية. بدل التخمين، أحتاج منك 6 إجابات فقط.</p></div>
+        <div class="sub" style="align-items:center;background:var(--bg);border-color:var(--yellowline);flex-shrink:0"><span class="lbl">درجة الثقة</span><span class="big" style="font-size:26px;color:var(--orange)">58%</span><span style="font-size:11px;color:var(--orangefg)">منخفضة</span></div>
+      </div>
+      <div class="grid g3">${[['بيانات المبيعات',1],['أداء الفروع',1],['بيانات العملاء',1],['دوران الموظفين',0],['ساعات التدريب',0],['شكاوى العملاء',0]].map(([n, ok]) => `<div class="row nowrap" style="padding:9px 12px;border-radius:10px;background:var(--sunk);border:1px solid ${ok ? 'var(--greenline)' : 'var(--redline)'}">${ic(ok ? 'check' : 'x', 15, `style="color:${ok ? 'var(--green)' : '#FF5C74'};stroke-width:2.6"`)}<span style="flex-grow:1;font-size:13px">${n}</span><span style="font-size:11px;color:${ok ? 'var(--green)' : '#FF5C74'}">${ok ? 'متوفرة' : 'ناقصة'}</span></div>`).join('')}</div>
+      <div class="row">
+        <button type="button" class="btn primary" data-go="questionnaire">استكمال البيانات — 6 أسئلة فقط</button>
+        <button type="button" class="btn" data-go="data">عقد البيانات والجودة</button>
+        <button type="button" class="btn link" data-go="diagnosis">عرض التحليل الأولي</button>
+      </div>
+    </div>` : ''}`;
+  return `<div class="split">
+    <section class="stack" style="gap:16px">${run ? running : idle}</section>
+    <aside class="stack" style="gap:14px">
+      <div class="card tight"><h2 class="h-sec">أسئلة حديثة</h2>
+        ${[['لماذا ارتفعت تكلفة التدريب خلال الربع الأخير؟','تشخيص · المالية + التعليم · ثقة 82%','diagnosis'],['ما المتوقع للطلب على برامج التدريب في 2027؟','استشراف · المعرفة والتعليم · ثقة 77%','foresight'],['ما أهم المخاطر الحالية في قطاع التدريب؟','مخاطر · المخاطر والسلامة · ثقة 74%','risks']].map(([q, m, r]) => `<button type="button" class="list-btn" data-go="${r}" style="flex-direction:column;gap:3px"><span style="font-size:13px;line-height:1.55">${q}</span><span class="faint" style="font-size:11px">${m}</span></button>`).join('')}
+      </div>
+      <div class="card tight"><h2 class="h-sec">أنواع الطلبات التي يفهمها نايوش</h2>
+        <div class="row" style="gap:6px">${['بحث','وصف','تحليل','تشخيص','مقارنة','تنبؤ','استشراف','مخاطر','فرص','حلول','توصية','دعم قرار','تنفيذ إجراء','قياس أثر','تعلم مؤسسي','تقرير'].map(x => `<span class="chip" style="border-radius:7px">${x}</span>`).join('')}</div>
+      </div>
+      <div class="card tight good"><div class="row nowrap">${ic('governance', 16, 'style="color:var(--green)"')}<b style="color:var(--greenfg);font-size:13px">كل إجابة قابلة للتتبع</b></div>
+        <p style="font-size:12.5px;line-height:1.7;color:#B5C9BC">الذكاء ← التحليل ← البيانات والمعرفة ← الدليل ← المصدر. لا يُرسل إلى الذكاء الاصطناعي إلا ما تسمح به صلاحياتك، وبالحد الأدنى اللازم للمهمة.</p>
+      </div>
+    </aside>
+  </div>`;
+};
+
+/* ================= CONSULTATIONS ================= */
+VIEWS.consult = () => {
+  const st = cnsStage(), c1 = S.askStage === 1 ? diagConf() + (S.qDone && S.decided ? 0 : 0) : 58;
+  const goals = [['فهم مشكلة','diagnosis','#FF5C74'],['تحليل بيانات','chart','var(--bluefg)'],['توقع المستقبل','foresight','var(--yellow)'],['تقييم خطر','risks','var(--orangefg)'],['البحث عن فرصة','bulb','var(--greenfg)'],['صناعة حل','solutions','var(--purple)'],['دعم قرار','decision','var(--fg2)'],['استشارة شاملة','ask','var(--red)']];
+  const PR = new Proxy({ 'حرجة': '#FF5C74', 'عالية': 'var(--orangefg)', 'متوسطة': 'var(--yellow)', 'منخفضة': '#8E8E98' }, { get: (t, k) => t[k] || '#8E8E98' });
+  const grpOf = () => S.lessonApproved ? 'closed' : S.decided ? 'exec' : S.qDone ? 'analysis' : 'data';
+  const reqRows = (S.requests || []).map(q => [q.ref, q.title, 'طلب تحليل بيانات · ' + q.typesLabel, q.domainLabel, q.status, q.status === 'جاهز للتحليل' ? 'analysis' : 'data', q.priority, q.suff, q.owner, 'request']);
+  const rows = reqRows.concat(CFG.consults.map(c => c.live
+    ? [c.id, c.title, c.sub, c.domain, st.name, grpOf(), c.priority, c1, c.owner, nextRoute()[0]]
+    : [c.id, c.title, c.sub, c.domain, c.stage, c.grp, c.priority, +c.conf || 0, c.owner, c.route || 'consult']));
+  const T = [['all','الكل'],['data','جمع البيانات'],['analysis','التحليل'],['decision','القرار'],['exec','التنفيذ'],['closed','مغلقة']];
+  const shown = rows.filter(r => S.consultTab === 'all' || r[5] === S.consultTab);
+  return `
+  <section class="card">
+    <div class="row between"><div class="stack" style="gap:2px"><h2 class="title-l">استشارة جديدة — ما الذي تريد تحقيقه؟</h2><span class="muted" style="font-size:13px">اختر الهدف، ونايوش يبني مسار الاستشارة المناسب: البيانات، الأسئلة، التحليل، والحلول.</span></div>
+      <div class="row"><button type="button" class="btn" data-act="set-tab" data-k="consults">${ic('settings', 16)}إدارة الاستشارات</button><button type="button" class="btn y" data-go="request">${ic('request', 16)}طلب تحليل بيانات</button><button type="button" class="btn primary" data-go="ask">${ic('plus', 16)}استشارة جديدة</button></div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px">${goals.map(([l, i, c]) => `<button type="button" class="kpi" data-go="ask" style="gap:8px">${ic(i, 20, `style="color:${c}"`)}<b style="font-size:13px">${l}</b></button>`).join('')}</div>
+  </section>
+  <section class="card" style="padding:0;gap:0">
+    <div class="row between" style="padding:12px 16px;border-bottom:1px solid var(--line)">
+      <div class="tabs" role="tablist" aria-label="تصفية حسب المرحلة">${T.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.consultTab === k}" data-act="ctab" data-k="${k}">${l} <span class="mono faint" style="font-size:11px">${k === 'all' ? rows.length : rows.filter(r => r[5] === k).length}</span></button>`).join('')}</div>
+      <span class="lbl">اضغط على أي استشارة لفتحها</span>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr><th>الرقم</th><th>المشكلة</th><th>المجال</th><th>المرحلة</th><th>الأولوية</th><th style="min-width:130px">الثقة</th><th>المسؤول</th></tr></thead><tbody>
+      ${shown.map(r => `<tr class="click" data-go="${r[9]}" tabindex="0" role="link"><td class="mono" style="color:var(--yellow);font-size:12px">${r[0]}</td>
+        <td><div class="stack" style="gap:1px"><b style="font-size:13.5px">${r[1]}</b><span class="faint" style="font-size:11.5px">${r[2]}</span></div></td>
+        <td class="soft">${r[3]}</td><td><span class="chip">${r[4]}</span></td>
+        <td><span class="row nowrap" style="gap:6px;color:${PR[r[6]]}"><span class="dot" style="background:${PR[r[6]]}"></span>${r[6]}</span></td>
+        <td><span class="row nowrap"><span class="bar" style="height:5px"><i style="width:${r[7]}%;background:${confColor(r[7])}"></i></span><span class="mono" style="font-size:12px;color:${confColor(r[7])}">${r[7]}%</span></span></td>
+        <td class="soft">${r[8]}</td></tr>`).join('')}
+    </tbody></table></div>
+  </section>`;
+};
+
+/* ================= DATA ================= */
+const SRC = () => CFG.sources;
+const GATE = { good: ['جيد','t-s','متابعة التحليل','var(--greenfg)'], warn: ['تنبيه','t-m','متابعة + وسم النتيجة','var(--yellow)'], low: ['منخفض','t-h','طلب البيانات أو إصلاحها','var(--orangefg)'], crit: ['حرج — محجوب','t-c','حجب تحليل الذكاء الاصطناعي','#FF6B81'] };
+VIEWS.data = () => {
+  const sel = SRC().find(s => s.code === S.dataSel) || SRC()[0] || { code: '', name: '—', st: 'off', g: 'crit', d: [0,0,0,0,0,0,0], note: '' };
+  const STC = new Proxy({ ok: ['متصل','var(--green)'], warn: ['تنبيه','var(--yellow)'], off: ['منقطع','#FF5C74'] }, { get: (t, k) => t[k] || t.warn });
+  const dims = ['الاكتمال','الدقة','الاتساق','الحداثة','التفرّد','الصلاحية','الموثوقية'];
+  const q = S.qDone;
+  const reqs = [['مؤشرات أداء الفرع (12 شهرًا)','ok'],['الأحداث والتغييرات التشغيلية','ok'],['حالات مشابهة سابقة','ok'],['حجم العمل والمناوبات','warn'],['دوران الموظفين',q?'ans':'miss'],['ساعات التدريب',q?'ans':'miss'],['شكاوى العملاء',q?'ans':'miss']];
+  const RQ = { ok: ['check','var(--green)','متوفرة'], warn: ['warn','var(--yellow)','جزئية'], miss: ['x','#FF5C74','ناقصة'], ans: ['check','var(--bluefg)','من الاستبيان · L2'] };
+  return `
+  <section class="grid g6">
+    ${[['مصادر متصلة','7 / 8',''],['السجلات','1,284,500',''],['جودة البيانات','87%','var(--yellow)'],['الاكتمال',q?'94%':'92%',''],['مشكلات جودة مفتوحة',q?'4':'7','var(--orange)'],['بوابة الجودة الآن','تمرير مع تنبيه','var(--yellow)']].map(([l, v, c]) => `<div class="kpi"><span class="lbl" style="color:var(--muted)">${l}</span><span class="v" style="font-size:${v.length > 9 ? 16 : 22}px;${c ? `color:${c}` : ''}">${v}</span></div>`).join('')}
+  </section>
+  <section class="split wide">
+    <div class="card" style="padding:14px 0 6px">
+      <div class="row between" style="padding:0 18px"><h2 class="h-sec">مصادر البيانات — اضغط على مصدر لعرض جودته</h2><span class="lbl">موصل قياسي ← عقد بيانات ← بوابة التكامل</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>النظام المصدر</th><th>الحالة</th><th>السجلات</th><th>آخر مزامنة</th><th>الجودة</th><th>البوابة</th></tr></thead><tbody>
+      ${SRC().map(s => { const g = GATE[s.g] || GATE.warn, on = s.code === sel.code, ov = s.st === 'off' ? '—' : Math.round(s.d.reduce((a, b) => a + b, 0) / 7) + '%';
+        return `<tr class="click" data-act="dsel" data-k="${s.code}" tabindex="0" role="button" aria-pressed="${on}" style="${on ? 'background:#1C1C21;box-shadow:inset -3px 0 0 var(--red)' : ''}">
+          <td><div class="stack" style="gap:0"><b>${s.name}</b><span class="mono faint" style="font-size:10.5px">${s.code}</span></div></td>
+          <td><span class="row nowrap" style="gap:6px;color:${STC[s.st][1]};font-size:12px"><span class="dot" style="background:${STC[s.st][1]}"></span>${STC[s.st][0]}</span></td>
+          <td class="mono soft" style="font-size:12px">${s.rec}</td><td style="font-size:12px;color:${s.st === 'ok' ? 'var(--muted)' : STC[s.st][1]}">${s.sync}</td>
+          <td class="big" style="font-size:14px;color:${g[3]}">${ov}</td><td><span class="tag ${g[1]}">${g[0]}</span></td></tr>`; }).join('')}
+      </tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">عقد بيانات الذكاء</h2><span class="mono" style="color:var(--yellow);font-size:11px">CNS-001</span></div>
+      <dl class="kv" style="font-size:12.5px;margin:0"><dt>السؤال</dt><dd>لماذا انخفض أداء الفرع الشمالي؟</dd><dt>نوع التحليل</dt><dd>تشخيصي ← توجيهي</dd><dt>المجال</dt><dd>D05 التشغيل · D06 رأس المال البشري</dd><dt>الفترة</dt><dd>آخر 12 شهرًا</dd><dt>الصلاحية</dt><dd>الفرع + القطاع · حقلا الرواتب محجوبان</dd></dl>
+      <div class="stack" style="gap:6px;padding-top:8px;border-top:1px solid var(--line)"><span class="lbl">البيانات المطلوبة لهذا النوع من التحليل</span>
+        ${reqs.map(([n, k]) => `<div class="row nowrap" style="font-size:12.5px">${ic(RQ[k][0], 14, `style="color:${RQ[k][1]};stroke-width:2.6"`)}<span style="flex-grow:1">${n}</span><span style="font-size:11px;color:${RQ[k][1]}">${RQ[k][2]}</span></div>`).join('')}
+      </div>
+      <div class="sub" style="background:${q ? 'var(--greenbg)' : 'var(--orangebg)'};border-color:${q ? 'var(--greenline)' : 'var(--orangeline)'}">
+        <div class="row between"><b style="font-size:12.5px">كفاية البيانات</b><span class="big" style="font-size:18px;color:${q ? 'var(--greenfg)' : 'var(--orange)'}">${q ? '94%' : '62%'}</span></div>
+        <span style="font-size:12px;line-height:1.6;color:var(--fg2)">${q ? 'البيانات كافية. التحليل النهائي مسموح.' : 'التحليل النهائي موقوف حتى تُستكمل البيانات الناقصة.'}</span>
+        <button type="button" class="btn ${q ? '' : 'primary'} sm block" data-go="${q ? 'diagnosis' : 'questionnaire'}">${q ? 'فتح التشخيص' : 'توليد الاستبيان الذكي'}</button>
+      </div>
+    </div>
+  </section>
+  <section class="split l">
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">أبعاد الجودة — ${sel.name}</h2><span class="tag ${GATE[sel.g][1]}">${GATE[sel.g][0]}</span></div>
+      ${sel.d.map((v, i) => { const c = v >= 90 ? 'var(--green)' : v >= 80 ? 'var(--yellow)' : v >= 60 ? 'var(--orange)' : '#FF5C74';
+        return `<div class="row nowrap" style="font-size:12.5px"><span class="soft" style="width:78px">${dims[i]}</span><span class="bar" style="height:8px"><i style="width:${v}%;background:${c}"></i></span><span class="mono" style="width:40px;text-align:left;color:${c}">${sel.st === 'off' ? '—' : v + '%'}</span></div>`; }).join('')}
+      <p class="muted" style="font-size:12.5px;line-height:1.65">${sel.note}</p>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card"><h2 class="h-sec">بوابة جودة البيانات — قبل إرسال أي بيانات إلى الذكاء الاصطناعي</h2>
+        <div class="grid g4" style="gap:8px">${Object.entries(GATE).map(([k, g]) => `<div class="sub" style="${k === sel.g ? `border-color:${g[3]};background:#1C1C21` : ''}"><b style="font-size:12.5px;color:${g[3]}">${g[0]}</b><span class="muted" style="font-size:11.5px">${g[2]}</span></div>`).join('')}</div>
+      </div>
+      <div class="card"><div class="row between"><h2 class="h-sec">تتبّع المصدر — من أين جاءت هذه المعلومة؟</h2><span class="lbl">الاستنتاج: «نقص التدريب سبب محتمل»</span></div>
+        <div class="flow">${[['الاستنتاج · INS-0412','var(--yellowline)'],['التحليل التشخيصي · ANL-0098',''],['ساعات التدريب الشهرية · DS-TRN-12',''],['سجل الحضور · AST-LMS-ATT',''],['النظام: التدريب LMS',''],['السجل الأصلي · TRN-2026-08-17-3391','var(--greenline)']].map(([t, b], i, a) => `<span style="${b ? `border-color:${b}` : ''}">${t}</span>${i < a.length - 1 ? '<i>←</i>' : ''}`).join('')}</div>
+      </div>
+    </div>
+  </section>`;
+};
+
+/* ================= QUESTIONNAIRE ================= */
+function QS() {
+  return CFG.questions.map((q, i) => {
+    const id = 'q' + (i + 1), prev = i > 0 ? S.ans['q' + i] : undefined;
+    const lines = (x) => (Array.isArray(x) ? x : String(x || '').split('\n')).map(t => String(t).trim()).filter(Boolean);
+    if (q.branchWhen && q.branchText && prev === q.branchWhen) return { id, text: q.branchText, o: lines(q.branchOptions).length ? lines(q.branchOptions) : lines(q.options), why: q.branchWhy || q.why, gap: q.gap, gain: +q.gain || 0, adaptive: true };
+    return { id, text: q.text, o: lines(q.options), why: q.why, gap: q.gap, gain: +q.gain || 0, adaptive: false };
+  }).filter(q => q.o.length);
+}
+VIEWS.questionnaire = () => {
+  const qs = QS(), i = Math.min(S.qi, qs.length - 1), q = qs[i], sel = S.ans[q.id];
+  let conf = 58; qs.forEach((x, k) => { if (S.ans[x.id] && (k < S.qi || S.qDone)) conf += x.gain; });
+  if (S.qDone) conf = 84;
+  const cc = conf >= 80 ? 'var(--green)' : conf >= 65 ? 'var(--yellow)' : 'var(--orange)';
+  const main = S.qDone ? `
+    <div class="stack" style="gap:20px;max-width:680px;padding:20px 0">
+      <span style="width:56px;height:56px;border-radius:28px;background:rgba(47,210,122,.14);display:flex;align-items:center;justify-content:center;color:var(--green)">${ic('check', 28, 'style="stroke-width:2.4"')}</span>
+      <h2 class="title-xl">اكتملت البيانات الأساسية للتشخيص</h2>
+      <p class="lead" style="color:var(--soft)">ارتفعت كفاية البيانات من 62% إلى 94%، وارتفعت الثقة المتوقعة في التشخيص من 58% إلى 84%. سُجّلت إجاباتك كمصدر «إفادة صاحب الاستشارة» بمستوى موثوقية L2، وستُطابق مع بيانات الأنظمة عند التحليل.</p>
+      <div class="row"><button type="button" class="btn primary" data-go="diagnosis">تشغيل التحليل والتشخيص</button><button type="button" class="btn" data-act="q-review">مراجعة الإجابات</button></div>
+    </div>` : `
+    <div class="row nowrap"><span class="muted" style="font-size:13px;white-space:nowrap">السؤال <b class="big" style="color:var(--fg)">${i + 1}</b> من ${qs.length}</span>
+      <span class="bar" style="height:4px"><i style="width:${((i + (sel ? 1 : 0)) / qs.length) * 100}%"></i></span></div>
+    ${q.adaptive ? `<span class="chip" style="align-self:flex-start;color:var(--yellow);border-color:rgba(255,205,17,.35);background:rgba(255,205,17,.08)">سؤال تكيّفي — تغيّر بناءً على إجابتك السابقة</span>` : ''}
+    <fieldset style="margin:0;padding:0;border:0" class="stack">
+      <legend style="padding:0 0 18px;font-family:var(--f-display);font-size:clamp(20px,2.4vw,26px);font-weight:600;line-height:1.55;max-width:720px">${q.text}</legend>
+      <div class="stack" style="gap:10px;max-width:640px" role="radiogroup">${q.o.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${sel === o}" data-act="q-pick" data-k="${k}"><span class="rd"></span><span>${o}</span></button>`).join('')}</div>
+    </fieldset>
+    <div class="row" style="margin-top:auto;padding-top:16px">
+      <button type="button" class="btn" data-act="q-back" ${i === 0 ? 'aria-disabled="true"' : ''}>السابق</button>
+      <button type="button" class="btn primary" data-act="q-next" aria-disabled="${!sel}">${i === qs.length - 1 ? 'إنهاء الاستبيان' : 'التالي'}</button>
+      <span class="faint" style="margin-inline-start:auto;font-size:12.5px">يمكنك اختيار «لا أعرف» — نايوش يسجّلها كفجوة بدل أن يخمّن.</span>
+    </div>`;
+  return `${stepper(S.qDone ? 3 : 2)}
+  <div class="split">
+    <section class="card" style="padding:28px 32px;min-height:520px">${main}</section>
+    <aside class="stack" style="gap:14px">
+      <div class="card tight"><span class="lbl" style="color:var(--muted)">الثقة المتوقعة في التشخيص</span>
+        <div class="row nowrap" style="align-items:baseline"><span class="big" style="font-size:40px;color:${cc}">${conf}%</span><span style="font-size:13px;color:${cc}">${conf >= 80 ? 'كافية لإصدار توصية' : conf >= 65 ? 'متوسطة' : 'منخفضة'}</span></div>
+        <div style="position:relative"><span class="bar" style="height:8px;display:block"><i style="width:${conf}%;background:${cc}"></i></span><span style="position:absolute;top:-4px;right:80%;width:2px;height:16px;background:var(--fg)"></span></div>
+        <span class="faint" style="font-size:11.5px">العلامة البيضاء = حدّ الثقة المطلوب لإصدار توصية (80%)</span>
+      </div>
+      ${S.qDone ? '' : `<div class="card tight warn"><div class="row nowrap">${ic('questionnaire', 16, 'style="color:var(--yellow)"')}<b style="color:var(--yellow);font-size:13.5px">لماذا هذا السؤال؟</b></div>
+        <p style="font-size:13px;line-height:1.75;color:#E0DCC8">${q.why}</p>
+        <div class="row between" style="font-size:12px;padding-top:6px;border-top:1px solid var(--yellowline)"><span class="muted">يسدّ فجوة: <span style="color:var(--fg)">${q.gap}</span></span>${q.gain ? `<span style="color:var(--greenfg)">+${q.gain}% ثقة</span>` : ''}</div></div>`}
+      <div class="card tight"><b style="font-size:13.5px">الفجوات التي يغطيها الاستبيان</b>
+        ${qs.slice(0, 5).map((x, k) => { const ok = S.qDone || (S.ans[x.id] && k < S.qi);
+          return `<div class="row nowrap" style="font-size:13px">${ic(ok ? 'check' : 'dotc', 15, `style="color:${ok ? 'var(--green)' : '#6E6E78'};stroke-width:2.6"`)}<span style="flex-grow:1;color:${ok ? 'var(--fg)' : 'var(--muted)'}">${x.gap}</span><span style="font-size:11px;color:${ok ? 'var(--green)' : '#6E6E78'}">${ok ? esc(S.ans[x.id]) : 'بانتظار'}</span></div>`; }).join('')}
+      </div>
+    </aside>
+  </div>`;
+};
+</script>

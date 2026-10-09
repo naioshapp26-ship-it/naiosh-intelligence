@@ -1,0 +1,279 @@
+
+<script data-app="">
+/* ================= shared solution data ================= */
+const SOLS_FN = () => CFG.solutions.map((x, i) => {
+  const v = (Array.isArray(x.v) ? x.v : String(x.v || '').split(/[,،\s]+/)).map(Number).filter(n => !isNaN(n));
+  while (v.length < 6) v.push(0);
+  const tasks = (Array.isArray(x.tasks) ? x.tasks : String(x.tasks || '').split('\n')).filter(Boolean);
+  while (tasks.length < 3) tasks.push('إجراء تنفيذي');
+  return { ...x, n: i + 1, v: v.slice(0, 6), tasks, score: +x.score || 0, conf: +x.conf || 0, exp: +x.exp || 64, act: +x.act || 64, short: x.short || x.name };
+});
+let SOLS = [];
+const solSel = () => { SOLS = SOLS_FN(); return SOLS.find(s => s.n === S.sol) || SOLS[0] || { n: 1, name: '—', short: '—', v: [0,0,0,0,0,0], score: 0, conf: 0, exp: 64, act: 64, tasks: ['—','—','—'], note: '' }; };
+function impactOf() { const s = solSel(); const d = s.exp - 64; return { exp: s.exp, act: s.act, ratio: d ? Math.round(((s.act - 64) / d) * 100) : 100 }; }
+const CHOICES = [['approve','اعتماد'],['modify','اعتماد مع تعديل'],['defer','تأجيل'],['more','طلب بيانات إضافية'],['reject','رفض']];
+const choiceLabel = () => (CHOICES.find(c => c[0] === S.choice) || ['',''])[1];
+const approved = () => S.decided && (S.choice === 'approve' || S.choice === 'modify');
+
+/* ================= DIAGNOSIS ================= */
+function CAUSES() {
+  const a = S.ans, K = { data: ['بيانات نظام','var(--bluefg)'], ans: ['إجابة الاستبيان','var(--yellow)'], case: ['حالة مشابهة','var(--purple)'], know: ['قاعدة المعرفة','var(--greenfg)'] };
+  const ev = (k, t, src) => ({ kind: K[k][0], kc: K[k][1], t, src });
+  const lift = S.qDone ? 0 : -14;
+  return {
+    c1: { name: 'نقص التدريب', p: 71, conf: 78 + lift, imp: 'مرتفع', tr: S.qDone ? 'L3' : 'L2', ev: [ev('data','متوسط ساعات التدريب انخفض من 8 إلى 3 ساعات شهريًا منذ يوليو.','LMS · DS-TRN-12'), a.q4 ? ev('ans','صاحب الاستشارة: ' + a.q4 + ' شهريًا.','QST-001 · Q4') : null, ev('case','نمط مطابق في الفرع الجنوبي 2025، تعافى الأداء بعد برنامج تدريب مكثف.','CNS-2025-114'), ev('know','سياسة التدريب تشترط 6 ساعات شهريًا كحد أدنى للموظف الجديد.','POL-HR-07 · §3')].filter(Boolean) },
+    c2: { name: 'ضغط العمل', p: 58, conf: 66 + lift, imp: 'متوسط', tr: 'L3', ev: [ev('data','ساعات العمل الإضافية ارتفعت 34% بعد مغادرة الموظفين.','HR · DS-HR-OT'), a.q3 ? ev('ans','غادر الفرع: ' + a.q3 + ' خلال الربع.','QST-001 · Q3') : null].filter(Boolean) },
+    c3: { name: 'ضعف توزيع المهام', p: 52, conf: 61 + lift, imp: 'متوسط', tr: 'L2', ev: [ev('data','3 موظفين يحملون 41% من المهام المفتوحة.','ERP · DS-TASK-04')] },
+    c6: { name: 'تغيّر قيادة الفرع', p: 47, conf: 69 + lift, imp: 'مرتفع', tr: 'L2', ev: [a.q2 ? ev('ans','إجابتك: ' + a.q2 + '.','QST-001 · Q2') : ev('data','لا توجد بيانات مؤكدة عن تغيّر القيادة بعد.','—'), ev('case','في 3 من 5 حالات مشابهة تراجع الأداء خلال 6 أشهر من تغيّر القيادة.','PATTERN · PM-022')] },
+    c7: { name: 'غياب متابعة المؤشرات', p: 39, conf: 58 + lift, imp: 'متوسط', tr: 'L1', ev: [ev('data','آخر مراجعة شهرية لمؤشرات الفرع كانت قبل 11 أسبوعًا.','NEOS · MEET-LOG')] },
+    c4: { name: 'تأخر سلسلة التوريد', p: 34, conf: 55 + lift, imp: 'منخفض', tr: 'L2', ev: [ev('data','تأخر 2 من 14 شحنة، ضمن المعدل المعتاد.','ERP · DS-SCM-02')] },
+    c5: { name: 'أعطال النظام التشغيلي', p: 21, conf: 72 + lift, imp: 'منخفض', tr: 'L3', ev: [ev('data','التوافر 99.2%، لا أعطال مؤثرة في الفترة.','OPS · DS-UPTIME')] }
+  };
+}
+const TRUST = { L1: ['L1 · CLAIM','ادعاء يحتاج إلى تحقق','var(--orangefg)','var(--orangebg)','var(--orangeline)'], L2: ['L2 · SOURCED','له مصدر معروف، يحتاج أدلة إضافية','var(--yellow)','var(--yellowbg)','var(--yellowline)'], L3: ['L3 · EVIDENCED','مدعوم بأدلة قابلة للتحقق','var(--greenfg)','var(--greenbg)','var(--greenline)'] };
+VIEWS.diagnosis = () => {
+  const C = CAUSES(), sel = C[S.cause] || C.c1, tr = TRUST[sel.tr];
+  const pc = v => v >= 65 ? '#FF6B81' : v >= 45 ? 'var(--orangefg)' : 'var(--yellow)';
+  const br = [['الموظفون','64%','#FF6B81',['c1','c2','c3']],['الإدارة','43%','var(--orangefg)',['c6','c7']],['العمليات','28%','var(--yellow)',['c4','c5']]];
+  return `${stepper(4)}
+  ${S.qDone ? '' : `<div class="banner y">${ic('warn', 18, 'style="color:var(--yellow)"')}<span style="flex:1 1 260px">هذا تحليل أولي بثقة 58%، لأن 3 فجوات بيانات لم تُستكمل بعد. الأسباب مرتبة بالاحتمال لكن أدلتها أضعف.</span><button type="button" class="btn sm primary" data-go="questionnaire">استكمال البيانات</button></div>`}
+  <section class="split wide">
+    <div class="card">
+      <span class="lbl">الخلاصة التنفيذية — الرؤية أولًا، ثم البيانات</span>
+      <p style="font-family:var(--f-display);font-size:17px;font-weight:500;line-height:1.75">انخفاض أداء الفرع الشمالي 17% خلال 6 أسابيع يرتبط على الأرجح بعوامل تخص <span style="color:var(--yellow)">الموظفين</span>، وأقواها <span style="color:var(--yellow)">نقص التدريب</span>${S.ans.q3 ? ` بعد مغادرة ${esc(S.ans.q3)} موظفين` : ' بعد موجة مغادرة'}. هذه أسباب محتملة مدعومة بأدلة، وليست حقائق نهائية.</p>
+      ${S.ans.q1 === 'جميع الفروع' ? `<div class="banner y" style="font-size:12.5px">أشرت إلى أن الانخفاض يشمل جميع الفروع، لذلك أُضيفت العوامل المركزية إلى الفحص، لكن بيانات الأداء تُظهر أن الفرع الشمالي وحده انحرف عن المتوسط.</div>` : ''}
+      <div class="row">${['العرَض: تراجع الإنتاجية 17%','العرَض: تأخر الإنجاز 2.3 يوم','العرَض: ارتفاع طفيف في الشكاوى'].map(x => `<span class="chip">${x}</span>`).join('')}</div>
+    </div>
+    <div class="grid g3" style="gap:8px">${[['المصادر','8',''],['السجلات','1.28M',''],['جودة البيانات','87%','var(--yellow)'],['الاكتمال',S.qDone ? '94%' : '62%',''],['شذوذ مكتشف','3','#FF5C74'],['ثقة التشخيص',diagConf() + '%',confColor(diagConf())]].map(([l, v, c]) => `<div class="kpi" style="padding:12px"><span class="lbl">${l}</span><span class="v" style="font-size:20px;${c ? `color:${c}` : ''}">${v}</span></div>`).join('')}</div>
+  </section>
+  <section class="split wide">
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">شجرة الأسباب المحتملة — اضغط على أي سبب لرؤية أدلّته</h2><span class="lbl">الرقم الكبير = الاحتمال · الشريط = الثقة</span></div>
+      <div class="stack" style="align-items:center;gap:0"><div style="padding:10px 22px;border-radius:12px;background:var(--redbg);border:1.5px solid var(--red);font-family:var(--f-display);font-size:15px;font-weight:600">انخفاض أداء الفرع الشمالي</div><div style="width:2px;height:16px;background:var(--line3)"></div></div>
+      <div class="grid g3" style="border-top:2px solid var(--line3);padding-top:14px">
+        ${br.map(([n, p, c, ids]) => `<div class="stack" style="gap:8px">
+          <div class="row between" style="padding:10px 14px;border-radius:11px;background:#1A1A1F;border:1px solid var(--line2)"><b>${n}</b><span class="big" style="font-size:14px;color:${c}">${p}</span></div>
+          ${ids.map(id => { const x = C[id], on = id === S.cause; return `<button type="button" class="list-btn ${on ? 'sel' : ''}" data-act="cause" data-k="${id}" aria-pressed="${on}" style="flex-direction:column;gap:7px;margin-inline-start:12px;width:auto">
+            <span class="row between nowrap" style="width:100%"><b style="font-size:13.5px">${x.name}</b><span class="big" style="font-size:16px;color:${pc(x.p)}">${x.p}%</span></span>
+            <span class="row nowrap" style="width:100%"><span class="bar" style="height:4px"><i style="width:${x.conf}%;background:#8E8E98"></i></span><span class="muted" style="font-size:11px;white-space:nowrap">ثقة ${x.conf}%</span></span></button>`; }).join('')}
+        </div>`).join('')}
+      </div>
+    </div>
+    <aside class="card">
+      <div class="stack" style="gap:3px"><span class="lbl">لوحة الأدلة · سبب محتمل</span><h2 class="title-l">${sel.name}</h2></div>
+      <div class="grid g3" style="gap:8px">${[['الاحتمال',sel.p + '%',pc(sel.p)],['الأثر',sel.imp,''],['الثقة',sel.conf + '%','']].map(([l, v, c]) => `<div class="sub" style="padding:10px"><span class="lbl">${l}</span><span class="big" style="font-size:18px;${c ? `color:${c}` : ''}">${v}</span></div>`).join('')}</div>
+      <div class="row nowrap" style="padding:8px 12px;border-radius:9px;background:${tr[3]};border:1px solid ${tr[4]}"><span class="mono" style="font-size:11px;font-weight:600;color:${tr[2]}">${tr[0]}</span><span class="soft" style="font-size:12px">${tr[1]}</span></div>
+      <b style="font-size:12.5px">الأدلة الداعمة</b>
+      ${sel.ev.map(e => `<div class="sub" style="padding:10px 12px"><span style="font-size:12.5px;line-height:1.6">${esc(e.t)}</span><span class="row between" style="font-size:11px"><span style="color:${e.kc}">${e.kind}</span><span class="mono faint">${e.src}</span></span></div>`).join('')}
+      <div class="row nowrap" style="margin-top:auto"><button type="button" class="btn sm" style="flex:1" data-go="data">تتبّع المصدر</button><button type="button" class="btn sm primary" style="flex:1.4" data-go="foresight">ماذا قد يحدث؟</button></div>
+    </aside>
+  </section>`;
+};
+
+/* ================= FORESIGHT ================= */
+VIEWS.foresight = () => {
+  const sc = S.sc, w = id => id === sc ? 3 : 1.8, op = id => id === sc ? 1 : .35;
+  const list = [
+    ['opt','متفائل','OPTIMISTIC','var(--green)','25%','78','إيجابي','تنفيذ حل خلال 30 يومًا واستقرار الفريق يعيدان المؤشر إلى مستواه السابق.','ارتفاع ساعات التدريب فوق 6 ساعات شهريًا لمدة شهرين.','اعتماد الحل خلال أسبوعين لاقتناص هذا المسار.'],
+    ['base','أساسي','BASE','var(--blue)','55%','63','سلبي','استمرار الوضع دون تدخل: يتوقف الانخفاض لكن الأداء يبقى أدنى من المتوسط بـ 16 نقطة.','ثبات دوران الموظفين عند مستواه الحالي.','لا يكفي الانتظار: الفجوة مع المتوسط لن تُغلق دون تدخل.'],
+    ['dis','جذري','DISRUPTIVE','var(--red)','20%','47','حرج','مغادرة موجة ثانية من الموظفين القدامى تنقل التراجع إلى الفروع المجاورة.','استقالة أي من الموظفين الثلاثة الذين يحملون 41% من المهام.','خطة احتفاظ فورية للموظفين الرئيسيين قبل أي حل آخر.']
+  ];
+  return `${stepper(5)}
+  <section class="split">
+    <div class="card">
+      <div class="row between" style="align-items:flex-start"><div class="stack" style="gap:2px"><h2 class="h-sec">مؤشر أداء الفرع — 7 أشهر فعلية و5 أشهر متوقعة</h2><span class="lbl">اضغط على سيناريو لإبرازه · المنطقة المظللة = مدى التوقع بثقة 80%</span></div>
+        <div class="row" style="font-size:12px;color:var(--muted)">${[['#E8E8EC','فعلي'],['var(--blue)','أساسي'],['var(--green)','متفائل'],['var(--red)','جذري']].map(([c, l]) => `<span class="row nowrap" style="gap:6px"><span style="width:14px;height:3px;background:${c}"></span>${l}</span>`).join('')}</div></div>
+      <svg class="chart" viewBox="0 0 720 262" role="img" aria-label="المؤشر انخفض من 78 إلى 64. السيناريو الأساسي يستقر قرب 63، والمتفائل يعود إلى 78، والجذري يهبط إلى 47">
+        <g stroke="var(--line)"><line x1="40" y1="44.4" x2="680" y2="44.4"/><line x1="40" y1="93.3" x2="680" y2="93.3"/><line x1="40" y1="142.2" x2="680" y2="142.2"/><line x1="40" y1="191.1" x2="680" y2="191.1"/></g>
+        <text x="8" y="48">80</text><text x="8" y="97">70</text><text x="8" y="146">60</text><text x="8" y="195">50</text>
+        <path d="M389.1 122.7 L447.3 107.8 L505.5 112.7 L563.6 112.7 L621.8 107.8 L680 103.1 L680 152 L621.8 156.9 L563.6 161.8 L505.5 161.8 L447.3 156.9 Z" fill="#4DA3FF" opacity="${sc === 'base' ? .14 : .05}"/>
+        <path d="M389.1 122.7 L447.3 117.8 L505.5 98.2 L563.6 83.6 L621.8 68.9 L680 54.2" fill="none" stroke="#2FD27A" stroke-width="${w('opt')}" opacity="${op('opt')}" stroke-dasharray="6 5"/>
+        <path d="M389.1 122.7 L447.3 142.2 L505.5 161.8 L563.6 181.3 L621.8 196 L680 205.8" fill="none" stroke="#FF2E4D" stroke-width="${w('dis')}" opacity="${op('dis')}" stroke-dasharray="6 5"/>
+        <path d="M389.1 122.7 L447.3 132.4 L505.5 137.3 L563.6 137.3 L621.8 132.4 L680 127.6" fill="none" stroke="#4DA3FF" stroke-width="${w('base')}" opacity="${op('base')}" stroke-dasharray="6 5"/>
+        <path d="M40 54.2 L98.2 49.3 L156.4 59.1 L214.5 64 L272.7 83.6 L330.9 103.1 L389.1 122.7" fill="none" stroke="#E8E8EC" stroke-width="2.5" stroke-linejoin="round"/>
+        <line x1="389.1" y1="10" x2="389.1" y2="230" stroke="#FFCD11" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <circle cx="389.1" cy="122.7" r="5.5" fill="#0B0B0D" stroke="#FFCD11" stroke-width="2.5"/>
+        <text x="396" y="24" style="fill:var(--yellow);font-family:var(--f-body);font-size:11px">اليوم</text>
+        <text x="40" y="252">MAR</text><text x="214" y="252">JUN</text><text x="372" y="252">SEP</text><text x="555" y="252">DEC</text><text x="656" y="252">FEB</text>
+      </svg>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card tight"><span class="lbl">بطاقة النموذج</span><dl class="kv" style="margin:0;font-size:12.5px"><dt>النموذج</dt><dd>سلاسل زمنية + محرّكات</dd><dt>الإصدار</dt><dd class="mono" style="text-align:right">FCST-TS v2.3</dd><dt>خطأ التوقع</dt><dd>MAPE 7.8%</dd><dt>اختبار رجعي</dt><dd>12 شهرًا · دقة 81%</dd><dt>الأفق</dt><dd>5 أشهر</dd></dl></div>
+      <div class="card tight"><span class="lbl">أهم المحرّكات المؤثرة</span>
+        ${[['ساعات التدريب','أثر قوي ↓',82,'#FF6B81'],['دوران الموظفين','أثر قوي ↓',74,'#FF6B81'],['حجم العمل الإضافي','أثر متوسط ↓',51,'var(--orangefg)'],['موسمية الربع الرابع','أثر خفيف ↑',22,'var(--green)']].map(([n, d, v, c]) => `<div class="stack" style="gap:4px"><div class="row between" style="font-size:12.5px"><span>${n}</span><span style="color:${c}">${d}</span></div><span class="bar" style="height:5px"><i style="width:${v}%;background:${c}"></i></span></div>`).join('')}
+      </div>
+    </div>
+  </section>
+  <section class="grid g4">
+    ${list.map(([id, n, code, c, prob, end, imp, desc, sig, now]) => `<button type="button" class="card ${id === sc ? '' : ''}" data-act="sc" data-k="${id}" aria-pressed="${id === sc}" style="text-align:right;color:var(--fg);border:1.5px solid ${id === sc ? c : 'var(--line)'};background:${id === sc ? '#18181D' : 'var(--surface)'}">
+      <span class="row between nowrap" style="width:100%"><span class="row nowrap"><span class="dot" style="width:10px;height:10px;border-radius:5px;background:${c}"></span><b style="font-size:15px">${n}</b></span><span class="mono faint" style="font-size:10.5px">${code}</span></span>
+      <span class="soft" style="font-size:12.5px;line-height:1.65">${desc}</span>
+      <span class="grid g3" style="gap:6px;width:100%">${[['الاحتمال',prob,''],['بعد 5 أشهر',end,c],['الأثر',imp,'']].map(([l, v, cc]) => `<span class="sub" style="padding:7px 8px;background:var(--sunk);gap:1px"><span class="faint" style="font-size:10.5px">${l}</span><b class="big" style="font-size:15px;${cc ? `color:${cc}` : ''}">${v}</b></span>`).join('')}</span>
+      <span class="faint" style="font-size:11.5px">مؤشر إنذار مبكر</span><span style="font-size:12.5px;line-height:1.55;margin-top:-6px">${sig}</span>
+      <span class="sub" style="background:var(--yellowbg);border-color:var(--yellowline);width:100%"><span style="font-size:11px;color:var(--yellow)">ما الذي يجب فعله الآن؟</span><span style="font-size:12.5px;line-height:1.55">${now}</span></span>
+    </button>`).join('')}
+    <div class="card"><b style="font-size:13.5px">إشارات ضعيفة مرصودة</b>
+      <div class="sub"><span style="font-size:12.5px;line-height:1.55">3 موظفين إضافيين حدّثوا ملفاتهم المهنية خارجيًا هذا الشهر.</span><span style="font-size:11px;color:var(--orangefg)">قوة الإشارة: متوسطة · تميل للسيناريو الجذري</span></div>
+      <div class="sub"><span style="font-size:12.5px;line-height:1.55">منافس افتتح فرعًا على بُعد 2 كم.</span><span style="font-size:11px;color:var(--yellow)">قوة الإشارة: ضعيفة · قيد المراقبة</span></div>
+      <button type="button" class="btn primary sm" style="margin-top:auto" data-go="risks">المخاطر والفرص</button>
+    </div>
+  </section>`;
+};
+
+/* ================= RISKS ================= */
+const RISKS_FN = () => CFG.risks.map(x => ({ ...x, p: Math.min(5, Math.max(1, +x.p || 1)), i: Math.min(5, Math.max(1, +x.i || 1)),
+  ctl: (Array.isArray(x.ctl) ? x.ctl : String(x.ctl || '').split('\n')).filter(Boolean).map(l => { const [n, e = ''] = String(l).split('|').map(t => t.trim()); const num = parseInt((e.match(/\d+/) || [])[0], 10); return [n, e, isNaN(num) ? '#FF6B81' : num >= 70 ? 'var(--green)' : 'var(--yellow)']; }) }));
+let RISKS = [];
+const LV = new Proxy({ c: ['حرج','t-c','#FF2E4D'], h: ['مرتفع','t-h','#FF8A1F'], m: ['متوسط','t-m','#FFCD11'], l: ['منخفض','t-s','#2FD27A'] }, { get: (t, k) => t[k] || t.m });
+VIEWS.risks = () => {
+  RISKS = RISKS_FN(); if (!RISKS.length) return `<div class="empty"><h2 class="title-l">لا توجد مخاطر مسجلة</h2><p class="lead">أضف المخاطر من الإعدادات.</p></div>`;
+  const r = RISKS.find(x => x.id === S.risk) || RISKS[0];
+  let cells = '';
+  for (let i = 5; i >= 1; i--) for (let p = 1; p <= 5; p++) {
+    const s = p * i, bg = s >= 15 ? 'rgba(255,46,77,.22)' : s >= 8 ? 'rgba(255,138,31,.16)' : s >= 4 ? 'rgba(255,205,17,.09)' : 'var(--raised)';
+    cells += `<div style="aspect-ratio:1/1;max-width:100%;border-radius:7px;background:${bg};display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:3px;padding:2px">${RISKS.filter(x => x.p === p && x.i === i).map(x => `<button type="button" data-act="risk" data-k="${x.id}" aria-label="${x.id} ${x.name}" style="height:26px;min-width:42px;padding:0 5px;border-radius:13px;border:2px solid ${x.id === r.id ? '#fff' : LV[x.lv][2]};background:var(--bg);font:600 10.5px var(--f-mono)">${x.id}</button>`).join('')}</div>`;
+  }
+  const opps = [['نقل ممارسات الفرع الجنوبي الأعلى أداءً','86','الفرع الجنوبي تعافى من نمط مماثل في 2025. نقل برنامجه التدريبي ونظام المتابعة.','عالية','الآن','R-01'],['أتمتة جدولة المناوبات','78','توزيع أعدل للمهام يخفّض العمل الإضافي ويحمي الموظفين الرئيسيين.','متوسطة','60 يومًا','R-01'],['برنامج إرشاد من الموظفين القدامى','74','يحوّل المعرفة المهددة بالضياع إلى أصل مؤسسي موثّق.','عالية','30 يومًا','R-03']];
+  return `${stepper(6)}
+  <section class="grid" style="grid-template-columns:minmax(0,400px) minmax(0,1fr) minmax(0,320px)">
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">مصفوفة المخاطر</h2><span class="lbl">اضغط على خطر</span></div>
+      <div class="row nowrap" style="gap:8px;align-items:stretch"><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11.5px;color:var(--muted);text-align:center">الأثر ←</span>
+        <div dir="ltr" style="flex-grow:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px">${cells}</div></div>
+      <span class="muted" style="align-self:center;font-size:11.5px">الاحتمال ←</span>
+      <div class="stack" style="gap:5px;padding-top:6px;border-top:1px solid var(--line)">${RISKS.map(x => `<button type="button" class="list-btn ${x.id === r.id ? 'sel' : ''}" data-act="risk" data-k="${x.id}" style="align-items:center;padding:7px 10px;font-size:12.5px"><span class="mono faint" style="font-size:11px">${x.id}</span><span style="flex-grow:1">${x.name}</span><span class="tag ${LV[x.lv][1]}">${LV[x.lv][0]}</span></button>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="row between" style="align-items:flex-start"><div class="stack" style="gap:3px"><span class="mono faint" style="font-size:11.5px">${r.id} · ${r.cat}</span><h2 class="title-l">${r.name}</h2></div><span class="tag ${LV[r.lv][1]}" style="font-size:12px;padding:5px 12px">${LV[r.lv][0]}</span></div>
+      <div class="grid g4" style="gap:8px">${[['الاحتمال × الأثر',r.p + ' × ' + r.i],['السرعة',r.vel],['القرب الزمني',r.prox],['الاتجاه',r.tr]].map(([l, v]) => `<div class="sub" style="padding:10px 12px"><span class="lbl">${l}</span><b class="big" style="font-size:17px">${v}</b></div>`).join('')}</div>
+      <div class="sub"><b style="font-size:12.5px">الخطر الكامن ← الضوابط ← الخطر المتبقي</b>
+        <div class="row nowrap" style="align-items:stretch">
+          <div class="sub" style="align-items:center;background:var(--redbg);border-color:var(--redline);padding:8px 14px"><span class="lbl">كامن</span><b class="big" style="font-size:20px;color:#FF6B81">${r.inh}</b></div>
+          <div class="stack" style="flex-grow:1;gap:4px">${r.ctl.map(([n, e, c]) => `<div class="row between nowrap" style="font-size:12px;padding:6px 10px;border-radius:7px;background:var(--sunk)"><span>${n}</span><span style="color:${c}">${e}</span></div>`).join('')}</div>
+          <div class="sub" style="align-items:center;background:var(--orangebg);border-color:var(--orangeline);padding:8px 14px"><span class="lbl">متبقٍ</span><b class="big" style="font-size:20px;color:var(--orangefg)">${r.res}</b></div>
+        </div>
+        <span class="faint" style="font-size:11.5px">حدّ تقبّل المخاطر للقطاع: 10 · المتبقي ${r.res > 10 ? 'فوق الحد — يتطلب معالجة' : 'ضمن الحد'}</span>
+      </div>
+      <div class="grid g2" style="gap:10px"><div class="sub" style="background:transparent"><span class="lbl">السلسلة السببية</span><span style="font-size:12.5px;line-height:1.65">${r.chain}</span></div><div class="sub" style="background:transparent"><span class="lbl">مؤشر الإنذار المبكر</span><span style="font-size:12.5px;line-height:1.65">${r.kri}</span></div></div>
+      <div class="sub" style="background:var(--yellowbg);border-color:var(--yellowline)"><span style="font-size:11.5px;color:var(--yellow)">المعالجة المقترحة</span><span style="font-size:13px;line-height:1.65">${r.treat}</span></div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">الفرص</h2><span class="lbl">مرتبطة بالمخاطر</span></div>
+      ${opps.map(([n, s, d, f, t, l]) => `<div class="sub" style="border-color:var(--greenline)"><div class="row between nowrap" style="align-items:baseline"><b style="font-size:13.5px;line-height:1.5">${n}</b><span class="big" style="font-size:18px;color:var(--greenfg)">${s}</span></div><span class="muted" style="font-size:12px;line-height:1.6">${d}</span><div class="row" style="gap:6px"><span class="chip" style="font-size:11px">الجدوى ${f}</span><span class="chip" style="font-size:11px">التوقيت ${t}</span><span class="chip mono" style="font-size:11px;color:var(--greenfg)">↔ ${l}</span></div></div>`).join('')}
+      <button type="button" class="btn primary sm" style="margin-top:auto" data-go="solutions">توليد الحلول</button>
+    </div>
+  </section>`;
+};
+
+/* ================= SOLUTIONS ================= */
+VIEWS.solutions = () => {
+  solSel();
+  const labels = ['الأثر المتوقع','كفاءة التكلفة','انخفاض المخاطر','قابلية التنفيذ','سرعة التنفيذ','الاستدامة'];
+  return `${stepper(7)}
+  <section class="card tight" style="flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px">
+    <span class="lbl">الهدف</span><b style="font-size:13px">${esc(S.ans.q6 || 'استعادة مستوى الأداء السابق')} خلال 90 يومًا</b>
+    <span style="width:1px;height:22px;background:var(--line2)"></span><span class="lbl">القيود</span>
+    <span class="chip" style="background:var(--redbg);border-color:var(--redline);color:var(--redsoft)">صارم: ضمن ميزانية الربع المعتمدة</span>
+    <span class="chip" style="background:var(--redbg);border-color:var(--redline);color:var(--redsoft)">صارم: دون تسريح موظفين</span>
+    <span class="chip">مرن: بدء التنفيذ خلال 14 يومًا</span>
+    <span class="lbl" style="margin-inline-start:auto">7 بدائل مولّدة · استُبعد 4 لخرق القيود</span>
+  </section>
+  <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">${SOLS.map(s => { const on = s.n === S.sol;
+    return `<div class="card" style="border:1.5px solid ${on ? 'var(--red)' : 'var(--line)'};background:${on ? '#16161B' : 'var(--surface)'}">
+      <div class="row between"><span class="mono faint" style="font-size:11px">SOLUTION #${s.n}</span>${s.rec ? '<span class="tag" style="background:var(--yellow);color:#0B0B0D">الموصى به · حدّ باريتو</span>' : s.conf < 65 ? '<span class="tag t-h">ثقة منخفضة</span>' : ''}</div>
+      <h3 class="title-l" style="font-size:18px">${s.name}</h3>
+      <div class="grid g2" style="gap:8px"><div class="sub" style="background:var(--sunk);padding:9px 12px"><span class="lbl" style="color:var(--muted)">Score — الملاءمة</span><b class="big" style="font-size:24px">${s.score}</b></div><div class="sub" style="background:var(--sunk);padding:9px 12px"><span class="lbl" style="color:var(--muted)">Confidence — الثقة</span><b class="big" style="font-size:24px;color:${confColor(s.conf)}">${s.conf}%</b></div></div>
+      <div class="stack" style="gap:6px">${s.v.map((v, i) => `<div class="row nowrap" style="font-size:12px"><span class="soft" style="width:96px">${labels[i]}</span><span class="bar"><i style="width:${v}%;background:${on ? 'var(--red)' : '#6E6E78'}"></i></span><span class="mono" style="width:26px;text-align:left">${v}</span></div>`).join('')}</div>
+      <p class="muted" style="font-size:12px;line-height:1.6">${s.note}</p>
+      <div class="row nowrap" style="margin-top:auto"><button type="button" class="btn sm" style="flex:1" data-act="sol-focus" data-k="${s.n}" aria-pressed="${on}">${on ? 'محدد' : 'تحديد'}</button><button type="button" class="btn sm ${s.rec ? 'primary' : ''}" style="flex:1" data-act="sol-choose" data-k="${s.n}">رفع للقرار</button></div>
+    </div>`; }).join('')}</section>
+  <section class="card" style="padding:0;gap:0"><div class="tbl-wrap"><table><thead><tr><th>مقارنة البدائل</th>${SOLS.map(s => `<th style="color:${s.n === S.sol ? '#fff' : 'var(--faint)'}">#${s.n} ${s.short}</th>`).join('')}</tr></thead><tbody>
+    ${labels.map((l, i) => { const mx = Math.max(...SOLS.map(s => s.v[i])); return `<tr><td class="soft">${l}</td>${SOLS.map(s => `<td class="mono" style="font-weight:${s.n === S.sol ? 700 : 500};color:${s.n === S.sol ? '#fff' : 'var(--muted)'}">${s.v[i]}${s.v[i] === mx ? ' ●' : ''}</td>`).join('')}</tr>`; }).join('')}
+    <tr><td class="soft">Score / الثقة</td>${SOLS.map(s => `<td class="mono" style="color:${s.n === S.sol ? '#fff' : 'var(--muted)'}">${s.score} / ${s.conf}%</td>`).join('')}</tr>
+    <tr><td class="soft">زمن ظهور الأثر</td>${SOLS.map(x => `<td style="color:${x.n === S.sol ? '#fff' : 'var(--muted)'}">${esc(x.time || '—')}</td>`).join('')}</tr>
+  </tbody></table></div><p class="faint" style="font-size:11.5px;padding:10px 16px">● أعلى قيمة في المعيار. الدرجة تقيس ملاءمة الحل، والثقة تقيس مدى قوة البيانات والأدلة خلفه، ولا تُدمجان.</p></section>`;
+};
+
+/* ================= DECISION ================= */
+VIEWS.decision = () => {
+  const s = solSel(), ok = !!S.choice && S.why.trim().length > 3;
+  const gate = [['السياق','لا ذاكرة بلا سياق',1],['المصدر','لا معرفة بلا مصدر وأصل',1],['الدليل','لا علاقة بلا دليل',S.qDone ? 1 : 2],['المبرر','لا قرار بلا مبرر',S.decided ? 1 : 3],['الملاحظات','لا نمط بلا ملاحظات متكررة',1],['التتبع','لا ذكاء بلا قابلية للتتبع',1],['جودة البيانات','87% — تمرير مع تنبيه',2],['الصلاحيات','تم التحقق من نطاق الوصول',1]];
+  const GI = { 1: ['check','var(--green)'], 2: ['warn','var(--yellow)'], 3: ['dotc','var(--faint)'] };
+  const panel = S.decided ? `
+    <span style="width:48px;height:48px;border-radius:24px;background:rgba(47,210,122,.14);display:flex;align-items:center;justify-content:center;color:var(--green)">${ic('check', 24, 'style="stroke-width:2.4"')}</span>
+    <div class="stack" style="gap:4px"><span class="mono" style="color:var(--yellow);font-size:12px">DEC-2026-041</span><h2 class="title-l">تم تسجيل القرار: ${choiceLabel()}</h2></div>
+    <dl class="kv sub" style="margin:0;font-size:12.5px"><dt>صاحب القرار</dt><dd>د. عدنان</dd><dt>الحل</dt><dd>${s.name}</dd><dt>سجل التدقيق</dt><dd style="color:var(--green)">محفوظ</dd><dt>المبرر</dt><dd style="line-height:1.6">${esc(S.why)}</dd></dl>
+    <p class="soft" style="font-size:12.5px;line-height:1.7">حُفظ القرار في ذاكرة القرار مع البدائل والأدلة والنتيجة المتوقعة (${s.exp})، وسيُقارن لاحقًا بالنتيجة الفعلية.</p>
+    ${approved() ? `<button type="button" class="btn primary block" data-go="execution">فتح خطة التنفيذ</button>` : `<div class="banner y" style="font-size:12.5px">القرار «${choiceLabel()}» لا يولّد خطة تنفيذ. أُعيدت الاستشارة إلى الفريق مع مبررك.</div>`}
+    <button type="button" class="btn sm block" data-act="d-undo">تعديل القرار</button>` : `
+    <div class="stack" style="gap:3px"><span class="lbl">مراجعة صاحب القرار — الذكاء الاصطناعي لا يقرر وحده</span><h2 class="title-l">قرارك</h2></div>
+    <dl class="kv sub" style="margin:0;font-size:12px"><dt>مستوى القرار</dt><dd>D3 — تكتيكي</dd><dt>الصلاحية المطلوبة</dt><dd>مدير القطاع أو أعلى</dd><dt>صلاحيتك</dt><dd style="color:var(--green)">مطابقة</dd></dl>
+    <fieldset style="margin:0;padding:0;border:0" class="stack"><legend style="font-size:12.5px;font-weight:600;padding-bottom:6px">اختر القرار</legend>
+      <div class="stack" style="gap:6px" role="radiogroup">${CHOICES.map(([k, l]) => `<button type="button" class="opt" role="radio" aria-checked="${S.choice === k}" data-act="d-pick" data-k="${k}" style="min-height:44px;font-size:14px"><span class="rd"></span>${l}</button>`).join('')}</div></fieldset>
+    <label for="why" style="font-size:12.5px;font-weight:600">مبرر القرار <span style="font-weight:400;color:var(--yellow)">— مطلوب: لا قرار بلا مبرر</span></label>
+    <textarea id="why" data-model="why" rows="3" placeholder="لماذا اتخذت هذا القرار؟ سيُحفظ في ذاكرة القرار المؤسسية.">${esc(S.why)}</textarea>
+    <button type="button" id="d-submit" class="btn primary block" data-act="d-submit" aria-disabled="${!ok}">تسجيل القرار</button>`;
+  return `${stepper(S.decided ? 10 : 9)}
+  ${S.qDone ? '' : `<div class="banner y">${ic('warn', 18, 'style="color:var(--yellow)"')}<span style="flex:1 1 260px">التوصية مبنية على تحليل أولي بثقة 58%. يمكنك القرار الآن، لكن الأفضل استكمال البيانات أولًا.</span><button type="button" class="btn sm" data-go="questionnaire">استكمال البيانات</button></div>`}
+  <div class="split">
+    <div class="stack" style="gap:14px">
+      <section class="card">
+        <div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">DECISION BRIEF · REC-2026-118</span><h2 class="title-l">توصية نايوش</h2></div>
+          <div class="row"><span class="chip">Score <b class="big">${s.score}</b></span><span class="chip" style="background:var(--greenbg);border-color:var(--greenline);color:var(--greenfg)">الثقة <b class="big">${S.qDone ? s.conf : s.conf - 14}%</b></span></div></div>
+        <div class="sub" style="background:var(--redbg);border-color:var(--redline)"><span style="font-size:11.5px;color:var(--redsoft)">الحل المرفوع للقرار ${s.rec ? '(الموصى به)' : ''}</span><b style="font-family:var(--f-display);font-size:17px">${s.name}</b>
+          ${s.rec ? '' : `<span style="font-size:12px;color:var(--yellow)">اخترت بديلًا غير الموصى به. سيُسجَّل ذلك مع مبررك، والموصى به هو «${(SOLS.find(x => x.rec) || SOLS[0] || s).short}».</span>`}</div>
+        <div class="grid g3" style="gap:12px">${[['المشكلة','انخفاض أداء الفرع الشمالي 17% خلال 6 أسابيع.'],['الاستنتاج','أسباب محتملة: نقص التدريب (71%) وضغط العمل (58%) بعد موجة مغادرة.'],['لماذا هذا الحل؟',s.note],['المخاطر','مقاومة داخلية للتغيير · ضغط مؤقت على المشرفين.'],['المتطلبات','مالك تنفيذ من القطاع · 3 إلى 6 أسابيع.'],['حدود التوصية','بيانات الشكاوى من إفادة صاحب الاستشارة فقط (L2).']].map(([l, d]) => `<div class="stack" style="gap:4px"><span class="lbl">${l}</span><span style="font-size:13px;line-height:1.6">${d}</span></div>`).join('')}</div>
+      </section>
+      <div class="grid g2">
+        <section class="card"><h2 class="h-sec">لماذا أوصى النظام بهذا الحل؟</h2>
+          ${[['قوة الأدلة',86],['البيانات',S.qDone ? 78 : 58],['الحالات التاريخية',91],['ثقة النموذج',79]].map(([l, v]) => `<div class="stack" style="gap:5px"><div class="row between" style="font-size:12.5px"><span>${l}</span><span class="mono" style="color:var(--yellow)">${v}%</span></div><span class="bar" style="height:7px"><i style="width:${v}%;background:var(--yellow)"></i></span></div>`).join('')}
+          <span class="lbl" style="padding-top:6px;border-top:1px solid var(--line)">سلسلة القرار</span>
+          <div class="flow">${['المصدر','البيانات','التحليل','المشكلة','الحل','التوصية'].map(x => `<span>${x}</span><i>←</i>`).join('')}<span style="background:var(--redbg);color:var(--redsoft)">القرار</span></div>
+        </section>
+        <section class="card"><div class="row between"><h2 class="h-sec">بوابة الحوكمة المعرفية</h2><span class="mono" style="font-size:11px;color:var(--greenfg)">5.4.19</span></div>
+          ${gate.map(([n, r, k]) => `<div class="row nowrap" style="font-size:12.5px">${ic(GI[k][0], 15, `style="color:${GI[k][1]};stroke-width:2.6"`)}<b style="width:88px;flex-shrink:0">${n}</b><span class="muted" style="font-size:12px">${r}</span></div>`).join('')}
+          <div class="row nowrap" style="margin-top:auto;padding:9px 12px;border-radius:10px;background:var(--greenbg);border:1px solid var(--greenline)"><span class="mono" style="font-size:11.5px;font-weight:600;color:var(--greenfg)">${S.qDone ? 'L4 · VERIFIED' : 'L3 · EVIDENCED'}</span><span style="font-size:12px;color:#B5C9BC">${S.decided ? 'اكتمل: القرار مسجّل بمبرره' : 'مؤهلة للعرض على صاحب القرار'}</span></div>
+        </section>
+      </div>
+    </div>
+    <aside class="card" style="border-color:#3A1C22">${panel}</aside>
+  </div>`;
+};
+
+/* ================= EXECUTION ================= */
+VIEWS.execution = () => {
+  if (!approved()) return `${stepper(9)}<div class="empty"><span class="eyebrow">NO ACTION PLAN YET</span><h2 class="title-l">لا توجد خطة تنفيذ بعد</h2><p class="lead">خطة التنفيذ تُولَّد تلقائيًا من القرار المعتمد: الإجراءات، والمالكون، والمواعيد، والمؤشرات. ${S.decided ? `القرار المسجّل «${choiceLabel()}» لا يولّد خطة.` : 'لم يُسجَّل قرار لهذه الاستشارة.'}</p><button type="button" class="btn primary" data-go="decision">الذهاب إلى مركز القرار</button></div>`;
+  const s = solSel(), m = S.measured;
+  const A = { man: ['يدوي','var(--muted)'], ai: ['بمساعدة الذكاء','var(--bluefg)'], auto: ['مؤتمت بموافقة','var(--yellow)'] };
+  const tasks = [
+    ['T-01','done','اعتماد القرار DEC-2026-041','د. عدنان','اليوم','man',0],
+    ['T-02','done','تعيين مالك التنفيذ وفريق المتابعة','مدير القطاع','اليوم','man',0],
+    ['T-08','done','ربط مؤشر الأداء بمتابعة أسبوعية','نايوش','اليوم','auto',0],
+    ['T-03',m ? 'done' : 'doing',s.tasks[0],'مدير الفرع','بعد 10 أيام','auto',60],
+    ['T-04',m ? 'done' : 'doing',s.tasks[1],'الموارد البشرية','بعد 5 أيام','man',40,!m],
+    ['T-05',m ? 'done' : 'doing',s.tasks[2],'التدريب','بعد 19 يومًا','ai',30],
+    ['T-06',m ? 'doing' : 'todo','توثيق معرفة الموظفين الرئيسيين الثلاثة','م. ليلى','بعد 16 يومًا','ai',m ? 70 : 0],
+    ['T-07','todo','تفعيل برنامج إرشاد داخلي','أ. خالد','بعد 23 يومًا','man',0]
+  ];
+  const cols = [['todo','قيد الانتظار','var(--faint)'],['doing','قيد التنفيذ','var(--yellow)'],['done','مكتمل','var(--green)']];
+  const prog = m ? 81 : 38;
+  return `${stepper(m ? 11 : 10)}
+  <section class="grid" style="grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr))">
+    <div class="card tight"><span class="eyebrow">ACTION PLAN · AP-2026-077</span><b class="title-l" style="font-size:16px">${s.name}</b>
+      <div class="row nowrap"><span class="bar" style="height:7px"><i style="width:${prog}%"></i></span><b class="big">${prog}%</b></div><span class="faint" style="font-size:11.5px">المالك: م. ليلى · من القرار DEC-2026-041</span></div>
+    ${[['مؤشر أداء الفرع', m ? String(s.act) : '66', String(s.exp), m ? 'تعافٍ ملحوظ' : 'بدأ التعافي: +2 خلال أسبوع', 'var(--greenfg)'],['ساعات التدريب الشهرية', m ? '6.2' : '3.5','6', m ? 'تحقق الهدف' : 'دون المسار المخطط', m ? 'var(--greenfg)' : 'var(--yellow)'],['الموظفون المغادرون','0','0','لا مغادرات منذ القرار','var(--greenfg)']].map(([n, v, t, st, c]) => `<div class="card tight"><span class="lbl" style="color:var(--muted)">${n}</span><div class="row nowrap" style="align-items:baseline"><b class="big" style="font-size:22px">${v}</b><span class="faint" style="font-size:12px">الهدف ${t}</span></div><span style="font-size:11.5px;color:${c}">${st}</span></div>`).join('')}
+  </section>
+  ${m ? `<div class="banner g">${ic('check', 18, 'style="color:var(--green)"')}<span style="flex:1 1 260px">مرّ 30 يومًا (محاكاة): المؤشر ارتفع من 64 إلى ${s.act}. المقارنة الكاملة بين المتوقع والفعلي جاهزة.</span><button type="button" class="btn sm primary" data-go="impact">قياس الأثر</button></div>`
+       : `<div class="banner y">${ic('clock', 18, 'style="color:var(--yellow)"')}<span style="flex:1 1 260px">للعرض: شاهد ماذا يحدث بعد 30 يومًا من التنفيذ.</span><button type="button" class="btn sm primary" data-act="simulate">محاكاة مرور 30 يومًا</button></div>`}
+  <section class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,320px)">
+    ${cols.map(([k, n, c]) => { const ts = tasks.filter(t => t[1] === k); return `<div class="card" style="background:#101013;padding:12px;gap:8px"><div class="row between"><span class="row nowrap"><span class="dot" style="background:${c}"></span><b style="font-size:13.5px">${n}</b></span><span class="mono faint">${ts.length}</span></div>
+      ${ts.map(t => `<div class="sub" style="border-color:${t[7] ? 'var(--redline)' : 'var(--line)'}"><div class="row between"><span class="mono faint" style="font-size:10.5px">${t[0]}</span>${t[7] ? '<span class="tag t-c">متأخر</span>' : ''}</div><b style="font-size:13px;line-height:1.55">${t[2]}</b>${k === 'doing' && t[6] ? `<div class="row nowrap"><span class="bar" style="height:4px"><i style="width:${t[6]}%;background:var(--yellow)"></i></span><span class="mono faint" style="font-size:11px">${t[6]}%</span></div>` : ''}<div class="row between" style="font-size:11.5px;color:var(--muted)"><span>${t[3]} · ${t[4]}</span><span class="tag" style="background:var(--sunk);color:${A[t[5]][1]};font-weight:500">${A[t[5]][0]}</span></div></div>`).join('')}</div>`; }).join('')}
+    <div class="stack" style="gap:12px">
+      ${m ? '' : `<div class="card tight bad"><div class="row nowrap">${ic('risks', 16, 'style="color:#FF5C74"')}<b style="color:var(--redsoft);font-size:13.5px">استثناء مكتشف · تصعيد تلقائي</b></div><span style="font-size:12.5px;line-height:1.7">«${s.tasks[1]}» متأخر 4 أيام، وهو شرط لنجاح الحل. صُعّد إلى مدير القطاع وفق قاعدة التصعيد.</span><div class="row nowrap"><button type="button" class="btn sm primary" style="flex:1">إعادة التخطيط</button><button type="button" class="btn sm" style="flex:1">تدخل بشري</button></div></div>`}
+      <div class="card tight"><b style="font-size:13px">مستويات الأتمتة المحكومة</b>
+        ${[['A0','الذكاء يراقب'],['A1','يقترح'],['A2','يُحضّر'],['A3','ينفذ بعد الموافقة'],['A4','ينفذ ضمن قواعد معتمدة مسبقًا'],['A5','تنفيذ ذاتي منخفض المخاطر'],['A6','بشري فقط / محظور']].map(([c, l]) => `<div class="row nowrap" style="font-size:12px"><span class="mono" style="color:var(--yellow);width:26px">${c}</span><span class="soft">${l}</span></div>`).join('')}
+        <span class="faint" style="font-size:11.5px;line-height:1.6">لا يرفع أي وكيل مستوى استقلاليته بنفسه، ومفتاح الإيقاف متاح دائمًا.</span></div>
+    </div>
+  </section>`;
+};
+</script>

@@ -1,0 +1,194 @@
+
+<script data-app="">
+/* ================= SETTINGS ================= */
+let CAN_EDIT = false, READONLY = false, PUBLISHING = false, RESET_ARMED = false;
+const OPEN = new Set();
+const ROUTE_OPTS = [['home','الرئيسية'],['ask','اسأل نايوش'],['consult','مركز الاستشارات'],['data','مركز ذكاء البيانات'],['questionnaire','الاستبيان الذكي'],['diagnosis','التحليل والتشخيص'],['foresight','التنبؤ والاستشراف'],['risks','المخاطر والفرص'],['solutions','استوديو الحلول'],['decision','مركز القرار'],['execution','مركز التنفيذ'],['impact','قياس الأثر'],['learning','التعلم المؤسسي'],['knowledge','قاعدة المعرفة'],['agents','الذكاء الاصطناعي والوكلاء'],['reports','التقارير'],['integration','مركز التكامل'],['governance','الحوكمة والتدقيق'],['architecture','المعمارية والوثائق']];
+const COLOR_OPTS = [['g','أخضر — جيد'],['y','أصفر — انتباه'],['o','برتقالي — مرتفع'],['r','أحمر — حرج'],['b','أزرق — معلومة']];
+const AUTO_OPTS = [['','قيمة ثابتة'],['decisions','ينقص بعد تسجيل القرار'],['consult','يعرض مرحلة CNS-001'],['perf','مؤشر الأداء — يتغير بعد التنفيذ']];
+const F = (k, label, type = 'text', opt = null, wide = false) => ({ k, label, type, opt, wide });
+const SECTIONS = [
+  { id: 'identity', title: 'الهوية والمستخدم', icon: 'governance', kind: 'obj', desc: 'اسم المنظومة واسم المستخدم والفرع. التغيير ينعكس على كل الشاشات والنصوص.', fields: [
+    F('brandAr','اسم المنظومة بالعربية'), F('brandEn','الاسم اللاتيني (الشعار)'), F('brandSub','السطر الثاني في الشعار'), F('user','اسم المستخدم المعروض'), F('userInitial','حرف الصورة الرمزية'), F('role','المنصب'), F('greeting','التحية في لوحة القيادة'), F('branch','اسم الفرع في قصة الاستشارة'),
+    F('demoBadge','إظهار شارة «بيانات تجريبية»','bool'), F('tourDefault','تشغيل العرض الموجّه عند فتح الرابط','bool') ] },
+  { id: 'theme', title: 'الألوان', icon: 'bulb', kind: 'obj', desc: 'ألوان الهوية. الخلفية السوداء ثابتة للحفاظ على وضوح النصوص.', fields: [F('red','لون التركيز والتنبيه','color'), F('action','لون الأزرار الأساسية (نص أبيض فوقه)','color'), F('yellow','لون الذكاء والتفسير','color')] },
+  { id: 'modules', title: 'الوحدات الظاهرة', icon: 'architecture', kind: 'modules', desc: 'أخفِ أي وحدة لا تريد عرضها على العميل. الرئيسية والإعدادات تبقى ظاهرة دائمًا.' },
+  { id: 'command', title: 'ما يحتاج انتباهك', icon: 'bell', kind: 'list', item: 'بند', sum: 'label', desc: 'البطاقات الأربع في أعلى لوحة القيادة.', fields: [F('label','العنوان'), F('value','القيمة'), F('color','اللون','select',COLOR_OPTS), F('route','يفتح عند الضغط','select',ROUTE_OPTS), F('auto','الربط بالحالة','select',AUTO_OPTS)], tpl: { label: 'بند جديد', value: '0', color: 'y', route: 'home', auto: '' } },
+  { id: 'health', title: 'مؤشر صحة المنظمة', icon: 'impact', kind: 'list', item: 'بُعدًا', sum: 'label', desc: 'أبعاد مؤشر صحة المنظمة في مركز القيادة (0–100). «التحسن بعد التنفيذ» يُضاف تلقائيًا بعد قياس الأثر.', fields: [F('label','البُعد'), F('score','الدرجة','number'), F('route','الصفحة عند الضغط'), F('boost','التحسن بعد التنفيذ','number')] },
+  { id: 'kpis', title: 'المؤشرات الرئيسية', icon: 'chart', kind: 'list', item: 'مؤشرًا', sum: 'label', desc: 'بطاقات المؤشرات في لوحة القيادة. نسبة الشريط من 0 إلى 100.', fields: [F('label','اسم المؤشر'), F('value','القيمة المعروضة'), F('sub','السطر الوصفي'), F('bar','نسبة الشريط','number'), F('color','اللون','select',COLOR_OPTS), F('route','يفتح عند الضغط','select',ROUTE_OPTS), F('auto','الربط بالحالة','select',AUTO_OPTS)], tpl: { label: 'مؤشر جديد', value: '0%', sub: '', bar: 50, color: 'b', route: 'home', auto: '' } },
+  { id: 'alerts', title: 'تنبيهات الذكاء', icon: 'risks', kind: 'list', item: 'تنبيهًا', sum: 'title', desc: 'التنبيه الأول (CNS-001) يتغيّر تلقائيًا مع القصة؛ هذه التنبيهات تُعرض بعده.', fields: [F('level','المستوى','select',[['c','حرج'],['h','مرتفع'],['m','متوسط'],['i','معلومة'],['s','فرصة']]), F('route','يفتح عند الضغط','select',ROUTE_OPTS), F('title','نص التنبيه','textarea',null,true), F('meta','المصدر والتفاصيل','text',null,true)], tpl: { level: 'm', title: 'تنبيه جديد', meta: 'المصدر', route: 'home' } },
+  { id: 'consults', title: 'الاستشارات', icon: 'consult', kind: 'list', item: 'استشارة', sum: 'title', desc: 'قائمة مركز الاستشارات. الاستشارة المعلّمة «حيّة» تتبع خطوات العرض تلقائيًا.', fields: [F('id','الرقم'), F('title','المشكلة'), F('sub','السطر الوصفي'), F('domain','المجال'), F('stage','المرحلة'), F('grp','تبويب التصفية','select',[['data','جمع البيانات'],['analysis','التحليل'],['decision','القرار'],['exec','التنفيذ'],['closed','مغلقة']]), F('priority','الأولوية','select',[['حرجة','حرجة'],['عالية','عالية'],['متوسطة','متوسطة'],['منخفضة','منخفضة']]), F('conf','الثقة %','number'), F('owner','المسؤول'), F('route','يفتح عند الضغط','select',ROUTE_OPTS), F('live','حيّة (تتبع العرض)','bool')], tpl: { id: 'CNS-009', title: 'استشارة جديدة', sub: '', domain: 'التشغيل', stage: 'البيانات', grp: 'data', priority: 'متوسطة', conf: 60, owner: 'د. عدنان', route: 'consult', live: false } },
+  { id: 'sources', title: 'مصادر البيانات', icon: 'data', kind: 'list', item: 'مصدرًا', sum: 'name', desc: 'الأنظمة المتصلة في مركز ذكاء البيانات. أبعاد الجودة السبعة بالترتيب: الاكتمال، الدقة، الاتساق، الحداثة، التفرّد، الصلاحية، الموثوقية.', fields: [F('name','اسم النظام'), F('code','الرمز'), F('st','حالة الاتصال','select',[['ok','متصل'],['warn','تنبيه'],['off','منقطع']]), F('g','بوابة الجودة','select',[['good','جيد'],['warn','تنبيه'],['low','منخفض'],['crit','حرج — محجوب']]), F('rec','عدد السجلات'), F('sync','آخر مزامنة'), F('d','أبعاد الجودة السبعة (أرقام بفواصل)','nums',null,true), F('note','ملاحظة الجودة','textarea',null,true)], tpl: { code: 'NEW', name: 'نظام جديد', st: 'ok', rec: '0', sync: 'الآن', g: 'good', d: [90,90,90,90,90,90,90], note: '' } },
+  { id: 'questions', title: 'أسئلة الاستبيان الذكي', icon: 'questionnaire', kind: 'list', item: 'سؤالًا', sum: 'text', desc: 'الأسئلة تظهر واحدًا في كل مرة. التفرّع: إذا كانت إجابة السؤال السابق تساوي القيمة المحددة، يظهر النص البديل بدلًا من النص الأصلي.', fields: [F('text','نص السؤال','textarea',null,true), F('options','الخيارات — خيار في كل سطر','lines',null,true), F('why','لماذا هذا السؤال؟','textarea',null,true), F('gap','الفجوة التي يسدّها'), F('gain','زيادة الثقة %','number'), F('branchWhen','تفرّع: عندما تكون إجابة السؤال السابق'), F('branchText','تفرّع: النص البديل','textarea',null,true), F('branchOptions','تفرّع: الخيارات البديلة — خيار في كل سطر','lines',null,true), F('branchWhy','تفرّع: لماذا السؤال البديل؟','textarea',null,true)], tpl: { text: 'سؤال جديد؟', options: ['نعم','لا','لا أعرف'], why: '', gap: 'فجوة جديدة', gain: 3, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' } },
+  { id: 'risks', title: 'المخاطر', icon: 'risks', kind: 'list', item: 'خطرًا', sum: 'name', desc: 'الاحتمال والأثر من 1 إلى 5 يحددان موقع الخطر في المصفوفة.', fields: [F('id','الرمز'), F('name','اسم الخطر'), F('cat','الفئة'), F('lv','المستوى','select',[['c','حرج'],['h','مرتفع'],['m','متوسط'],['l','منخفض']]), F('p','الاحتمال 1–5','number'), F('i','الأثر 1–5','number'), F('vel','السرعة'), F('prox','القرب الزمني'), F('tr','الاتجاه'), F('inh','الخطر الكامن','number'), F('res','الخطر المتبقي','number'), F('ctl','الضوابط — سطر لكل ضابط: الاسم | الفعالية','lines',null,true), F('chain','السلسلة السببية','textarea',null,true), F('kri','مؤشر الإنذار المبكر','text',null,true), F('treat','المعالجة المقترحة','textarea',null,true)], tpl: { id: 'R-06', name: 'خطر جديد', cat: 'التشغيل', p: 3, i: 3, lv: 'm', vel: 'متوسطة', prox: '60 يومًا', tr: '→ ثابت', inh: 9, res: 6, ctl: ['ضابط | فعالية 60%'], chain: '', kri: '', treat: '' } },
+  { id: 'solutions', title: 'الحلول', icon: 'solutions', kind: 'list', item: 'حلًا', sum: 'name', desc: 'البدائل في استوديو الحلول. المعايير الستة بالترتيب: الأثر، كفاءة التكلفة، انخفاض المخاطر، قابلية التنفيذ، السرعة، الاستدامة. أول 3 مهام تتحول إلى خطة التنفيذ.', fields: [F('name','اسم الحل','text',null,true), F('short','اسم مختصر'), F('rec','الموصى به','bool'), F('score','Score — الملاءمة','number'), F('conf','الثقة %','number'), F('exp','المؤشر المتوقع بعد التنفيذ','number'), F('act','المؤشر الفعلي بعد 30 يومًا','number'), F('time','زمن ظهور الأثر'), F('v','المعايير الستة (أرقام بفواصل)','nums',null,true), F('note','لماذا هذا الحل؟','textarea',null,true), F('tasks','مهام التنفيذ — مهمة في كل سطر','lines',null,true)], tpl: { name: 'حل جديد', short: 'حل جديد', v: [70,70,70,70,70,70], score: 70, conf: 70, rec: false, exp: 75, act: 72, time: '4 أسابيع', note: '', tasks: ['مهمة 1','مهمة 2','مهمة 3'] } },
+  { id: 'docs', title: 'قاعدة المعرفة', icon: 'knowledge', kind: 'list', item: 'وثيقة', sum: 'title', desc: 'الوثائق التي يظهر فيها البحث. الكلمات المفتاحية مفصولة بفواصل.', fields: [F('id','الرمز'), F('title','العنوان'), F('type','النوع'), F('domain','المجال'), F('level','مستوى الموثوقية','select',[['L0','L0 غير معروف'],['L1','L1 ادعاء'],['L2','L2 له مصدر'],['L3','L3 مدعوم بأدلة'],['L4','L4 متحقَّق منه'],['L5','L5 مؤسسي'],['L6','L6 محكوم']]), F('tags','الكلمات المفتاحية','text',null,true)], tpl: { id: 'DOC-NEW', title: 'وثيقة جديدة', type: 'سياسة', domain: 'الحوكمة', level: 'L4', tags: '' } },
+  { id: 'backup', title: 'النسخ والاستعادة', icon: 'copy', kind: 'backup', desc: 'انسخ كل الإعدادات كنص للاحتفاظ بها، أو الصق نسخة سابقة لاستعادتها.' }
+];
+const secOf = () => SECTIONS.find(x => x.id === S.setTab) || SECTIONS[0];
+function fieldHTML(path, f, val) {
+  const id = 'cfg-' + path.replace(/\./g, '-');
+  const lab = `<label for="${id}" class="lbl" style="color:var(--muted)">${f.label}</label>`;
+  const box = (inner) => `<div class="stack" style="gap:5px;${f.wide ? 'grid-column:1/-1' : ''}">${inner}</div>`;
+  const attrs = `id="${id}" data-cfg="${path}" data-t="${f.type}"`;
+  if (f.type === 'bool') return box(`<label class="row nowrap" style="min-height:44px;gap:10px;cursor:pointer"><input type="checkbox" ${attrs} ${val ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13.5px">${f.label}</span></label>`);
+  if (f.type === 'select') return box(lab + `<select ${attrs} style="min-height:42px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:0 10px">${f.opt.map(([v, l]) => `<option value="${esc(v)}" ${String(val ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`);
+  if (f.type === 'color') return box(lab + `<div class="row nowrap"><input type="color" ${attrs} value="${esc(val)}" style="width:52px;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--bg);padding:2px"><span class="mono soft">${esc(val)}</span></div>`);
+  if (f.type === 'textarea') return box(lab + `<textarea ${attrs} rows="3">${esc(val)}</textarea>`);
+  if (f.type === 'lines') return box(lab + `<textarea ${attrs} rows="${Math.min(8, Math.max(3, (val || []).length + 1))}">${esc((Array.isArray(val) ? val : []).join('\n'))}</textarea>`);
+  if (f.type === 'nums') return box(lab + `<input type="text" dir="ltr" ${attrs} value="${esc((Array.isArray(val) ? val : []).join(', '))}" style="text-align:left">`);
+  if (f.type === 'number') return box(lab + `<input type="text" inputmode="decimal" dir="ltr" ${attrs} value="${esc(val)}" style="text-align:left">`);
+  return box(lab + `<input type="text" ${attrs} value="${esc(val)}">`);
+}
+function parseField(el) {
+  const t = el.dataset.t;
+  if (t === 'bool') return el.checked;
+  if (t === 'number') { const n = parseFloat(String(el.value).replace(',', '.')); return isNaN(n) ? 0 : n; }
+  if (t === 'lines') return el.value.split('\n').map(x => x.trim()).filter(Boolean);
+  if (t === 'nums') return el.value.split(/[,،\s]+/).map(Number).filter(n => !isNaN(n) && String(n) !== '');
+  return el.value;
+}
+VIEWS.settings = () => {
+  const sec = secOf();
+  const status = PUBLISHING ? ['t-i','جارٍ النشر…'] : !(CAN_EDIT && !READONLY) ? (CFG_DIRTY ? ['t-m','تغييرات محفوظة في متصفحك'] : ['t-n','الإعدادات المنشورة']) : CFG_DIRTY ? ['t-m','تغييرات غير منشورة'] : ['t-s','منشور — يراه الجميع'];
+  let body = '';
+  if (sec.kind === 'obj') {
+    body = `<div class="grid g2">${sec.fields.map(f => fieldHTML(sec.id + '.' + f.k, f, CFG[sec.id][f.k])).join('')}</div>`;
+  } else if (sec.kind === 'modules') {
+    const mods = NAV.flatMap(g => g.items).filter(([id]) => id !== 'home' && id !== 'settings' && !(window.SERVER_ROUTES && SERVER_ROUTES.has(id)));
+    body = `<div class="grid g3">${mods.map(([id, label]) => `<label class="sub row nowrap" style="flex-direction:row;cursor:pointer;min-height:48px"><input type="checkbox" id="cfg-mod-${id}" data-cfg="modules.${id}" data-t="bool" ${modOn(id) ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)">${ic(id, 18)}<span style="font-size:13.5px">${label}</span></label>`).join('')}</div>`;
+  } else if (sec.kind === 'list') {
+    const arr = CFG[sec.id] || [];
+    body = `<div class="stack" style="gap:8px">${arr.map((it, i) => {
+      const path = sec.id + '.' + i;
+      const title = String(it[sec.sum] ?? '').trim() || '(بدون عنوان)';
+      return `<details class="sub" data-path="${path}" ${OPEN.has(path) ? 'open' : ''} style="padding:0">
+        <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:48px">
+          <span class="mono faint" style="font-size:11px;width:22px">${i + 1}</span>
+          <b style="flex-grow:1;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(title)}</b>
+          ${it.live ? '<span class="tag t-m">حيّة</span>' : ''}${it.rec ? '<span class="tag t-m">موصى به</span>' : ''}
+          ${ic('chev', 16, 'style="color:var(--faint);transform:rotate(-90deg)"')}
+        </summary>
+        <div class="stack" style="gap:12px;padding:4px 14px 14px;border-top:1px solid var(--line)">
+          <div class="grid g2" style="padding-top:10px">${sec.fields.map(f => fieldHTML(path + '.' + f.k, f, it[f.k])).join('')}</div>
+          <div class="row">
+            <button type="button" class="btn sm" data-act="cfg-move" data-k="${path}" data-dir="-1" ${i === 0 ? 'aria-disabled="true"' : ''}>${ic('up', 15)}أعلى</button>
+            <button type="button" class="btn sm" data-act="cfg-move" data-k="${path}" data-dir="1" ${i === arr.length - 1 ? 'aria-disabled="true"' : ''}>${ic('down', 15)}أسفل</button>
+            <button type="button" class="btn sm" data-act="cfg-dup" data-k="${path}">${ic('copy', 15)}نسخ</button>
+            <button type="button" class="btn sm" data-act="cfg-del" data-k="${path}" style="margin-inline-start:auto;color:#FF6B81;border-color:var(--redline)">${ic('trash', 15)}حذف</button>
+          </div>
+        </div>
+      </details>`; }).join('')}
+      ${arr.length ? '' : `<div class="empty" style="padding:18px"><b>لا توجد عناصر</b><span class="muted" style="font-size:13px">أضف أول ${sec.item} بالزر أدناه.</span></div>`}
+      <button type="button" class="btn y" data-act="cfg-add" data-k="${sec.id}" style="align-self:flex-start">${ic('plus', 16)}إضافة ${sec.item}</button></div>`;
+  } else if (sec.kind === 'backup') {
+    body = `<div class="grid g2">
+      <div class="stack"><label for="cfg-export" class="lbl" style="color:var(--muted)">الإعدادات الحالية كنص</label><textarea id="cfg-export" rows="12" readonly dir="ltr" style="font-family:var(--f-mono);font-size:11.5px">${esc(JSON.stringify(CFG, null, 2))}</textarea><button type="button" class="btn sm" data-act="cfg-copy" style="align-self:flex-start">${ic('copy', 15)}نسخ النص</button></div>
+      <div class="stack"><label for="cfg-import" class="lbl" style="color:var(--muted)">الصق نسخة محفوظة هنا</label><textarea id="cfg-import" rows="12" dir="ltr" style="font-family:var(--f-mono);font-size:11.5px" placeholder="{ ... }"></textarea><button type="button" class="btn sm y" data-act="cfg-import" style="align-self:flex-start">استعادة من النص</button></div>
+    </div>
+    <div class="banner r" style="justify-content:space-between"><span style="flex:1 1 260px">إعادة كل المحتوى إلى الإعدادات الأصلية للعرض. لن يُنشر شيء حتى تضغطي «حفظ ونشر».</span><button type="button" class="btn sm" data-act="cfg-reset" style="color:#FF6B81;border-color:var(--redline)">${RESET_ARMED ? 'اضغطي مرة أخرى للتأكيد' : 'استعادة الإعدادات الأصلية'}</button></div>`;
+  }
+  return `
+  <section class="card">
+    <div class="row between" style="align-items:flex-start">
+      <div class="stack" style="gap:4px"><h2 class="title-l">الإعدادات — تحكّم كامل في محتوى العرض</h2>
+        <p class="muted" style="font-size:13px;line-height:1.7;max-width:70ch">كل تغيير يظهر فورًا في الشاشات عندك.${CAN_EDIT && !READONLY ? ' اضغطي «حفظ ونشر للجميع» ليصل إلى كل من يفتح الرابط.' : ''}</p></div>
+      <div class="row"><span class="tag ${status[0]}" style="font-size:12px;padding:5px 10px">${status[1]}</span>
+        ${CFG_DIRTY && !PUBLISHING ? `<button type="button" class="btn sm" data-act="cfg-discard">تجاهل التغييرات</button>` : ''}
+        ${CAN_EDIT && !READONLY ? `<button type="button" class="btn primary" data-act="cfg-publish" aria-disabled="${!CFG_DIRTY || PUBLISHING}">حفظ ونشر للجميع</button>` : ''}</div>
+    </div>
+    ${CAN_EDIT && !READONLY ? '' : `<div class="banner y">${ic('warn', 18, 'style="color:var(--yellow)"')}<span style="flex:1 1 260px">وضع التجربة: يمكنك تعديل كل شيء وإضافة بياناتك، وتظهر التغييرات فورًا عندك. تُحفظ في هذا المتصفح فقط ولا تصل إلى الآخرين، لأن النشر للجميع متاح لصاحبة العرض.</span></div>`}
+  </section>
+  <div class="grid" style="grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:16px" id="set-grid">
+    <nav class="card" style="padding:8px;gap:2px;align-self:start" aria-label="أقسام الإعدادات">
+      ${SECTIONS.map(x => `<button type="button" class="list-btn" data-act="set-tab" data-k="${x.id}" ${x.id === sec.id ? 'aria-current="page"' : ''} style="align-items:center;border-color:transparent;background:${x.id === sec.id ? 'rgba(255,46,77,.12)' : 'transparent'};padding:9px 12px">${ic(x.icon, 17, `style="color:${x.id === sec.id ? 'var(--red)' : 'var(--faint)'}"`)}<span style="flex-grow:1;font-size:13.5px;font-weight:${x.id === sec.id ? 600 : 500}">${x.title}</span>${x.kind === 'list' ? `<span class="mono faint" style="font-size:11px">${(CFG[x.id] || []).length}</span>` : ''}</button>`).join('')}
+    </nav>
+    <section class="card" style="min-width:0">
+      <div class="stack" style="gap:4px"><h2 class="title-l" style="font-size:18px">${sec.title}</h2><p class="muted" style="font-size:13px;line-height:1.7">${sec.desc}</p></div>
+      ${body}
+    </section>
+  </div>`;
+};
+function markDirty() { CFG_DIRTY = true; saveDraft(); const t = document.querySelector('[data-act="cfg-publish"]'); if (t && !READONLY) t.setAttribute('aria-disabled', 'false'); }
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.cfg) return;
+  if (el.dataset.t === 'bool' || el.dataset.t === 'select') return;
+  setPath(CFG, el.dataset.cfg, parseField(el)); markDirty();
+  if (el.dataset.t === 'color') { applyTheme(); const s = el.parentElement.querySelector('.mono'); if (s) s.textContent = el.value; }
+});
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.cfg) return;
+  if (el.dataset.t !== 'bool' && el.dataset.t !== 'select') return;
+  setPath(CFG, el.dataset.cfg, parseField(el)); markDirty();
+  const fid = el.id; render(); const back = fid && document.getElementById(fid); if (back) back.focus({ preventScroll: true });
+});
+document.addEventListener('toggle', (e) => { const d = e.target; if (d.dataset && d.dataset.path) { if (d.open) OPEN.add(d.dataset.path); else OPEN.delete(d.dataset.path); } }, true);
+function listOf(path) { const [sec] = path.split('.'); return CFG[sec]; }
+function settingsHandle(act, k, el) {
+  if (act === 'set-tab') { S.setTab = k; RESET_ARMED = false; go('settings'); return true; }
+  if (act === 'cfg-add') { const sec = SECTIONS.find(x => x.id === k); CFG[k] = CFG[k] || []; CFG[k].push(clone(sec.tpl)); OPEN.add(k + '.' + (CFG[k].length - 1)); markDirty(); render(); const d = document.querySelector(`details[data-path="${k}.${CFG[k].length - 1}"]`); if (d) { d.scrollIntoView({ block: 'center' }); const f = d.querySelector('input,textarea,select'); if (f) f.focus({ preventScroll: true }); } return true; }
+  if (act === 'cfg-del') { const arr = listOf(k), i = +k.split('.')[1]; arr.splice(i, 1); OPEN.clear(); markDirty(); render(); toast('تم الحذف — لن يُنشر حتى تضغطي «حفظ ونشر»'); return true; }
+  if (act === 'cfg-dup') { const arr = listOf(k), i = +k.split('.')[1]; arr.splice(i + 1, 0, clone(arr[i])); OPEN.clear(); OPEN.add(k.split('.')[0] + '.' + (i + 1)); markDirty(); render(); return true; }
+  if (act === 'cfg-move') { const arr = listOf(k), i = +k.split('.')[1], j = i + (+el.dataset.dir); if (j < 0 || j >= arr.length) return true; [arr[i], arr[j]] = [arr[j], arr[i]]; OPEN.clear(); OPEN.add(k.split('.')[0] + '.' + j); markDirty(); render(); return true; }
+  if (act === 'cfg-discard') { CFG = mergeCfg(CFG_DEFAULT, readEmbedded()); CFG_DIRTY = false; clearDraft(); applyTheme(); render(); toast('عادت الإعدادات إلى آخر نسخة منشورة'); return true; }
+  if (act === 'cfg-reset') { if (!RESET_ARMED) { RESET_ARMED = true; render(); return true; } RESET_ARMED = false; CFG = clone(CFG_DEFAULT); markDirty(); applyTheme(); render(); toast('استُعيدت الإعدادات الأصلية — اضغطي «حفظ ونشر» لاعتمادها'); return true; }
+  if (act === 'cfg-copy') { const ta = document.getElementById('cfg-export'); const done = () => toast('نُسخ النص'); try { navigator.clipboard.writeText(ta.value).then(done, () => { ta.focus(); ta.select(); toast('النص محدد — انسخيه يدويًا'); }); } catch (e2) { ta.focus(); ta.select(); toast('النص محدد — انسخيه يدويًا'); } return true; }
+  if (act === 'cfg-import') { const raw = document.getElementById('cfg-import').value.trim(); try { const v = JSON.parse(raw); if (!v || typeof v !== 'object' || Array.isArray(v)) throw 0; CFG = mergeCfg(CFG_DEFAULT, v); markDirty(); applyTheme(); render(); toast('استُعيدت الإعدادات من النص'); } catch (e2) { toast('النص غير صالح — تأكدي أنك لصقت نسخة كاملة تبدأ بـ { وتنتهي بـ }'); } return true; }
+  if (act === 'cfg-publish') { if (CFG_DIRTY && !PUBLISHING && !READONLY) publishCfg(); return true; }
+  return false;
+}
+
+/* ---- saving: the page republishes itself with the new settings embedded ---- */
+const HEAD_HTML = '<title>NAIOSH Intelligence</title>\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">\n';
+const SHELL_HTML = '<div class="app" id="app" dir="rtl" lang="ar">\n  <aside class="side" id="side" aria-label="القائمة الرئيسية"></aside>\n  <div class="main">\n    <header class="top" id="top"></header>\n    <main class="view" id="view" tabindex="-1"></main>\n  </div>\n</div>\n<div id="tour"></div>\n<div id="toast" aria-live="polite"></div>\n';
+function buildDoc() {
+  const ST = 'scr' + 'ipt';
+  const resetCss = (document.head.querySelector('style') || {}).textContent || ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.5 system-ui,sans-serif;background:#fafaf7}img{max-width:100%}[hidden]{display:none!important}';
+  const css = document.getElementById('app-css').textContent;
+  const json = JSON.stringify(CFG).replace(/</g, '\\u003c');
+  const scripts = Array.from(document.querySelectorAll(ST + '[data-app]')).map(x => '<' + ST + ' data-app="">' + x.textContent + '</' + ST + '>').join('\n');
+  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + resetCss + '</style></head><body>'
+    + HEAD_HTML + '<style id="app-css">' + css + '</style>\n'
+    + '<' + ST + ' type="application/json" id="naiosh-config">' + json + '</' + ST + '>\n'
+    + SHELL_HTML + scripts + '\n</body></html>';
+}
+async function publishCfg() {
+  const art = (window.claude && window.claude.use) ? await window.claude.use('artifact') : null;
+  if (!art) { toast('النشر متاح فقط من صفحة الرابط لمن يملك صلاحية التعديل. تغييراتك محفوظة في هذا المتصفح.'); return; }
+  PUBLISHING = true; render();
+  try { sessionStorage.setItem('naiosh-published', '1'); sessionStorage.setItem('naiosh-force-draft', '1'); } catch (e) {}
+  try {
+    await art.publish(buildDoc());
+    try { sessionStorage.removeItem('naiosh-force-draft'); } catch (e) {}
+    clearDraft();
+  } catch (err) {
+    PUBLISHING = false;
+    try { sessionStorage.removeItem('naiosh-published'); } catch (e) {}
+    const code = err && err.code;
+    if (code === 'conflict') { toast('حُدّثت الصفحة من مكان آخر — ستُعاد تحميلها مع الاحتفاظ بتغييراتك'); return; }
+    try { sessionStorage.removeItem('naiosh-force-draft'); } catch (e) {}
+    if (code === 'not_writer' || code === 'not_granted') { READONLY = true; toast('لا تملكين صلاحية النشر في هذا العرض. التغييرات محفوظة في متصفحك.'); }
+    else if (code === 'capability_disabled' || code === 'not_declared') toast('النشر غير متاح في هذا العرض.');
+    else if (code === 'rate_limited') toast('نشرات كثيرة متتالية — انتظري دقيقة ثم أعيدي المحاولة.');
+    else if (code === 'too_large') toast('المحتوى أكبر من المسموح — قلّلي النصوص الطويلة.');
+    else toast('تعذّر النشر الآن' + (code ? ' (' + code + ')' : '') + '. تغييراتك محفوظة في متصفحك.');
+    render();
+  }
+}
+(function forceDraft() {
+  try {
+    if (sessionStorage.getItem('naiosh-force-draft') === '1') {
+      sessionStorage.removeItem('naiosh-force-draft');
+      const d = JSON.parse(localStorage.getItem('naiosh-cfg-draft') || 'null');
+      if (d && d.cfg && sessionStorage.getItem('naiosh-published') !== '1') { CFG = mergeCfg(CFG_DEFAULT, d.cfg); CFG_DIRTY = true; }
+    }
+  } catch (e) {}
+})();
+async function detectEditor() {
+  const has = () => window.claude && typeof window.claude.use === 'function';
+  if (!has()) await new Promise(r => setTimeout(r, 1500));
+  if (!has()) { CAN_EDIT = true; render(); return; }
+  try { const u = await window.claude.use('user'); CAN_EDIT = u ? !!(await u.canEdit()) : false; } catch (e) { CAN_EDIT = false; }
+  render();
+}
+</script>

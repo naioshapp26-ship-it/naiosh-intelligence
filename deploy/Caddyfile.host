@@ -1,0 +1,9 @@
+# For a server without Docker: Caddy installed on the host, app running via systemd on port 3000.
+# Replace app.example.com with your domain, copy to /etc/caddy/Caddyfile, then: sudo systemctl reload caddy
+app.example.com {
+	encode zstd gzip
+	request_body {
+		max_size 600MB
+	}
+	reverse_proxy 127.0.0.1:3000
+}

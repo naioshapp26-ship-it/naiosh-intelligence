@@ -1,0 +1,328 @@
+
+<script data-app="">
+/* ================= DIA additions: command center intel, quality, context, analysis, root cause, what-if, memory, ledger ================= */
+function healthNow() {
+  const dims = (CFG.health || []).map(d => {
+    let v = +d.score || 0;
+    if (S.measured && d.boost) v = Math.min(100, v + (+d.boost || 0));
+    return { ...d, v };
+  });
+  const avg = dims.length ? Math.round(dims.reduce((a, b) => a + b.v, 0) / dims.length) : 0;
+  const st = avg >= 80 ? ['مستقرة', 'var(--green)', 't-s'] : avg >= 65 ? ['تحتاج انتباه', 'var(--yellow)', 't-m'] : ['حرجة', 'var(--red)', 't-c'];
+  return { dims, avg, st };
+}
+function monitorItems() {
+  const items = [
+    { k: 'تغير مهم', t: 't-c', title: 'انخفاض مؤشر أداء الفرع الشمالي 17% خلال 6 أسابيع', ev: 'الدليل: ERP + HR · محرك الشذوذ · ثقة 81%', r: 'analysis' },
+    { k: 'خطر محتمل', t: 't-h', title: 'تسرّب الكفاءات من الفرع (R-01) — السرعة: سريعة', ev: 'السبب: ضغط العمل بعد موجة مغادرة', r: 'risks' },
+    { k: 'فرصة محتملة', t: 't-s', title: 'نقل ممارسات الفرع الجنوبي الأعلى أداءً', ev: 'البيانات: حالة مطابقة CNS-2025-114 · تعافٍ خلال 6 أسابيع', r: 'risks' },
+    { k: 'سؤال يحتاج إجابة', t: 't-m', title: S.qDone ? 'لا توجد بيانات كافية عن الغياب لتثبيت استنتاج الإنتاجية' : 'ثلاث فجوات بيانات تمنع تشخيصًا موثوقًا', ev: S.qDone ? 'البيانات الناقصة: سجل الغياب الشهري' : 'البيانات الناقصة: الدوران، التدريب، الشكاوى', r: S.qDone ? 'rootcause' : 'questionnaire' },
+    { k: 'توصية', t: 't-i', title: 'REC-2026-118: ' + (SOLS_FN().find(s => s.rec) || SOLS_FN()[0] || { name: '—' }).name, ev: 'الحل المقترح · Score ' + ((SOLS_FN().find(s => s.rec) || {}).score || '—'), r: 'solutions' }
+  ];
+  if (!S.decided) items.push({ k: 'قرار مطلوب منك', t: 't-c', title: 'اعتماد التوصية REC-2026-118 لـ CNS-001', ev: 'مستوى القرار D3 · الصلاحية: مطابقة', r: 'decision', decision: true });
+  else items.push({ k: 'قرار مسجّل', t: 't-s', title: 'DEC-2026-041: ' + choiceLabel(), ev: 'محفوظ في ذاكرة القرار مع المبرر', r: 'decision' });
+  if (approved() && !S.measured) items.push({ k: 'متابعة التنفيذ', t: 't-h', title: 'إجراء متأخر 4 أيام في خطة AP-2026-077', ev: 'صُعّد تلقائيًا إلى مدير القطاع', r: 'execution' });
+  if (S.measured) items.push({ k: impactOf().ratio >= 100 ? 'نتيجة كما المتوقع' : 'النتيجة أقل من المتوقع', t: impactOf().ratio >= 100 ? 't-s' : 't-m', title: 'تحقق ' + impactOf().ratio + '% من التحسن المتوقع', ev: 'المؤشر ' + impactOf().act + ' مقابل المتوقع ' + impactOf().exp, r: 'impact' });
+  if (S.lessonApproved) items.push({ k: 'تعلمنا شيئًا جديدًا', t: 't-s', title: 'LSN-2026-093 دخل الذاكرة المؤسسية', ev: 'سيُقترح تلقائيًا في الحالات المشابهة', r: 'memory' });
+  return items;
+}
+function homeIntel() {
+  const h = healthNow(), items = monitorItems();
+  const Q12 = [['حالة المؤسسة الآن', ''], ['ماذا يحدث؟', 'analysis'], ['لماذا يحدث؟', 'rootcause'], ['ماذا سيحدث؟', 'foresight'], ['أين المخاطر؟', 'risks'], ['أين الفرص؟', 'risks'], ['ماذا ينبغي أن نفعل؟', 'solutions'], ['ماذا يحدث إذا فعلنا ذلك؟', 'whatif'], ['ماذا تم تنفيذه؟', 'execution'], ['ما الأثر؟', 'impact'], ['ماذا تعلمنا؟', 'learning'], ['ماذا يجب أن نغيّر؟', 'memory']];
+  return `
+  <section class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:16px">
+    <div class="card" style="border-color:var(--yellowline)">
+      <div class="row between" style="align-items:flex-start">
+        <div class="stack" style="gap:3px"><span class="eyebrow">PROACTIVE INTELLIGENCE MONITOR · مراقب الذكاء المؤسسي</span>
+          <h2 class="title-l">د. عدنان، اكتشفت ${items.length} أمور مهمة منذ آخر مراجعة</h2></div>
+        <div class="row" style="gap:6px">${CFG.command.map(k => `<button type="button" class="chip" data-go="${k.route || 'home'}"><span class="dot" style="background:${{ g: 'var(--green)', y: 'var(--yellow)', o: 'var(--orange)', r: 'var(--red)', b: 'var(--blue)' }[k.color] || 'var(--yellow)'}"></span>${esc(k.label)} <b class="big">${k.auto === 'decisions' && S.decided ? Math.max(0, (parseInt(k.value, 10) || 0) - 1) : esc(k.value)}</b></button>`).join('')}</div>
+      </div>
+      <div class="grid g2" style="gap:8px">
+        ${items.map((it, i) => `<div class="sub" style="flex-direction:row;align-items:flex-start;gap:12px;${it.decision ? 'border-color:var(--redline);background:var(--redbg)' : ''}">
+          <span class="mono" style="color:var(--yellow);font-size:12px;width:16px;padding-top:3px">${i + 1}</span>
+          <span class="stack" style="gap:4px;flex-grow:1;min-width:0"><span class="row" style="gap:8px"><span class="tag ${it.t}">${it.k}</span></span>
+            <b style="font-size:13.5px;line-height:1.55">${esc(it.title)}</b><span class="faint" style="font-size:11.5px">${esc(it.ev)}</span>
+            ${it.decision ? `<span class="row" style="gap:6px;padding-top:4px"><button type="button" class="btn sm primary" data-go="decision">اعتماد</button><button type="button" class="btn sm" data-go="decision">رفض</button><button type="button" class="btn sm y" data-go="request">طلب تحليل إضافي</button></span>` : ''}
+          </span>
+          ${it.decision ? '' : `<button type="button" class="btn link sm" data-go="${it.r}" aria-label="فتح: ${esc(it.k)}" style="flex-shrink:0">${ic('chev', 16)}</button>`}
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="row between"><h2 class="h-sec">مؤشر صحة المؤسسة</h2><span class="tag ${h.st[2]}" style="font-size:12px;padding:4px 10px">${h.st[0]}</span></div>
+      <div class="row nowrap" style="align-items:center;gap:16px">
+        <svg width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="مؤشر صحة المؤسسة ${h.avg} من 100"><circle cx="48" cy="48" r="40" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="${h.st[1]}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(h.avg / 100) * 251.3} 251.3" transform="rotate(-90 48 48)"/><text x="48" y="55" text-anchor="middle" style="fill:var(--fg);font-family:var(--f-display);font-size:24px;font-weight:700">${h.avg}</text></svg>
+        <span class="muted" style="font-size:12.5px;line-height:1.7">مؤشر مركّب من ${h.dims.length} أبعاد. اضغط على أي بُعد للنزول إلى السبب التفصيلي.</span>
+      </div>
+      <div class="stack" style="gap:5px">${h.dims.map(d => { const c = d.v >= 80 ? 'var(--green)' : d.v >= 65 ? 'var(--yellow)' : 'var(--red)'; return `<button type="button" class="row nowrap hrow" data-go="${d.route || 'home'}" style="gap:10px;background:none;border:0;padding:3px 0;color:var(--fg);text-align:right;width:100%"><span style="width:96px;font-size:12.5px" class="soft">${esc(d.label)}</span><span class="bar" style="height:6px"><i style="width:${d.v}%;background:${c}"></i></span><span class="mono" style="width:26px;font-size:12px;color:${c};text-align:left">${d.v}</span></button>`; }).join('')}</div>
+    </div>
+  </section>
+  <section class="card" style="gap:10px">
+    <div class="row between"><h2 class="h-sec">الأسئلة الاثنا عشر لمركز القيادة</h2><span class="lbl">كل سؤال يفتح الوحدة التي تجيب عنه</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+      ${Q12.map(([q, r], i) => r ? `<button type="button" class="kpi" data-go="${r}" style="gap:4px;padding:11px 12px"><span class="mono" style="color:var(--yellow);font-size:11px">${String(i + 1).padStart(2, '0')}</span><b style="font-size:13px">${q}</b></button>`
+        : `<div class="kpi" style="gap:4px;padding:11px 12px;border-color:${h.st[1]}"><span class="mono" style="color:var(--yellow);font-size:11px">01</span><b style="font-size:13px">${q}</b><span style="font-size:11.5px;color:${h.st[1]}">${h.st[0]} · ${h.avg}</span></div>`).join('')}
+    </div>
+  </section>`;
+}
+
+/* ---------- DIA-04 data quality ---------- */
+VIEWS.quality = () => {
+  const src = CFG.sources.filter(s => s.st !== 'off'), avgDim = (i) => src.length ? Math.round(src.reduce((a, s) => a + (+s.d[i] || 0), 0) / src.length) : 0;
+  const overall = src.length ? Math.round(src.reduce((a, s) => a + s.d.reduce((x, y) => x + y, 0) / 7, 0) / src.length) : 0;
+  const recs = (s) => parseInt(String(s.rec).replace(/[^\d]/g, ''), 10) || 0;
+  const checks = ['بيانات مفقودة', 'مكررة', 'قيم شاذة', 'تعارضات', 'قديمة', 'موثوقية المصدر'];
+  const cell = (s, i) => {
+    if (s.st === 'off') return '<span class="faint">—</span>';
+    const n = recs(s), d = s.d;
+    const v = [Math.round(n * (100 - d[0]) / 1000), Math.round(n * (100 - d[4]) / 2000), Math.round(n * (100 - d[1]) / 4000), Math.round(n * (100 - d[2]) / 6000), d[3] < 70 ? 'متأخرة' : 'حديثة', d[6] + '%'][i];
+    const bad = i === 4 ? d[3] < 70 : i === 5 ? d[6] < 85 : (i === 0 ? d[0] < 80 : false);
+    return `<span class="mono" style="font-size:12px;color:${bad ? '#FF6B81' : 'var(--soft)'}">${typeof v === 'number' ? v.toLocaleString('en') : v}</span>`;
+  };
+  const issues = [
+    ['Q-01', 'ساعات التدريب غير مسجلة لـ 42% من موظفي الفرع', 'التدريب LMS', 'منخفض', 't-h'],
+    ['Q-02', 'آخر مزامنة للموارد البشرية قبل 9 أيام', 'الموارد البشرية', 'تنبيه', 't-m'],
+    ['Q-03', '1,240 سجل عميل مكرر بين الفروع', 'إدارة العملاء CRM', 'تنبيه', 't-m'],
+    ['Q-04', 'موصل خدمة العملاء غير متصل', 'خدمة العملاء', 'حرج', 't-c']
+  ];
+  S.qfix = S.qfix || {};
+  return `
+  <section class="grid g4">${[['جودة البيانات', overall], ['الاكتمال', avgDim(0)], ['الحداثة', avgDim(3)], ['الاتساق', avgDim(2)]].map(([l, v]) => `<div class="kpi"><span class="lbl" style="color:var(--muted)">${l}</span><span class="v" style="color:${v >= 90 ? 'var(--greenfg)' : v >= 80 ? 'var(--yellow)' : 'var(--orangefg)'}">${v}%</span><span class="bar" style="height:4px"><i style="width:${v}%;background:${v >= 90 ? 'var(--green)' : v >= 80 ? 'var(--yellow)' : 'var(--orange)'}"></i></span></div>`).join('')}</section>
+  <section class="card"><div class="row between"><h2 class="h-sec">فحوصات الجودة لكل مصدر — قبل السماح بأي تحليل</h2><span class="lbl">Missing · Duplicate · Outliers · Conflicts · Stale · Reliability</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>المصدر</th>${checks.map(c => `<th>${c}</th>`).join('')}<th>البوابة</th></tr></thead><tbody>
+      ${CFG.sources.map(s => `<tr><td><b>${esc(s.name)}</b></td>${checks.map((c, i) => `<td>${cell(s, i)}</td>`).join('')}<td><span class="tag ${(GATE[s.g] || GATE.warn)[1]}">${(GATE[s.g] || GATE.warn)[0]}</span></td></tr>`).join('')}
+    </tbody></table></div></section>
+  <section class="split">
+    <div class="card"><h2 class="h-sec">مشكلات الجودة المفتوحة</h2>
+      ${issues.map(([id, t, s, l, tg]) => `<div class="sub" style="flex-direction:row;align-items:center;gap:12px"><span class="mono faint" style="font-size:11px">${id}</span><span class="stack" style="gap:2px;flex-grow:1"><b style="font-size:13px">${t}</b><span class="faint" style="font-size:11.5px">${s}</span></span>${S.qfix[id] ? '<span class="tag t-i">طلب إصلاح مُرسل</span>' : `<span class="tag ${tg}">${l}</span><button type="button" class="btn sm" data-act="qfix" data-k="${id}">طلب إصلاح</button>`}</div>`).join('')}
+    </div>
+    <div class="card warn"><h2 class="h-sec">موثوقية التحليل لا تُخمَّن، بل تُحسب</h2>
+      <p style="font-size:13px;line-height:1.8;color:var(--fg2)">موثوقية أي نتيجة تحليل = جودة المصدر × الاكتمال × الدقة × الحداثة، ناقص أثر التعارضات، مضروبًا في قوة الأدلة. لذلك قد تكون النتيجة منطقية لكن موثوقيتها منخفضة لأن البيانات ناقصة.</p>
+      <div class="flow">${['مصدر البيانات', 'تاريخها', 'الاكتمال', 'الجودة', 'حجم العينة', 'طريقة التحليل', 'الافتراضات', 'القيود', 'درجة الثقة'].map((x, i, a) => `<span>${x}</span>${i < a.length - 1 ? '<i>←</i>' : ''}`).join('')}</div>
+      <button type="button" class="btn sm" data-go="data" style="align-self:flex-start">مصادر البيانات وبوابة الجودة</button>
+    </div>
+  </section>`;
+};
+
+/* ---------- DIA-05 context ---------- */
+VIEWS.context = () => {
+  const ctx = [['من؟', 'د. عدنان — صاحب القرار · مدير الفرع الجديد · 38 موظفًا'], ['ماذا؟', 'انخفاض مؤشر أداء الفرع 17% خلال 6 أسابيع'], ['متى؟', 'بدأ في الأسبوع السابع من الربع الثالث 2026'], ['أين؟', 'الفرع الشمالي — قطاع التشغيل'], ['لماذا يهم؟', 'الفرع يمثل 14% من إيرادات القطاع'], ['في أي نظام؟', 'ERP · الموارد البشرية · التدريب · CRM'], ['في أي ظرف؟', S.ans.q2 ? 'إفادة: ' + S.ans.q2 : 'بعد موجة مغادرة وتغيّر في الإدارة (غير مؤكد)'], ['ما النتيجة المطلوبة؟', S.ans.q6 || 'غير محددة بعد'], ['ما حدود صلاحية هذا السياق؟', 'الربع الثالث والرابع 2026 · الفرع الشمالي فقط']];
+  const done = ctx.filter(c => !/غير (مؤكد|محددة)/.test(c[1])).length;
+  return `${stepper(1)}
+  <section class="split">
+    <div class="card"><div class="row between"><h2 class="h-sec">سياق الاستشارة CNS-001</h2><span class="eyebrow">CONTEXT RULE 5.4.18.1</span></div>
+      <dl class="kv" style="margin:0;font-size:13.5px;gap:10px 18px">${ctx.map(([k, v]) => `<dt>${k}</dt><dd style="${/غير (مؤكد|محددة)/.test(v) ? 'color:var(--yellow)' : ''}">${esc(v)}</dd>`).join('')}</dl>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card tight"><span class="lbl" style="color:var(--muted)">اكتمال السياق</span><div class="row nowrap" style="align-items:baseline"><b class="big" style="font-size:34px;color:${done === ctx.length ? 'var(--greenfg)' : 'var(--yellow)'}">${done}/${ctx.length}</b><span class="faint" style="font-size:12px">${done === ctx.length ? 'كافٍ لتسجيله ذاكرةً مؤسسية' : 'لا ذاكرة بلا سياق — الحالة: غير مكتمل'}</span></div><span class="bar" style="height:6px"><i style="width:${(done / ctx.length) * 100}%;background:var(--yellow)"></i></span>
+        ${done < ctx.length ? '<button type="button" class="btn sm primary" data-go="questionnaire">استكمال السياق عبر الاستبيان</button>' : ''}</div>
+      <div class="card tight"><b style="font-size:13.5px">سياق مرتبط</b>
+        ${[['قرار سابق', 'DEC-2025-114 · تراجع الفرع الجنوبي', 'memory'], ['استشارة مشابهة', 'CNS-003 · دوران الموظفين الجدد', 'consult'], ['سياسة', 'POL-HR-07 · التدريب والتطوير', 'knowledge'], ['مؤشر', 'مؤشر أداء الفروع · أسبوعي', 'analysis']].map(([k, v, r]) => `<button type="button" class="list-btn" data-go="${r}" style="padding:8px 10px;align-items:center"><span class="tag t-n">${k}</span><span style="font-size:12.5px;flex-grow:1">${v}</span></button>`).join('')}</div>
+    </div>
+  </section>
+  <section class="card"><h2 class="h-sec">الخط الزمني للأحداث المؤسسية</h2>
+    <div class="stack" style="gap:0">${[['يونيو', 'آخر مراجعة شهرية لمؤشرات الفرع', 'faint'], ['يوليو', 'انخفاض ساعات التدريب من 8 إلى 3 شهريًا', 'yellow'], ['أغسطس', 'تغيّر مدير الفرع + مغادرة 4 إلى 8 موظفين', 'yellow'], ['الأسبوع 7', 'بداية الانحراف: محرك الشذوذ يرصد التغير', 'red'], ['سبتمبر', 'الإنذار المبكر يفتح الاستشارة الاستباقية CNS-001', 'red']].map(([d, t, c]) => `<div class="row nowrap" style="gap:14px;padding:10px 0;border-bottom:1px solid #1A1A1F"><span class="mono" style="width:80px;font-size:12px;color:var(--${c === 'faint' ? 'faint' : c})">${d}</span><span class="dot" style="background:var(--${c === 'faint' ? 'ghost' : c})"></span><span style="font-size:13px">${t}</span></div>`).join('')}</div></section>`;
+};
+
+/* ---------- DIA-07 analysis: patterns, comparisons, relationships ---------- */
+const CMP = [['الحالي ↔ السابق', 'الربع الحالي', 64, 'الربع السابق', 78], ['الفرع ↔ الفرع', 'الفرع الشمالي', 64, 'الفرع الجنوبي', 81], ['الخطة ↔ الواقع', 'الواقع', 64, 'الخطة', 80], ['المؤشر ↔ المستهدف', 'المؤشر', 64, 'المستهدف', 78], ['السنة ↔ السنة', '2026', 64, '2025', 76], ['المتوقع ↔ الفعلي', 'الفعلي', 64, 'المتوقع', 75], ['المؤسسة ↔ معيار مرجعي', 'المؤسسة', 72, 'معيار القطاع', 74]];
+VIEWS.analysis = () => {
+  const ci = S.cmp || 0, c = CMP[ci], gap = c[2] - c[4];
+  const pats = [['الاتجاهات', 'هبوط مستمر منذ 6 أسابيع', 1], ['التغيرات المفاجئة', 'انكسار في الأسبوع السابع', 1], ['القيم الشاذة', '3 أسابيع خارج النطاق الطبيعي', 1], ['الموسمية', 'لا يفسّرها نمط موسمي', 0], ['الارتباطات', 'التدريب ↔ الإنتاجية: 0.71', 1], ['الانحراف عن الخطة', '−16 نقطة عن الخطة', 1], ['التكرار', 'نمط مشابه في 2025', 1], ['الفجوات', '3 فجوات بيانات', 1], ['العلاقات الخفية', 'تأخر التسليم ↔ فقد العملاء', 1], ['مؤشرات الإنذار المبكر', 'ارتفاع العمل الإضافي 34%', 1]];
+  return `${stepper(3)}
+  <section class="card"><div class="row between"><h2 class="h-sec">محرك اكتشاف الأنماط — ما الذي وجده النظام دون أن يُسأل؟</h2><span class="eyebrow">PATTERN DISCOVERY</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">${pats.map(([n, d, f]) => `<div class="sub" style="${f ? 'border-color:var(--yellowline)' : ''}"><div class="row between"><b style="font-size:13px">${n}</b>${ic(f ? 'check' : 'x', 14, `style="color:${f ? 'var(--yellow)' : 'var(--ghost)'};stroke-width:2.6"`)}</div><span style="font-size:12px;color:${f ? 'var(--fg2)' : 'var(--faint)'}">${d}</span></div>`).join('')}</div></section>
+  <section class="split">
+    <div class="card"><div class="row between"><h2 class="h-sec">محرك المقارنة الذكي — الفجوة لا الجدول</h2></div>
+      <div class="tabs" role="tablist">${CMP.map((x, i) => `<button type="button" role="tab" aria-selected="${i === ci}" data-act="cmp" data-k="${i}">${x[0]}</button>`).join('')}</div>
+      <div class="stack" style="gap:12px;padding-top:6px">
+        ${[[c[1], c[2], 'var(--red)'], [c[3], c[4], '#6E6E78']].map(([l, v, col]) => `<div class="row nowrap"><span style="width:110px;font-size:13px">${l}</span><span class="bar" style="height:14px;border-radius:7px"><i style="width:${v}%;background:${col}"></i></span><b class="big" style="width:34px;text-align:left">${v}</b></div>`).join('')}
+        <div class="banner ${gap < -5 ? 'r' : 'y'}"><b class="big" style="font-size:20px;color:${gap < 0 ? '#FF6B81' : 'var(--greenfg)'}">${gap > 0 ? '+' : ''}${gap}</b><span style="flex:1 1 220px;font-size:13px">الفجوة الذكية: ${gap < -5 ? 'فجوة جوهرية تستحق التشخيص' : 'فجوة صغيرة ضمن التذبذب الطبيعي'}${ci === 1 ? ' — والفرع الجنوبي مرّ بالنمط نفسه وتعافى.' : '.'}</span>${gap < -5 ? '<button type="button" class="btn sm y" data-go="rootcause">لماذا؟</button>' : ''}</div>
+      </div>
+    </div>
+    <div class="card"><h2 class="h-sec">محرك اكتشاف العلاقات</h2>
+      <div class="stack" style="gap:4px;align-items:stretch">${['انخفاض المبيعات', 'ارتفاع وقت التسليم', 'زيادة الشكاوى', 'انخفاض رضا العملاء', 'زيادة فقد العملاء'].map((x, i, a) => `<div class="sub" style="padding:8px 12px;text-align:center"><b style="font-size:13px">${x}</b></div>${i < a.length - 1 ? '<span style="text-align:center;color:var(--ghost)">↓</span>' : ''}`).join('')}</div>
+      <p class="muted" style="font-size:12.5px;line-height:1.7">تم اكتشاف علاقة محتملة بين تأخر التسليم وانخفاض الاحتفاظ بالعملاء. العلاقة لا تُعتبر حقيقة تلقائيًا.</p>
+      ${S.relCheck ? '<span class="tag t-i" style="align-self:flex-start">قيد التحقق — L1 ادعاء ← بانتظار الأدلة</span>' : '<button type="button" class="btn sm primary" data-act="relcheck" style="align-self:flex-start">طلب التحقق من العلاقة</button>'}
+    </div>
+  </section>
+  <section class="card warn"><h2 class="h-sec">ما الذي لم يحدث كما كان متوقعًا؟</h2>
+    <div class="grid g3">${[['التوقع', 'مؤشر الفرع 75 هذا الربع'], ['الفعلي', '64 (−11)'], ['أول انحراف', 'الأسبوع السابع — قبل أي تقرير شهري']].map(([k, v]) => `<div class="sub" style="background:var(--sunk)"><span class="lbl">${k}</span><b style="font-size:14px">${v}</b></div>`).join('')}</div>
+    <div class="row"><button type="button" class="btn sm" data-go="diagnosis">التشخيص</button><button type="button" class="btn sm" data-go="rootcause">السبب الجذري</button></div></section>`;
+};
+
+/* ---------- DIA-09 root cause ---------- */
+VIEWS.rootcause = () => {
+  const conf = S.qDone ? 78 : 58;
+  const chain = [['المؤشر', 'أداء الفرع 64 (−17%)'], ['المشكلة', 'انخفاض الإنتاجية'], ['الأعراض', 'تأخر الإنجاز 2.3 يوم · عمل إضافي +34%'], ['الأسباب المحتملة', 'نقص التدريب · ضغط العمل · تغيّر القيادة'], ['السبب الجذري المحتمل', 'فقدان المعرفة بعد موجة المغادرة دون تعويض تدريبي'], ['الأدلة', S.qDone ? '4 أدلة: نظام + استبيان + حالة مشابهة + سياسة' : '2 دليل من الأنظمة فقط'], ['درجة الثقة', (conf >= 75 ? 'مرتفعة' : 'متوسطة') + ' · ' + conf + '%']];
+  const unasked = [['لا توجد بيانات كافية عن الغياب قبل تثبيت استنتاج الإنتاجية.', 'سجل الغياب الشهري'], ['هل تغيّرت إجراءات العمل بالتزامن مع تغيّر المدير؟', 'سجل تغييرات الإجراءات'], ['هل غادر موظفون من ذوي الخبرة تحديدًا أم الجدد؟', 'خبرة المغادرين بالسنوات']];
+  S.uq = S.uq || {};
+  return `${stepper(4)}
+  <section class="card"><div class="row between"><h2 class="h-sec">سلسلة السبب الجذري — لا استنتاج على أنه حقيقة</h2><span class="tag ${conf >= 75 ? 't-s' : 't-m'}">ثقة ${conf}%</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">${chain.map(([k, v], i) => `<div class="sub" style="${i === 4 ? 'border-color:var(--red);background:var(--redbg)' : ''}"><span class="mono" style="color:var(--yellow);font-size:11px">${i + 1}</span><span class="lbl">${k}</span><b style="font-size:12.5px;line-height:1.6">${esc(v)}</b></div>`).join('')}</div>
+    ${S.qDone ? '' : '<div class="banner y" style="font-size:12.5px">التشخيص أولي: استكمل الاستبيان لرفع الثقة قبل اعتماد السبب الجذري.<button type="button" class="btn sm" data-go="questionnaire" style="margin-inline-start:auto">الاستبيان</button></div>'}
+  </section>
+  <section class="split">
+    <div class="card"><h2 class="h-sec">لماذا؟ لماذا؟ — سلّم الأسباب الخمسة</h2>
+      ${['لماذا انخفض الأداء؟ — لأن الإنتاجية انخفضت.', 'لماذا انخفضت الإنتاجية؟ — لأن المهام تأخرت وتراكمت.', 'لماذا تأخرت؟ — لأن 3 موظفين يحملون 41% من المهام.', 'لماذا تركزت المهام؟ — لأن الموظفين الجدد غير مدرَّبين.', 'لماذا لم يُدرَّبوا؟ — لأن ساعات التدريب خُفضت بعد مغادرة المدربين الداخليين.'].map((t, i) => `<div class="row nowrap" style="align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #1A1A1F;padding-inline-start:${i * 14}px"><span class="mono" style="color:var(--yellow);font-size:12px">${i + 1}</span><span style="font-size:13px;line-height:1.6">${t}</span></div>`).join('')}
+      <div class="row" style="gap:6px">${['تحليل الاتجاه', 'المقارنة', 'شجرة الأسباب', 'تحليل الفجوة', 'تحليل الاختلاف', 'تحليل التكرار', 'تحليل التأثير'].map(x => `<span class="chip" style="font-size:11.5px">${x}</span>`).join('')}</div>
+    </div>
+    <div class="card warn"><div class="row between"><h2 class="h-sec">الأسئلة التي لم نسألها</h2><span class="lbl">معلومات قد تغيّر النتيجة</span></div>
+      ${unasked.map(([q, d], i) => `<div class="sub" style="background:var(--sunk)"><b style="font-size:13px;line-height:1.6">${q}</b><div class="row between"><span class="faint" style="font-size:11.5px">البيانات المطلوبة: ${d}</span>${S.uq[i] ? '<span class="tag t-s">أُضيف إلى الاستبيان القادم</span>' : `<button type="button" class="btn sm" data-act="uq" data-k="${i}">إضافة إلى الاستبيان</button>`}</div></div>`).join('')}
+      <span class="faint" style="font-size:12px;line-height:1.65">هذه الوظيفة تمنع الاستنتاجات المتسرعة: لا يُثبَّت السبب الجذري قبل الإجابة عنها أو توثيق سبب تجاوزها.</span>
+    </div>
+  </section>`;
+};
+
+/* ---------- DIA-11 what-if lab ---------- */
+const WI_PRESETS = [
+  ['cost', 'ماذا لو خفضنا التكلفة 10٪؟', { c: -10, d: 0, s: 0, t: 0, sup: false }],
+  ['demand', 'ماذا لو زاد الطلب 30٪؟', { c: 0, d: 30, s: 0, t: 0, sup: false }],
+  ['supplier', 'ماذا لو فقدنا المورد الرئيسي؟', { c: 0, d: 0, s: 0, t: 0, sup: true }],
+  ['staff', 'ماذا لو أضفنا موظفين 15٪؟', { c: 0, d: 0, s: 15, t: 0, sup: false }],
+  ['resources', 'ماذا لو زدنا الموارد 20٪؟', { c: 8, d: 0, s: 20, t: 0, sup: false }],
+  ['solution', 'ماذا لو نفذنا الحل الموصى به؟', { c: 3, d: 0, s: 5, t: 3, sup: false }]
+];
+function wiState() { if (!S.wi) S.wi = { p: 'cost', ...WI_PRESETS[0][2] }; return S.wi; }
+function wiCalc(w, k) {
+  const m = { cons: 0.6, base: 1, opt: 1.3, crisis: 0.8 }[k];
+  let prod = (0.4 * w.s + 2.2 * w.t - (w.c < 0 ? 0.35 * Math.abs(w.c) : 0) - (w.sup ? 6 : 0) - Math.max(0, w.d - w.s) * 0.12) * m;
+  let cost = (w.c + 0.6 * w.s + 0.8 * w.t + (w.sup ? 9 : 0)) * (k === 'crisis' ? 1.2 : 1);
+  let risk = 55 + (w.c < 0 ? 0.6 * Math.abs(w.c) : 0) + 0.5 * Math.max(0, w.d - w.s) - 3 * w.t - 0.3 * w.s + (w.sup ? 18 : 0);
+  if (k === 'opt') risk -= 5; if (k === 'cons') risk += 3; if (k === 'crisis') { prod -= 8; risk += 20; }
+  const sat = 0.3 * prod - 0.25 * Math.max(0, w.d - w.s - prod);
+  const perf = 64 + 0.6 * prod;
+  return { prod: Math.round(prod * 10) / 10, cost: Math.round(cost * 10) / 10, risk: Math.max(0, Math.min(100, Math.round(risk))), sat: Math.round(sat * 10) / 10, perf: Math.round(perf) };
+}
+function wiOut() {
+  const w = wiState(), sc = [['cons', 'متحفظ'], ['base', 'متوقع'], ['opt', 'متفائل'], ['crisis', 'أزمة']];
+  const r = sc.map(([k, l]) => ({ k, l, ...wiCalc(w, k) })), b = r[1];
+  const verdict = b.risk > 70 || b.perf < 60 ? ['غير موصى به', 't-c', 'var(--red)'] : b.perf >= 70 && b.risk <= 55 ? ['مناسب', 't-s', 'var(--green)'] : ['يحتاج تعديل', 't-m', 'var(--yellow)'];
+  const why = [];
+  if (b.prod < 0) why.push('الإنتاجية تنخفض ' + Math.abs(b.prod) + '%');
+  if (b.prod > 0) why.push('الإنتاجية ترتفع ' + b.prod + '%');
+  if (b.cost > 0) why.push('التكلفة ترتفع ' + b.cost + '%'); else if (b.cost < 0) why.push('التكلفة تنخفض ' + Math.abs(b.cost) + '%');
+  why.push('درجة المخاطر ' + b.risk + (b.risk > 60 ? ' — فوق حد التقبّل' : ' — ضمن الحد'));
+  if (r[3].perf < 55) why.push('في سيناريو الأزمة يهبط المؤشر إلى ' + r[3].perf);
+  const fmt = (v, inv) => `<span class="mono" style="color:${(inv ? -v : v) > 0 ? 'var(--greenfg)' : (inv ? -v : v) < 0 ? '#FF6B81' : 'var(--soft)'}">${v > 0 ? '+' : ''}${v}%</span>`;
+  return `<div class="tbl-wrap"><table><thead><tr><th>السيناريو</th><th>الإنتاجية</th><th>التكلفة</th><th>رضا العملاء</th><th>المخاطر</th><th>مؤشر الأداء</th></tr></thead><tbody>
+    ${r.map(x => `<tr style="${x.k === 'base' ? 'background:#16161B' : ''}"><td><b>${x.l}</b></td><td>${fmt(x.prod)}</td><td>${fmt(x.cost, true)}</td><td>${fmt(x.sat)}</td><td class="mono" style="color:${x.risk > 60 ? '#FF6B81' : x.risk > 45 ? 'var(--yellow)' : 'var(--greenfg)'}">${x.risk}</td><td class="big" style="font-size:15px;color:${x.perf >= 70 ? 'var(--greenfg)' : x.perf >= 60 ? 'var(--yellow)' : '#FF6B81'}">${x.perf}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="sub" style="border-color:${verdict[2]};gap:8px"><div class="row between"><b style="font-size:14px">محاكاة القرار — التوصية</b><span class="tag ${verdict[1]}" style="font-size:12.5px;padding:4px 12px">${verdict[0]}</span></div>
+    <div class="stack" style="gap:4px">${why.map(x => `<span class="row nowrap" style="font-size:12.5px">${ic('dotc', 12, 'style="color:var(--yellow);stroke-width:4"')}${x}</span>`).join('')}</div>
+    <span class="faint" style="font-size:11.5px">نموذج توضيحي مبني على علاقات الاستشارة CNS-001. القرار النهائي لصاحب الصلاحية.</span></div>`;
+}
+VIEWS.whatif = () => {
+  const w = wiState();
+  const sl = (k, label, min, max, step, unit) => `<div class="stack" style="gap:6px"><div class="row between"><label for="wi-${k}" style="font-size:13px;font-weight:600">${label}</label><span class="mono" id="wi-${k}-v" style="color:var(--yellow)">${w[k] > 0 ? '+' : ''}${w[k]}${unit}</span></div><input type="range" id="wi-${k}" data-wi="${k}" min="${min}" max="${max}" step="${step}" value="${w[k]}" style="width:100%;accent-color:var(--action)"></div>`;
+  return `
+  <section class="card"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:3px"><span class="eyebrow">WHAT-IF LAB · DIA-11</span><h2 class="title-l">مختبر «ماذا لو؟» — جرّب القرار قبل اتخاذه</h2><span class="muted" style="font-size:13px">الوضع الحالي ← التغيير ← الأثر المتوقع ← المخاطر ← الفرص ← النتائج المحتملة</span></div></div>
+    <div class="row" style="gap:6px">${WI_PRESETS.map(([k, l]) => `<button type="button" class="chip" data-act="wi-preset" data-k="${k}" style="min-height:38px;${w.p === k ? 'background:var(--redbg);border-color:var(--red);color:#fff' : ''}">${l}</button>`).join('')}</div>
+  </section>
+  <section class="split l">
+    <div class="card"><h2 class="h-sec">المتغيرات</h2>
+      ${sl('c', 'التكلفة التشغيلية', -30, 30, 5, '%')}${sl('d', 'الطلب', -30, 50, 5, '%')}${sl('s', 'عدد الموظفين', -20, 30, 5, '%')}${sl('t', 'ساعات التدريب الشهرية', -3, 6, 1, ' س')}
+      <label class="row nowrap" style="min-height:44px;gap:10px;cursor:pointer"><input type="checkbox" id="wi-sup" data-wi="sup" ${w.sup ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13px">فقدان المورد الرئيسي (صدمة خارجية)</span></label>
+    </div>
+    <div class="card"><h2 class="h-sec">النتائج المحتملة عبر أربعة سيناريوهات</h2><div class="stack" id="wi-out" style="gap:12px">${wiOut()}</div>
+      <div class="row"><button type="button" class="btn sm" data-go="solutions">استوديو الحلول</button><button type="button" class="btn sm primary" data-go="decision">إلى مركز القرار</button></div></div>
+  </section>`;
+};
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.wi) return;
+  const w = wiState(), k = el.dataset.wi;
+  w[k] = el.type === 'checkbox' ? el.checked : +el.value; w.p = '';
+  const v = document.getElementById('wi-' + k + '-v'); if (v) v.textContent = (w[k] > 0 ? '+' : '') + w[k] + (k === 't' ? ' س' : '%');
+  const o = document.getElementById('wi-out'); if (o) o.innerHTML = brandify(wiOut());
+  save();
+});
+document.addEventListener('change', (e) => { const el = e.target; if (el.dataset && el.dataset.wi === 'sup') { const o = document.getElementById('wi-out'); if (o) o.innerHTML = brandify(wiOut()); } });
+
+/* ---------- DIA-18 memory ---------- */
+VIEWS.memory = () => {
+  const layers = [['تشغيلية', 12840], ['المعاملات', 96210], ['القرار', 214 + (S.decided ? 1 : 0)], ['الخبرة', 388], ['التعلم', 93 + (S.lessonApproved ? 1 : 0)], ['الاستراتيجية', 41], ['الأنماط', 31]];
+  const cases = [['CNS-2025-114', 'تراجع أداء الفرع الجنوبي بعد موجة مغادرة', 87, 'تدريب مكثف', 'تعافٍ 96% خلال 6 أسابيع'], ['CNS-2024-061', 'انخفاض إنتاجية مركز خدمة بعد إعادة هيكلة', 72, 'إعادة توزيع المهام', 'تعافٍ 81% خلال 8 أسابيع'], ['CNS-2025-030', 'دوران مرتفع للموظفين الجدد', 64, 'برنامج إرشاد', 'خفض الدوران 40%']];
+  return `
+  <section class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">${layers.map(([l, n]) => `<div class="kpi"><span class="lbl" style="color:var(--muted)">ذاكرة ${l}</span><span class="v" style="font-size:20px">${n.toLocaleString('en')}</span></div>`).join('')}</section>
+  <section class="split">
+    <div class="card"><div class="row between"><h2 class="h-sec">الحالات المشابهة — الذكاء المبني على الخبرة</h2><span class="lbl">لـ CNS-001</span></div>
+      ${cases.map(([id, t, sim, sol, out]) => `<div class="sub"><div class="row between"><span class="mono" style="color:var(--yellow);font-size:12px">${id}</span><span class="tag ${sim >= 80 ? 't-s' : sim >= 65 ? 't-m' : 't-n'}">تشابه ${sim}%</span></div><b style="font-size:13.5px">${t}</b><div class="row" style="gap:6px"><span class="chip" style="font-size:11.5px">الحل: ${sol}</span><span class="chip" style="font-size:11.5px;color:var(--greenfg)">${out}</span></div></div>`).join('')}
+      <p class="muted" style="font-size:12.5px;line-height:1.7">عند ظهور حالة مشابهة يسترجع النظام الخبرة السابقة تلقائيًا ويقترحها في استوديو الحلول، مع توضيح أين نجحت وأين فشلت ولماذا.</p>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card tight"><b style="font-size:13.5px">ماذا يجب أن نغيّر؟</b>
+        ${S.lessonApproved ? ['ابدأ خطة الاحتفاظ في الأسبوع الأول قبل أي إجراء آخر.', 'اربط التدريب بالمغادرين: كل مغادرة تولّد خطة نقل معرفة.', 'راقب العمل الإضافي كمؤشر إنذار مبكر أسبوعي.'].map(x => `<span class="row nowrap" style="font-size:12.5px;align-items:flex-start">${ic('check', 14, 'style="color:var(--green);margin-top:4px"')}${x}</span>`).join('') : '<span class="muted" style="font-size:12.5px;line-height:1.7">تظهر التغييرات المقترحة بعد قياس الأثر واعتماد الدرس المستفاد.</span><button type="button" class="btn sm" data-go="learning">التعلم المؤسسي</button>'}
+      </div>
+      <div class="card tight bad"><b style="font-size:13.5px;color:var(--redsoft)">معرفة مهددة بالضياع</b><span style="font-size:12.5px;line-height:1.65">3 موظفين في الفرع الشمالي يحملون معرفة غير موثقة. درجة الخطر 82.</span></div>
+      <div class="card tight"><b style="font-size:13.5px">دورة حياة الذاكرة</b><div class="flow">${['التقاط', 'سياق', 'تحقق', 'اعتماد', 'استخدام', 'مراجعة', 'أرشفة'].map((x, i, a) => `<span>${x}</span>${i < a.length - 1 ? '<i>←</i>' : ''}`).join('')}</div></div>
+    </div>
+  </section>`;
+};
+
+/* ---------- DIA-19 intelligence ledger ---------- */
+function ledgerRows() {
+  const s = solSel();
+  const rows = [
+    { id: 'INT-000141', t: 'نمط: انحراف أداء الفرع الشمالي', type: 'تحليل', conf: 81, lv: 'L3', by: 'محرك الشذوذ', stage: 6 },
+    { id: 'INT-000142', t: 'عقد بيانات CNS-001 — كفاية ' + (S.qDone ? '94%' : '62%'), type: 'بيانات', conf: S.qDone ? 94 : 62, lv: 'L2', by: 'AG03 + AG04', stage: 6 },
+    { id: 'INT-000143', t: 'تشخيص: نقص التدريب سبب محتمل 71%', type: 'تشخيص', conf: diagConf(), lv: S.qDone ? 'L3' : 'L2', by: 'AG08', stage: 7 },
+    { id: 'INT-000144', t: 'توقع: السيناريو الأساسي يستقر عند 63', type: 'تنبؤ', conf: 77, lv: 'L3', by: 'AG09', stage: 7 },
+    { id: 'INT-000145', t: 'توصية REC-2026-118: ' + s.short, type: 'توصية', conf: S.qDone ? s.conf : s.conf - 14, lv: S.qDone ? 'L4' : 'L3', by: 'AG15', stage: S.decided ? 9 : 8 }
+  ];
+  if (S.decided) rows.push({ id: 'INT-000146', t: 'قرار DEC-2026-041: ' + choiceLabel(), type: 'قرار', conf: 100, lv: 'L4', by: 'د. عدنان', stage: approved() ? 10 : 9 });
+  if (S.measured) rows.push({ id: 'INT-000147', t: 'أثر: تحقق ' + impactOf().ratio + '% من المتوقع', type: 'أثر', conf: 88, lv: 'L4', by: 'محرك الأثر', stage: 11 });
+  if (S.lessonApproved) rows.push({ id: 'INT-000148', t: 'درس LSN-2026-093 معتمد', type: 'تعلم', conf: 90, lv: 'L5', by: 'بوابة الحوكمة', stage: 11 });
+  return rows.reverse();
+}
+VIEWS.ledger = () => {
+  const rows = ledgerRows(), sel = rows.find(r => r.id === S.ledSel) || rows[0], s = solSel();
+  const chain = ['البيانات المستخدمة', 'الاستعلام', 'التحليل', 'النموذج', 'الافتراضات', 'النتيجة', 'درجة الثقة', 'المستخدم', 'التوصية', 'القرار', 'التنفيذ', 'الأثر'];
+  const card = [['معرّف التحليل', sel.id], ['طالب التحليل', 'د. عدنان'], ['الغرض', 'تشخيص انخفاض أداء الفرع الشمالي واقتراح حل'], ['مصادر البيانات', 'ERP · HR · LMS · CRM + استبيان QST-001'], ['مالك البيانات', 'إدارة العمليات · الموارد البشرية'], ['وقت التحليل', '2026-09-28 18:42'], ['الإصدار', 'v1.3'], ['النموذج', 'FCST-TS v2.3 · RCA-Graph v1.1'], ['الوكلاء', 'AG01–AG08 · AG15 · AG16'], ['الافتراضات', 'استقرار الطلب · لا تغييرات سعرية'], ['جودة البيانات', '87%'], ['درجة الثقة', sel.conf + '%'], ['الأدلة', S.qDone ? '4 أدلة موثقة' : '2 دليل'], ['النتيجة', sel.t], ['التوصية', s.name], ['المخاطر', 'تسرّب الكفاءات (حرج)'], ['الموافقة', S.decided ? 'د. عدنان · DEC-2026-041' : 'بانتظار'], ['الإجراء', approved() ? 'AP-2026-077' : '—'], ['النتيجة الفعلية', S.measured ? String(impactOf().act) : '—'], ['سجل التدقيق', S.audit.length + ' عملية مسجلة']];
+  return `
+  <section class="card"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">INTELLIGENCE LEDGER · DIA-19</span><h2 class="title-l">سجل الذكاء — رحلة كل نتيجة تحليلية</h2></div><span class="lbl">${rows.length} نتائج لـ CNS-001 · يتحدث مع كل مرحلة</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>المعرّف</th><th>النتيجة</th><th>النوع</th><th>الثقة</th><th>الموثوقية</th><th>المصدر</th></tr></thead><tbody>
+      ${rows.map(r => `<tr class="click" data-act="led" data-k="${r.id}" tabindex="0" role="button" aria-pressed="${r.id === sel.id}" style="${r.id === sel.id ? 'background:#1C1C21;box-shadow:inset -3px 0 0 var(--red)' : ''}"><td class="mono" style="color:var(--yellow);font-size:12px">${r.id}</td><td><b style="font-size:13px">${esc(r.t)}</b></td><td><span class="chip">${r.type}</span></td><td class="mono" style="color:${confColor(r.conf)}">${r.conf}%</td><td class="mono" style="font-size:12px">${r.lv}</td><td class="soft" style="font-size:12.5px">${esc(r.by)}</td></tr>`).join('')}
+    </tbody></table></div></section>
+  <section class="split">
+    <div class="card"><div class="row between"><h2 class="h-sec">بطاقة حوكمة التحليل — ${sel.id}</h2><span class="tag t-n">قابلة للمراجعة والتدقيق</span></div>
+      <dl class="kv" style="margin:0;font-size:12.5px;gap:8px 16px">${card.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>
+    <div class="card"><h2 class="h-sec">رحلة النتيجة</h2>
+      <div class="stack" style="gap:0">${chain.map((x, i) => { const on = i <= sel.stage; return `<div class="row nowrap" style="gap:12px;padding:7px 0"><span style="width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:${on ? 'var(--action)' : 'var(--raised)'};border:1px solid ${on ? 'var(--action)' : 'var(--line2)'}">${on ? ic('check', 12, 'style="color:#fff;stroke-width:3"') : ''}</span><span style="font-size:13px;color:${on ? 'var(--fg)' : 'var(--faint)'}">${x}</span></div>`; }).join('')}</div>
+    </div>
+  </section>`;
+};
+
+/* ---------- governance: internal & external ---------- */
+function govInternal() {
+  const rows = [['من دخل؟', 'د. عدنان · م. سارة · أ. خالد', 'اليوم'], ['ماذا طلب؟', (S.requests || []).length + ' طلب تحليل · سؤال CNS-001', 'اليوم'], ['ماذا حلل؟', 'تشخيص + تنبؤ + مخاطر + حلول', 'المنسّق'], ['من اعتمد؟', S.decided ? 'د. عدنان — DEC-2026-041' : 'لا اعتماد بعد', 'مركز القرار'], ['من عدّل؟', CFG_DIRTY ? 'تعديلات إعدادات غير منشورة' : 'لا تعديلات', 'الإعدادات'], ['من نفّذ؟', approved() ? 'م. ليلى — AP-2026-077' : '—', 'مركز التنفيذ'], ['ما البيانات المستخدمة؟', '8 مصادر · 1.28M سجل', 'مركز البيانات'], ['ما النموذج المستخدم؟', 'FCST-TS v2.3 · RCA-Graph v1.1', 'الوكلاء'], ['ما القرارات الناتجة؟', S.decided ? '1 قرار' : '0', 'ذاكرة القرار']];
+  return `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>سؤال الحوكمة الداخلية</th><th>الإجابة الآن</th><th>المصدر</th></tr></thead><tbody>${rows.map(([q, a, s]) => `<tr><td><b>${q}</b></td><td>${esc(a)}</td><td class="faint" style="font-size:12px">${s}</td></tr>`).join('')}</tbody></table></div>
+    <p class="faint" style="font-size:12px;padding:10px 16px">تراقب: المستخدمين، الصلاحيات، الوكلاء، النماذج، البيانات، التحليلات، التوصيات، التغييرات، التنفيذ، والتدقيق.</p></div>`;
+}
+function govExternal() {
+  const src = [['هيئة الإحصاءات العامة', 'مؤشرات سوق العمل', 'رخصة استخدام عام', 'سارية', 'منخفض', 92], ['مزود بيانات السوق', 'أسعار ومنافسون', 'عقد سنوي — ينتهي بعد 45 يومًا', 'تنبيه', 'متوسط', 84], ['نظام المورّد الرئيسي', 'سلاسل الإمداد عبر API', 'اتفاقية مشاركة بيانات', 'سارية', 'متوسط', 88], ['منصة التوظيف', 'بيانات المواهب', 'شروط استخدام — لا إعادة نشر', 'سارية', 'منخفض', 79]];
+  return `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>المصدر الخارجي</th><th>البيانات</th><th>الترخيص وشروط الاستخدام</th><th>الحالة</th><th>مخاطر المصدر</th><th>جودة المصدر</th></tr></thead><tbody>${src.map(([a, b, c, d, e, f]) => `<tr><td><b>${a}</b></td><td class="soft">${b}</td><td style="font-size:12.5px">${c}</td><td><span class="tag ${d === 'سارية' ? 't-s' : 't-m'}">${d}</span></td><td>${e}</td><td class="mono" style="color:${confColor(f)}">${f}%</td></tr>`).join('')}</tbody></table></div>
+    <p class="faint" style="font-size:12px;padding:10px 16px">تراقب: مصادر البيانات الخارجية، الأنظمة المرتبطة، مزودي البيانات، الجهات التنظيمية، الالتزامات النظامية، الخصوصية، الاستخدام المسموح، مشاركة البيانات، وواجهات التكامل.</p></div>`;
+}
+
+function askVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('الإملاء الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome'); return; }
+  if (S.listening) { try { window.__sr && window.__sr.stop(); } catch (e) {} return; }
+  const r = new SR(); window.__sr = r; r.lang = 'ar-SA'; r.interimResults = false;
+  r.onresult = (e) => { const t = Array.from(e.results).map(x => x[0].transcript).join(' '); S.q = t; render(); toast('تم إدخال السؤال بالصوت'); };
+  r.onerror = (e) => { toast(e.error === 'not-allowed' ? 'اسمح للمتصفح باستخدام الميكروفون' : 'تعذّر التعرّف على الصوت'); };
+  r.onend = () => { S.listening = false; render(); };
+  try { r.start(); S.listening = true; render(); toast('تحدّث الآن…'); } catch (e) { toast('تعذّر تشغيل الميكروفون'); }
+}
+function diaHandle(act, k) {
+  if (act === 'ask-voice') { askVoice(); return true; }
+  if (act === 'back') { const h = S.hist || []; const prev = h.pop(); S.hist = h; S.route = prev || 'home'; S.menu = false; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'cmp') { S.cmp = +k; render(); return true; }
+  if (act === 'relcheck') { S.relCheck = true; log('د. عدنان', 'طلب التحقق من علاقة تأخر التسليم ↔ فقد العملاء'); toast('أُرسل طلب التحقق'); render(); return true; }
+  if (act === 'uq') { S.uq = S.uq || {}; S.uq[k] = true; log('د. عدنان', 'أضاف سؤالًا غير مسأل إلى الاستبيان القادم'); render(); return true; }
+  if (act === 'qfix') { S.qfix = S.qfix || {}; S.qfix[k] = true; log('د. عدنان', 'أرسل طلب إصلاح جودة ' + k + ' إلى مالك البيانات'); toast('أُرسل طلب الإصلاح إلى مالك البيانات'); render(); return true; }
+  if (act === 'wi-preset') { const p = WI_PRESETS.find(x => x[0] === k); if (p) S.wi = { p: k, ...p[2] }; render(); return true; }
+  if (act === 'led') { S.ledSel = k; render(); return true; }
+  return false;
+}
+</script>

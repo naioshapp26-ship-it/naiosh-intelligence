@@ -1,0 +1,273 @@
+
+<script data-app="">
+/* ================= IMPACT ================= */
+VIEWS.impact = () => {
+  if (!S.measured) return `${stepper(11)}<div class="empty"><span class="eyebrow">WAITING FOR RESULTS</span><h2 class="title-l">لا توجد نتائج لقياسها بعد</h2><p class="lead">قياس الأثر يبدأ بعد تنفيذ القرار: يقارن النتيجة المتوقعة بالفعلية، ويشرح سبب الفرق، ويحدد ما يجب أن يتغيّر.</p><button type="button" class="btn primary" data-go="${approved() ? 'execution' : 'decision'}">${approved() ? 'الذهاب إلى التنفيذ' : 'الذهاب إلى مركز القرار'}</button></div>`;
+  const s = solSel(), im = impactOf();
+  const lv = [['هل تم القرار؟','نعم — DEC-2026-041',1],['هل تم التنفيذ؟','5 من 8 إجراءات مكتملة',1],['هل تحققت المخرجات؟','ساعات التدريب 6.2 (الهدف 6)',1],['هل تحققت النتائج؟',`المؤشر ${s.act} (الهدف ${s.exp})`,2],['هل تحقق الأثر؟',`${im.ratio}% من التحسن المتوقع`,2],['لماذا لم يكتمل؟','خطة الاحتفاظ تأخرت 4 أيام',2],['ما الذي يجب أن يتغيّر؟','ربط حوافز الاحتفاظ بأول أسبوع من الخطة',3]];
+  const y = v => 20 + (85 - v) / 30 * 170;
+  return `${stepper(11)}
+  <section class="grid g4">${[['قبل',64,'var(--muted)'],['المتوقع',s.exp,'var(--bluefg)'],['الفعلي',s.act,'var(--greenfg)'],['نسبة التحقق',im.ratio + '%','var(--yellow)']].map(([l, v, c]) => `<div class="kpi"><span class="lbl" style="color:var(--muted)">${l}</span><span class="v" style="color:${c}">${v}</span></div>`).join('')}</section>
+  <section class="split">
+    <div class="card"><h2 class="h-sec">سبعة مستويات للقياس — من القرار إلى التعلم</h2>
+      ${lv.map(([q, a, k], i) => `<div class="row nowrap" style="padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line)"><span class="mono" style="color:var(--yellow);width:22px">${i + 1}</span>${ic(k === 1 ? 'check' : k === 2 ? 'warn' : 'fwd', 16, `style="color:${k === 1 ? 'var(--green)' : k === 2 ? 'var(--yellow)' : 'var(--bluefg)'};stroke-width:2.4"`)}<b style="flex:0 0 190px;font-size:13.5px">${q}</b><span class="soft" style="font-size:13px">${a}</span></div>`).join('')}
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card"><h2 class="h-sec">المتوقع مقابل الفعلي</h2>
+        <svg class="chart" viewBox="0 0 340 210" role="img" aria-label="المؤشر كان 64، والمتوقع ${s.exp}، والفعلي ${s.act}">
+          <g stroke="var(--line)"><line x1="30" y1="${y(80)}" x2="330" y2="${y(80)}"/><line x1="30" y1="${y(70)}" x2="330" y2="${y(70)}"/><line x1="30" y1="${y(60)}" x2="330" y2="${y(60)}"/></g>
+          <text x="4" y="${y(80) + 4}">80</text><text x="4" y="${y(70) + 4}">70</text><text x="4" y="${y(60) + 4}">60</text>
+          ${[[64,'قبل','#6E6E78',60],[s.exp,'المتوقع','#4DA3FF',160],[s.act,'الفعلي','#2FD27A',260]].map(([v, l, c, x]) => `<rect x="${x}" y="${y(v)}" width="54" height="${190 - y(v)}" rx="6" fill="${c}" opacity=".85"/><text x="${x + 27}" y="${y(v) - 6}" text-anchor="middle" style="fill:var(--fg);font-size:12px">${v}</text><text x="${x + 27}" y="206" text-anchor="middle" style="font-family:var(--f-body);font-size:11px">${l}</text>`).join('')}
+        </svg></div>
+      <div class="card tight"><b style="font-size:13.5px">الإسناد — ما الذي أحدث التغيير؟</b>
+        ${[['الحل المنفذ',78,'var(--green)'],['موسمية الربع الرابع',14,'var(--yellow)'],['عوامل غير مفسّرة',8,'var(--faint)']].map(([l, v, c]) => `<div class="row nowrap" style="font-size:12.5px"><span style="width:130px">${l}</span><span class="bar"><i style="width:${v}%;background:${c}"></i></span><span class="mono" style="width:34px;text-align:left">${v}%</span></div>`).join('')}
+        <button type="button" class="btn primary sm" style="margin-top:6px" data-go="learning">تحويل النتيجة إلى تعلم مؤسسي</button></div>
+    </div>
+  </section>`;
+};
+
+/* ================= LEARNING ================= */
+VIEWS.learning = () => {
+  const s = solSel(), im = impactOf(), obs = S.lessonApproved ? 3 : 2;
+  const lesson = S.measured ? `
+    <section class="card ${S.lessonApproved ? 'good' : 'warn'}">
+      <div class="row between"><span class="eyebrow">NEW LESSON · LSN-2026-093 · من CNS-001</span><span class="mono" style="font-size:12px;font-weight:600;color:${S.lessonApproved ? 'var(--greenfg)' : 'var(--yellow)'}">${S.lessonApproved ? 'L5 · INSTITUTIONAL' : 'L2 · PENDING VALIDATION'}</span></div>
+      <h2 class="title-l" style="line-height:1.6">عند تراجع أداء فرع بعد موجة مغادرة، يسبق نقصُ التدريب التراجعَ بـ 4 إلى 6 أسابيع. «${s.short}» أعاد ${im.ratio}% من الأداء المتوقع خلال 30 يومًا، وتأخر خطة الاحتفاظ خفّض الأثر.</h2>
+      <div class="grid g3" style="gap:10px">${[['ما الذي نجح؟','التدخل المزدوج: تخفيف ضغط العمل والتدريب معًا.'],['ما الذي لم ينجح؟','بدء خطة الاحتفاظ متأخرًا 4 أيام.'],['ما الذي يجب تكراره أو تجنبه؟','ابدأ بالاحتفاظ في الأسبوع الأول قبل أي إجراء آخر.']].map(([l, d]) => `<div class="sub" style="background:var(--sunk)"><span class="lbl">${l}</span><span style="font-size:13px;line-height:1.6">${d}</span></div>`).join('')}</div>
+      ${S.lessonApproved ? `<div class="banner g">${ic('check', 18, 'style="color:var(--green)"')}<span>اجتاز الدرس بوابة الحوكمة ودخل الذاكرة المؤسسية. سيُقترح تلقائيًا في أي استشارة مشابهة قادمة.</span></div>`
+        : `<div class="row"><button type="button" class="btn primary" data-act="lesson-approve">تمرير عبر بوابة الحوكمة واعتماده</button><span class="faint" style="font-size:12.5px">السياق ✓ المصدر ✓ الدليل ✓ المبرر ✓ الملاحظات ✓ التتبع ✓</span></div>`}
+    </section>` : `<div class="empty"><span class="eyebrow">NO NEW LESSON YET</span><h2 class="title-l">الدروس تولد من النتائج</h2><p class="lead">بعد قياس أثر CNS-001 سيقترح نايوش درسًا جديدًا، ولن يدخل الذاكرة المؤسسية إلا بعد اجتياز بوابة الحوكمة.</p><button type="button" class="btn primary" data-go="impact">قياس الأثر</button></div>`;
+  return `${stepper(S.lessonApproved ? 12 : 12)}
+  ${lesson}
+  <section class="split">
+    <div class="card"><h2 class="h-sec">ذاكرة القرار — لماذا اتخذنا القرار، لا ماذا فقط</h2>
+      <div class="tbl-wrap"><table><thead><tr><th>القرار</th><th>المشكلة</th><th>الحل المختار</th><th>المتوقع</th><th>الفعلي</th><th>الدرس</th></tr></thead><tbody>
+        ${S.decided ? `<tr><td class="mono" style="color:var(--yellow)">DEC-2026-041</td><td>تراجع الفرع الشمالي</td><td>${s.short}</td><td class="mono">${approved() ? s.exp : '—'}</td><td class="mono">${S.measured ? s.act : '—'}</td><td>${S.lessonApproved ? '<span class="tag t-s">LSN-093</span>' : '<span class="faint">بانتظار</span>'}</td></tr>` : ''}
+        <tr><td class="mono" style="color:var(--yellow)">DEC-2025-114</td><td>تراجع الفرع الجنوبي</td><td>تدريب مكثف</td><td class="mono">80</td><td class="mono">79</td><td><span class="tag t-s">LSN-061</span></td></tr>
+        <tr><td class="mono" style="color:var(--yellow)">DEC-2026-007</td><td>تأخر تحصيل المستحقات</td><td>أتمتة التذكير</td><td class="mono">90</td><td class="mono">83</td><td><span class="tag t-s">LSN-072</span></td></tr>
+      </tbody></table></div></div>
+    <div class="stack" style="gap:14px">
+      <div class="card tight"><b style="font-size:13.5px">ذاكرة الأنماط — لا نمط بلا ملاحظات</b>
+        <span class="soft" style="font-size:12.5px;line-height:1.6">PM-031: «تراجع الأداء بعد موجة مغادرة مع نقص التدريب»</span>
+        <div class="flow">${['ملاحظة','ملاحظة متكررة','نمط','نمط مُتحقق','نمط تنبؤي'].map((x, i) => `<span style="${(obs >= 3 ? 2 : 1) === i ? 'background:var(--yellowbg);border-color:var(--yellowline);color:var(--yellow)' : ''}">${x}</span>${i < 4 ? '<i>←</i>' : ''}`).join('')}</div>
+        <span class="faint" style="font-size:12px">عدد الملاحظات: <b class="mono" style="color:var(--fg)">${obs}</b> · يحتاج 5 للتحقق</span></div>
+      <div class="card tight"><b style="font-size:13.5px">طبقات الذاكرة المؤسسية</b>
+        ${['تشغيلية','المعاملات','القرار','الخبرة','التعلم','الاستراتيجية','الأنماط'].map(x => `<span class="row nowrap" style="font-size:12.5px"><span class="dot" style="background:var(--yellow)"></span>ذاكرة ${x}</span>`).join('')}
+        <span class="faint" style="font-size:11.5px;line-height:1.6">لا نخلط بين الخبرة والحقيقة: الخبرة تصبح معرفة فقط بعد التحقق.</span></div>
+    </div>
+  </section>`;
+};
+
+/* ================= KNOWLEDGE ================= */
+const KDOCS_FN = () => CFG.docs.map(d => [d.id, d.title, d.type, d.domain, d.level, String(d.tags || '').split(/[،,]/).map(t => t.trim())]);
+function kResults() {
+  const q = (S.kq || '').trim();
+  const KDOCS = KDOCS_FN();
+  const list = q ? KDOCS.filter(d => (d[1] + ' ' + d[5].join(' ') + ' ' + d[2]).includes(q)) : KDOCS;
+  if (!list.length) return `<div class="empty" style="padding:18px"><b>لا توجد نتائج لـ «${esc(q)}»</b><span class="muted" style="font-size:13px">المعلومات المتاحة غير كافية. جرّب «تدريب» أو «أداء»، أو اطلب من نايوش توليد أسئلة لاستكمال المعرفة.</span></div>`;
+  return list.map(d => `<div class="sub"><div class="row between"><b style="font-size:13.5px">${d[1]}</b><span class="mono" style="font-size:11px;color:${d[4] === 'L6' || d[4] === 'L5' ? 'var(--greenfg)' : 'var(--yellow)'}">${d[4]}</span></div><div class="row" style="gap:6px;font-size:11.5px"><span class="mono faint">${d[0]}</span><span class="chip" style="font-size:11px">${d[2]}</span><span class="chip" style="font-size:11px">${d[3]}</span></div></div>`).join('');
+}
+VIEWS.knowledge = () => `
+  <section class="card"><div class="row between"><div class="stack" style="gap:2px"><h2 class="title-l">اسأل المعرفة المؤسسية</h2><span class="muted" style="font-size:13px">بحث هجين: نصي + دلالي، مع احترام الصلاحيات، وكل نتيجة تحمل مصدرها ومستوى موثوقيتها.</span></div><span class="eyebrow">5.3 · NAIOSH KNOWS</span></div>
+    <label for="kq" class="lbl">ابحث في السياسات والإجراءات والاستشارات السابقة والدروس</label>
+    <input id="kq" type="search" data-model="kq" value="${esc(S.kq)}" placeholder="مثلًا: تدريب، أداء، مناوبات…">
+    <div class="flow">${['السؤال','فحص الصلاحية','بحث نصي + دلالي','الرسم المعرفي','إعادة الترتيب','حزمة السياق','توليد مستند إلى الأدلة','الاستشهاد'].map((x, i, a) => `<span>${x}</span>${i < a.length - 1 ? '<i>←</i>' : ''}`).join('')}</div>
+  </section>
+  <section class="split">
+    <div class="card"><h2 class="h-sec">النتائج</h2><div class="stack" id="kres" style="gap:8px">${kResults()}</div></div>
+    <div class="stack" style="gap:14px">
+      <div class="card tight"><b style="font-size:13.5px">سجل مصادر المعرفة حسب السلطة</b>
+        ${[['الدستور والسياسات العليا','أعلى سلطة'],['السياسات والإجراءات واللوائح','سلطة مؤسسية'],['الاستشارات والقرارات والدروس','خبرة موثّقة'],['التقارير والبيانات التشغيلية','أدلة'],['الكتب والمواد التدريبية','مرجعية'],['الأنظمة والتشريعات والمعايير الدولية','خارجية معتمدة'],['المصادر الخارجية الموثوقة','خارجية']].map(([n, a], i) => `<div class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:18px">${i + 1}</span><span style="flex-grow:1">${n}</span><span class="faint" style="font-size:11px">${a}</span></div>`).join('')}</div>
+      <div class="card tight bad"><b style="font-size:13.5px;color:var(--redsoft)">معرفة مهددة بالضياع</b><span style="font-size:12.5px;line-height:1.65">3 موظفين في الفرع الشمالي يحملون معرفة غير موثقة بإجراءات الإغلاق الشهري. درجة الخطر 82.</span><button type="button" class="btn sm" data-go="execution">إجراء التوثيق في خطة التنفيذ</button></div>
+      <div class="card tight"><b style="font-size:13.5px">ضوابط منع الهلوسة</b>${['لا إجابة بلا مصدر مستشهد به','كشف التعارض بين المصادر وعرضه','حداثة المعرفة وتاريخ صلاحيتها','حدود أمان: لا بيانات خارج صلاحيتك'].map(x => `<span class="row nowrap" style="font-size:12.5px">${ic('check', 14, 'style="color:var(--green)"')}${x}</span>`).join('')}</div>
+    </div>
+  </section>`;
+
+/* ================= AGENTS ================= */
+const AGENTS = [['AG01','Intent','فهم نية الطلب'],['AG02','Context','بناء السياق'],['AG03','Data Discovery','اكتشاف البيانات'],['AG04','Data Quality','تقييم جودة البيانات'],['AG05','Smart Questionnaire','توليد الأسئلة الذكية'],['AG06','RAG / Knowledge','استرجاع المعرفة'],['AG07','Analytics','التحليل'],['AG08','Diagnosis','التشخيص'],['AG09','Forecast','التنبؤ'],['AG10','Foresight','الاستشراف'],['AG11','Risk','تحليل المخاطر'],['AG12','Opportunity','اكتشاف الفرص'],['AG13','Solution','توليد الحلول'],['AG14','Simulation','المحاكاة والسيناريوهات'],['AG15','Recommendation','التوصيات'],['AG16','Explainability','تفسير النتائج'],['AG17','Decision Support','دعم القرار'],['AG18','Learning','التعلم المؤسسي']];
+VIEWS.agents = () => {
+  const used = new Set(['AG01','AG02','AG03','AG04','AG06']);
+  if (S.qDone) ['AG05','AG07','AG08'].forEach(x => used.add(x));
+  if (S.qDone) ['AG09','AG10','AG11','AG12','AG13','AG14','AG15','AG16'].forEach(x => used.add(x));
+  if (S.decided) used.add('AG17'); if (S.lessonApproved) used.add('AG18');
+  return `
+  <section class="card"><div class="row between"><div class="stack" style="gap:2px"><h2 class="title-l">نايوش ليس وكيلًا واحدًا، بل منظومة عقول متخصصة يقودها منسّق</h2><span class="muted" style="font-size:13px">المضيء = شارك في الاستشارة CNS-001 حتى الآن (${used.size} من 18). كل وكيل له هوية وصلاحية ونطاق ومساءلة.</span></div><span class="eyebrow">4.2 · 5.2 AGENT REGISTRY</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px">${AGENTS.map(([id, en, ar]) => { const on = used.has(id); return `<div class="sub" style="${on ? 'border-color:var(--yellowline);background:var(--yellowbg)' : ''}"><div class="row between"><span class="mono" style="font-size:11px;color:${on ? 'var(--yellow)' : 'var(--faint)'}">${id}</span><span class="dot" style="background:${on ? 'var(--green)' : '#3A3A42'}"></span></div><b style="font-size:13px">${ar}</b><span class="mono faint" style="font-size:10.5px">${en} Agent</span></div>`; }).join('')}</div>
+  </section>
+  <section class="grid g3">
+    <div class="card tight"><b style="font-size:13.5px">مسؤوليات المنسّق</b>${['قراءة النية والرجوع إلى القاموس الرئيسي','تحديد الوكلاء وترتيب خطة التنفيذ','مراقبة النتائج واكتشاف التعارض بين الوكلاء','طلب بيانات إضافية أو التصعيد للإنسان','تجميع النتيجة وإرسالها للتفسير','تسجيل العملية كاملة'].map(x => `<span class="row nowrap" style="font-size:12.5px;align-items:flex-start">${ic('check', 14, 'style="color:var(--green);margin-top:4px"')}${x}</span>`).join('')}</div>
+    <div class="card tight bad"><b style="font-size:13.5px;color:var(--redsoft)">ممنوعات لا يتجاوزها أي وكيل</b>${['اختراع صلاحية أو تجاوز الموافقة','رفع مستوى استقلاليته بنفسه','تعديل سجل التدقيق أو حذف دليل','تحويل الاستنتاج إلى حقيقة','تجاوز مفتاح الإيقاف','استخدام أداة غير مصرح بها','اعتبار النجاح السابق تفويضًا دائمًا'].map(x => `<span class="row nowrap" style="font-size:12.5px">${ic('x', 14, 'style="color:#FF5C74"')}${x}</span>`).join('')}</div>
+    <div class="card tight"><b style="font-size:13.5px">تتبع كل مخرج ذكاء اصطناعي</b><div class="flow" style="flex-direction:column;align-items:stretch">${['المستخدم','الجلسة','إصدار التعليمات (Prompt)','النموذج وإصداره','مصادر البيانات','مصادر المعرفة','المخرج','التحقق','التوصية'].map(x => `<span>${x}</span>`).join('')}</div><span class="faint" style="font-size:11.5px;line-height:1.6">قاعدة البيانات مستقلة عن مزود الذكاء الاصطناعي عبر طبقة تجريد، فيمكن تغيير المزود دون إعادة البناء.</span></div>
+  </section>`;
+};
+
+/* ================= REPORTS ================= */
+VIEWS.reports = () => {
+  const s = solSel();
+  const types = [['EXECUTIVE','التقرير التنفيذي','للإدارة العليا'],['ANALYTICAL','التقرير التحليلي','للمحللين'],['CONSULTATION','تقرير الاستشارة','لصاحب الاستشارة'],['FORECAST','تقرير التوقعات','للتخطيط'],['FORESIGHT','تقرير الاستشراف','للاستراتيجية'],['SOLUTION','تقرير الحلول','لفريق التنفيذ'],['DECISION_BRIEF','موجز القرار','لصاحب القرار'],['EARLY_WARNING','تقرير الإنذار المبكر','للمخاطر']];
+  const card = [['المشكلة','انخفاض أداء الفرع الشمالي 17%'],['البيانات المستخدمة','8 مصادر · 1,284,500 سجل + 6 إجابات استبيان'],['جودة البيانات','87%'],['الأسباب المحتملة','نقص التدريب 71% · ضغط العمل 58%'],['التوقع','أساسي: 63 · متفائل: 78 · جذري: 47'],['الحل الموصى به',(SOLS.find(x => x.rec) || SOLS[0] || s).name],['الحل المختار',S.decided ? s.name : '—'],['درجة الثقة',S.qDone ? s.conf + '%' : (s.conf - 14) + '%'],['المخاطر','تسرّب الكفاءات (حرج)'],['المسؤول عن القرار','د. عدنان'],['القرار',S.decided ? choiceLabel() + ' · DEC-2026-041' : 'بانتظار القرار'],['النتيجة بعد التنفيذ',S.measured ? `${s.act} (${impactOf().ratio}% من المتوقع)` : '—']];
+  return `
+  <section class="grid g4">${types.map(([c, n, a]) => `<div class="card tight"><span class="mono faint" style="font-size:10.5px">${c}</span><b style="font-size:14px">${n}</b><span class="faint" style="font-size:12px">${a}</span><button type="button" class="btn sm" data-act="report-gen" data-k="${n}">توليد</button></div>`).join('')}</section>
+  <section class="split">
+    <div class="card"><div class="row between"><h2 class="h-sec">بطاقة ذكاء القرار — CNS-001</h2><span class="lbl">تتحدث تلقائيًا مع كل مرحلة</span></div>
+      <div class="tbl-wrap"><table><tbody>${card.map(([k, v]) => `<tr><td class="muted" style="width:190px">${k}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="card"><h2 class="h-sec">التقارير المولّدة</h2>
+      ${S.reports.length ? S.reports.map(r => `<div class="sub"><b style="font-size:13px">${r.n} — CNS-001</b><span class="faint" style="font-size:11.5px">${r.t} · صيغة PDF / Word · مسجّل في سجل التدقيق</span></div>`).join('') : `<p class="muted" style="font-size:13px;line-height:1.7">لم تولَّد تقارير بعد. اضغط «توليد» على أي نوع ليظهر هنا، مع تسجيله في سجل التدقيق.</p>`}
+    </div>
+  </section>`;
+};
+
+/* ================= INTEGRATION ================= */
+VIEWS.integration = () => {
+  const sys = [['ERP','ok'],['HR','warn'],['CRM','ok'],['Talent','ok'],['Training','warn'],['Education','ok'],['Safety','ok'],['Finance','ok'],['Marketing','ok'],['Sales','ok'],['Legal','ok'],['Operations','ok'],['Customer Service','off']];
+  const SC = { ok: ['متصل','var(--green)'], warn: ['تنبيه','var(--yellow)'], off: ['منقطع','#FF5C74'] };
+  const ev = [['SALES_DROP_DETECTED','Sales','ذكاء + مخاطر + إنذار مبكر + استشارة'],['ANOMALY_DETECTED','Analytics','CNS-001 فُتحت تلقائيًا'],['DATA_RECEIVED','ERP','482,300 سجل'],...(S.decided ? [['DECISION_APPROVED','Decision','DEC-2026-041 ← خطة تنفيذ']] : []),...(S.measured ? [['RESULT_MEASURED','Impact',`المؤشر ${solSel().act}`]] : [])].reverse();
+  return `
+  <section class="card"><div class="row between"><div class="stack" style="gap:2px"><h2 class="title-l">ابنِ نواة الذكاء مرة واحدة، واستخدمها في كل مكان</h2><span class="muted" style="font-size:13px">لا يُربط كل نظام بمنطق الذكاء مباشرة: نظام ← موصل قياسي ← عقد بيانات ← بوابة التكامل ← حوكمة البيانات ← نواة الذكاء.</span></div><span class="eyebrow">190 SYSTEMS · ONE CORE</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">${sys.map(([n, s]) => `<div class="sub"><div class="row between"><b class="mono" style="font-size:12.5px">${n}</b><span class="dot" style="background:${SC[s][1]}"></span></div><span style="font-size:11.5px;color:${SC[s][1]}">${SC[s][0]}</span></div>`).join('')}</div>
+  </section>
+  <section class="grid g3">
+    <div class="card tight"><b style="font-size:13.5px">الذكاء كخدمة — أي نظام يستدعيه دون فتح الواجهة</b>${['/analyze','/forecast','/foresight','/detect-risk','/detect-opportunity','/generate-solution','/recommend'].map(x => `<span class="row between" style="font-size:12.5px"><span class="mono" style="color:var(--yellow)">POST ${x}</span><span class="faint">v1</span></span>`).join('')}
+      <span class="faint" style="font-size:11.5px;line-height:1.6">مثال: نظام المواهب يطلب «تحليل فجوات المهارات» ويستقبل الفجوات والمهارات المستقبلية وتوصيات التدريب.</span></div>
+    <div class="card tight"><b style="font-size:13.5px">الجهاز العصبي الرقمي — أحداث الآن</b>${ev.map(([e, s, d]) => `<div class="sub" style="padding:8px 10px"><span class="mono" style="font-size:11px;color:var(--bluefg)">${e}</span><span style="font-size:12px">${d}</span><span class="faint" style="font-size:11px">المصدر: ${s}</span></div>`).join('')}</div>
+    <div class="card tight"><b style="font-size:13.5px">عقد البيانات لكل نظام متصل</b>${['معرّف النظام','كائنات البيانات والحقول وأنواعها','تكرار التحديث','المالك والتصنيف','الصلاحيات','الواجهة البرمجية والإصدار'].map(x => `<span class="row nowrap" style="font-size:12.5px">${ic('check', 14, 'style="color:var(--green)"')}${x}</span>`).join('')}
+      <b style="font-size:13px;padding-top:6px">الويب هوكس</b><span class="mono faint" style="font-size:11.5px">/webhooks/data · events · decision · alerts</span><span class="faint" style="font-size:11.5px">توقيع + إعادة محاولة + منع التكرار (idempotency)</span></div>
+  </section>`;
+};
+
+/* ================= GOVERNANCE ================= */
+VIEWS.governance = () => {
+  const tabs = [['rules','القواعد الحاكمة'],['roles','الأدوار والصلاحيات'],['audit','سجل التدقيق'],['levels','المستويات'],['internal','الحوكمة الداخلية'],['external','الحوكمة الخارجية']];
+  let body = '';
+  if (S.govTab === 'rules') body = `
+    <div class="grid g3">${[['لا ذاكرة بلا سياق','من؟ ماذا؟ متى؟ أين؟ لماذا؟ في أي نظام؟ وإلا فالحالة: غير مكتملة.'],['لا معرفة بلا مصدر وأصل','المعرفة ← الادعاء ← الدليل ← المصدر ← الوثيقة ← الصفحة ← المقطع.'],['لا علاقة بلا دليل','كل علاقة: دليل، أو معلّمة كاستنتاج أو فرضية أو بانتظار التحقق.'],['لا قرار بلا مبرر','السياق، البدائل، الخيار، المبرر، الأدلة، صاحب القرار، المتوقع والفعلي.'],['لا نمط بلا ملاحظات','ملاحظة ← متكررة ← نمط ← نمط مُتحقق ← نمط تنبؤي.'],['لا ذكاء بلا قابلية للتتبع','أي استنتاج يُضغط عليه ليصل المسؤول إلى أصله الكامل.']].map(([t, d], i) => `<div class="card tight"><span class="mono" style="color:var(--yellow);font-size:12px">5.4.18.${i + 1}</span><b style="font-size:15px">${t}</b><span class="muted" style="font-size:12.5px;line-height:1.7">${d}</span></div>`).join('')}</div>
+    <div class="card"><h2 class="h-sec">بوابة الحوكمة المعرفية الموروثة (5.4.19)</h2><div class="flow">${['الطلب','السياق','المصدر','الدليل','المبرر','الملاحظات','التتبع','الحوكمة'].map(x => `<span>${x}</span><i>←</i>`).join('')}<span style="background:var(--greenbg);border-color:var(--greenline);color:var(--greenfg)">اعتماد / رفض / مراجعة بشرية</span></div>
+      <p class="muted" style="font-size:13px;line-height:1.7">القواعد مفروضة على مستوى المعمارية، لا مجرد تعليمات للذكاء الاصطناعي: لا يستطيع أي وكيل تجاوزها حتى لو طلب المستخدم ذلك.</p></div>`;
+  if (S.govTab === 'roles') { const roles = ['مدير عام','حوكمة البيانات','محلل بيانات','مستشار','صاحب قرار','مدير نظام','مدير قطاع','مدقق','عميل']; const perms = ['عرض البيانات','تشغيل التحليل','تشغيل التنبؤ','إنشاء استشارة','اعتماد القرار','تصدير التقارير'];
+    const M = [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,1,1,0,0,1],[1,1,1,1,0,1],[1,1,1,1,1,1],[1,0,0,0,0,0],[1,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,1,0,0]];
+    body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الدور</th>${perms.map(p => `<th>${p}</th>`).join('')}<th>النطاق</th></tr></thead><tbody>${roles.map((r, i) => `<tr><td><b>${r}</b></td>${M[i].map(v => `<td>${v ? ic('check', 15, 'style="color:var(--green);stroke-width:2.6"') : '<span class="faint">—</span>'}</td>`).join('')}<td class="faint" style="font-size:12px">${['المنظمة','المنظمة','القطاع','الاستشارة','المنظمة','النظام','القطاع','المنظمة (قراءة)','استشاراته فقط'][i]}</td></tr>`).join('')}</tbody></table></div>
+      <p class="faint" style="font-size:12px;padding:10px 16px;line-height:1.7">عزل على مستوى الصفوف: لا يرى المستخدم بيانات فرع أو قطاع أو منظمة أو عميل آخر حتى لو وصل إلى نفس الواجهة البرمجية.</p></div>`; }
+  if (S.govTab === 'audit') body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th></tr></thead><tbody>${S.audit.map(a => `<tr><td class="mono faint" style="font-size:12px">${a.t}</td><td><span class="tag ${a.kind === 'user' ? 't-i' : a.kind === 'warn' ? 't-h' : 't-n'}">${esc(a.who)}</span></td><td style="font-size:13px">${esc(a.what)}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">يُحدَّث مباشرة مع كل خطوة في العرض. السجل غير قابل للتعديل.</p></div>`;
+  if (S.govTab === 'levels') body = `<div class="grid g3">
+    <div class="card tight"><b style="font-size:13.5px">موثوقية المعرفة L0–L6</b>${['غير معروف','ادعاء','له مصدر','مدعوم بأدلة','متحقَّق منه','مؤسسي','محكوم'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">L${i}</span>${x}</span>`).join('')}</div>
+    <div class="card tight"><b style="font-size:13.5px">مستويات القرار D0–D8</b>${['معلومة','تشغيلي','إدارة روتينية','تكتيكي','عمل جوهري','استراتيجي','عالي المخاطر','حرج','حساس — بشري فقط'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">D${i}</span>${x}</span>`).join('')}<span class="faint" style="font-size:11.5px">كلما ارتفع المستوى زادت متطلبات الأدلة والمراجعة والموافقة.</span></div>
+    <div class="card tight"><b style="font-size:13.5px">الاستقلالية المحكومة A0–A8</b>${['يراقب','يُعلم','يحلل','يوصي','يُحضّر','ينفذ بعد الموافقة','استقلالية مضبوطة','استقلالية تكيفية','بشري فقط'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">A${i}</span>${x}</span>`).join('')}<span class="faint" style="font-size:11.5px">الاستقلالية محكومة بالصلاحية والمخاطر والسياسة والثقة والأثر.</span></div>
+  </div>`;
+  if (S.govTab === 'internal') body = govInternal();
+  if (S.govTab === 'external') body = govExternal();
+  return `<div class="card" style="border-color:var(--redline);background:linear-gradient(135deg,rgba(255,46,77,.08),transparent)"><span class="eyebrow">القاعدة الذهبية</span><p style="font-size:15px;line-height:1.9;font-weight:600">لا تحليل بلا بيانات موثوقة، ولا استنتاج بلا دليل، ولا توصية بلا تفسير، ولا قرار بلا صلاحية، ولا تنفيذ بلا حوكمة، ولا نتيجة بلا قياس، ولا تعلم بلا توثيق.</p></div><div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.govTab === k}" data-act="gov-tab" data-k="${k}">${l}</button>`).join('')}</div>${body}`;
+};
+
+/* ================= ARCHITECTURE & DOCS ================= */
+VIEWS.architecture = () => {
+  const tabs = [['map','الخريطة الكاملة'],['taxonomy','القاموس الرئيسي'],['eng','الهندسة والتنفيذ'],['biz','نموذج الأعمال'],['docs','فهرس الوثائق']];
+  const L4 = [['4.1','القاموس الرئيسي','12 مجالًا تحدد لغة الذكاء'],['4.2','المنسّق والوكلاء','18 وكيلًا محكومًا'],['4.3','RAG والمعرفة','استرجاع مستند إلى الأدلة'],['4.4','الرسم المعرفي والذاكرة','كيانات وعلاقات وذاكرة مؤسسية'],['4.5','ذكاء البيانات والتحليلات','مصادر، جودة، تتبع، مؤشرات'],['4.6','التنبؤ والاستشراف','سيناريوهات وإنذار مبكر'],['4.7','المخاطر والفرص والمرونة','استمرارية واختبار ضغط'],['4.8','الحلول والتحسين','بدائل، باريتو، توصية'],['4.9 / 5.9','ذكاء القرار','مستويات، صلاحيات، ذاكرة قرار'],['4.10','التنفيذ وسير العمل','من القرار إلى الإجراء'],['4.11','الأثر والتعلم','المتوقع مقابل الفعلي'],['4.12','التكيف والتطور','المؤسسة تتطور بما تتعلمه'],['4.13','التوأم الرقمي','محاكاة المؤسسة قبل القرار'],['4.14','المؤسسة الذاتية المحكومة','استقلالية بصلاحيات'],['4.15','نظام التشغيل المؤسسي NEOS','طبقة تربط المؤسسة'],['4.16','الجهاز العصبي الرقمي','الإحساس بما يحدث الآن'],['4.17','الشبكة المعرفية','ربط المعرفة البشرية والآلية'],['4.18','النسيج الإدراكي التشغيلي','توزيع السياق والقدرات']];
+  const L5 = [['5.1','Think'],['5.2','Orchestrate'],['5.3','Retrieve Knowledge · KNOWS'],['5.4','Connect & Remember · REMEMBERS'],['5.5','Understand Data · THINKS'],['5.6','Predict & Explore Futures'],['5.7','Manage Risk & Opportunity'],['5.8','Generate & Optimize Solutions'],['5.9','Support Decisions'],['5.10','Execute'],['5.11','Measure & Learn'],['5.12','Adapt & Evolve'],['5.13','Simulate'],['5.14','Govern Autonomy'],['5.15','Operate Enterprise'],['5.16','Sense Enterprise'],['5.17','Connect Cognition'],['5.18','Operate Cognitively']];
+  let body = '';
+  if (S.archTab === 'map') body = `
+    <div class="card"><span class="eyebrow">THE CLOSED LOOP</span><h2 class="title-l">استشعر ← فكّر ← اعرف ← قرّر ← نفّذ ← تعلّم ← تطوّر</h2>
+      <div class="flow" style="font-size:13px">${['البيانات','المعلومات','المعرفة','الرؤية','الاستشراف','البدائل','الحل','القرار البشري','التنفيذ','القياس','التعلم'].map(x => `<span>${x}</span><i>←</i>`).join('')}<span style="background:var(--yellowbg);border-color:var(--yellowline);color:var(--yellow)">عودة إلى البيانات</span></div>
+      <div class="grid g4" style="gap:8px">${[['5.3','KNOWS','مصادر ← معرفة ← أدلة'],['5.4','REMEMBERS','كيانات ← علاقات ← ذاكرة'],['5.5','THINKS','تحليل ← اكتشاف ← تنبؤ ← تفسير'],['5.6','OPERATES','مستخدم ← معاملة ← سير عمل ← نتيجة']].map(([c, e, d]) => `<div class="sub"><span class="mono" style="color:var(--yellow);font-size:12px">${c} · ${e}</span><span style="font-size:12.5px">${d}</span></div>`).join('')}</div></div>
+    <div class="split"><div class="card"><h2 class="h-sec">الطبقات المعمارية — الوثيقة 4</h2><div class="grid g2" style="gap:6px">${L4.map(([c, n, d]) => `<div class="row nowrap" style="padding:8px 10px;border-radius:9px;background:var(--raised);align-items:flex-start"><span class="mono" style="color:var(--yellow);font-size:11.5px;width:58px;flex-shrink:0">${c}</span><span class="stack" style="gap:0"><b style="font-size:13px">${n}</b><span class="faint" style="font-size:11.5px">${d}</span></span></div>`).join('')}</div></div>
+      <div class="card"><h2 class="h-sec">طبقات الإعداد — الوثيقة 5</h2>${L5.map(([c, f]) => `<div class="row nowrap" style="font-size:12.5px;${+c.split('.')[1] > 10 ? 'opacity:.55' : ''}"><span class="mono" style="color:var(--yellow);width:40px">${c}</span><span class="mono" style="font-size:12px">${f}</span></div>`).join('')}<span class="faint" style="font-size:11.5px">الباهت = مخطط في خارطة التوسع، لم تصل وثيقته بعد.</span></div></div>
+    <div class="card"><h2 class="h-sec">المؤسسة ككائن حي (4.16)</h2><div class="grid g4" style="gap:8px">${[['الدماغ','NAIOSH Intelligence'],['الجهاز العصبي','NEDNS'],['الذاكرة','الذاكرة المؤسسية'],['الحواس','مصادر البيانات'],['الأعصاب','نسيج الأحداث'],['رد الفعل','سير العمل والتنفيذ'],['المناعة','المخاطر والمرونة'],['التوأم','التوأم الرقمي']].map(([a, b]) => `<div class="sub"><span class="lbl">${a}</span><b style="font-size:13px">${b}</b></div>`).join('')}</div></div>`;
+  if (S.archTab === 'taxonomy') body = `<div class="grid g3">${[['D01','الاستراتيجية','Strategy & Corporate Intelligence'],['D02','الحوكمة','Governance'],['D03','الأعمال','Business & Entrepreneurship'],['D04','المالية','Finance & Economics'],['D05','التشغيل','Operations & Quality'],['D06','رأس المال البشري','Human Capital & Talent'],['D07','السوق والعملاء','Market, Marketing & Customer'],['D08','المخاطر والسلامة','Risk, Safety & Resilience'],['D09','التقنية والذكاء الاصطناعي','Technology, Data & AI'],['D10','المعرفة والتعليم','Knowledge, Education & Learning'],['D11','القانون والامتثال','Legal & Compliance'],['D12','الاستدامة والمستقبل','Sustainability & Future']].map(([c, a, e]) => `<div class="card tight"><span class="mono" style="color:var(--yellow);font-size:12px">${c}</span><b style="font-size:15px">${a}</b><span class="mono faint" style="font-size:11px">${e}</span></div>`).join('')}</div>
+    <div class="card"><h2 class="h-sec">كيف يربط القاموس كل شيء</h2><div class="flow">${['النية','المجال','المجال الفرعي','الكيان','نوع التحليل','البيانات المطلوبة','المحرك','الوكيل','المخرج','المؤشر','المخاطر','المعرفة'].map((x, i, a) => `<span>${x}</span>${i < a.length - 1 ? '<i>←</i>' : ''}`).join('')}</div><p class="muted" style="font-size:13px;line-height:1.7">كل مجال فيه 10 إلى 20 مجالًا فرعيًا، مثل D01.02 التخطيط الاستراتيجي، ولكلٍّ وظائفه وتحليلاته وبياناته ومحركاته ومخرجاته ومؤشراته ومخاطره ومصادر معرفته.</p></div>`;
+  if (S.archTab === 'eng') body = `<div class="grid g2">
+    <div class="card tight"><b style="font-size:13.5px">القرارات الهندسية الثابتة</b><div class="row" style="gap:6px">${['API FIRST','DATA FIRST','GOVERNANCE FIRST','SECURITY FIRST','AI AGNOSTIC','INTEGRATION READY','MULTI-TENANT READY','AUDITABLE','SCALABLE','MODULAR','HUMAN CONTROLLED'].map(x => `<span class="chip mono" style="font-size:11px">${x}</span>`).join('')}</div>
+      <b style="font-size:13px;padding-top:8px">البنية التقنية</b><span class="soft" style="font-size:12.5px;line-height:1.7">PostgreSQL مع JSONB وبحث نصي و pgvector للبحث الدلالي وتقسيم للجداول الكبيرة وعزل على مستوى الصفوف · Redis للتخزين المؤقت · طوابير ومعالجات للمهام الثقيلة · تخزين كائنات للملفات · /api/v1 مع إصدارات منذ البداية.</span></div>
+    <div class="card tight"><b style="font-size:13.5px">نطاقات قاعدة البيانات (25)</b><div class="row" style="gap:6px">${['IAM','ORGANIZATION','INTEGRATION','DATA GOVERNANCE','DATA','CONSULTATION','QUESTIONNAIRE','ANALYTICS','AI','KNOWLEDGE','FORECAST','FORESIGHT','RISK','OPPORTUNITY','SOLUTION','DECISION','ACTION','MEASUREMENT','FEEDBACK','REPORTING','NOTIFICATION','AUDIT','SYSTEM','EARLY WARNING','BUSINESS RULES'].map(x => `<span class="chip mono" style="font-size:10.5px">${x}</span>`).join('')}</div></div>
+    <div class="card tight"><b style="font-size:13.5px">مراحل البناء</b>${[['Sprint 1','المستخدمون، الأدوار، الصلاحيات، المنظمات، الفروع، القطاعات، الأنظمة'],['Sprint 2','مصادر البيانات، الأصول، الحوكمة، الجودة، التكامل'],['Sprint 3','الاستشارات، المشكلات، الاستبيانات والأسئلة والإجابات ومنطقها'],['Sprint 4','التحليلات، الرؤى، الشذوذ، الأسباب الجذرية'],['Sprint 5','التنبؤ، الاستشراف، السيناريوهات، المخاطر، الفرص'],['Sprint 6','الحلول، التوصيات، القرار، الاعتمادات'],['Sprint 7','خطط العمل، المؤشرات، القياس، الملاحظات، الدروس'],['Sprint 8','المعرفة، الذكاء الاصطناعي، RAG، التقارير، التدقيق، الإشعارات']].map(([a, b]) => `<div class="row nowrap" style="font-size:12.5px;align-items:flex-start"><span class="mono" style="color:var(--yellow);width:64px;flex-shrink:0">${a}</span><span class="soft">${b}</span></div>`).join('')}</div>
+    <div class="card tight"><b style="font-size:13.5px">معايير قبول النسخة الأولى (19)</b><div class="grid g2" style="gap:4px 12px">${['إنشاء استشارة','تحديد المشكلة','الوصول للبيانات المصرح بها','قياس جودة البيانات','تحديد البيانات الناقصة','استبيان تكيفي','استقبال الإجابات','تنفيذ تحليل','إظهار الرؤى','اقتراح أسباب محتملة','اقتراح حلول','الدرجة والثقة منفصلتان','إنشاء توصية','رفعها لصاحب القرار','تسجيل القرار','خطة عمل','قياس النتيجة','تسجيل الملاحظات','تدقيق كامل'].map(x => `<span class="row nowrap" style="font-size:12px">${ic('check', 13, 'style="color:var(--green)"')}${x}</span>`).join('')}</div><span class="faint" style="font-size:11.5px">كل المعايير الـ 19 ممثلة في هذا العرض.</span></div>
+  </div>`;
+  if (S.archTab === 'biz') body = `<div class="card"><h2 class="h-sec">شرائح التسعير (5.6.3) — القيمة والتكلفة والإتاحة</h2><div class="grid g3">${[['L0','FREE','أقصى وصول: معرفة عامة، أدوات أساسية، محتوى توعوي.'],['L1','SUPPORTED','تكلفة فعلية بسعر مخفّض عبر الدعم والتمويل التبادلي.'],['L2','AFFORDABLE','خدمات أساسية مدفوعة بأسعار منخفضة ومستدامة.'],['L3','PROFESSIONAL','تدريب، استشارات، ذكاء مهني، تقارير متقدمة — السعر حسب القيمة.'],['L4','ENTERPRISE','متعدد المستخدمين والفروع، صلاحيات، تكاملات، وكلاء ذكاء، SLA.'],['L5','STRATEGIC','تحول مؤسسي ومنصات مخصصة ومشاريع كبرى — نموذج تسعير استراتيجي.']].map(([c, e, d]) => `<div class="sub"><span class="mono" style="color:var(--yellow);font-size:12px">${c} · ${e}</span><span style="font-size:12.5px;line-height:1.65">${d}</span></div>`).join('')}</div></div>
+    <div class="grid g2"><div class="card tight"><b style="font-size:13.5px">محرك السوق والنمو (5.7) — 16 وكيلًا</b><div class="row" style="gap:6px">${['ذكاء السوق','ذكاء القطاع','ذكاء العملاء','اكتشاف العملاء المحتملين','تأهيلهم','ذكاء الحملات','مطابقة الحلول','ذكاء المبيعات','ذكاء الشركاء','الإحالات','العروض','ذكاء العقود','ذكاء التسليم','نجاح العملاء','التجديد','ذكاء النمو'].map(x => `<span class="chip" style="font-size:11.5px">${x}</span>`).join('')}</div></div>
+      <div class="card tight"><b style="font-size:13.5px">NAIOSH HUB 360 (5.6) — طبقة التشغيل</b><span class="soft" style="font-size:12.5px;line-height:1.7">هدف المستخدم ← إجراء موجّه ← معاملة ← سير عمل ← نتيجة ← أفضل إجراء تالٍ. معرّف مركزي لكل عنصر (APP · MOD · SCR · FRM · TRX · WFL · KNO · MEM · INT)، 17 دورًا قابلًا للتخصيص، و8 مستويات نطاق للصلاحيات من الشامل حتى السجل الواحد.</span></div></div>`;
+  if (S.archTab === 'docs') { const docs = [['المتطلبات التأسيسية','الرؤية، 13 سؤالًا، المحركات، المراحل'],['نظام ذكاء البيانات والقرار','المحركات الثمانية وبطاقة القرار والإنذار المبكر'],['الوثيقة 2','قاعدة البيانات والعلاقات والواجهات البرمجية'],['الوثيقة 3','مواصفة الواجهات وتجربة المستخدم'],['الوثيقة التنفيذية لتحليل البيانات','طبقات التكامل والحوكمة والمحركات'],['الوثيقة 4','معمارية الذكاء و RAG'],['4.1 → 4.18','الطبقات المعمارية الثماني عشرة'],['5.0','معمارية الإعدادات الرئيسية والوراثة'],['5.1 → 5.10','إعدادات الطبقات'],['5.4.18 / 5.4.19','القاعدة الذهبية والحوكمة الموروثة'],['5.6 · 5.6.1–5.6.3','HUB 360، القيمة والتكلفة، التسعير'],['5.7','محرك السوق والنمو'],['خارطة التوسع','5.1 → 5.18'],['الفهرس العقلي','12 عائلة ومصادر المعرفة'],['الطبقة التشغيلية A–Z','مصطلحات بوابة نايوش 360'],['ما المقصود بعلم البيانات؟','المرجع العلمي للمنهجية']];
+    body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوثيقة</th><th>ما تغطيه</th></tr></thead><tbody>${docs.map(([a, b]) => `<tr><td><b>${a}</b></td><td class="soft">${b}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">52 وثيقة مرجعية بُني عليها هذا العرض.</p></div>`; }
+  return `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${S.archTab === k}" data-act="arch-tab" data-k="${k}">${l}</button>`).join('')}</div>${body}`;
+};
+
+/* ================= render & events ================= */
+function save() { try { const { menu, ...keep } = S; localStorage.setItem('naiosh-demo', JSON.stringify(keep)); } catch (e) {} }
+function load() { try { const raw = localStorage.getItem('naiosh-demo'); if (raw) { const v = JSON.parse(raw); S = Object.assign(freshState(), v, { menu: false }); if (S.askStage === 1) S.askShown = ASK_STEPS.length; } } catch (e) {} }
+function effRoute() { const r = VIEWS[S.route] ? S.route : 'home'; if (r !== 'home' && r !== 'settings' && !modOn(r)) return 'home'; return r; }
+function render() {
+  if (!VIEWS[S.route]) S.route = 'home';
+  const R = effRoute();
+  applyTheme();
+  renderSide(); renderTop();
+  const side = document.getElementById('side'), top = document.getElementById('top');
+  side.innerHTML = brandify(side.innerHTML); top.innerHTML = brandify(top.innerHTML);
+  document.getElementById('view').innerHTML = R === 'settings' ? VIEWS.settings() : brandify(VIEWS[R]());
+  document.getElementById('app').classList.toggle('open', S.menu);
+  document.getElementById('app').classList.toggle('touring', S.tour.on);
+  renderTour(); const tr = document.getElementById('tour'); tr.innerHTML = brandify(tr.innerHTML); save();
+}
+function go(r) { if (r !== S.route) S.hist = (S.hist || []).concat(S.route).slice(-30); S.route = r; S.menu = false; render(); window.scrollTo(0, 0); document.getElementById('view').focus({ preventScroll: true }); }
+function tourGo(i) { S.tour.i = Math.max(0, Math.min(TOUR.length - 1, i)); go(TOUR[S.tour.i].r); }
+
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-go]');
+  const a = e.target.closest('[data-act]');
+  if (a && (!g || g.contains(a))) { handle(a.dataset.act, a.dataset.k, a); return; }
+  if (g) { go(g.dataset.go); }
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-go],tr[data-act]')) { e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('input', (e) => {
+  const k = e.target.dataset && e.target.dataset.model; if (!k) return;
+  S[k] = e.target.value;
+  if (k === 'why') { const b = document.getElementById('d-submit'); if (b) b.setAttribute('aria-disabled', String(!(S.choice && S.why.trim().length > 3))); }
+  if (k === 'kq') { const r = document.getElementById('kres'); if (r) r.innerHTML = kResults(); }
+  save();
+});
+function handle(act, k, el) {
+  const qs = QS();
+  switch (act) {
+    case 'menu': S.menu = !S.menu; document.getElementById('app').classList.toggle('open', S.menu); return;
+    case 'tour-next': if (S.tour.i >= TOUR.length - 1) { S.tour.on = false; go('home'); toast('انتهى العرض الموجّه — الحلقة مكتملة'); } else tourGo(S.tour.i + 1); return;
+    case 'tour-prev': if (S.tour.i > 0) tourGo(S.tour.i - 1); return;
+    case 'tour-close': S.tour.on = false; render(); return;
+    case 'tour-open': S.tour.on = true; render(); return;
+    case 'tour-reset': clearInterval(askTimer); S = Object.assign(freshState(), { setTab: S.setTab }); go('home'); toast('أُعيد العرض إلى البداية'); return;
+    case 'ask-ex': { const ex = ['أريد معرفة سبب انخفاض مبيعات الفرع.','لماذا انخفض مؤشر الأداء في قطاع التشغيل؟','ما المتوقع خلال الأشهر الستة القادمة؟','هل هناك خطر متوقع على أداء الموظفين؟','أين توجد فرص النمو غير المستغلة؟','ما البيانات التي تنقصنا لاتخاذ القرار؟']; S.q = ex[+el.dataset.i] || S.q; render(); return; }
+    case 'ask-start':
+      if (!S.q.trim()) { toast('اكتب سؤالك أولًا'); return; }
+      S.askStage = 1; S.askShown = 0; log('د. عدنان', 'طرح سؤالًا على نايوش: ' + S.q.slice(0, 60)); render();
+      clearInterval(askTimer);
+      askTimer = setInterval(() => { S.askShown++; if (S.askShown >= ASK_STEPS.length) { clearInterval(askTimer); log('المنسّق', 'عقد البيانات: الكفاية 62% — طُلب استبيان ذكي', 'sys'); } if (S.route === 'ask') render(); else save(); }, 520);
+      return;
+    case 'ask-reset': clearInterval(askTimer); S.askStage = 0; S.askShown = 0; render(); return;
+    case 'ctab': S.consultTab = k; render(); return;
+    case 'dsel': S.dataSel = k; render(); return;
+    case 'q-pick': { const q = qs[Math.min(S.qi, qs.length - 1)]; S.ans[q.id] = q.o[+k]; if (q.id === 'q1') delete S.ans.q2; render(); return; }
+    case 'q-next': { const q = qs[S.qi]; if (!S.ans[q.id]) { toast('اختر إجابة أولًا'); return; } if (S.qi >= qs.length - 1) { S.qDone = true; if (S.askStage !== 1) { S.askStage = 1; S.askShown = ASK_STEPS.length; } log('د. عدنان', 'أكمل الاستبيان الذكي — الثقة ارتفعت إلى 84%'); toast('اكتملت البيانات — الثقة 84%'); } else S.qi++; render(); return; }
+    case 'q-back': S.qi = Math.max(0, S.qi - 1); render(); return;
+    case 'q-review': S.qDone = false; S.qi = 0; render(); return;
+    case 'cause': S.cause = k; render(); return;
+    case 'sc': S.sc = k; render(); return;
+    case 'risk': S.risk = k; render(); return;
+    case 'sol-focus': S.sol = +k; render(); return;
+    case 'sol-choose': S.sol = +k; log('د. عدنان', 'رفع الحل #' + k + ' إلى مركز القرار'); go('decision'); return;
+    case 'd-pick': S.choice = k; render(); return;
+    case 'd-submit':
+      if (!(S.choice && S.why.trim().length > 3)) { toast(S.choice ? 'اكتب مبرر القرار أولًا' : 'اختر القرار أولًا'); return; }
+      S.decided = true; log('د. عدنان', `سجّل القرار DEC-2026-041 (${choiceLabel()}): ${solSel().short}`);
+      if (approved()) log('محرك التنفيذ', 'ولّد خطة التنفيذ AP-2026-077 من 8 إجراءات', 'sys');
+      toast('سُجّل القرار في ذاكرة القرار'); render(); return;
+    case 'd-undo': S.decided = false; S.measured = false; S.lessonApproved = false; render(); return;
+    case 'simulate': S.measured = true; log('محرك الأثر', `بعد 30 يومًا: المؤشر ${solSel().act} مقابل المتوقع ${solSel().exp}`, 'sys'); toast('مرّ 30 يومًا — النتائج جاهزة'); render(); return;
+    case 'lesson-approve': S.lessonApproved = true; log('بوابة الحوكمة', 'اعتمدت الدرس LSN-2026-093 كمعرفة مؤسسية L5', 'sys'); toast('دخل الدرس الذاكرة المؤسسية'); render(); return;
+    case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
+    case 'gov-tab': S.govTab = k; render(); return;
+    case 'arch-tab': S.archTab = k; render(); return;
+    default: if (!diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+  }
+}
+
+if (window.NAIOSH_SERVER && typeof serverBoot === 'function') serverBoot();
+else { load(); render(); detectEditor(); }
+try { if (sessionStorage.getItem('naiosh-published') === '1') { sessionStorage.removeItem('naiosh-published'); toast('نُشرت الإعدادات — يراها الآن كل من يفتح الرابط'); } } catch (e) {}
+</script>

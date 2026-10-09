@@ -1,0 +1,134 @@
+
+<script type="application/json" id="naiosh-config">{}</script>
+<script data-app="">
+/* ================= configuration (editable from Settings) ================= */
+const CFG_DEFAULT = {
+  identity: { brandAr: 'نايوش', brandEn: 'NAIOSH', brandSub: 'INTELLIGENCE', user: 'د. عدنان', userInitial: 'ع', role: 'صاحب قرار · الإدارة العليا', branch: 'الفرع الشمالي', greeting: 'مساء الخير', demoBadge: true, tourDefault: true },
+  theme: { red: '#FF2E4D', action: '#D90F2C', yellow: '#FFCD11' },
+  modules: {},
+  command: [
+    { label: 'مخاطر حرجة', value: '3', color: 'r', route: 'risks', auto: '' },
+    { label: 'قرارات بانتظار اعتمادك', value: '5', color: 'o', route: 'decision', auto: 'decisions' },
+    { label: 'مشكلات جودة بيانات', value: '7', color: 'y', route: 'data', auto: '' },
+    { label: 'فرص مكتشفة', value: '12', color: 'g', route: 'risks', auto: '' }
+  ],
+  health: [
+    { label: 'مالي', score: 78, route: 'impact', boost: 0 },
+    { label: 'تشغيلي', score: 64, route: 'diagnosis', boost: 8 },
+    { label: 'العملاء', score: 71, route: 'analysis', boost: 0 },
+    { label: 'الموارد البشرية', score: 58, route: 'rootcause', boost: 6 },
+    { label: 'الجودة', score: 82, route: 'quality', boost: 0 },
+    { label: 'المخاطر', score: 61, route: 'risks', boost: 0 },
+    { label: 'المشاريع', score: 76, route: 'execution', boost: 0 },
+    { label: 'المعرفة', score: 69, route: 'knowledge', boost: 0 },
+    { label: 'الابتكار', score: 73, route: 'solutions', boost: 0 },
+    { label: 'الامتثال', score: 88, route: 'governance', boost: 0 }
+  ],
+  kpis: [
+    { label: 'صحة البيانات', value: '87%', sub: '7 من 8 مصادر متصلة', bar: 87, color: 'g', route: 'data', auto: '' },
+    { label: 'الاستشارات النشطة', value: '9', sub: '', bar: 60, color: 'b', route: 'consult', auto: 'consult' },
+    { label: 'المخاطر الحرجة', value: '3', sub: 'من أصل 12 خطرًا', bar: 25, color: 'r', route: 'risks', auto: '' },
+    { label: 'الفرص', value: '18', sub: '4 عالية القيمة', bar: 72, color: 'g', route: 'risks', auto: '' },
+    { label: 'القرارات المعلقة', value: '7', sub: '5 بانتظارك', bar: 45, color: 'o', route: 'decision', auto: 'decisions' },
+    { label: 'الإجراءات المنجزة', value: '84%', sub: '3 متأخرة', bar: 84, color: 'g', route: 'execution', auto: '' },
+    { label: 'دقة التنبؤات', value: '81%', sub: 'اختبار رجعي 12 شهرًا', bar: 81, color: 'y', route: 'foresight', auto: '' },
+    { label: 'مؤشر أداء الفرع الشمالي', value: '64', sub: 'أدنى من المتوسط بـ 16', bar: 64, color: 'r', route: 'diagnosis', auto: 'perf' }
+  ],
+  alerts: [
+    { level: 'h', title: 'ارتفاع تدريجي في مؤشر مخاطر تسرّب الكفاءات في قطاع التشغيل', meta: 'محرك المخاطر · ثقة 74%', route: 'risks' },
+    { level: 'm', title: 'نقص بيانات يمنع الوصول إلى درجة ثقة أعلى — 3 مصادر غير متوفرة', meta: 'محرك جودة البيانات', route: 'data' },
+    { level: 's', title: 'نقل ممارسات الفرع الجنوبي الأعلى أداءً إلى الفروع المتراجعة', meta: 'محرك الفرص · ثقة 77%', route: 'risks' }
+  ],
+  consults: [
+    { id: 'CNS-001', title: 'انخفاض أداء الفرع الشمالي', sub: 'استشارة استباقية من الإنذار المبكر', domain: 'التشغيل', stage: '', grp: 'data', priority: 'حرجة', conf: 58, owner: 'د. عدنان', route: 'ask', live: true },
+    { id: 'CNS-002', title: 'تراجع المبيعات في قناة التجزئة', sub: 'توصية جاهزة للمراجعة', domain: 'السوق والعملاء', stage: 'القرار', grp: 'decision', priority: 'عالية', conf: 91, owner: 'م. سارة', route: 'decision', live: false },
+    { id: 'CNS-003', title: 'ارتفاع دوران الموظفين الجدد', sub: 'تحليل تشخيصي قيد التشغيل', domain: 'رأس المال البشري', stage: 'التحليل', grp: 'analysis', priority: 'عالية', conf: 74, owner: 'أ. خالد', route: 'diagnosis', live: false },
+    { id: 'CNS-004', title: 'مخاطر السلامة في مواقع التشغيل', sub: 'خطة من 9 إجراءات · 6 منجزة', domain: 'المخاطر والسلامة', stage: 'التنفيذ', grp: 'exec', priority: 'حرجة', conf: 86, owner: 'م. ليلى', route: 'execution', live: false },
+    { id: 'CNS-005', title: 'فجوة المهارات الرقمية لدى المدربين', sub: '3 بدائل قيد المقارنة', domain: 'المعرفة والتعليم', stage: 'الحلول', grp: 'analysis', priority: 'متوسطة', conf: 82, owner: 'د. هالة', route: 'solutions', live: false },
+    { id: 'CNS-006', title: 'توقع الطلب على برامج التدريب 2027', sub: '3 سيناريوهات · اختبار رجعي 12 شهرًا', domain: 'المعرفة والتعليم', stage: 'الاستشراف', grp: 'analysis', priority: 'متوسطة', conf: 77, owner: 'أ. رامي', route: 'foresight', live: false },
+    { id: 'CNS-008', title: 'امتثال الفروع للسياسات المحدّثة', sub: 'نقص في بيانات فرعين', domain: 'القانون والامتثال', stage: 'البيانات', grp: 'data', priority: 'منخفضة', conf: 49, owner: 'أ. نور', route: 'data', live: false },
+    { id: 'CNS-007', title: 'تأخر تحصيل المستحقات', sub: 'الأثر الفعلي 92% من المتوقع', domain: 'المالية', stage: 'مغلقة', grp: 'closed', priority: 'منخفضة', conf: 88, owner: 'م. سارة', route: 'impact', live: false }
+  ],
+  sources: [
+    { code: 'ERP', name: 'تخطيط الموارد ERP', st: 'ok', rec: '482,300', sync: 'قبل 8 د', g: 'good', d: [96,91,88,94,99,93,90], note: 'جميع الأبعاد ضمن الحدود. تُستخدم مباشرة في التحليل.' },
+    { code: 'HR', name: 'الموارد البشرية', st: 'warn', rec: '38,420', sync: 'قبل 9 أيام', g: 'warn', d: [84,90,86,61,97,92,85], note: 'الحداثة منخفضة: آخر مزامنة قبل 9 أيام. يُسمح بالتحليل مع وسم النتائج بتنبيه.' },
+    { code: 'CRM', name: 'إدارة العملاء CRM', st: 'ok', rec: '311,900', sync: 'قبل 22 د', g: 'warn', d: [92,87,83,90,95,89,88], note: 'اتساق أقل من الحد بسبب تكرار سجلات العملاء بين الفروع. يُسمح مع تنبيه.' },
+    { code: 'LMS', name: 'التدريب LMS', st: 'warn', rec: '96,110', sync: 'قبل يومين', g: 'low', d: [58,85,80,78,96,88,82], note: 'الاكتمال 58%: ساعات التدريب غير مسجلة لـ 42% من موظفي الفرع. تُطلب عبر الاستبيان الذكي قبل التشخيص.' },
+    { code: 'SALES', name: 'المبيعات', st: 'ok', rec: '264,800', sync: 'قبل 5 د', g: 'good', d: [97,94,92,96,98,95,93], note: 'جودة عالية وحديثة. المصدر الأساسي لوصف ما حدث.' },
+    { code: 'SAFETY', name: 'السلامة', st: 'ok', rec: '12,640', sync: 'قبل ساعة', g: 'good', d: [90,88,91,85,99,90,89], note: 'ضمن الحدود. غير مطلوب لهذه الاستشارة.' },
+    { code: 'FIN', name: 'المالية', st: 'ok', rec: '78,330', sync: 'قبل 30 د', g: 'good', d: [95,96,93,88,99,97,94], note: 'جودة عالية. تُستخدم لتقدير كلفة الحلول.' },
+    { code: 'CS', name: 'خدمة العملاء والشكاوى', st: 'off', rec: '—', sync: 'غير متصل', g: 'crit', d: [0,0,0,0,0,0,0], note: 'الموصل غير متصل. لا يُرسل منه شيء إلى الذكاء الاصطناعي؛ البيانات تُطلب يدويًا عبر الاستبيان.' }
+  ],
+  questions: [
+    { text: 'هل حدث انخفاض الأداء في جميع الفروع، أم في هذا الفرع فقط؟', options: ['جميع الفروع','هذا الفرع فقط','بعض الفروع','لا أعرف'], why: 'إذا كان الانخفاض محصورًا في فرع واحد فالسبب داخلي على الأرجح (فريق، قيادة، عمليات). وإذا شمل الفروع فالسبب خارجي أو مركزي. هذا السؤال يحدد اتجاه التشخيص كله.', gap: 'نطاق المشكلة', gain: 6, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' },
+    { text: 'هل تزامن الانخفاض مع تغيّر في السوق أو الأسعار أو المنافسة؟', options: ['نعم، تغيّر في الأسعار','نعم، منافس جديد','تغيّر في طلب السوق','لا','لا أعرف'], why: 'بما أن الانخفاض قد يشمل أكثر من فرع، نختبر أولًا العوامل الخارجية المشتركة قبل الأسباب الداخلية.', gap: 'التغييرات والعوامل المؤثرة', gain: 6, branchWhen: 'هذا الفرع فقط', branchText: 'هل تغيّر مدير الفرع أو هيكل الفريق خلال آخر 6 أشهر؟', branchOptions: ['نعم، تغيّر المدير','نعم، تغيّر هيكل الفريق','الاثنان معًا','لا، لم يتغيّر شيء','لا أعرف'], branchWhy: 'بما أن الانخفاض محصور في هذا الفرع، نختبر أولًا الأسباب الداخلية الأكثر تكرارًا في الحالات المشابهة: تغيّر القيادة أو إعادة الهيكلة.' },
+    { text: 'كم موظفًا تقريبًا غادر الفرع خلال الربع الأخير؟', options: ['لا أحد','من 1 إلى 3','من 4 إلى 8','أكثر من 8','لا أعرف'], why: 'بيانات دوران الموظفين غير محدثة في نظام الموارد البشرية لهذا الفرع (آخر مزامنة قبل 9 أيام). الدوران المرتفع من أقوى مؤشرات تراجع الأداء.', gap: 'دوران الموظفين', gain: 5, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' },
+    { text: 'ما متوسط ساعات التدريب الشهرية للموظف في هذا الفرع؟', options: ['أقل من ساعتين','من 2 إلى 5 ساعات','من 6 إلى 10 ساعات','أكثر من 10 ساعات','لا تتوفر بيانات'], why: 'نظام التدريب لا يسجّل ساعات 42% من موظفي الفرع (الاكتمال 58%). نحتاج تقديرك لسدّ الفجوة، وسيُطابق لاحقًا مع السجلات.', gap: 'ساعات التدريب', gain: 5, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' },
+    { text: 'هل ارتفعت شكاوى العملاء في الفترة نفسها؟', options: ['ارتفعت كثيرًا','ارتفعت قليلًا','لم تتغيّر','انخفضت','لا أعرف'], why: 'نظام خدمة العملاء غير متصل حاليًا، لذلك لا نملك بيانات الشكاوى. الشكاوى تكشف إن كان التراجع ظاهرًا للعملاء أم داخليًا فقط.', gap: 'شكاوى العملاء', gain: 4, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' },
+    { text: 'ما النتيجة التي تريد تحقيقها خلال 90 يومًا؟', options: ['استعادة مستوى الأداء السابق','تجاوز المستوى السابق','إيقاف التراجع فقط'], why: 'الهدف يحدد كيف تُقيَّم الحلول: استعادة الأداء تفضّل الحلول السريعة، وتجاوزه يفضّل الحلول المستدامة الأعلى كلفة.', gap: 'الهدف المطلوب', gain: 0, branchWhen: '', branchText: '', branchOptions: [], branchWhy: '' }
+  ],
+  risks: [
+    { id: 'R-01', name: 'تسرّب الكفاءات من الفرع', cat: 'رأس المال البشري', p: 4, i: 5, lv: 'c', vel: 'سريعة', prox: '30 يومًا', tr: '↑ صاعد', inh: 20, res: 14, ctl: ['مقابلات البقاء الشهرية | فعالية 40%','حوافز الاحتفاظ | غير مفعّلة'], chain: 'نقص التدريب ← ضغط العمل ← استقالات ← فقدان المعرفة ← تراجع إضافي', kri: 'استقالة أي من الموظفين الثلاثة الذين يحملون 41% من المهام', treat: 'تخفيف: خطة احتفاظ فورية للموظفين الرئيسيين + توثيق معرفتهم خلال 3 أسابيع.' },
+    { id: 'R-02', name: 'تراجع رضا العملاء', cat: 'السوق والعملاء', p: 4, i: 4, lv: 'h', vel: 'متوسطة', prox: '60 يومًا', tr: '↑ صاعد', inh: 16, res: 12, ctl: ['متابعة الشكاوى | البيانات غير متصلة'], chain: 'تأخر الإنجاز ← انتظار أطول ← شكاوى ← فقدان عملاء', kri: 'متوسط زمن الإنجاز فوق 3 أيام لأسبوعين متتاليين', treat: 'تخفيف: ربط نظام الشكاوى وإضافة مؤشر رضا أسبوعي.' },
+    { id: 'R-03', name: 'انتقال التراجع إلى الفروع المجاورة', cat: 'خطر متتالٍ', p: 2, i: 5, lv: 'h', vel: 'بطيئة', prox: '4 أشهر', tr: '→ ثابت', inh: 10, res: 8, ctl: ['فصل الموارد المشتركة | فعالية 55%'], chain: 'نقل موظفين لسدّ النقص ← ضغط على الفروع المجاورة ← تراجع متتالٍ', kri: 'طلبات نقل مؤقت من الفرع الشمالي', treat: 'مراقبة: منع النقل المؤقت دون موافقة القطاع.' },
+    { id: 'R-04', name: 'تجاوز ميزانية التدريب', cat: 'المالية', p: 3, i: 2, lv: 'm', vel: 'بطيئة', prox: '6 أشهر', tr: '→ ثابت', inh: 6, res: 4, ctl: ['سقف إنفاق ربعي | فعالية 80%'], chain: 'برنامج تدريب مكثف ← تكلفة غير مخططة ← ضغط على الميزانية', kri: 'الإنفاق الفعلي فوق 110% من المخطط', treat: 'قبول مع مراقبة شهرية.' },
+    { id: 'R-05', name: 'ضعف جودة بيانات الموارد البشرية', cat: 'البيانات', p: 3, i: 3, lv: 'm', vel: 'متوسطة', prox: 'الآن', tr: '↓ يتحسن', inh: 9, res: 6, ctl: ['بوابة جودة البيانات | فعالية 75%'], chain: 'مزامنة متأخرة ← بيانات قديمة ← ثقة أقل في التشخيص', kri: 'تأخر المزامنة أكثر من 7 أيام', treat: 'تخفيف: جدولة مزامنة يومية مع مالك البيانات.' }
+  ],
+  solutions: [
+    { name: 'إعادة توزيع الموارد والمهام مع خطة احتفاظ', short: 'إعادة التوزيع', v: [91,62,69,88,76,84], score: 86, conf: 79, rec: true, exp: 78, act: 74, time: '3–4 أسابيع', note: 'يعالج السببين الأقوى معًا (ضغط العمل ونقص التدريب) ويحمي الموظفين الرئيسيين. مدعوم بحالة مطابقة ناجحة.', tasks: ['إعادة توزيع المهام المفتوحة على الفريق','خطة احتفاظ للموظفين الرئيسيين','جدول تدريب 6 ساعات شهريًا لكل موظف'] },
+    { name: 'برنامج تدريب مكثف موجّه', short: 'تدريب مكثف', v: [84,91,56,80,62,71], score: 79, conf: 72, rec: false, exp: 75, act: 70, time: '6–8 أسابيع', note: 'منخفض التكلفة وسهل البدء، لكنه لا يعالج ضغط العمل، وأثره يظهر بعد 6 إلى 8 أسابيع.', tasks: ['تصميم برنامج تدريب مكثف للفرع','جدولة 12 ساعة تدريب شهريًا للموظفين الجدد','قياس أثر التدريب على الإنتاجية'] },
+    { name: 'أتمتة جدولة المناوبات', short: 'أتمتة الجدولة', v: [77,75,72,85,90,81], score: 81, conf: 64, rec: false, exp: 76, act: 69, time: '5–6 أسابيع', note: 'ملاءمة عالية نظريًا، لكن الثقة منخفضة: لا توجد حالات سابقة، وبيانات المناوبات جزئية.', tasks: ['إعداد نظام جدولة المناوبات','ترحيل بيانات المناوبات الحالية','تدريب المشرفين على النظام'] }
+  ],
+  docs: [
+    { id: 'POL-HR-07', title: 'سياسة التدريب والتطوير المهني', type: 'سياسة', domain: 'الموارد البشرية', level: 'L6', tags: 'تدريب، ساعات، موظف جديد' },
+    { id: 'CNS-2025-114', title: 'استشارة: تراجع أداء الفرع الجنوبي', type: 'استشارة سابقة', domain: 'التشغيل', level: 'L5', tags: 'تراجع، فرع، أداء، تدريب' },
+    { id: 'PROC-OPS-12', title: 'إجراء توزيع المهام والمناوبات', type: 'إجراء', domain: 'التشغيل', level: 'L6', tags: 'مهام، مناوبات، توزيع' },
+    { id: 'LSN-061', title: 'درس: التدريب المكثف يعيد الأداء خلال 6 أسابيع', type: 'درس مستفاد', domain: 'المعرفة والتعليم', level: 'L5', tags: 'تدريب، درس، أداء' },
+    { id: 'CONST-01', title: 'دستور نايوش — الحوكمة العليا', type: 'الدستور', domain: 'الحوكمة', level: 'L6', tags: 'حوكمة، دستور، صلاحيات' },
+    { id: 'RPT-Q2-26', title: 'التقرير الربعي لأداء الفروع', type: 'تقرير', domain: 'الاستراتيجية', level: 'L4', tags: 'فروع، أداء، تقرير' },
+    { id: 'STD-ISO-45001', title: 'معيار إدارة السلامة المهنية', type: 'معيار دولي', domain: 'المخاطر والسلامة', level: 'L4', tags: 'سلامة، معيار، مخاطر' },
+    { id: 'TRN-BK-03', title: 'دليل المدرب: قياس أثر التدريب', type: 'مادة تدريبية', domain: 'المعرفة والتعليم', level: 'L3', tags: 'تدريب، أثر، قياس' }
+  ]
+};
+const clone = (o) => JSON.parse(JSON.stringify(o));
+function mergeCfg(base, over) {
+  const out = clone(base);
+  if (!over || typeof over !== 'object') return out;
+  for (const k of Object.keys(over)) {
+    const v = over[k];
+    if (Array.isArray(v)) out[k] = clone(v);
+    else if (v && typeof v === 'object' && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])) out[k] = Object.assign({}, out[k], clone(v));
+    else out[k] = v;
+  }
+  return out;
+}
+function readEmbedded() { try { return JSON.parse(document.getElementById('naiosh-config').textContent || '{}'); } catch (e) { return {}; } }
+const EMBED_RAW = JSON.stringify(readEmbedded());
+let CFG = mergeCfg(CFG_DEFAULT, readEmbedded());
+let CFG_DIRTY = false;
+(function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem('naiosh-cfg-draft') || 'null');
+    if (d && d.base === EMBED_RAW && d.cfg) { CFG = mergeCfg(CFG_DEFAULT, d.cfg); CFG_DIRTY = true; }
+  } catch (e) {}
+})();
+function saveDraft() { try { localStorage.setItem('naiosh-cfg-draft', JSON.stringify({ base: EMBED_RAW, cfg: CFG })); } catch (e) {} }
+function clearDraft() { try { localStorage.removeItem('naiosh-cfg-draft'); } catch (e) {} }
+function getPath(o, p) { return p.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+function applyTheme() {
+  const t = CFG.theme, r = document.documentElement.style;
+  if (/^#[0-9a-f]{6}$/i.test(t.red)) r.setProperty('--red', t.red);
+  if (/^#[0-9a-f]{6}$/i.test(t.action)) r.setProperty('--action', t.action);
+  if (/^#[0-9a-f]{6}$/i.test(t.yellow)) r.setProperty('--yellow', t.yellow);
+}
+function brandify(html) {
+  const I = CFG.identity, D = CFG_DEFAULT.identity, T = CFG.theme, DT = CFG_DEFAULT.theme;
+  let h = html;
+  const pairs = [[D.role, I.role], [D.user, I.user], [D.branch, I.branch], [D.brandEn, I.brandEn], [D.brandAr, I.brandAr], [D.brandSub, I.brandSub]];
+  for (const [a, b] of pairs) if (b && b !== a) h = h.split(a).join(String(b).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+  for (const [a, b] of [[DT.red, T.red], [DT.action, T.action], [DT.yellow, T.yellow]]) if (b && b.toLowerCase() !== a.toLowerCase() && /^#[0-9a-f]{6}$/i.test(b)) h = h.split(a).join(b);
+  return h;
+}
+const modOn = (id) => CFG.modules[id] !== false;
+</script>
