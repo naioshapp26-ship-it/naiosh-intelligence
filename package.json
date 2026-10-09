@@ -1,0 +1,20 @@
+{
+  "name": "naiosh-intelligence-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NAIOSH Intelligence — backend API and web server",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node --watch src/server.js",
+    "migrate": "node scripts/migrate.js",
+    "create-admin": "node scripts/create-admin.js",
+    "build:frontend": "node scripts/build-frontend.js",
+    "test": "node --test test/*.test.js",
+    "assemble:frontend": "node scripts/assemble-frontend.js && node scripts/build-frontend.js",
+    "backup": "node scripts/backup.js"
+  }
+}

@@ -1,0 +1,36 @@
+# Production stack: the app + Caddy (automatic HTTPS certificates for your domain).
+# Usage:  cp .env.example .env   (edit it)   then   docker compose up -d --build
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /data
+      TRUST_PROXY: "1"
+    volumes:
+      - naiosh-data:/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  naiosh-data:
+  caddy-data:
+  caddy-config:

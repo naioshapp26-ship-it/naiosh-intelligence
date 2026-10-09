@@ -1,0 +1,5 @@
+data
+.env
+*.log
+test
+node_modules
