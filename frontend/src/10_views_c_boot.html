@@ -102,17 +102,23 @@ VIEWS.agents = () => {
 };
 
 /* ================= REPORTS ================= */
+const REPORT_TYPES = [['EXECUTIVE','التقرير التنفيذي','للإدارة العليا'],['ANALYTICAL','التقرير التحليلي','للمحللين'],['CONSULTATION','تقرير الاستشارة','لصاحب الاستشارة'],['FORECAST','تقرير التوقعات','للتخطيط'],['FORESIGHT','تقرير الاستشراف','للاستراتيجية'],['SOLUTION','تقرير الحلول','لفريق التنفيذ'],['DECISION_BRIEF','موجز القرار','لصاحب القرار'],['EARLY_WARNING','تقرير الإنذار المبكر','للمخاطر']];
+function decisionCard() {
+  SOLS = SOLS_FN(); const s = solSel();
+  return [['المشكلة','انخفاض أداء الفرع الشمالي 17%'],['البيانات المستخدمة','8 مصادر · 1,284,500 سجل + 6 إجابات استبيان'],['جودة البيانات','87%'],['الأسباب المحتملة','نقص التدريب 71% · ضغط العمل 58%'],['التوقع','أساسي: 63 · متفائل: 78 · جذري: 47'],['الحل الموصى به',(SOLS.find(x => x.rec) || SOLS[0] || s).name],['الحل المختار',S.decided ? s.name : '—'],['درجة الثقة',S.qDone ? s.conf + '%' : (s.conf - 14) + '%'],['المخاطر','تسرّب الكفاءات (حرج)'],['المسؤول عن القرار','د. عدنان'],['القرار',S.decided ? choiceLabel() + ' · DEC-2026-041' : 'بانتظار القرار'],['النتيجة بعد التنفيذ',S.measured ? `${s.act} (${impactOf().ratio}% من المتوقع)` : '—']];
+}
 VIEWS.reports = () => {
   const s = solSel();
-  const types = [['EXECUTIVE','التقرير التنفيذي','للإدارة العليا'],['ANALYTICAL','التقرير التحليلي','للمحللين'],['CONSULTATION','تقرير الاستشارة','لصاحب الاستشارة'],['FORECAST','تقرير التوقعات','للتخطيط'],['FORESIGHT','تقرير الاستشراف','للاستراتيجية'],['SOLUTION','تقرير الحلول','لفريق التنفيذ'],['DECISION_BRIEF','موجز القرار','لصاحب القرار'],['EARLY_WARNING','تقرير الإنذار المبكر','للمخاطر']];
-  const card = [['المشكلة','انخفاض أداء الفرع الشمالي 17%'],['البيانات المستخدمة','8 مصادر · 1,284,500 سجل + 6 إجابات استبيان'],['جودة البيانات','87%'],['الأسباب المحتملة','نقص التدريب 71% · ضغط العمل 58%'],['التوقع','أساسي: 63 · متفائل: 78 · جذري: 47'],['الحل الموصى به',(SOLS.find(x => x.rec) || SOLS[0] || s).name],['الحل المختار',S.decided ? s.name : '—'],['درجة الثقة',S.qDone ? s.conf + '%' : (s.conf - 14) + '%'],['المخاطر','تسرّب الكفاءات (حرج)'],['المسؤول عن القرار','د. عدنان'],['القرار',S.decided ? choiceLabel() + ' · DEC-2026-041' : 'بانتظار القرار'],['النتيجة بعد التنفيذ',S.measured ? `${s.act} (${impactOf().ratio}% من المتوقع)` : '—']];
+  const types = REPORT_TYPES;
+  const card = decisionCard();
   return `
-  <section class="grid g4">${types.map(([c, n, a]) => `<div class="card tight"><span class="mono faint" style="font-size:10.5px">${c}</span><b style="font-size:14px">${n}</b><span class="faint" style="font-size:12px">${a}</span><button type="button" class="btn sm" data-act="report-gen" data-k="${n}">توليد</button></div>`).join('')}</section>
+  <section class="card row between" style="gap:12px;border-color:rgba(255,205,17,.35)"><div class="stack" style="gap:3px;flex:1 1 320px"><span class="eyebrow">EXPORT · PDF · EXCEL</span><h2 class="h-sec">تصدير التقارير</h2><span class="muted" style="font-size:13px;line-height:1.7">كل تقرير يُبنى من بيانات الاستشارة الحالية لحظة التصدير، ويُسجَّل التصدير في سجل التدقيق. ملف Excel يحتوي ورقة لكل جدول، وملف PDF جاهز للطباعة والمشاركة.</span></div><div class="stack" style="gap:6px;align-items:flex-start"><span class="lbl">التقرير الشامل (كل الأقسام)</span>${expBtns('ALL')}</div></section>
+  <section class="grid g4">${types.map(([c, n, a]) => `<div class="card tight"><span class="mono faint" style="font-size:10.5px">${c}</span><b style="font-size:14px">${n}</b><span class="faint" style="font-size:12px">${a}</span>${expBtns(c)}</div>`).join('')}</section>
   <section class="split">
     <div class="card"><div class="row between"><h2 class="h-sec">بطاقة ذكاء القرار — CNS-001</h2><span class="lbl">تتحدث تلقائيًا مع كل مرحلة</span></div>
       <div class="tbl-wrap"><table><tbody>${card.map(([k, v]) => `<tr><td class="muted" style="width:190px">${k}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div></div>
     <div class="card"><h2 class="h-sec">التقارير المولّدة</h2>
-      ${S.reports.length ? S.reports.map(r => `<div class="sub"><b style="font-size:13px">${r.n} — CNS-001</b><span class="faint" style="font-size:11.5px">${r.t} · صيغة PDF / Word · مسجّل في سجل التدقيق</span></div>`).join('') : `<p class="muted" style="font-size:13px;line-height:1.7">لم تولَّد تقارير بعد. اضغط «توليد» على أي نوع ليظهر هنا، مع تسجيله في سجل التدقيق.</p>`}
+      ${S.reports.length ? S.reports.slice(0, 12).map(r => `<div class="sub row between" style="flex-direction:row;align-items:center;gap:10px"><div class="stack" style="gap:2px"><b style="font-size:13px">${r.n} — CNS-001</b><span class="faint" style="font-size:11.5px">${r.t} · ${r.fmt === 'pdf' ? 'PDF' : r.fmt === 'xlsx' ? 'Excel' : 'مولّد'} · مسجّل في سجل التدقيق</span></div>${r.code ? expBtns(r.code) : ''}</div>`).join('') : `<p class="muted" style="font-size:13px;line-height:1.7">لم تُصدَّر تقارير بعد. اضغط PDF أو Excel على أي نوع ليُنشأ الملف ويظهر هنا، مع تسجيله في سجل التدقيق.</p>`}
     </div>
   </section>`;
 };
@@ -147,7 +153,7 @@ VIEWS.governance = () => {
     const M = [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,1,1,0,0,1],[1,1,1,1,0,1],[1,1,1,1,1,1],[1,0,0,0,0,0],[1,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,1,0,0]];
     body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الدور</th>${perms.map(p => `<th>${p}</th>`).join('')}<th>النطاق</th></tr></thead><tbody>${roles.map((r, i) => `<tr><td><b>${r}</b></td>${M[i].map(v => `<td>${v ? ic('check', 15, 'style="color:var(--green);stroke-width:2.6"') : '<span class="faint">—</span>'}</td>`).join('')}<td class="faint" style="font-size:12px">${['المنظمة','المنظمة','القطاع','الاستشارة','المنظمة','النظام','القطاع','المنظمة (قراءة)','استشاراته فقط'][i]}</td></tr>`).join('')}</tbody></table></div>
       <p class="faint" style="font-size:12px;padding:10px 16px;line-height:1.7">عزل على مستوى الصفوف: لا يرى المستخدم بيانات فرع أو قطاع أو منظمة أو عميل آخر حتى لو وصل إلى نفس الواجهة البرمجية.</p></div>`; }
-  if (S.govTab === 'audit') body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th></tr></thead><tbody>${S.audit.map(a => `<tr><td class="mono faint" style="font-size:12px">${a.t}</td><td><span class="tag ${a.kind === 'user' ? 't-i' : a.kind === 'warn' ? 't-h' : 't-n'}">${esc(a.who)}</span></td><td style="font-size:13px">${esc(a.what)}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">يُحدَّث مباشرة مع كل خطوة في العرض. السجل غير قابل للتعديل.</p></div>`;
+  if (S.govTab === 'audit') body = `<div class="row between" style="gap:10px"><span class="muted" style="font-size:13px">${(S.audit || []).length} حدث</span><div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="audit-pdf">${ic('reports', 14)}تصدير PDF</button><button type="button" class="btn sm" data-act="audit-xlsx">${ic('chart', 14)}تصدير Excel</button></div></div><div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th></tr></thead><tbody>${S.audit.map(a => `<tr><td class="mono faint" style="font-size:12px">${a.t}</td><td><span class="tag ${a.kind === 'user' ? 't-i' : a.kind === 'warn' ? 't-h' : 't-n'}">${esc(a.who)}</span></td><td style="font-size:13px">${esc(a.what)}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">يُحدَّث مباشرة مع كل خطوة في العرض. السجل غير قابل للتعديل.</p></div>`;
   if (S.govTab === 'levels') body = `<div class="grid g3">
     <div class="card tight"><b style="font-size:13.5px">موثوقية المعرفة L0–L6</b>${['غير معروف','ادعاء','له مصدر','مدعوم بأدلة','متحقَّق منه','مؤسسي','محكوم'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">L${i}</span>${x}</span>`).join('')}</div>
     <div class="card tight"><b style="font-size:13.5px">مستويات القرار D0–D8</b>${['معلومة','تشغيلي','إدارة روتينية','تكتيكي','عمل جوهري','استراتيجي','عالي المخاطر','حرج','حساس — بشري فقط'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">D${i}</span>${x}</span>`).join('')}<span class="faint" style="font-size:11.5px">كلما ارتفع المستوى زادت متطلبات الأدلة والمراجعة والموافقة.</span></div>
@@ -263,7 +269,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

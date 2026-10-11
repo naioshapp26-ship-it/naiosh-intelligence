@@ -241,7 +241,14 @@ svg.ic{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;strok
   #view .btn.sm{min-height:38px}
   #view .hrow{min-height:36px}
 }
+.brand-logo{width:46px;height:46px;border-radius:11px;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(212,161,42,.35),0 4px 14px rgba(0,0,0,.5)}
+.gate-logo{width:112px;height:112px;border-radius:22px;object-fit:cover;box-shadow:0 0 0 1px rgba(212,161,42,.4),0 14px 40px rgba(217,15,44,.25);margin-inline:auto}
 </style>
+<script data-app="">
+/* ================= official NAIOSH logo (embedded) ================= */
+const LOGO_SRC = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwMEBAQFBgoGBgUFBgwICQcKDgwPDg4MDQ0PERYTDxAVEQ0NExoTFRcYGRkZDxIbHRsYHRYYGRj/2wBDAQQEBAYFBgsGBgsYEA0QGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBj/wAARCAEAAQADASIAAhEBAxEB/8QAHQAAAQQDAQEAAAAAAAAAAAAAAgEDBgcEBQgACf/EAF4QAAEDAwIDBAYDCgQQCwkAAAECAwQABREGIQcSMRNBUWEIFCJxgZEyobEVI0JSYnKCssHRFpKi0xckJTNDRlNjc3SDk7PD0uEmJzREVGSFpLTC8DY3RVVWZnWVo//EABwBAAEFAQEBAAAAAAAAAAAAAAABAwQFBgIHCP/EAD0RAAEDAgMFBQcCBQIHAAAAAAEAAgMEEQUhMQYSQVHwE2FxgbEUIpGhwdHhI1IHFTIzcjQ1FiRCQ2KC8f/aAAwDAQACEQMRAD8A4HApcUopQKEJBS43pQKPFCEON6LFKE70YTmhCADyogmi5aNKdqS6E3y70pRTgTRctJdLZNBFe5N6eCaXlpbosmOSlCafCK9yUl0WTHLXuTyrJQwVnABJq8OB3o6ai4q3huVIZdg2FshT81YKeceCPf4/LPcxUVLIGF8hyTkcTpDYKh+XGxFexXV/pF+izJ0Y49qzQMNyVp8JT28VsErhkAAnG55DjOfPfz5WU0pCykpII2Oa4pK2OqZvxldTQOiNimcUhT3U/wAlIUb1LumbLHKTXuXxp8poeXNF0iY5aQinuXfakKaVCYIpMb08U0BSaEJvGaEjyp3FIRQhNYpCKcIocUIQUNGRSEUITmKXG9eAowPChC8BRYrwTTiU5oQhCacCaJKRmnEoyelcpQE3yfOjSj2ayW4zrgJbbUrG5wM4pSwpJwrAPgTSbwS2WMEd9EE5FZAYPfj504mMpZwkZPgN6N4JbFYvJShHlUltOitU3t5LVp07dJq1dAxFWrPxxirV0x6KHF/UJbcf0+LOwrq7cnA3j9Hc1ElroIv63gJ5tPI7QKiUsqUelbqw6UvepLmi32W2SZ0lZADbCCojPj4fGu1NGehZpq2Lbk611C7c1jGYsFPZt+4qO5q/rNp7Q/DiwLXZrbbLFBYTl2UspbCR4rcVjHzFUNZtNCz3YRvFTYsOcc3rmrg/6HKGFsXziY4BghaLU1uT+ee73H5GunNQaq0Rws0IZt2mwbBZYg5UJxjnVjZCEj2nFnwGT8KoPiX6Y+lLGl+18Oow1RdUggzVZbgMH8Yq2U7+jhP5Vcb6y17qziNqI3nVF5dvM3dLaljljRkn8FlsYGPcAPHmqvjo6zEnh9TdreXH8efwKfc+KFtmr6EcMvSG0Fxf9ahWR92BcmlLSq1XHlS862DjnQASHEkdQMkZIIxuaz4v+itp3WLj990GpizXZWVriK9mM+fyfxD5fR91cQtRLjbpbVxt8p9ElpYdQ80vkdbUN+ZKhjf5eVdJ8MPS8utraZtPEuK7c46CEC8xUj1hH+Fb2C/eMK/OpavCaugk9ow91x+3rX18U5T1EMzezmC5+1doLVWh705a9S2aTAfQdi4g8qh4pV0I86jnIc7ivpzF1BoDippM9i7adTWxQ9ptQCy3nxScLbV8jVM6x9FHRl3W7L0hd37G8ckRpA7Zj3Aj2h8jUii2thJ7OraWOHXkuJ8FfbehNwuKijOaHk3yKuTUvo38UdPqWtmyi8R09HrYsPZHjyj2h8RVaXHT15tT6mbnapkNxOxS+ypBHzFaeCtgnG9G8HzVTJTyRmz2kLSlNAU79KzC2emKBTRxUq6ZssQpz3UBQayy0c0JaIGcbUXSWWIU4oCmslSabKTS3RZMkdKAiniKAjelSJvFCRThG1ARQhOYo0jBpAKMUISgb08lNCkZp5KdqQpQvJTvmshpIKsYptA3qX8P9GXHXevbdpu2srcdlOpQeQbhORk/spmWRsbS92gTjGl7g0LrD0KeFrL0W6a9vUJp6M42Ycdp9AUl0HrkHYgYz/FrqaXw24eTVlcjQ1heJ7zCT+yisFpsvDnhpFs7bzMa32qKVvyD7KRypy44fLY/ACvmFxo4o3viLxouGq4s6dGZdV2MGOzJU12UVB5W+h6ncnzKqxUbH4lUPINu/XyVsXdk3LQL6WjhHwxbVzJ4d2HP+Ig1ls6O0RaRzRdI2KGE78whNox8SK+SqdSaqSkJcvOoT5JurgH21iSLjPmq5ZSrhJUdsSLgpefhg1Ids/K7WT5flcisaOivrLdeJPDvSzChc9Z6ZtKEfgKnMNkfopOfqqrNT+mFwSsXOmHf5moJA27O0w1rBP8AhHOVP1mvnnC0lqO4NregaXkltCStbqYrq0pSBkkqwAAB31iCFIH0n1JHg2AgfVv9dOx7MxE/qPJ+X39Vy6vtoF1NrL04tUTG3GNFaRg2RpQwibeHvWHfeGxypB/jVzxqziJrniHPEjVuo7nfCk5Q1IcLcZv8xpOAPgB76ybDpLTj9iRdbrepcZTjzjQZjQQ8o8nKc86nEjfnH11tmrfoVkpbaZ1DMWTjLjrDCfklKjj41cU2F01N/aZY8+PxOaiyVb36lQpuGt5AEhzmQDkNJHKgH83v95zWyaQ22MBNYTExp6OHAQDj2gO4+AqezrjbrepmOxpOxHDDRLjjLilLJbSok/fMbknuqwDbZAKOXE5lRULHdWHKiNPq7Qgpc6c6Nj/v+NSpd6graLY0rY0kgjmS06kjzH3yoXEuIkRUhSvbxhRPjXW6uQ7klgy71p65ouVluEuFLbOUyYLhaWPgDv8AP4Vb2l/So17akoi6giQdRsp2K1ZjSf4yRg/FPxqFXOJpuDJ9UWzdUrDTalLQ82oEqQFHYpG2/jUduMazeqOOtPSF8u4bfYSM7/jBRxUGrwqmqxaZgPXPX5qXBXywn3HLrGx+lNw8ufKi6/dOxyD3S2O1Qk/nt5+tIqdxOKeh9RNBuJqux3FJ/sbshtX8hzf6q+fy46kJwy+rl/FV7Y+RzSybbcGGkOSrWOzWkLQtbK2woHoQRsRWdm2PgvvQvc3zv+fmraPHn2tIAeuuC+gjtj0Tc/vz2k9OS89FiE0frSBWJ/Q/4euL7VegLFnqB6qofVzVwA1KdYP3hl9oj+4Syn9lZP3bvOMJm3kDw+6CqY/4Yq2/01Luv/ZPfzinOsQ68l9CYWiNCsq529A6cT4k29Kv1s1WvpKaBtly4Ux79p+0w4j1lcJdahMJaCmV4BJCQMkHG/urmPh1d7+xxKgXGLcZarhFV6xEZkSVOIfUndTZye9PN7967bi322aj0u3KwX7bcoxStlfXkVlKkK/KScg+Ck1VVUFTg9THI6UvHHX7nUX+amQPir4XNazdXz1cRimCBU14kaPkaJ17MszntxwrtIzoGzjSt0qHwqGqFelQTNmYJGG4Kx8sZjeWO1Cx1DehIwKdI3ptQp9MpsjbNAadI9mm1ChCcANOpTkUCacAoQjSMCnkA00nen0DNIUoT0dsuOBKQST3DevoR6JfCAaO0Ydd3yMBdbkgiKlQ3aa6FXx3A/SPhXOvox8GXeIWuG7zdGVosVuV2ryzt2hB+inxJOwPccn8Gu3uKfEK3cLeEdx1OuGlxEFtDEOE0k8q3Vew03t9FGcZPgD34rIY9iBc4UkOZPXX4VtRQWb2juh+fTxVF+mLxgbttkTwus8zkkTGxJvLyFbsx+qGfzlkBRHgEj8KuKrewp91cx9ACl9EH8BI6D4D9tHfL1dNXawm3W8SlypkuQqVMfX/AGR0nOPcPDu2HdWcwkJGMYq4wuhFLEG8eKjVU2+6w0Qc6IT7UpTaFhpxLhQtIUlQCgSCD1BGa6rlSWrY+9Hs8S321oLJSIMNpn2c5G6U56Y765Rnp7SMtGeqSPqq/wBd2Miy22Wk5EiBGez48zKM/XmrTdChkotW3S53XSd1iLnTpTjkN5DbRdWvnJbUAkJzvnwqhrbovW86Ch1zTk5lGP65KSI4x45cKatqXLUQVZwfKo9cF9usuOJ51n8JW5+ZoPcgFaI2160aUh2+W5HMpLz7riGH0vBAVyBOVJJGfZO2fDxrVIWlqQhau4g7DurZSsYxjA7hWqdSArJ+FIhNQNJWVljmlauAUo5KGLc6rHllRTW1vU2LKualQ1OKYQhttC3EhKlhKAnJTk4zjOMmtQFgKwoj50KnEjvHuzXQSFOl1IVv0rXRtPWthGf4SHnO5CoDgA8sgmshbqO9Q+dMLcRjdQx7661SLYagmRpl9efiLW4xytoQtaeUqCUJTnHduDWkkpU/DdZbCedaeVIJA3952pxxxPeofOsZbiQdlD50qRIza7w1HyYi3NtuyWlz9Umt7qaZPt0u2x486UwpFuaJS08pHKVKWrcA/lA/Go0tac8wxnxplasknOSfOgBBKzFXq6OkIdkCRk4AfaQ59agT9dNCShyU8jlA5XFABIwBv0ApuGnmuDRIJCTzq9yRzH7KwYSyXCs9VHNBQFuWJEiLLZmQ3izIYcS6y6nqhaTkH5iuiuG2t23y0yk9lCu7pU22FbQ54ADjPklzYp8+X8Y1zgDtvW309ekWua9GlrUm3TQESCCcsrH0Hk46FJ647ifAVTYzhzauE5Zj06zHw4qzw2sNPJnoevwV0lxT0inXGjCYzQVd7chTsYgZU8jqtrzPVSR+cO8Vya6lSFlJGCK600fqOZfNO+sSioToLiWJL6RhLq8cyHUnoeZIycd4PcRVT8ZtDtwZ41dZY4TAmLxLZbG0d/GSQO5CtyPA8w7hVFs7XOp5DQzeX289QrXGKUStFVH5qnTTRGaeVQEVtgswmlZoFdKcUKFWMUIRgd4p1NNpyKdTQhOJFPIODmmU9KcGMUhS3Vl8JeJl34ccQLff4LrjjUYlD8XmPLIjqP3xoj6x4Hfur6PXOFYOI3DVyE+RLsl9gghwdS24kKSseCknBHgU18nWXyxIQ73JOcV9BvRQ1Sq98F39PyHed2ySeVnJ39XeBWge4KDg+NYnaij3AKmPIhX2Gzb7dwrjDVmkZWjNaXGwz2+SREkuMOkDZS0ndQ8lApWPJVatKh3HaulvS30siPrFnULDZT90IKXlqA6ux1BtfzacT/FrmdIJFaDCKv2qmbJxVfXQ9nKQOKR728dK29t4L6pvthjX9nVukYcWWFKZbuV6Qw8EpUUYKCMjBSRWmdI61M7XIU7w5tpVuY8mUxsegyhwfrmrF4cf6TZRAQNVql8CtSIGXeIHD1PvvyD/AOSmF8E72n6fETh6P+2gf9XWc44rck/XWC6+c+04B+lTe5J+75Jd5vJML4OXJBwviNw+/wD2+f8AVUwrhJNTseIugCfK6k/6qvPup5s9on+MKx1OJB/rqf4wo3H/ALvkEbw5JV8K5af7f9DK/NuRP+qoBwwl5wde6IT5m4n+bptTwCsdqj+MKbU+j+6pz+cKURv/AH/IfZG+3l6rIXwwkJTn+iBodXkLir+arEXw8mN9NZaQV5i5J/aigU+Af64k/pCmVPA/hj510I3/ALvT7JN8ckStCzE/22aUPuuaP3U2rRc1Iz/CfS6vdcm/3U0tzbZX100pwdM/XXW479yTeHJOr0jOQM/wh04R+TcW6aOmJ6RtfbEfdPbplSj5mmsqz30oa7mk3hyRyrLcIUVcg3C3PpTgER5SHFb7dBvWPFaKAM086VJtazg5W6lPyBJ/ZT7LKlNjApdNUaoge6prww0cjWnEONb5LLjtvjoVLmpR1W0jH3sHxcWpDY/P8qh3YrTuRXSHAK3JsnDC76oW2PWJkhQaUeoRHCUo+b74P+SHhVdi1Waalc9pz0Hnx8tfJS6Cn7adrDpr16Ka3AsxpgtUNLQbaWQ52QCULeUQHFDyyAlPglCRXOfE/V677qNceE+fubEKmIoScBZ6OO/pEYHkBVr6vu5smhLhOZURIeSIkc53C3MjPwSFn4CuapTnNIUEn2U+yn3Cs5s5R9rI6pfwyHXy+KvMZqezYIW9darHOKbPWjx1oDmtsFligUMUBxijO53NAqlQnBTiemKbFOpoQiGfGnBkUKacHSkQhWTjrXW/oW3RxOtpdvKvYm2p1BB/HYcSpJ/iqVXJRGRXT3obAp4qxD+TNQfcY2ftFU+OMD6RwPWSn4e4iVXd6U9ubf0BZZbgGETnopUfxXoyx9qU1xjpGwo1Q4+05dWrcliL6yp1xlToPtJTjCd85UK7T9LB3suCMZROMXeOR7+VdcXcMXSsXfmJCRbOv+Xaqp2VcfZiO/7qZiw95p8fots7oe1JO+sY+M//AC5+o9deHlqkye0b1m0k4wf6nv4NSeZIQlCnFuJQhPUqOB8zUTn6ts0dZSJQfWPwWRzfX0rVhU11gq4b24ddZNH/ALPeppfDy3I66ubP/Z7tTLTmiuK2uUIe0roSamE5gJn3AdgyB4hbnKD8Oas3UnCzjHo5CnLtpIXeGgZVLsy/WAPelI5hjzRUV1fTtk7J0jQ7lcXTwpZS3fDDbnYqvP4BWsbfwrB91vc/fTatD2lP9tQJ/wDx7n76yk6gtzjpZeccivA4U2+nlKT4Hw+OKyFOIdbCm1pWk9Ck5qXcplRK4WSPDuCo0O5GWAgL5yyWuvdgnPxqxEcHrQIsZxzXLqVusNvKQm1KVyFaArlz2m+M4zUCuSiL+rf+xAfVV6LI9Vif4pH/ANCiqjFquWnDTGdV6HsDs/R4vJM2saSGgWsSNb8lB/6EdmHTXT+e7+pKv5yvf0JLeRtrh7Ph9zFfzlTJJKlhI76lfEy9N8K/RasCrcxEb1bq+e5KbmOx0OuxbcwOX2CtJ5O0WRuOozVdR1lZVSdm1wHkFrdodnNn8DpfaZonOuQAA83J+PIKoFcJoKf7eHj5fc1X85TC+FtvSf8A20dPh/U1X+3Whj8TNYG6xW73dHX4vOlbjTrSE5SodchIPQ5HwqzQtLqQ4jcK3FOVtTW0jgHPBB7go2zWDbO49E98MLmuacwXnjocj4/BQtXDGGOmsXPjb1D/AM9Nq4aRAMjV7h90BX+3Vq64uUrSvooQLxYxGjXKVqlyI9N9WbW8plMRKw2FqSSlPMScDFV9o2+am1o/EgPJXdJ7q1tMNssIS4oABWMIA5uqjk748hTnbVnswqN8W8Aq91Hs63FXYW+ncC0kb2+bZC/NaOVoBiHBemDUSpPYoLnZmGpPNgZ6823vq2bZqO+8FPRmauNvchWrU2o7m1LjIejodkLt6WsAqStJKEqUSpIPUHPeK2moJznCvhLbrhctCWWbe5VyeDjd6Y7Vfq6W0FBCQrATzc3Ub1RtwuGqOLHE8zpi1zrvdJSGWmecABS1BKEDOyRuB5CmaeSWvZ+t/bBuTlnbh4c7rO7QxYfR1G5h7CCLjUm55gm/kttqHjzxK1ZY5FkvF1YehSQEOtpito5gCD1CRjcCrr0ZKDHAu1xW0hJMeNzAd5cW/IV+s38hVRay4UwNN2+5O2TW1p1JJsriWrzHgsuI9TUpXLlK17OJCvZJGN+6rK0xIC+H0Vpv6KBESMeUNP8AvqNigpjTAUoAbe+Qtna3ofgq3Du27cmbW31/CjHFmcprT9piBRwpb8pW/ekJbT9al1Sme4GrY4zKIFnSD7PqatvfIXn7BVS53q4wOMMpG26zVbijy6oddeOaAg04SKE1chVpTeKAijPlQmlSIhTietNinEmhCcBp5IyKYBp0GhCLrtXWXoX29Tmuly+X2WI0p0n3pbaH1rrk9Aya719EHTarVw8uN+dRyrfbajIJHiS8v7WqosfmEdI4lWGHsLpVj+mddExuGVit5WlJfuS3uXPUNtHf5qrkfhnkMXnytif9O1V1emtqNMvX9q0+24D9zrYpawO5yQvA/kJB+NUrw/UER793ctuQP+8NVG2bi7OiaTxz68k9ib7y25LZzo8Ka0Y9whtymc83ZulQGR0PskHv8af01PgaPuirjp61twJm3K+2tLqk48O3Q5j4YrFfeyonpUS1LqFcJXqkJXK9jK3MZ5M9APP7K0Dmh7d1wuCqxri03GqvtPpI66gEGXqFDuBgCfBjOD5o7I1jzvSP1fcWyY95ZbIH/wAPt8dGD+ctTprlVbr77pcWoqWTkqUck/E0ra5LLgcQopUOhTsarTgWHl28YW/AKWMQqQLCQ/FW/qrVStXTBI1DFcuzgVzByY6lKh8WW2zjyzUedkMiM3FhwY0JhBUoNsBW5VjJKlEqJ2HU921ay2XBU+AtThHatYC9uoPQ/s+VPLcwas4omRNDIxYDgMlEe9zzvPNytNcFf1aUT/c/2VeKlZjxN/8AmrH+iTVFzjm8H/B/sq6u0Pq0UH/orH+iTVHjouGea9Y/hY/dlqPBvqVIdJafmar1ra9OwQe3nym4ySPweY4KvgMn4VAvSh1lG1p6SVwt1lXzWPTyG9PWxKT7Iaj+wpQ/Oc7Q58MVdPDq6o0Fw211xhewl2x24wLVzDZVwlDs2yPNKSVe41x9Z50eNe/X7hBfuKRklCHi2So95Vyq8+7vpzBacxwultmfooP8R8WbVYjHRX9yPXxdYn4C3ndWbxetCbhw14f6/jMpSX7d/B+4htOAmVCAQhSvNcdTJ/QVS6Iuvr+mmUrXlxn70r4dPqxWtvXFVq5cIrjoNvSKGYkmaxcWpLspTi4zzQUgqQOQD2kLUk58j3VHdA3P1S+qhuKwh8bfnD/dmna+nfLSe+Pebn15KDsnisGH45uwO/Sk93PLXMZeOXmro4rr5vQ5s4/+8Xv/AAKKqLQ0dmXIhRn9QM2Ntx5xKp7ylJSyMJySU+15beNWrxQcC/Q9tIBz/wAMHv8AwKKqbRk6xwfVn7/YnrxES6srjtPlkqGE7cw6b4pIAf5e0Dl3fXJR8ZkttHO7/wAj6KzF8P8AQ8m5Ql3rjtZJENBy8hpEh14I7w2FJCebGcZ2zWPffSBv9suqLVwqYj6c01AT2EOOiO2txxIJy64tSSVOKO5OaxZOreCqEI9b4MXLtDkgi+vDbv6CgZ19wRjSW3Y/BuWQhQVyu3x9aTg5wQdiPLvqBHCXW7aJzwNAQy3wBzVdWyESHdcGnzv6ZLW6p1/eJ+jpaI2iI9iTqFxL1yubMdxAuCknmHKpXshOcqITsSSannDh5cjh0UqOVhEV0b93I60frQKa4g8QYV709q+43HXn3bg3pDYstiS2pJt60qBBKSOVvkAKQE9RWj4R3TngCAOq2n2MdfaQpL6P5JcqNUN36IlrN2x7zw77HLTllkiB25VAOde47hx7ueqc4xtFdqsso9EtvMn3hxK/9ZVQDrV88TIfr/DhbqACuHJSs/muJKD/ACg3VCA1bYDJv0gHK4VbizN2oPejNCaXOBQmrtVaQ0CulH5UCtvOhCIGnE02kU4KEJxPdToxTQ6U6gHxpClC2ljtjl21BEtrScqkOpb+BO5+Wa+oHDayI01wlstrCAh1xr1pwHbBcwUg+5HIPhXDHo26NGq+LMftkZjsYCz4c2eY/BAWa7R4zavGkuDeor7HWGn0RTHiJHc6597QB7ubP6NYXamoMr2UjNSevotDhMFmmQ9dZr5/8bNVfwz42369IWVMSLgtLB/vDI7Nv4bZrE0SrlhX/wDxJsf94bqJSfvl6dQFZSzhkHxx9L6yaeTeblZoclNtUgCShLTxKQo8oUFDGem6RWtpIhFE1jeAVTVO3pXFTJTg5xk9+9VlNUubeHnF5JUsqPxNZZ1ReVbFxP8Amk/upmIkurU4Rgk9KlaKNZK3GASNhRKZB7qy+TakIGeoHxpbossrSscK1IuOoZS/FkIx5hpS0n4FINKpwkZPU1isz5VqeM6CEF5KFoSVDOApJSTjxwo1qjc5hAB7vyRSgpLLJln+qmT+JVxTZKWVsAnZMWPkf5FBqlmlOSpHaODfHKTUml63dkygt2GEFLaGsAE7IQEA9euEiqzEaZ04bujRbbY7GIsMfKZXW3gPldXHx4uiInAfQnDTS8hm4lRdvt+VAcDoRLX7LbSynoUIJ2PiKpTTTupLfCcatVxlQkrXzOIaWU5UNt8Vr3bpb1ulwxFJKjkgbftrYRNXR4bHZsQEhI9/76V3atiEcbdE3DHQS1r6mtnB3iTx1J8FYOgtVansXE2w3a9XKRPtsea2qVFkK50PMk8q0kHqCkmoPrXR8nSfF6727TublbYdwWIMyKe0beZ58tnmG2eUgHwOaA65CusJPyP7607l0t7rqnDEWCTnA6fbSU5nbcSNyK6xWHCnuY+ins4ePlwVu6ylJu3ooW22xFJeno1Q7JXEQoKdDfqiE8/KN+Xm2z0zUC0Qxqq2361/cBiQ1e+3UqIhtoOOFRAAwjfPf3Von73CkNoQqMRyDlSoHfHh1ooeoGre920Jt9h4fReaWULT5gg5BoEcgg7ENTc8lLLiDqwzA72fHl4K5dRa59IvSltTcr2bqi284Drsu3pQ0cnZCiU9FbjFaFNm4SauujN3Z1cnRyZZT21ncgrkhl0qwrs1hQAQTuArp37VE7FxGutsvTbj7sm6W5xJZm2+e6p1qQyrqkhROD4HurT6gRp6Tf5D2nGprVuUeZpuaB2jefwSQTzAdx2JHUVFgonNdugbh5tAse4ggi/L5HVVtdVROcS2zm8s8u8HW3NWjrvRWkRatV/cXRFx02jTi2xHucuW48LoCvlwQr2SpQ9sFvAA7sEVCOH11Tab6onJS0tuYEjv7M4WPi2tXyqPz77qO521m2T7zMkwmcdkw66pSUAdMAnagtcgW+7xpa90NrAcHig+yofxSakx0kgp3Ryu3ifE8Bz5nO3C9goLqiPt2vjFh1y5D4rpabBRcoU6zBQUmUythtX5XVtX8YINczy2FRp7rSklPKroe6uiNPyi/pqGoOFTrGYq3AfwmzhKvigoNVPxPtAt2t3pLaAGZmJKMdML9oj4K5x8Kp8Al7KZ9OerdBWOMRb8bZQoXtivHpXu6vGtcs4gOaE0ZoFChCIdKME56UAox12oQnEnNPIHMQKZGxp9rZYOa5cugu3vRD00i38PJupnEffX1rSgkeJ5B/JS586wPS41QYum7Fp8KPK667c30D8JLSeVAP6SlfKrY4NWoWH0edPxeXC32kuLHnyg/as1yx6V90VN4qyIgXlESFEiAZ6FZLqvtrzaI+2Yzc6N6+q2LB7PSX7vQfdRjgExFN4vr023wJqkQErxNjNyEhReSCQlYIB3O/nUh4raeZvNnRdLbbbfDchpPMzBiNx0uJO5JCAMnzNaDggsIf1KrOMW9rfw+/pqa/dxmRquXYH+RDiIyZLQJ/ryDkLHvGx9xPhVxiE0sVaXR8ADZbzZHCqGuwIMqmi73OaHWzvwz9PgqX4cxIjvFawiRGYkMqmICmnmw4hY8FJIII8jU/4sXBpGimkRrVZ4oL4KjDtzLCleRUhION+ma1sOwixcc7A9GSRCkzkKbP4qsnKaDim7z6QbH99H7KlTVInqoHsOR+6gYdgQoMIxKGqYDJHextwsMweRVZoVzJzjaug7PEj6c0jbbKuz2d2U2wHJTku3svOdq57ZSVLSThIUkY7sGqe4d2hF611BYkpCokfMuSD0LTY5lD44A+NSriHqx2BPt8kkKdVOTMdSe8BWeX3dflT2KufLIymjOZzUDYmjpqalqMWrmBzG2ABA1v3qPcS43JqdNwTHjstSkABEdlLSEqSMYCUgAdKjumY7K9b2dDrLbraprKVNuJCkqBWNiDsR5VZGvLe3cNPvmP7fZYfjn8ZJHMn5gj51XWk1hWt7Kc9ZzP64p/Dagy0hB1bcKHtdhLKHHY3RACOQtcOWoBHXNWRxFXGj6YnCJaLPFw/ylUWA00oJCjsFJTkDYVHNBaFgajS9fL866xZIyg2rsMB2S6RkNIJ2G25V3CtzxIdA01cEnfL6v1lVtbepNr4d2KC2B2aYPrjgH4TjpKiT58oQPhVdBWSQ0ZcDdxNlsMU2dpsQx5kTmhsbIw4gZXzPrxT868aWsCRFhWaxWpsD2WxES+6oeKlrClE+ew8q0k2HpvUkZbhhQFKOwfitBlaD+iAD8RVQXefLul4feddUrKz31I+HK5C9bxLY44rs5fM0kZ6K5SR9YqTJhsscRm7Q74zVTR7XYfPWDD3UjBA47oyF+QJWFd7Eq03FTDg52zu25j6Q/fVr2nTGmtGaehvzLVEul+kR0ynnJ6O0ZhJWnmShDfRS+UglSsgZAAqIa4CTZWpRHtNrHL8a36r3E1PBEjnSS+whDrYVukhASR/JrietlkpmOGVzYkKThuzFBS43PC8Bwa0OY06Z8+dj0UL+qrNcpPqzibYvmOA36i0lB+SBUW1RpuA1GVc4DCY6UnLjKPo48U+HupZPDyET29rvy2Xc5DUxk4B/PRn6wK0N8TqmJKU3dHlKS5n742vnbX44I2+FOUsTe0a6nl8QeKj43WS+xSRYrQAftcwCw5G/DPwvorG0WIUfhqw8LTa33Vz3kKdkwm3lkBCCBzKBONztVf6nfDmspwDLLQ5wQhlsNoTsNglIwB7qnGjlFPCyOFdfui/+o3WC9om33S6PXKZqVuGp057AQ3HVJ+IIFJDUtiq5DI7L8rjEsGkrtnqQUcV35E2sDax1KHhymMmFqCQ9AhS1tsMlv1uOh4IJdAJAUDg4JFaTXbrZucQIixI6VNKBRGYS0k79SEgZO9Taz2a06cs92SzfFXB2YhpDaExFNcvK4FEkknuFQLXJzcoR/IV9opyGYS12803H4Uevw11FsuWTx7sgIvpfN3NT/hddVyrTLhLVv2Tb4z3qQeyX9SkH4U/xUgmZpaFcEp3jrXHUfI/fE/Y586jPCZ0jUyWM47QuM5/wjKiP5TYqwtUNCZoG5s8v0Q2+PLCwk/U4aragezYi1w4kfPJZKM9vREHkufqQnzrx2UUnqNq8cVsll0nd0oVUpJoTQhEDRg0CTRA70ITudqfYPO8hGOpArGzTjS+RxKvAg0jtEo1X1HshRH4ZacYbAAEAEAfL9lcQekYVO8Yr66o5xcGWx7kxRiux9LXJNx4RaYmIXnMVTR94IP2Krkf0j4RZ4i3aRg4ceiSfgthSD9acV5hgTt3FXB3L7LbVrb0RI7/VR/g66GlalHjBa/06K0HES7zrVxLt95guFL8dCVI8DjqD4gjIIodC6ntmnE3lVxfW361GbaaCU83MQ6lR92wNaPWd5g3+/MSoDpW2lHKeYYIIx3VsTA52IF5b7pFu7RWsOIwxbKCJkgEofvAXzydrZXFbbzAuzFs1BHaDrSHEyG2yrBbcSd0E+R28xjxqHcSnebSqAT0cGfPpUV0hqZNglPw5q1eovDnGBns3ANiPeNj8KydX6otV3sYjRH1KcCwrChjvHnUBmHyQVjQ0XYDcFaybaqkxPZ+Z0jw2ZzLEXsSRyHfqPhwUr4cRfufoabd1+y7cXhEaJG/ZN4W4fcVlA+Bp+5WfSd5kmReW5ch5OyQ1OS0hPd9HkJ+utK9rOwQ9Pw7Xb5alohRAw2opwFObqWvr3rUo+4CquU/MedW6l1aQpRIFSWUc1RUPm3izllwVTUY7huEYVT4e6Ns9xdwDsge/Xmr6kSLe7Djw4TRbjx46Y4C3+2UQM4KlYHccdOgFVla433O4owIvLhKbg0pGfxSsEfu+FM6Pvzdp9fZuTxDbqErQrGTzpPT4gmsibebU5rK1XZmSAhl9BeUobgBQVnHz+ddU1NLTTPYcwRr32TeMYrRYzh9NVMIY+N492+Ybex8sgVJ+Ib3Np+4Dv7ZR/lGsqyXNq56KtaysFTcURHE+BQSPsIqK6p1NarraJbMV9SluKKgFjGd/f13qPWS9yLE+Skc8dzHOg+PjXEdA+SlLbWcDdTKzaqlpMebNvh0Tow0kZ2Nyf/vivXK0v2y6vIfbKW1rKm1kbKB32NT3hnp6VGuB1xOjqYttuSv1d11OBJklJShtGfpYJ5lEdAKW264hMpD0aYGlHcoWhLgz7iCPqpq/8RzO5XZ1xkTnGwUtpWcJbHglPQDyAFPGqqJI+y7M72l1Vt2ewmmrBXirb2QO9bjztr9LrWa4kINvjwu0SFuOJGVHYDxPypmfoS9adjSZLV+tLrrI5jHiOrdUo+XsAefWofcJ8i8XFUl4nH4I8Kltr1g2WW2LmVJdQkI7T8YAYFO9hNTQNbGL8woYxLDsbxWWaqeY8gGG9tOfqtZB1fdG30NvgvJUQkDqSftqbaggrYhTIM9oNuNoypKuqFYz8xQRNYwre6mTDVb2pCDzJkiG32yT4hZTkHz61FNRasTMYejxnFuuvE9o8s5JydyT3k1GMRnkaY4922qvG1zcMopmVtWJg4ENGp001OqlWk3weGccZ2+6Dx/kN1FL3qe6wb/IjMuDkSRyjlGwI91Zmn7/AG2Bolm3SJBS+mU68U46JKUAfqmo3d32ZmoX5LCwttQTg/CpMFKHVTzI24z1VNiOOOgwKlZSzbrxa9jnax1Uw0fdJt5burs9efVmEKbSABupxKd/gTWo1qQZ8L8xX2ij0ndoFqj3ZMx7s1SGW0NjHUhwKP1CtfqS4RZ8iKuM6F8oUFeW4pWQblZdrbN/CZqsV9p2b3J5d6Qnibn+pSnhICrXkQdR65GyPepY+wmrNuR59LXNJP0oS+vlg/sqA8G4xOo/XSNmpCF58m2nnD9gqc3Fwp0xcQTjMUoHvKkJ/bVTitjWC3MfRZ7DxamN+R+q5/k+zPfT4OK+001mjlKC7g+odC4r7TTWa1zdAs07Upc0hNeO/SkOK6SJQdqIGgHTFEmhCc6iiTjNN0uaELu/gDqMX3gImGpzmftj6FEE9ELTy/rIHzqvPSOsypHq1xaSSZMJyNnGcuMqDyPiU84qIejNrBNp1ouwy3w3FuaFRFFR2SpW7Z+CwPnV38R7M7fdFzIjTPNNiqTLjoPUuNkko/STzJ+NeX10Zw/FhJwJ6+GS3FI4VVEW8bdfVcMllMoobJ9lShvVpvcILKxEvsqHd5faWiReELjvJQFOMw0pCHAcb5cUlKwOgWkjvqvbxBTbb09Gaz2BIdYV4tq9pP1be8Gsq0WubqD1pKb5Fi+rtqdWJ0taCtK1BKyMA82SRzeWM5FehyNfM1ron2HgseLRkteLlTaLoTRt6vVuiw/u8zHf085fHhIkNEkglKW0lDJwMpUSrlVsRgbEmOwuHEOdf9KtNpujcC8TXIz7xb5vV8SlMpSFcoBXypBwQN+4dKaRp24xnkvR9YWdlxCeRC2rg6lSU/ighGQPIbU2bNdQ0GTrO29n2nbcguT/AC9pnPPjk+lnfPXNc9jMDk/rP7j4Je0jOresk7p3h5HuMFuRdk3OM+JrzLkNtnDriG4apIS2lQz2iynlTnbcHBrbSOH9qgaXv91eRcmnIYjqiRTIQohL0ZbwK1JaPNjlG2G9s5INR56zXB6QJEjVltedSoLS4ue8pQUBgKBKM5AAweoxQqt1z5pDh1hC55Oe3V90HsvZGPbPL7W3jmh0U5N9/L8pRJGBbdUuuXC6ysT47LdynSYrsjsSWUJU8VIhGQ4yE4/rhUEpR3FK0nBORUd/gRakaWvd6XDvcZyMtpEaFLIQ4kLYLnMvDR5h4fQynfI6VrF2h8qCjqe2FQWFg+tukhQGAr6HUDG/WvGHcEKkKGrIpVJz26hOe++9x5/Z9r45obDOBYvvpw7/AKodLETk2y1dusLMq5Whpc1gidKSwpllfM6yO0SjKkkYGebKeucVNJWgrc3YJE5mc+46wl7tIquUKRyzfVm19N0kJXnwUB3GooLT2agtu82wLT7QKHl5BHh7HWsjSllm6r1G3aYt1biOONOL9YluOBASkFwglIJ3IJ6ddzXdQ14AeH2A1y4LqlZ2rxE1m852Q8VI7nw2stuuToTPnT46PXnWkRQntpCGFtoS2Bg8rnMtfPscBskCsJ/h5b2Dd3/W5ZYtBUqY2oJS62lbCVsJIxssuqLSvMbAVuBwvmMyEPs6/sSXkKLiXEvygpKj1UD2eQT49axH+G0+M088NY2Q5++OFDz5LhHtZP3v2jnffvqvZVAAAz38u/7fP4LQO2ZxE3Psrh190+jh5Z4OpbXarg7cnUyobvbLjONJLMplsuOI3Sr2cAAA4VnJOwxWsjaSss2ys3Xs7u/2sEy24EbkXIdJlqYSEnlxhKQFKPKck4GAdo9ZoUu8aljWuNcCw7LkdmH3XFhIWv2SpWMnfoTjOKlyeHlyiyUOx9bWdp1kFDa2pEhBQN8hJCNhuenjT0jzEQJJc/Dx/HwUKjwqprWl1NAXAZZc8uvNYszhrb4truLqLq67Kt/3QLzWEjKWFBKFp8QVHCh3ZGKjNo0/HlzFNuzWlj7myJ49XXzFtTbS1hteRscoGR4Eb1JXNAT2GVcmqrSUpQrmCH3twd1DHJ3947++o1Y7U9edRR7VFlNx3JKy0HXSpKBkHrygnB6dO+u4JS5jv1L2420XNZhFVTyRslhLS42Avropq/wzsapjaU3h9aFzIMbkTy9ohLpSl5SxjYhSgEeI3OawmtBWyZAvEyzTZDzUaOlUZIcbcC5AQXHWSsABfKhPVA+ktI8abVoOcHFO/wALLVzkhRWH3skjoSeTfHd4UydEzWkIQnUts5W1FaOR50cijjJHsbE4G/lUcT5f3s/BTTs5X3/0x+I+6fkaSsQ1NaLO7HvjjEp5iMu5I5EsOreQlSVNEpOwKum5UBnKelQyZGiM3eQ1CS8lhDhQgPKCl7HG5AA6g91bO8QJNoVGjLvTcoN7soYdcIZ7/ZyBynODt5ViWy3TLrd4ttgoLkqU8llpPXK1HAz8Tk1PhPu9oXXFuiqOrp3wSGB7LOHDXyyVxcL7d6hoKRdFpwtxl1aT/hlpYR/IbfNZGp5aI2kHznAddSPgkFZ+vlqSz4saz6at1kiFJQEIdCk7ZaQjs2c+9Icd/wAsKrTiTcOxtiYIVgpQElP5a9z8kgD4Vl4z7XWh3ffr5K8eBT0xHcqs5io8x6nc0VNpO1EK2iyqLO1Cele6CkztQhEKIE0INEKEI+6vE0Od6UmhC2VjublsvLMltwoIUPaBxg5yD867Z01q5vWGj4moUKAlbMzADul9I+l+kMK9/N4Vwio4q1uEnEM6avPYzVrXb5ADMtsbkDPsuJH4yTv57jvrNbR4X7XDvsHvBXmDVvYybjtCpHxi0N2EpdwtzCuzV2kqMEj8H6TzA80k9okd6VKHdVJMyX4ctqZFWA62cjvCgdik+II2PvrtK5xod2tPqj8jnjuhL7EmOclB6tut564zkeIJB6muZ+Imh5dguT05mMhDBPNIbZHsNFRwlxv+8rPT8RWUHGBUTZzFd9ns0x94addZ+IT+M0G67t4xkdeuvVQZepJRWf6TbSM9MnagOoZJ6xUfM05EejQ5yJEq2s3BlJ9uM8paErGMfSQQoHvBBrdtS9PSGguPpaAryMiTke8drWuWdUcN+kk59XR9dCb0+erCfrqTF2zY20pA/wA/J/naaL9n/wDpWB/n5P8AO0qRRs3h4/2BP10n3VdPVlP11vzItWcDS8Af5aT/ADlNl+25205CH+VkfzlKhaMXRwKz2I+uplwiyriO0kg/8jlH/wDiqtKXrefZTYIaSdshx84+blbzhIsf0SGT3+pSs/5lVRK7+w/wKu9nP9zg/wAh6qf9E5HhWPJBMV0b7oV9hpzn9gY8BTTigplzP4iv1TWHYMwvp2pNo3eBVY6LUf6JFo/x9H61WQ/n1hz84/bVa6N24j2k/wDX0frVZD6v6YdH5Z+2rzGP7jfBeZ/w6P8Ayk/+f0CaWOZJTnqD9lQPQav+My1jwlfvqc82FY9/2GoFoY8vEm2nwk/vrrDx+jL4fQrjbB18Rof8vq1TZXSsKZKbix1OuKCQATvT0mQ2w2XFnA7h41Ar3eF3OSWGVfeQdyPwvIeX201R0pmd3Kx2lx+PDYSAbyHQfVYkmU5cboqSrIT0SD3Crk4NaTaAkaxu/M1FaQ41HUB7XKPZedT54UGUflun8Q1CuHWgpus7+mM2l5uAypHrchpOVJ5j7LbYOynV4ISO7dRwlJNXff58FiKzp2yNspgxQlB9WOW1lIIQhB/CQjmUAr8NSlr/AAhiRitY1jPZ4/Pw5efHu8QvI6KF88hqZdSb+J5+Xr5rXXG4+u3GXdpgQ2n+uFtGyUgbJbT5YCUjyHlVFazujtwvxQ4rKkEuLP5at/qGPmanusL+1CtqmkLSpLX0sHZxw9E+4b/DmPeKp1Tq3n1vOqK1rUVKUe8nqa6wakLAZn6lN4pUh1o26JwHejptNOCtAqVKSKQ4xXu6kNCEQNKOtDilHiKEI8+NeND3UvdmhCRR2r0eQuLIS6ju6jxHhSGm1CkIBFilBsbhXtw24kIistWO7SFKgOZ9XkK3LBPVJ/Jz1Hcdx1ObXuEWDc4IizOUjlV2T4SHOzCxvsdltqGOZB2UMHYgEccQpy4Tx9kraV9JGcfEHuI8atrRXEZVuZbg3FxUq2KOEOj6bJ8MHp+adu8Ed+OxbBHNf7RT69dd602HYm1zexmWv1xw3m2R9yZbYxXFILhYbJc5UjqtsndbY78+2joofhGtXWV/SbWU539k9a6yauMWbbw4243LhrUFJKVEDmHeCMKQseIwR7tqg2qOF0O89pOsJ7OUcqUhKN1HxW2kb/ntj3o76dw3HtIqrI8/umq7CP8AuQaclRdus93u8pUa3IckPJQXCgLCTyjqdyM/Cs06N1Xne2yP84j/AGqcvWn7jaHgxcYpaKt23NlIXjvSobK+3xArVB7sfZfZScfhBIrUska8bzTcKgcwtNnDNZ50jqgdbe//AB0f7VNL0zqFBwuE6P00/wC1WGZsf+4j5CkMyP8A3LHwFOLhZP8AB6+p3MVwY3Ptp/fUp4Ujs+IbRzn+k5W/j95VUNTNjhYJb6HwFSrhiso102rP/NJPX/BKqJXf6d/gVebN/wC50/8AkPVWAV+yD5UyVnC/HlV+qaAObe1vtQ825P5KvsNY1jcwvpCplvG7wKrnR/8A7xLUc4/p5H61WHIX/Tjv56vtqutKHGvbcf8AriT/ACqnUp9CHnFqUEjnO5PnV1ijbyN8F5tsHII6OYk/9f0CcCxzjx3+yq70/PbtWqGbi7jljuqcwds4zgfOt1d9SojZZjZLo7h1+Ph9vuqOQocic+llplbjry8JbQkqUpRPQAbk+QqTQ05ZG7tMgVR7W45FNVwupjvOjN+69xb0TlyvEq6vdmglLR6npzfuHl86lfD/AIaXbWVxQGkOR7elYQ7M5Ob2uvZtp27RzG/L0A3UUgZqa6T4LoiRfu1rp5NviIP/ACQrIJV15XFJyUn+9oy548g3qY3XVCHLeLHpuKIFsDfYgIQELcR15OVOzaCd+RJOeq1LO4jVOJsjb2dN8ftz9PHRZv2eaqkM9Wbk9eXr6p6VPtGmrAnS+lENtsoSpDslpXPnm2WEr/DUrGFu7ZHsIAQPag95vKLbFU0hxAfIPMonAaA6793n4dBudsS7ahZt7a2ojiFvAcynwr2Wx4g/+b+Lk7iqr3e3Lg6pllauwzlSiMFwjpt3Adw+J3qLQ4e6d+/Jolq6xsTd1mqC+Xdd1nDlJEdvIbB2Jz1UfM+HcAB3VrgKADNOJFapjA0WCzrnFxuUaaMjahFLmu1yl6bCvE4pKQmhCUGi7qClBoQiBpaHNLQhL3UKhS5pDQhNqFFHlvw3udlQGRhSVDKVDwIr2KbUmkIuLFKDbMKb6Z1lMtskKt7xQVYC4rhylePDP0vd1HdVsWbXFru5ShbghSh1bWcJJ8lHofI/M1zaQc1sIt5ksKSl/meSNgc4WPce/wCNU1dg0VR7wFirWkxR8Puu0XT80w7kyuPeIaZAdHtqKQVK/PB2X7yObwUKgF+4RxpiHJOnJaeYDmMdXMpI+G60fyx+UKjGn9dTIqUstSRJZH/N3uo9w7v0TU9tmrLZcCgIdMR4HPI6rAz5K/fiqEQ1mHuvGcuuCty6mrG+8M1TFz07cbJKSm429TYJ9gq3bdx+KtJwoe4591NuTLMp0j+DzbRJ+j627j4ZromRKamsLj3mGiS2se2SBzL81ZBSv9IE+BFQDUPC6FOQ5L07ISlQHMYyskJ+G6k+8FafNNW9HjjJPdmG6fkqupwl7M4jcfNVpz2tagE2dKc7ZElZxW54cOJ/hmhRAGIkj/RKrQTrbcrLO9XmR1trG4SrfmHilQ2UPMZFbvQALeq+Yg7RJHw+9mrSscHU7i08CndnAW4rTh372+qmhc2oC8lOSpQAAIJJwOhrAm3KPDQS6sZAzjOAPee6odctQyZrhbinCB+GRjHuHd7zvVBTUT5TcZBev45tNTUDCxxu88B9Vi2uYLbf2p6gT2DxcxjOSCaObeZ9yfPZ87YUcc34Rz3Dw9wqdaI4RX3UaRMuB+5VuCe1XIkp9tSPxkoJGB+UspT5mrKt8TQWhh/wcgC63MbGa+o4HuXgH4NhA/LVVjU10Ebrgbzhl3dfFeRU5qzCYWu3WE3PM3t9u5VnpLgxqG8pEy7D7jwwAtTkkYd5T38hICB+U4UjwzVpWx3RugGizpiAi4zuXkXPdUcE9/t4SpQ/JQG0nvKxWkvWo585gO3achuGlWW2tm2UH8hA6nzAKj3k1C7jq5hhB9TSBjYyJAH8lHT5591VcktRWm3Dlw/Pz8E8yOGlF+PzUyvWoJE1aJ14n4SElLSSAAlP4rTacADyAA8TUEverUCOptlfq8dQxjq47+8eX0fHNRC5akelPKWlxbzqurzpzn3A/t+VaJx1x50uOrUtR6lRyTVnSYSG+9JqoNTiRPusWbcbq/PVy7ts5yG85yfFR7z/AOhWCOteAowKumtDRYKoc4uNyvAUaQMUIowa6SIqWhzXs70IS5pDXjSE0IXs0oNDnalBoQizSg7UBpc7UIRZrw60ndXjQheNCaKkPWhCAimyKeoFChCbyQRvjFbGJe5cZQCz2yR+MfaHuNa8ppCK5cxrxZwXTXlpu0qwrDrZ5jlYbf5kd8d/p8P92Km8DUEacpHYumO+DkIUrG/5KvH5fGqF6bVsoN7lxFBK1F1sdxO49xqnqsIZJ7zNVaU2JuZk/RXxcG7ZeYiod5iIUSf69ybg+KgMEn8pOFePN0qurzp266Smqn2pwusKaWAsEKPZqHKrcbEb45gMjoQk1mWTVqJDKWnFl1AAHtfTb/3fV7qlLMxtxgIViRFWclIVjB8UnqlQ8fgcjaqmN01G4sdm3krQOZKRLGbOGhGoVV2mw6g1hefU4bBcKfbWSeVplJOOZajsB5ncnYZO1XVYtC6W4d9lKvH9Vr4j2wxgJDB7sgghv3qBc/Jb61lxr/Fsmm41p0tFDDh9t2YGQ04HD+IlJPt427TOe5AQOsKuuoItuSttpSX5AzzZPsNnv5j+EfIfE91PTVctQeziFhy+/wBvVMshbGe1lN3cz113KV37U0u4NdrPlsxYaVFYZSShoK8cZJWv8o8yvOoFc9XtxwsQwlA/6Q+N/wBFHT559wqHXfUz0ySXA6X3OnaLGEpHgkdAPdgVH3XnX3Ct1alK8TUylwgf1S9ddBRKjEuEa3dw1I9JfU4FLdcOxdeOT8B/691aR1919fO84pZ8+6gpcVdRxMjFmhVT5XPPvFJSgUoTvRACnE2vAUYrwpaEJO+lpK9mhCKkr3NSE0IXicikNer1CF4ClFIM0u+aEL3U4paQ0oNCEo2pT0ocUu9CF6vHevHwr3TahC9ihIo6QjNCEGNqHl8qcxSYoQmimkKadx5UhT5UIQtOusPBxpakLT0Uk1NNN6oIdDD+EuK2x+C5+41DCnyocEHIzTFRTsnbuuT0M7oTdqtC+aobhQyxGUppKk4UsH21fkpx0Hiep8hsa4m3B6Ysg+w2OiB0pp99+S4FvuKcUBjKqa5T4U1S0bIBlqnKiqdMe5JXsUfKcdKUJ8qmKKhAzRAeVElOKUUIQgbUuN6KkxmhC8OtKa9316hCSve6vHPdSUIXu6vV7Fe3oQvUnfXjmk3oQv/Z";
+(function () { try { let l = document.querySelector("link[rel~=icon]"); if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.appendChild(l); } if (!window.NAIOSH_SERVER) { l.type = "image/jpeg"; l.href = LOGO_SRC; } } catch (e) {} })();
+</script>
 
 <script type="application/json" id="naiosh-config">{}</script>
 <script data-app="">
@@ -521,7 +528,7 @@ function renderSide() {
     </div>`).join('');
   document.getElementById('side').innerHTML = `
     <button type="button" class="brand" data-go="home" aria-label="الرئيسية">
-      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#16161A" stroke="#2A2A31"/><path d="M17 7 L26 17 L17 27 L8 17 Z" fill="none" stroke="#FF2E4D" stroke-width="2"/><path d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z" fill="#FFCD11"/></svg>
+      <img class="brand-logo" src="${LOGO_SRC}" width="46" height="46" alt="">
       <span><b>NAIOSH</b><small>INTELLIGENCE</small></span>
     </button>
     <nav class="nav">${groups}</nav>
@@ -979,13 +986,14 @@ VIEWS.diagnosis = () => {
 };
 
 /* ================= FORESIGHT ================= */
-VIEWS.foresight = () => {
-  const sc = S.sc, w = id => id === sc ? 3 : 1.8, op = id => id === sc ? 1 : .35;
-  const list = [
+const SCENARIOS = [
     ['opt','متفائل','OPTIMISTIC','var(--green)','25%','78','إيجابي','تنفيذ حل خلال 30 يومًا واستقرار الفريق يعيدان المؤشر إلى مستواه السابق.','ارتفاع ساعات التدريب فوق 6 ساعات شهريًا لمدة شهرين.','اعتماد الحل خلال أسبوعين لاقتناص هذا المسار.'],
     ['base','أساسي','BASE','var(--blue)','55%','63','سلبي','استمرار الوضع دون تدخل: يتوقف الانخفاض لكن الأداء يبقى أدنى من المتوسط بـ 16 نقطة.','ثبات دوران الموظفين عند مستواه الحالي.','لا يكفي الانتظار: الفجوة مع المتوسط لن تُغلق دون تدخل.'],
     ['dis','جذري','DISRUPTIVE','var(--red)','20%','47','حرج','مغادرة موجة ثانية من الموظفين القدامى تنقل التراجع إلى الفروع المجاورة.','استقالة أي من الموظفين الثلاثة الذين يحملون 41% من المهام.','خطة احتفاظ فورية للموظفين الرئيسيين قبل أي حل آخر.']
-  ];
+];
+VIEWS.foresight = () => {
+  const sc = S.sc, w = id => id === sc ? 3 : 1.8, op = id => id === sc ? 1 : .35;
+  const list = SCENARIOS;
   return `${stepper(5)}
   <section class="split">
     <div class="card">
@@ -1998,6 +2006,365 @@ function diaHandle(act, k) {
 }
 </script>
 <script data-app="">
+/* ================= Report export: Excel (.xlsx) and PDF — no external libraries =================
+   XLSX: SpreadsheetML parts packed into a stored ZIP (right-to-left sheets, styled headers).
+   PDF : each A4 page is drawn on a canvas (correct Arabic shaping and RTL), embedded as JPEG. */
+
+/* ---------- shared helpers ---------- */
+const EXP_TXT = (v) => { const s = v == null ? '' : String(v); return brandify(s).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"); };
+const expToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const expNow = () => { const d = new Date(); return expToday() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const expUser = () => (typeof ME !== 'undefined' && ME) ? ME.name : CFG.identity.user;
+
+/* ---------- report content (shared by PDF and Excel) ---------- */
+function expSections() {
+  SOLS = SOLS_FN(); RISKS = RISKS_FN();
+  const s = solSel(), rec = SOLS.find(x => x.rec) || SOLS[0] || s, st = cnsStage(), h = healthNow();
+  const LVL = { c: 'حرج', h: 'مرتفع', m: 'متوسط', s: 'فرصة', i: 'معلومة', l: 'منخفض' };
+  const causes = Object.values(CAUSES()).sort((a, b) => b.p - a.p);
+  const qs = QS();
+  return {
+    summary: { h: 'الملخص التنفيذي', text: `رُصد انخفاض غير طبيعي في مؤشر أداء الفرع الشمالي بنسبة 17% خلال 6 أسابيع، وفُتحت الاستشارة الاستباقية CNS-001. المرحلة الحالية: ${st.name}. السبب الأرجح: ${causes[0].name} (احتمال ${causes[0].p}%). الحل الموصى به: ${rec.name} — Score ${rec.score} وثقة ${rec.conf}%. ${S.decided ? 'القرار المسجّل: ' + choiceLabel() + '.' : 'القرار بانتظار صاحب الصلاحية.'} ${S.measured ? 'بعد التنفيذ ارتفع المؤشر إلى ' + s.act + ' (' + impactOf().ratio + '% من المتوقع).' : ''} مؤشر صحة المنظمة: ${h.avg}/100 — ${h.st[0]}.` },
+    card: { h: 'بطاقة ذكاء القرار — CNS-001', kv: decisionCard() },
+    kpis: { h: 'المؤشرات الرئيسية', cols: ['المؤشر', 'القيمة', 'ملاحظة'], rows: CFG.kpis.map(k => [k.label, k.value, k.sub || '']) },
+    health: { h: 'مؤشر صحة المنظمة', note: `المؤشر العام: ${h.avg}/100 — ${h.st[0]}`, cols: ['البُعد', 'الدرجة', 'الحالة'], rows: h.dims.map(d => [d.label, d.v, d.v >= 80 ? 'مستقر' : d.v >= 65 ? 'يحتاج انتباه' : 'حرج']) },
+    sources: { h: 'مصادر البيانات وجودتها', cols: ['النظام', 'الحالة', 'السجلات', 'آخر مزامنة', 'متوسط الجودة', 'بوابة الجودة', 'ملاحظة'], rows: CFG.sources.map(x => { const d = (x.d || []).map(Number).filter(n => !isNaN(n)); return [x.name, { ok: 'متصل', warn: 'تنبيه', off: 'منقطع' }[x.st] || x.st, x.rec, x.sync, d.length ? Math.round(d.reduce((a, b) => a + b, 0) / d.length) + '%' : '—', (GATE[x.g] || [x.g])[0], x.note || '']; }) },
+    causes: { h: 'الأسباب المحتملة والأدلة', cols: ['السبب', 'الاحتمال', 'الثقة', 'الأثر', 'الموثوقية', 'الأدلة'], rows: causes.map(c => [c.name, c.p + '%', c.conf + '%', c.imp, c.tr, c.ev.map(e => e.t + ' (' + e.src + ')').join(' · ')]) },
+    answers: { h: 'إجابات الاستبيان الذكي', cols: ['السؤال', 'الإجابة'], rows: qs.map(q => [q.text, S.ans[q.id] || '— لم يُجب بعد']) },
+    scenarios: { h: 'سيناريوهات التوقع', cols: ['السيناريو', 'الاحتمال', 'المؤشر المتوقع', 'الأثر', 'الوصف', 'مؤشر الإنذار', 'التوصية'], rows: SCENARIOS.map(x => [x[1], x[4], x[5], x[6], x[7], x[8], x[9]]) },
+    risks: { h: 'سجل المخاطر', cols: ['الرمز', 'الخطر', 'الفئة', 'الاحتمال', 'الأثر', 'المستوى', 'السرعة', 'القرب', 'الاتجاه', 'الضوابط'], rows: RISKS.map(r => [r.id, r.name, r.cat, r.p, r.i, (LV[r.lv] || [])[0] || '', r.vel, r.prox, r.tr, r.ctl.map(c => c[0] + (c[1] ? ' — ' + c[1] : '')).join(' · ')]) },
+    solutions: { h: 'البدائل والحلول', cols: ['#', 'الحل', 'Score', 'الثقة', 'المدة', 'الأثر المتوقع', 'موصى به', 'ملاحظة'], rows: SOLS.map(x => [x.n, x.name, x.score, x.conf + '%', x.time || '', x.exp, x.rec ? 'نعم' : '', x.note || '']) },
+    decision: { h: 'القرار', kv: [['الحل المعروض', s.name], ['القرار', S.decided ? choiceLabel() : 'بانتظار القرار'], ['مستوى القرار', 'D3 — تكتيكي'], ['صاحب الصلاحية', CFG.identity.user], ['مبرر القرار', S.decided ? (S.why || '—') : '—'], ['المرجع', S.decided ? 'DEC-2026-041' : '—']] },
+    execution: { h: 'خطة التنفيذ', note: approved() ? 'خطة التنفيذ AP-2026-077 مفعّلة' : 'تُفعّل الخطة بعد اعتماد القرار', bullets: s.tasks },
+    impact: { h: 'قياس الأثر', kv: S.measured ? [['المؤشر قبل التنفيذ', '64'], ['المتوقع', s.exp], ['الفعلي بعد 30 يومًا', s.act], ['نسبة تحقق التحسن', impactOf().ratio + '%']] : [['الحالة', 'لم يُقَس الأثر بعد — يُقاس بعد 30 يومًا من التنفيذ']] },
+    alerts: { h: 'تنبيهات الذكاء', cols: ['المستوى', 'التنبيه', 'المصدر'], rows: [['حرج', 'انخفاض غير طبيعي في مؤشر الأداء — الفرع الشمالي (−17% خلال 6 أسابيع)', 'محرك الشذوذ · ثقة 81%'], ...CFG.alerts.map(a => [LVL[a.level] || a.level, a.title, a.meta || ''])] },
+    monitor: { h: 'ما رصدته المراقبة الاستباقية', cols: ['النوع', 'البند', 'الدليل'], rows: monitorItems().map(m => [m.k, m.title, m.ev]) },
+    audit: { h: 'سجل التدقيق (آخر الأحداث)', cols: ['الوقت', 'الفاعل', 'الحدث'], rows: (S.audit || []).slice(0, 25).map(a => [a.t, a.who, a.what]) }
+  };
+}
+const REPORT_PLAN = {
+  EXECUTIVE: ['summary', 'card', 'kpis', 'health', 'risks', 'decision', 'impact'],
+  ANALYTICAL: ['summary', 'sources', 'causes', 'kpis', 'health', 'monitor'],
+  CONSULTATION: ['summary', 'card', 'answers', 'causes', 'solutions', 'decision', 'execution', 'impact', 'audit'],
+  FORECAST: ['summary', 'scenarios', 'kpis', 'health'],
+  FORESIGHT: ['summary', 'scenarios', 'risks', 'monitor'],
+  SOLUTION: ['summary', 'solutions', 'execution', 'impact'],
+  DECISION_BRIEF: ['summary', 'card', 'solutions', 'decision'],
+  EARLY_WARNING: ['summary', 'alerts', 'risks', 'monitor'],
+  ALL: ['summary', 'card', 'kpis', 'health', 'sources', 'causes', 'answers', 'scenarios', 'risks', 'solutions', 'decision', 'execution', 'impact', 'alerts', 'monitor', 'audit']
+};
+function buildReport(code) {
+  const t = REPORT_TYPES.find(x => x[0] === code) || [code, code === 'ALL' ? 'التقرير الشامل' : code, ''];
+  const all = expSections();
+  return { code, title: t[1], audience: t[2], sections: (REPORT_PLAN[code] || REPORT_PLAN.ALL).map(k => all[k]).filter(Boolean) };
+}
+
+/* ---------- ZIP (stored) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, tm, true); lh.setUint16(12, dt, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, tm, true); ch.setUint16(14, dt, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+
+/* ---------- XLSX ---------- */
+const xesc = (s) => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const colName = (i) => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+// style ids: 0 normal(wrap) · 1 title · 2 table header · 3 label · 4 number · 5 subtitle · 6 zebra
+function xlsxSheet(rows, widths, styleOf, merges = [], heights = {}, drawing = false) {
+  const xml = rows.map((r, ri) => `<row r="${ri + 1}"${heights[ri] ? ` ht="${heights[ri]}" customHeight="1"` : ''}>${r.map((v, ci) => {
+    if (v === '' || v == null) return '';
+    const ref = colName(ci) + (ri + 1), st = styleOf(ri, ci, v);
+    const num = typeof v === 'number' || (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) && v.length < 12);
+    return num ? `<c r="${ref}" s="${st === 0 ? 4 : st}"><v>${Number(v)}</v></c>` : `<c r="${ref}" t="inlineStr" s="${st}"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+  }).join('')}</row>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${xml}</sheetData>${merges.length ? `<mergeCells count="${merges.length}">${merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>${drawing ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
+}
+function buildXlsx(rep) {
+  const used = new Set();
+  const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
+  const sheets = [];
+  // cover sheet: title, metadata, summary text and every key/value section
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], ['الاستشارة', 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
+  for (const sec of rep.sections) {
+    if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
+    if (sec.kv) { coverStyle[cover.length] = 5; cover.push([EXP_TXT(sec.h)]); sec.kv.forEach(([k, v]) => cover.push([EXP_TXT(k), EXP_TXT(v)])); cover.push([]); }
+    if (sec.bullets) { coverStyle[cover.length] = 5; cover.push([EXP_TXT(sec.h)]); if (sec.note) cover.push([EXP_TXT(sec.note)]); sec.bullets.forEach((b, i) => cover.push([i + 1, EXP_TXT(b)])); cover.push([]); }
+  }
+  Object.keys(coverStyle).forEach(r => coverMerge.push(+r));
+  sheets.push({ name: sheetName('الملخص'), xml: xlsxSheet(cover, [28, 90, 4, 18], (r, c) => r === 0 ? 1 : coverStyle[r] ? 5 : c === 0 && cover[r].length > 1 ? 3 : 0, coverMerge.map(r => `A${r + 1}:B${r + 1}`), coverH, true) });
+  for (const sec of rep.sections.filter(x => x.cols)) {
+    const rows = [[EXP_TXT(sec.h)], ...(sec.note ? [[EXP_TXT(sec.note)]] : []), sec.cols.map(EXP_TXT), ...sec.rows.map(r => r.map(v => typeof v === 'number' ? v : EXP_TXT(v)))];
+    const hdr = sec.note ? 2 : 1;
+    const widths = sec.cols.map((c, i) => Math.min(60, Math.max(10, ...rows.slice(hdr).map(r => String(r[i] ?? '').length * 1.1))));
+    const last = colName(sec.cols.length - 1), mg = sec.cols.length > 1 ? [`A1:${last}1`, ...(sec.note ? [`A2:${last}2`] : [])] : [];
+    sheets.push({ name: sheetName(sec.h), xml: xlsxSheet(rows, widths, (r, c) => r === 0 ? 1 : r < hdr ? 5 : r === hdr ? 2 : (r - hdr) % 2 === 0 ? 6 : 0, mg, { 0: 24 }) });
+  }
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="4"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="15"/><color rgb="FFD90F2C"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
+<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF16161A"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F5"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF6CC"/></patternFill></fill></fills>
+<borders count="2"><border/><border><left style="thin"><color rgb="FFDDDDE3"/></left><right style="thin"><color rgb="FFDDDDE3"/></right><top style="thin"><color rgb="FFDDDDE3"/></top><bottom style="thin"><color rgb="FFDDDDE3"/></bottom></border></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="7"><xf fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf><xf fontId="1" applyFont="1" applyAlignment="1"><alignment vertical="center" readingOrder="2"/></xf><xf fontId="2" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="center" horizontal="center" readingOrder="2"/></xf><xf fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf><xf fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf><xf fontId="3" fillId="4" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" readingOrder="2"/></xf><xf fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s, i) => `<sheet name="${xesc(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`;
+  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`;
+  const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xesc(rep.title)}</dc:title><dc:creator>${xesc(EXP_TXT(expUser()))}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().slice(0, 19)}Z</dcterms:created></cp:coreProperties>`;
+  const logoBin = (() => { const b = atob(LOGO_SRC.split(',')[1]); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; })();
+  const EMU = 1150000;
+  const drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>3</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${EMU}" cy="${EMU}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="NAIOSH Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU}" cy="${EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`;
+  const drawingRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.jpeg"/></Relationships>`;
+  const sheet1Rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`;
+  return zipStore([
+    { name: '[Content_Types].xml', data: ct },
+    { name: 'xl/media/logo.jpeg', data: logoBin }, { name: 'xl/drawings/drawing1.xml', data: drawingXml }, { name: 'xl/drawings/_rels/drawing1.xml.rels', data: drawingRels }, { name: 'xl/worksheets/_rels/sheet1.xml.rels', data: sheet1Rels }, { name: '_rels/.rels', data: rels }, { name: 'docProps/core.xml', data: core },
+    { name: 'xl/workbook.xml', data: wb }, { name: 'xl/_rels/workbook.xml.rels', data: wbRels }, { name: 'xl/styles.xml', data: styles },
+    ...sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: s.xml }))
+  ]);
+}
+
+/* ---------- PDF (canvas pages → JPEG → PDF) ---------- */
+const PDF_W = 595.28, PDF_H = 841.89, PDF_K = 2.2;           // A4 in points, render scale
+const PDF_FONT = '"IBM Plex Sans Arabic","Readex Pro","Segoe UI",Tahoma,Arial,sans-serif';
+let LOGO_EL = null;
+async function logoImage() { if (LOGO_EL) return LOGO_EL; const im = new Image(); im.src = LOGO_SRC; try { await im.decode(); } catch (e) {} LOGO_EL = im; return im; }
+async function buildPdf(rep) {
+  const LOGO = await logoImage();
+  try { await Promise.all(['400 12px "IBM Plex Sans Arabic"', '700 12px "IBM Plex Sans Arabic"', '700 12px "Readex Pro"'].map(f => document.fonts.load(f))); } catch (e) {}
+  const M = 40, R = PDF_W - M, L = M, CW = R - L, FOOT = 34;
+  const pages = []; let ctx, y;
+  const red = (CFG.theme && CFG.theme.action) || '#D90F2C', yel = (CFG.theme && CFG.theme.yellow) || '#FFCD11';
+  const font = (sz, w = 400) => { ctx.font = `${w} ${sz}px ${PDF_FONT}`; };
+  function newPage(first) {
+    const c = document.createElement('canvas'); c.width = Math.round(PDF_W * PDF_K); c.height = Math.round(PDF_H * PDF_K);
+    ctx = c.getContext('2d'); ctx.scale(PDF_K, PDF_K); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PDF_W, PDF_H);
+    ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    pages.push(c);
+    const bandH = first ? 118 : 38;
+    ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, PDF_W, bandH); ctx.fillStyle = red; ctx.fillRect(0, bandH, PDF_W, 3);
+    // official logo
+    const logoAt = (x, yy, sz, r) => {
+      ctx.save(); ctx.beginPath(); ctx.moveTo(x + r, yy); ctx.arcTo(x + sz, yy, x + sz, yy + sz, r); ctx.arcTo(x + sz, yy + sz, x, yy + sz, r); ctx.arcTo(x, yy + sz, x, yy, r); ctx.arcTo(x, yy, x + sz, yy, r); ctx.closePath();
+      ctx.clip(); if (LOGO && LOGO.complete && LOGO.naturalWidth) ctx.drawImage(LOGO, x, yy, sz, sz); ctx.restore();
+      ctx.save(); ctx.strokeStyle = 'rgba(212,161,42,.55)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(x + r, yy); ctx.arcTo(x + sz, yy, x + sz, yy + sz, r); ctx.arcTo(x + sz, yy + sz, x, yy + sz, r); ctx.arcTo(x, yy + sz, x, yy, r); ctx.arcTo(x, yy, x + sz, yy, r); ctx.closePath(); ctx.stroke(); ctx.restore();
+    };
+    if (first) logoAt(L, 12, 94, 12);
+    else {
+      logoAt(L, 5, 28, 5);
+      ctx.direction = 'ltr'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; font(9, 700); ctx.fillText(EXP_TXT(CFG.identity.brandEn || 'NAIOSH').toUpperCase(), L + 36, 18);
+      ctx.fillStyle = '#9A9AA6'; font(6, 400); ctx.fillText(EXP_TXT(CFG.identity.brandSub || 'INTELLIGENCE').toUpperCase(), L + 36, 27);
+    }
+    ctx.direction = 'rtl'; ctx.textAlign = 'right';
+    if (first) {
+      ctx.fillStyle = yel; font(9, 700); ctx.fillText('CNS-001 · ' + rep.code.replace('_', ' '), R, 32);
+      ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
+      ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
+      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(expUser())} · ${expNow()}`, R, 86);
+      ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
+      y = bandH + 26;
+    } else {
+      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — CNS-001', R, 24);
+      y = bandH + 22;
+    }
+  }
+  function wrap(text, maxW) {
+    const out = []; String(text ?? '').split('\n').forEach(par => {
+      const words = par.split(/\s+/).filter(Boolean); let line = '';
+      if (!words.length) { out.push(''); return; }
+      for (const w of words) {
+        const t = line ? line + ' ' + w : w;
+        if (ctx.measureText(t).width <= maxW || !line) {
+          if (!line && ctx.measureText(w).width > maxW) { let cut = ''; for (const ch of w) { if (ctx.measureText(cut + ch).width > maxW) { out.push(cut); cut = ch; } else cut += ch; } line = cut; }
+          else line = t;
+        } else { out.push(line); line = w; }
+      }
+      out.push(line);
+    });
+    return out;
+  }
+  const room = (h) => { if (y + h > PDF_H - FOOT - 10) newPage(false); };
+  function heading(t, need = 48) {
+    room(need); y += 6;
+    ctx.fillStyle = red; ctx.fillRect(R - 3, y - 12, 3, 16);
+    ctx.fillStyle = '#0B0B0D'; font(13.5, 700); ctx.fillText(EXP_TXT(t), R - 10, y);
+    y += 14;
+  }
+  function para(t, sz = 10.5, color = '#24242B') {
+    font(sz, 400); const lines = wrap(EXP_TXT(t), CW), lh = sz * 1.75;
+    for (const ln of lines) { room(lh); ctx.fillStyle = color; font(sz, 400); ctx.fillText(ln, R, y + sz); y += lh; }
+    y += 4;
+  }
+  function kv(pairs) {
+    const lw = 150, pad = 7;
+    pairs.forEach(([k, v], i) => {
+      font(10, 400); const lines = wrap(EXP_TXT(v), CW - lw - pad * 3), h = Math.max(1, lines.length) * 16 + pad * 2 - 2;
+      room(h);
+      ctx.fillStyle = i % 2 ? '#FFFFFF' : '#F6F6F8'; ctx.fillRect(L, y, CW, h);
+      ctx.fillStyle = '#ECECF0'; ctx.fillRect(R - lw, y, lw, h);
+      ctx.strokeStyle = '#E2E2E8'; ctx.lineWidth = .6; ctx.strokeRect(L, y, CW, h);
+      ctx.fillStyle = '#4A4A55'; font(9.5, 700); wrap(EXP_TXT(k), lw - pad * 2).forEach((ln, j) => ctx.fillText(ln, R - pad, y + pad + 10 + j * 16));
+      ctx.fillStyle = '#16161A'; font(10, 400); lines.forEach((ln, j) => ctx.fillText(ln, R - lw - pad, y + pad + 10 + j * 16));
+      y += h;
+    });
+    y += 12;
+  }
+  function table(cols, rows) {
+    const sz = cols.length > 7 ? 8 : cols.length > 5 ? 8.6 : 9.5, lh = sz * 1.6, pad = 5;
+    // column widths: never narrower than the longest single word, extra space goes to longer text
+    const longestWord = (t, w) => { font(sz, w); return Math.max(0, ...EXP_TXT(t).split(/\s+/).map(x => ctx.measureText(x).width)); };
+    const fullW = (t) => { font(sz, 400); return ctx.measureText(EXP_TXT(t)).width; };
+    let mins = cols.map((c, i) => Math.min(CW * .28, Math.max(longestWord(c, 700), ...rows.map(r => longestWord(r[i], 400))) + pad * 2 + 2));
+    const want = cols.map((c, i) => Math.min(CW * .5, Math.max(mins[i], ...rows.map(r => fullW(r[i]) + pad * 2))));
+    const sumMin = mins.reduce((a, b) => a + b, 0);
+    if (sumMin > CW) mins = mins.map(m => m * CW / sumMin);
+    const spare = Math.max(0, CW - mins.reduce((a, b) => a + b, 0)), extra = want.map((w, i) => Math.max(0, w - mins[i])), sumExtra = extra.reduce((a, b) => a + b, 0);
+    const ws = mins.map((m, i) => m + (sumExtra ? spare * extra[i] / sumExtra : spare / cols.length));
+    font(sz, 400);
+    const xs = []; let x = R; ws.forEach(w => { xs.push(x); x -= w; });
+    const drawHead = () => {
+      font(sz, 700); const hl = cols.map((c, i) => wrap(EXP_TXT(c), ws[i] - pad * 2)), h = Math.max(...hl.map(l => l.length)) * lh + pad * 2;
+      room(h + lh * 2 + pad * 2);
+      ctx.fillStyle = '#16161A'; ctx.fillRect(L, y, CW, h);
+      ctx.fillStyle = '#FFFFFF'; hl.forEach((ls, i) => ls.forEach((ln, j) => ctx.fillText(ln, xs[i] - pad, y + pad + sz + j * lh)));
+      y += h;
+    };
+    drawHead();
+    rows.forEach((r, ri) => {
+      font(sz, 400); const cl = cols.map((c, i) => wrap(EXP_TXT(r[i]), ws[i] - pad * 2)), h = Math.max(1, ...cl.map(l => l.length)) * lh + pad * 2;
+      if (y + h > PDF_H - FOOT - 10) { newPage(false); drawHead(); }
+      ctx.fillStyle = ri % 2 ? '#F6F6F8' : '#FFFFFF'; ctx.fillRect(L, y, CW, h);
+      ctx.strokeStyle = '#E2E2E8'; ctx.lineWidth = .5; ctx.beginPath(); ctx.moveTo(L, y + h); ctx.lineTo(R, y + h); ctx.stroke();
+      ctx.fillStyle = '#1B1B21'; font(sz, 400); cl.forEach((ls, i) => ls.forEach((ln, j) => ctx.fillText(ln, xs[i] - pad, y + pad + sz + j * lh)));
+      y += h;
+    });
+    ctx.strokeStyle = '#D5D5DD'; ctx.lineWidth = .6; ctx.strokeRect(L, y - 0.3, CW, 0.3);
+    y += 14;
+  }
+  function bullets(items) {
+    items.forEach((b, i) => {
+      font(10.5, 400); const lines = wrap(EXP_TXT(b), CW - 22), h = lines.length * 18 + 4;
+      room(h);
+      ctx.fillStyle = red; ctx.beginPath(); ctx.arc(R - 4, y + 7, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1B1B21'; lines.forEach((ln, j) => ctx.fillText(ln, R - 16, y + 11 + j * 18));
+      y += h;
+    });
+    y += 10;
+  }
+  newPage(true);
+  for (const s of rep.sections) {
+    heading(s.h, s.cols ? 110 : s.kv ? 80 : 60);
+    if (s.note) para(s.note, 9.5, '#5A5A66');
+    if (s.text) para(s.text, 10.8);
+    if (s.kv) kv(s.kv);
+    if (s.cols) s.rows.length ? table(s.cols, s.rows) : para('لا توجد بيانات.', 10, '#777');
+    if (s.bullets) bullets(s.bullets);
+  }
+  // footer on every page (needs the total page count)
+  pages.forEach((c, i) => {
+    const g = c.getContext('2d'); g.save(); g.setTransform(PDF_K, 0, 0, PDF_K, 0, 0);
+    g.fillStyle = '#E4E4EA'; g.fillRect(L, PDF_H - FOOT + 4, CW, .6);
+    g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = '#6A6A76'; g.font = `400 8px ${PDF_FONT}`;
+    g.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${EXP_TXT(rep.title)} · داخلي — سري`, R, PDF_H - FOOT + 18);
+    g.direction = 'ltr'; g.textAlign = 'left'; g.fillText(`${i + 1} / ${pages.length}`, L, PDF_H - FOOT + 18);
+    g.restore();
+  });
+  return pdfFromCanvases(pages, rep.title);
+}
+function pdfFromCanvases(canvases, title) {
+  const enc = new TextEncoder(), chunks = [], offs = []; let pos = 0;
+  const push = (x) => { const b = typeof x === 'string' ? enc.encode(x) : x; chunks.push(b); pos += b.length; };
+  const obj = (n, body) => { offs[n] = pos; push(`${n} 0 obj\n`); body(); push('\nendobj\n'); };
+  const u16 = (s) => { let h = 'FEFF'; for (const ch of String(s)) { const c = ch.codePointAt(0); if (c > 0xFFFF) { const v = c - 0x10000; h += (0xD800 + (v >> 10)).toString(16).padStart(4, '0') + (0xDC00 + (v & 0x3FF)).toString(16).padStart(4, '0'); } else h += c.toString(16).padStart(4, '0'); } return '<' + h.toUpperCase() + '>'; };
+  const imgs = canvases.map(c => { const b64 = c.toDataURL('image/jpeg', 0.9).split(',')[1], bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return { u, w: c.width, h: c.height }; });
+  const n = imgs.length, pageObj = (i) => 3 + i * 3, total = 3 + n * 3;
+  push('%PDF-1.4\n'); push(new Uint8Array([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Count ${n} /Kids [${imgs.map((_, i) => pageObj(i) + ' 0 R').join(' ')}] >>`));
+  imgs.forEach((im, i) => {
+    const p = pageObj(i), content = `q ${PDF_W} 0 0 ${PDF_H} 0 0 cm /Im${i} Do Q`;
+    obj(p, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /XObject << /Im${i} ${p + 1} 0 R >> >> /Contents ${p + 2} 0 R >>`));
+    obj(p + 1, () => { push(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.u.length} >>\nstream\n`); push(im.u); push('\nendstream'); });
+    obj(p + 2, () => push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`));
+  });
+  obj(total, () => push(`<< /Title ${u16(title)} /Producer (NAIOSH Intelligence) /Creator (NAIOSH Intelligence) >>`));
+  const xref = pos;
+  push(`xref\n0 ${total + 1}\n0000000000 65535 f \n${Array.from({ length: total }, (_, i) => String(offs[i + 1]).padStart(10, '0') + ' 00000 n \n').join('')}`);
+  push(`trailer\n<< /Size ${total + 1} /Root 1 0 R /Info ${total} 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(chunks, { type: 'application/pdf' });
+}
+
+/* ---------- delivering the file ---------- */
+async function saveFile(filename, blob) {
+  if (!window.NAIOSH_SERVER && window.claude && typeof window.claude.use === 'function') {
+    let dl = null; try { dl = await window.claude.use('downloads'); } catch (e) {}
+    if (dl) {
+      try { await dl.save({ filename, data: blob }); toast('تم حفظ ' + filename); }
+      catch (e) { if (e && e.code === 'declined') toast('أُلغي الحفظ'); else if (e && e.code === 'rate_limited') toast('نافذة حفظ مفتوحة بالفعل — أكملها أولًا'); else toast('تعذّر حفظ الملف هنا' + (e && e.code ? ' (' + e.code + ')' : '')); }
+      return;
+    }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  toast('تم تنزيل ' + filename);
+}
+let EXPORTING = false;
+async function exportReport(code, fmt) {
+  if (EXPORTING) return; EXPORTING = true;
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const rep = buildReport(code);
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    const file = `NAIOSH_${code}_CNS-001_${expToday()}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`;
+    log('د. عدنان', `صدّر «${rep.title}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    if (!S.reports.some(r => r.n === rep.title && r.t === nowTime())) S.reports.unshift({ n: rep.title, t: nowTime(), code, fmt });
+    await saveFile(file, blob);
+    render();
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف: ' + (e && e.message ? e.message : e)); }
+  finally { EXPORTING = false; }
+}
+async function exportTable(name, title, cols, rows, fmt) {
+  const rep = { code: name, title, audience: '', sections: [{ h: title, cols, rows }] };
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    log('د. عدنان', `صدّر «${title}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    await saveFile(`NAIOSH_${name}_${expToday()}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`, blob);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
+function exportHandle(act, k) {
+  if (act === 'rep-pdf') { exportReport(k, 'pdf'); return true; }
+  if (act === 'rep-xlsx') { exportReport(k, 'xlsx'); return true; }
+  if (act === 'audit-xlsx' || act === 'audit-pdf') {
+    exportTable('AUDIT_LOG', 'سجل التدقيق', ['الوقت', 'الفاعل', 'الحدث', 'النوع'], (S.audit || []).map(a => [a.t, a.who, a.what, { user: 'مستخدم', sys: 'النظام', warn: 'تنبيه' }[a.kind] || a.kind]), act === 'audit-pdf' ? 'pdf' : 'xlsx');
+    return true;
+  }
+  return false;
+}
+const expBtns = (code, small) => `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="rep-pdf" data-k="${code}" title="تصدير PDF">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="rep-xlsx" data-k="${code}" title="تصدير Excel">${ic('chart', 14)}Excel</button></div>`;
+</script>
+<script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
    Sign-in, shared settings, per-user progress, real uploads, decision ledger and audit trail. */
 window.SERVER_ROUTES = new Set(['inbox', 'users', 'account']);
@@ -2045,9 +2412,9 @@ function gate(html) {
 function closeGate() { const g = document.getElementById('sv-gate'); if (g) g.remove(); }
 function gateBrand(id) {
   const i = (id || {});
-  return `<div class="row nowrap" style="gap:12px;margin-bottom:6px">
-    <svg width="44" height="44" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#16161A" stroke="#2A2A31"/><path d="M17 7 L26 17 L17 27 L8 17 Z" fill="none" stroke="${(i.theme && i.theme.red) || '#FF2E4D'}" stroke-width="2"/><path d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z" fill="${(i.theme && i.theme.yellow) || '#FFCD11'}"/></svg>
-    <div class="stack" style="gap:0"><b style="font-family:'Readex Pro',sans-serif;letter-spacing:.18em;font-size:18px">${esc(i.brandEn || 'NAIOSH')}</b><span class="faint" style="font-size:11px;letter-spacing:.3em">${esc(i.brandSub || 'INTELLIGENCE')}</span></div></div>`;
+  return `<div class="stack" style="gap:10px;align-items:center;text-align:center;margin-bottom:4px">
+    <img class="gate-logo" src="${LOGO_SRC}" alt="${esc(i.brandEn || 'NAIOSH')}">
+    <div class="stack" style="gap:0;align-items:center"><b style="font-family:'Readex Pro',sans-serif;letter-spacing:.2em;font-size:18px">${esc(i.brandEn || 'NAIOSH')}</b><span class="faint" style="font-size:11px;letter-spacing:.3em">${esc(i.brandSub || 'INTELLIGENCE')}</span></div></div>`;
 }
 async function showLogin(msg) {
   let id = {}; try { id = await api('GET', '/api/public/identity'); } catch (e) {}
@@ -2110,7 +2477,7 @@ function svInboxView() {
     <h2 class="title-xl" style="font-size:22px">صندوق طلبات التحليل</h2>
     <p class="muted" style="font-size:13.5px">كل الطلبات المرسلة من نموذج «طلب تحليل بيانات» مع مرفقاتها. ${SV.canManage ? 'يمكنك تغيير الحالة وإضافة ملاحظة — يصل التحديث لصاحب الطلب ويُسجَّل في التدقيق.' : 'عرض فقط — تغيير الحالة للمحللين والمستشارين.'}</p>
   </section>
-  <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${SV.filter === k}" data-act="sv-filter" data-k="${k}">${l} <span class="mono faint">${n}</span></button>`).join('')}</div>
+  <div class="row between" style="gap:10px"><div class="tabs" role="tablist" style="flex:1 1 auto">${tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${SV.filter === k}" data-act="sv-filter" data-k="${k}">${l} <span class="mono faint">${n}</span></button>`).join('')}</div><div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="sv-inbox-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="sv-inbox-xlsx">${ic('chart', 14)}Excel</button></div></div>
   <section class="grid" style="grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start" id="sv-inbox-grid">
     <div class="card" style="padding:0">${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>المرجع</th><th>العنوان</th><th>مقدّم الطلب</th><th>الكفاية</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>
       ${list.map(q => `<tr class="click" tabindex="0" data-act="sv-open" data-k="${q.id}" ${SV.inboxSel === q.id ? 'style="background:rgba(255,46,77,.08)"' : ''}><td class="mono" style="color:var(--yellow);font-size:12px">${esc(q.ref)}</td><td><b>${esc(q.title)}</b><div class="faint" style="font-size:11.5px">${esc(q.typesLabel)}${q.files || q.videos ? ` · ${q.files} ملف · ${q.videos} فيديو` : ''}</div></td><td class="soft">${esc(q.owner)}</td><td class="mono" style="color:${confColor(q.suff || 0)}">${q.suff ?? '—'}%</td><td><span class="tag ${STATUS_TAG[q.status] || 't-n'}">${esc(q.statusLabel)}</span></td><td class="faint" style="font-size:12px">${String(q.createdAt).slice(0, 10)}</td></tr>`).join('')}
@@ -2206,6 +2573,12 @@ async function serverHandle(act, k) {
       return true;
     }
     case 'sv-logout': svLogout(); return true;
+    case 'sv-inbox-xlsx': case 'sv-inbox-pdf': {
+      const list = SV.filter === 'all' ? (SV.inbox || []) : (SV.inbox || []).filter(q => q.status === SV.filter);
+      exportTable('ANALYSIS_REQUESTS', 'طلبات تحليل البيانات', ['المرجع', 'العنوان', 'نوع التحليل', 'المجال', 'مقدّم الطلب', 'الأولوية', 'الكفاية', 'الحالة', 'ملفات', 'فيديو', 'التاريخ'],
+        list.map(q => [q.ref, q.title, q.typesLabel, q.domainLabel, q.owner, q.priority || '', (q.suff ?? '') + '%', q.statusLabel, q.files, q.videos, String(q.createdAt || '').slice(0, 10)]), act === 'sv-inbox-pdf' ? 'pdf' : 'xlsx');
+      return true;
+    }
   }
   return false;
 }
@@ -2532,17 +2905,23 @@ VIEWS.agents = () => {
 };
 
 /* ================= REPORTS ================= */
+const REPORT_TYPES = [['EXECUTIVE','التقرير التنفيذي','للإدارة العليا'],['ANALYTICAL','التقرير التحليلي','للمحللين'],['CONSULTATION','تقرير الاستشارة','لصاحب الاستشارة'],['FORECAST','تقرير التوقعات','للتخطيط'],['FORESIGHT','تقرير الاستشراف','للاستراتيجية'],['SOLUTION','تقرير الحلول','لفريق التنفيذ'],['DECISION_BRIEF','موجز القرار','لصاحب القرار'],['EARLY_WARNING','تقرير الإنذار المبكر','للمخاطر']];
+function decisionCard() {
+  SOLS = SOLS_FN(); const s = solSel();
+  return [['المشكلة','انخفاض أداء الفرع الشمالي 17%'],['البيانات المستخدمة','8 مصادر · 1,284,500 سجل + 6 إجابات استبيان'],['جودة البيانات','87%'],['الأسباب المحتملة','نقص التدريب 71% · ضغط العمل 58%'],['التوقع','أساسي: 63 · متفائل: 78 · جذري: 47'],['الحل الموصى به',(SOLS.find(x => x.rec) || SOLS[0] || s).name],['الحل المختار',S.decided ? s.name : '—'],['درجة الثقة',S.qDone ? s.conf + '%' : (s.conf - 14) + '%'],['المخاطر','تسرّب الكفاءات (حرج)'],['المسؤول عن القرار','د. عدنان'],['القرار',S.decided ? choiceLabel() + ' · DEC-2026-041' : 'بانتظار القرار'],['النتيجة بعد التنفيذ',S.measured ? `${s.act} (${impactOf().ratio}% من المتوقع)` : '—']];
+}
 VIEWS.reports = () => {
   const s = solSel();
-  const types = [['EXECUTIVE','التقرير التنفيذي','للإدارة العليا'],['ANALYTICAL','التقرير التحليلي','للمحللين'],['CONSULTATION','تقرير الاستشارة','لصاحب الاستشارة'],['FORECAST','تقرير التوقعات','للتخطيط'],['FORESIGHT','تقرير الاستشراف','للاستراتيجية'],['SOLUTION','تقرير الحلول','لفريق التنفيذ'],['DECISION_BRIEF','موجز القرار','لصاحب القرار'],['EARLY_WARNING','تقرير الإنذار المبكر','للمخاطر']];
-  const card = [['المشكلة','انخفاض أداء الفرع الشمالي 17%'],['البيانات المستخدمة','8 مصادر · 1,284,500 سجل + 6 إجابات استبيان'],['جودة البيانات','87%'],['الأسباب المحتملة','نقص التدريب 71% · ضغط العمل 58%'],['التوقع','أساسي: 63 · متفائل: 78 · جذري: 47'],['الحل الموصى به',(SOLS.find(x => x.rec) || SOLS[0] || s).name],['الحل المختار',S.decided ? s.name : '—'],['درجة الثقة',S.qDone ? s.conf + '%' : (s.conf - 14) + '%'],['المخاطر','تسرّب الكفاءات (حرج)'],['المسؤول عن القرار','د. عدنان'],['القرار',S.decided ? choiceLabel() + ' · DEC-2026-041' : 'بانتظار القرار'],['النتيجة بعد التنفيذ',S.measured ? `${s.act} (${impactOf().ratio}% من المتوقع)` : '—']];
+  const types = REPORT_TYPES;
+  const card = decisionCard();
   return `
-  <section class="grid g4">${types.map(([c, n, a]) => `<div class="card tight"><span class="mono faint" style="font-size:10.5px">${c}</span><b style="font-size:14px">${n}</b><span class="faint" style="font-size:12px">${a}</span><button type="button" class="btn sm" data-act="report-gen" data-k="${n}">توليد</button></div>`).join('')}</section>
+  <section class="card row between" style="gap:12px;border-color:rgba(255,205,17,.35)"><div class="stack" style="gap:3px;flex:1 1 320px"><span class="eyebrow">EXPORT · PDF · EXCEL</span><h2 class="h-sec">تصدير التقارير</h2><span class="muted" style="font-size:13px;line-height:1.7">كل تقرير يُبنى من بيانات الاستشارة الحالية لحظة التصدير، ويُسجَّل التصدير في سجل التدقيق. ملف Excel يحتوي ورقة لكل جدول، وملف PDF جاهز للطباعة والمشاركة.</span></div><div class="stack" style="gap:6px;align-items:flex-start"><span class="lbl">التقرير الشامل (كل الأقسام)</span>${expBtns('ALL')}</div></section>
+  <section class="grid g4">${types.map(([c, n, a]) => `<div class="card tight"><span class="mono faint" style="font-size:10.5px">${c}</span><b style="font-size:14px">${n}</b><span class="faint" style="font-size:12px">${a}</span>${expBtns(c)}</div>`).join('')}</section>
   <section class="split">
     <div class="card"><div class="row between"><h2 class="h-sec">بطاقة ذكاء القرار — CNS-001</h2><span class="lbl">تتحدث تلقائيًا مع كل مرحلة</span></div>
       <div class="tbl-wrap"><table><tbody>${card.map(([k, v]) => `<tr><td class="muted" style="width:190px">${k}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div></div>
     <div class="card"><h2 class="h-sec">التقارير المولّدة</h2>
-      ${S.reports.length ? S.reports.map(r => `<div class="sub"><b style="font-size:13px">${r.n} — CNS-001</b><span class="faint" style="font-size:11.5px">${r.t} · صيغة PDF / Word · مسجّل في سجل التدقيق</span></div>`).join('') : `<p class="muted" style="font-size:13px;line-height:1.7">لم تولَّد تقارير بعد. اضغط «توليد» على أي نوع ليظهر هنا، مع تسجيله في سجل التدقيق.</p>`}
+      ${S.reports.length ? S.reports.slice(0, 12).map(r => `<div class="sub row between" style="flex-direction:row;align-items:center;gap:10px"><div class="stack" style="gap:2px"><b style="font-size:13px">${r.n} — CNS-001</b><span class="faint" style="font-size:11.5px">${r.t} · ${r.fmt === 'pdf' ? 'PDF' : r.fmt === 'xlsx' ? 'Excel' : 'مولّد'} · مسجّل في سجل التدقيق</span></div>${r.code ? expBtns(r.code) : ''}</div>`).join('') : `<p class="muted" style="font-size:13px;line-height:1.7">لم تُصدَّر تقارير بعد. اضغط PDF أو Excel على أي نوع ليُنشأ الملف ويظهر هنا، مع تسجيله في سجل التدقيق.</p>`}
     </div>
   </section>`;
 };
@@ -2577,7 +2956,7 @@ VIEWS.governance = () => {
     const M = [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,1,1,0,0,1],[1,1,1,1,0,1],[1,1,1,1,1,1],[1,0,0,0,0,0],[1,1,1,1,1,1],[1,0,0,0,0,1],[0,0,0,1,0,0]];
     body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الدور</th>${perms.map(p => `<th>${p}</th>`).join('')}<th>النطاق</th></tr></thead><tbody>${roles.map((r, i) => `<tr><td><b>${r}</b></td>${M[i].map(v => `<td>${v ? ic('check', 15, 'style="color:var(--green);stroke-width:2.6"') : '<span class="faint">—</span>'}</td>`).join('')}<td class="faint" style="font-size:12px">${['المنظمة','المنظمة','القطاع','الاستشارة','المنظمة','النظام','القطاع','المنظمة (قراءة)','استشاراته فقط'][i]}</td></tr>`).join('')}</tbody></table></div>
       <p class="faint" style="font-size:12px;padding:10px 16px;line-height:1.7">عزل على مستوى الصفوف: لا يرى المستخدم بيانات فرع أو قطاع أو منظمة أو عميل آخر حتى لو وصل إلى نفس الواجهة البرمجية.</p></div>`; }
-  if (S.govTab === 'audit') body = `<div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th></tr></thead><tbody>${S.audit.map(a => `<tr><td class="mono faint" style="font-size:12px">${a.t}</td><td><span class="tag ${a.kind === 'user' ? 't-i' : a.kind === 'warn' ? 't-h' : 't-n'}">${esc(a.who)}</span></td><td style="font-size:13px">${esc(a.what)}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">يُحدَّث مباشرة مع كل خطوة في العرض. السجل غير قابل للتعديل.</p></div>`;
+  if (S.govTab === 'audit') body = `<div class="row between" style="gap:10px"><span class="muted" style="font-size:13px">${(S.audit || []).length} حدث</span><div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="audit-pdf">${ic('reports', 14)}تصدير PDF</button><button type="button" class="btn sm" data-act="audit-xlsx">${ic('chart', 14)}تصدير Excel</button></div></div><div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th></tr></thead><tbody>${S.audit.map(a => `<tr><td class="mono faint" style="font-size:12px">${a.t}</td><td><span class="tag ${a.kind === 'user' ? 't-i' : a.kind === 'warn' ? 't-h' : 't-n'}">${esc(a.who)}</span></td><td style="font-size:13px">${esc(a.what)}</td></tr>`).join('')}</tbody></table></div><p class="faint" style="font-size:12px;padding:10px 16px">يُحدَّث مباشرة مع كل خطوة في العرض. السجل غير قابل للتعديل.</p></div>`;
   if (S.govTab === 'levels') body = `<div class="grid g3">
     <div class="card tight"><b style="font-size:13.5px">موثوقية المعرفة L0–L6</b>${['غير معروف','ادعاء','له مصدر','مدعوم بأدلة','متحقَّق منه','مؤسسي','محكوم'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">L${i}</span>${x}</span>`).join('')}</div>
     <div class="card tight"><b style="font-size:13.5px">مستويات القرار D0–D8</b>${['معلومة','تشغيلي','إدارة روتينية','تكتيكي','عمل جوهري','استراتيجي','عالي المخاطر','حرج','حساس — بشري فقط'].map((x, i) => `<span class="row nowrap" style="font-size:12.5px"><span class="mono" style="color:var(--yellow);width:24px">D${i}</span>${x}</span>`).join('')}<span class="faint" style="font-size:11.5px">كلما ارتفع المستوى زادت متطلبات الأدلة والمراجعة والموافقة.</span></div>
@@ -2693,7 +3072,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

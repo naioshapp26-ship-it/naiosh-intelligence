@@ -1,0 +1,359 @@
+<script data-app="">
+/* ================= Report export: Excel (.xlsx) and PDF — no external libraries =================
+   XLSX: SpreadsheetML parts packed into a stored ZIP (right-to-left sheets, styled headers).
+   PDF : each A4 page is drawn on a canvas (correct Arabic shaping and RTL), embedded as JPEG. */
+
+/* ---------- shared helpers ---------- */
+const EXP_TXT = (v) => { const s = v == null ? '' : String(v); return brandify(s).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"); };
+const expToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const expNow = () => { const d = new Date(); return expToday() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const expUser = () => (typeof ME !== 'undefined' && ME) ? ME.name : CFG.identity.user;
+
+/* ---------- report content (shared by PDF and Excel) ---------- */
+function expSections() {
+  SOLS = SOLS_FN(); RISKS = RISKS_FN();
+  const s = solSel(), rec = SOLS.find(x => x.rec) || SOLS[0] || s, st = cnsStage(), h = healthNow();
+  const LVL = { c: 'حرج', h: 'مرتفع', m: 'متوسط', s: 'فرصة', i: 'معلومة', l: 'منخفض' };
+  const causes = Object.values(CAUSES()).sort((a, b) => b.p - a.p);
+  const qs = QS();
+  return {
+    summary: { h: 'الملخص التنفيذي', text: `رُصد انخفاض غير طبيعي في مؤشر أداء الفرع الشمالي بنسبة 17% خلال 6 أسابيع، وفُتحت الاستشارة الاستباقية CNS-001. المرحلة الحالية: ${st.name}. السبب الأرجح: ${causes[0].name} (احتمال ${causes[0].p}%). الحل الموصى به: ${rec.name} — Score ${rec.score} وثقة ${rec.conf}%. ${S.decided ? 'القرار المسجّل: ' + choiceLabel() + '.' : 'القرار بانتظار صاحب الصلاحية.'} ${S.measured ? 'بعد التنفيذ ارتفع المؤشر إلى ' + s.act + ' (' + impactOf().ratio + '% من المتوقع).' : ''} مؤشر صحة المنظمة: ${h.avg}/100 — ${h.st[0]}.` },
+    card: { h: 'بطاقة ذكاء القرار — CNS-001', kv: decisionCard() },
+    kpis: { h: 'المؤشرات الرئيسية', cols: ['المؤشر', 'القيمة', 'ملاحظة'], rows: CFG.kpis.map(k => [k.label, k.value, k.sub || '']) },
+    health: { h: 'مؤشر صحة المنظمة', note: `المؤشر العام: ${h.avg}/100 — ${h.st[0]}`, cols: ['البُعد', 'الدرجة', 'الحالة'], rows: h.dims.map(d => [d.label, d.v, d.v >= 80 ? 'مستقر' : d.v >= 65 ? 'يحتاج انتباه' : 'حرج']) },
+    sources: { h: 'مصادر البيانات وجودتها', cols: ['النظام', 'الحالة', 'السجلات', 'آخر مزامنة', 'متوسط الجودة', 'بوابة الجودة', 'ملاحظة'], rows: CFG.sources.map(x => { const d = (x.d || []).map(Number).filter(n => !isNaN(n)); return [x.name, { ok: 'متصل', warn: 'تنبيه', off: 'منقطع' }[x.st] || x.st, x.rec, x.sync, d.length ? Math.round(d.reduce((a, b) => a + b, 0) / d.length) + '%' : '—', (GATE[x.g] || [x.g])[0], x.note || '']; }) },
+    causes: { h: 'الأسباب المحتملة والأدلة', cols: ['السبب', 'الاحتمال', 'الثقة', 'الأثر', 'الموثوقية', 'الأدلة'], rows: causes.map(c => [c.name, c.p + '%', c.conf + '%', c.imp, c.tr, c.ev.map(e => e.t + ' (' + e.src + ')').join(' · ')]) },
+    answers: { h: 'إجابات الاستبيان الذكي', cols: ['السؤال', 'الإجابة'], rows: qs.map(q => [q.text, S.ans[q.id] || '— لم يُجب بعد']) },
+    scenarios: { h: 'سيناريوهات التوقع', cols: ['السيناريو', 'الاحتمال', 'المؤشر المتوقع', 'الأثر', 'الوصف', 'مؤشر الإنذار', 'التوصية'], rows: SCENARIOS.map(x => [x[1], x[4], x[5], x[6], x[7], x[8], x[9]]) },
+    risks: { h: 'سجل المخاطر', cols: ['الرمز', 'الخطر', 'الفئة', 'الاحتمال', 'الأثر', 'المستوى', 'السرعة', 'القرب', 'الاتجاه', 'الضوابط'], rows: RISKS.map(r => [r.id, r.name, r.cat, r.p, r.i, (LV[r.lv] || [])[0] || '', r.vel, r.prox, r.tr, r.ctl.map(c => c[0] + (c[1] ? ' — ' + c[1] : '')).join(' · ')]) },
+    solutions: { h: 'البدائل والحلول', cols: ['#', 'الحل', 'Score', 'الثقة', 'المدة', 'الأثر المتوقع', 'موصى به', 'ملاحظة'], rows: SOLS.map(x => [x.n, x.name, x.score, x.conf + '%', x.time || '', x.exp, x.rec ? 'نعم' : '', x.note || '']) },
+    decision: { h: 'القرار', kv: [['الحل المعروض', s.name], ['القرار', S.decided ? choiceLabel() : 'بانتظار القرار'], ['مستوى القرار', 'D3 — تكتيكي'], ['صاحب الصلاحية', CFG.identity.user], ['مبرر القرار', S.decided ? (S.why || '—') : '—'], ['المرجع', S.decided ? 'DEC-2026-041' : '—']] },
+    execution: { h: 'خطة التنفيذ', note: approved() ? 'خطة التنفيذ AP-2026-077 مفعّلة' : 'تُفعّل الخطة بعد اعتماد القرار', bullets: s.tasks },
+    impact: { h: 'قياس الأثر', kv: S.measured ? [['المؤشر قبل التنفيذ', '64'], ['المتوقع', s.exp], ['الفعلي بعد 30 يومًا', s.act], ['نسبة تحقق التحسن', impactOf().ratio + '%']] : [['الحالة', 'لم يُقَس الأثر بعد — يُقاس بعد 30 يومًا من التنفيذ']] },
+    alerts: { h: 'تنبيهات الذكاء', cols: ['المستوى', 'التنبيه', 'المصدر'], rows: [['حرج', 'انخفاض غير طبيعي في مؤشر الأداء — الفرع الشمالي (−17% خلال 6 أسابيع)', 'محرك الشذوذ · ثقة 81%'], ...CFG.alerts.map(a => [LVL[a.level] || a.level, a.title, a.meta || ''])] },
+    monitor: { h: 'ما رصدته المراقبة الاستباقية', cols: ['النوع', 'البند', 'الدليل'], rows: monitorItems().map(m => [m.k, m.title, m.ev]) },
+    audit: { h: 'سجل التدقيق (آخر الأحداث)', cols: ['الوقت', 'الفاعل', 'الحدث'], rows: (S.audit || []).slice(0, 25).map(a => [a.t, a.who, a.what]) }
+  };
+}
+const REPORT_PLAN = {
+  EXECUTIVE: ['summary', 'card', 'kpis', 'health', 'risks', 'decision', 'impact'],
+  ANALYTICAL: ['summary', 'sources', 'causes', 'kpis', 'health', 'monitor'],
+  CONSULTATION: ['summary', 'card', 'answers', 'causes', 'solutions', 'decision', 'execution', 'impact', 'audit'],
+  FORECAST: ['summary', 'scenarios', 'kpis', 'health'],
+  FORESIGHT: ['summary', 'scenarios', 'risks', 'monitor'],
+  SOLUTION: ['summary', 'solutions', 'execution', 'impact'],
+  DECISION_BRIEF: ['summary', 'card', 'solutions', 'decision'],
+  EARLY_WARNING: ['summary', 'alerts', 'risks', 'monitor'],
+  ALL: ['summary', 'card', 'kpis', 'health', 'sources', 'causes', 'answers', 'scenarios', 'risks', 'solutions', 'decision', 'execution', 'impact', 'alerts', 'monitor', 'audit']
+};
+function buildReport(code) {
+  const t = REPORT_TYPES.find(x => x[0] === code) || [code, code === 'ALL' ? 'التقرير الشامل' : code, ''];
+  const all = expSections();
+  return { code, title: t[1], audience: t[2], sections: (REPORT_PLAN[code] || REPORT_PLAN.ALL).map(k => all[k]).filter(Boolean) };
+}
+
+/* ---------- ZIP (stored) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, tm, true); lh.setUint16(12, dt, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, tm, true); ch.setUint16(14, dt, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+
+/* ---------- XLSX ---------- */
+const xesc = (s) => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const colName = (i) => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+// style ids: 0 normal(wrap) · 1 title · 2 table header · 3 label · 4 number · 5 subtitle · 6 zebra
+function xlsxSheet(rows, widths, styleOf, merges = [], heights = {}, drawing = false) {
+  const xml = rows.map((r, ri) => `<row r="${ri + 1}"${heights[ri] ? ` ht="${heights[ri]}" customHeight="1"` : ''}>${r.map((v, ci) => {
+    if (v === '' || v == null) return '';
+    const ref = colName(ci) + (ri + 1), st = styleOf(ri, ci, v);
+    const num = typeof v === 'number' || (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) && v.length < 12);
+    return num ? `<c r="${ref}" s="${st === 0 ? 4 : st}"><v>${Number(v)}</v></c>` : `<c r="${ref}" t="inlineStr" s="${st}"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+  }).join('')}</row>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${xml}</sheetData>${merges.length ? `<mergeCells count="${merges.length}">${merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>${drawing ? '<drawing r:id="rId1"/>' : ''}</worksheet>`;
+}
+function buildXlsx(rep) {
+  const used = new Set();
+  const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
+  const sheets = [];
+  // cover sheet: title, metadata, summary text and every key/value section
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], ['الاستشارة', 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
+  for (const sec of rep.sections) {
+    if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
+    if (sec.kv) { coverStyle[cover.length] = 5; cover.push([EXP_TXT(sec.h)]); sec.kv.forEach(([k, v]) => cover.push([EXP_TXT(k), EXP_TXT(v)])); cover.push([]); }
+    if (sec.bullets) { coverStyle[cover.length] = 5; cover.push([EXP_TXT(sec.h)]); if (sec.note) cover.push([EXP_TXT(sec.note)]); sec.bullets.forEach((b, i) => cover.push([i + 1, EXP_TXT(b)])); cover.push([]); }
+  }
+  Object.keys(coverStyle).forEach(r => coverMerge.push(+r));
+  sheets.push({ name: sheetName('الملخص'), xml: xlsxSheet(cover, [28, 90, 4, 18], (r, c) => r === 0 ? 1 : coverStyle[r] ? 5 : c === 0 && cover[r].length > 1 ? 3 : 0, coverMerge.map(r => `A${r + 1}:B${r + 1}`), coverH, true) });
+  for (const sec of rep.sections.filter(x => x.cols)) {
+    const rows = [[EXP_TXT(sec.h)], ...(sec.note ? [[EXP_TXT(sec.note)]] : []), sec.cols.map(EXP_TXT), ...sec.rows.map(r => r.map(v => typeof v === 'number' ? v : EXP_TXT(v)))];
+    const hdr = sec.note ? 2 : 1;
+    const widths = sec.cols.map((c, i) => Math.min(60, Math.max(10, ...rows.slice(hdr).map(r => String(r[i] ?? '').length * 1.1))));
+    const last = colName(sec.cols.length - 1), mg = sec.cols.length > 1 ? [`A1:${last}1`, ...(sec.note ? [`A2:${last}2`] : [])] : [];
+    sheets.push({ name: sheetName(sec.h), xml: xlsxSheet(rows, widths, (r, c) => r === 0 ? 1 : r < hdr ? 5 : r === hdr ? 2 : (r - hdr) % 2 === 0 ? 6 : 0, mg, { 0: 24 }) });
+  }
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="4"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="15"/><color rgb="FFD90F2C"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts>
+<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF16161A"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F5"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF6CC"/></patternFill></fill></fills>
+<borders count="2"><border/><border><left style="thin"><color rgb="FFDDDDE3"/></left><right style="thin"><color rgb="FFDDDDE3"/></right><top style="thin"><color rgb="FFDDDDE3"/></top><bottom style="thin"><color rgb="FFDDDDE3"/></bottom></border></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="7"><xf fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf><xf fontId="1" applyFont="1" applyAlignment="1"><alignment vertical="center" readingOrder="2"/></xf><xf fontId="2" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="center" horizontal="center" readingOrder="2"/></xf><xf fontId="3" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf><xf fontId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf><xf fontId="3" fillId="4" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" readingOrder="2"/></xf><xf fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top" readingOrder="2"/></xf></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s, i) => `<sheet name="${xesc(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`;
+  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`;
+  const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xesc(rep.title)}</dc:title><dc:creator>${xesc(EXP_TXT(expUser()))}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().slice(0, 19)}Z</dcterms:created></cp:coreProperties>`;
+  const logoBin = (() => { const b = atob(LOGO_SRC.split(',')[1]); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; })();
+  const EMU = 1150000;
+  const drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>3</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${EMU}" cy="${EMU}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="NAIOSH Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU}" cy="${EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`;
+  const drawingRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.jpeg"/></Relationships>`;
+  const sheet1Rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>`;
+  return zipStore([
+    { name: '[Content_Types].xml', data: ct },
+    { name: 'xl/media/logo.jpeg', data: logoBin }, { name: 'xl/drawings/drawing1.xml', data: drawingXml }, { name: 'xl/drawings/_rels/drawing1.xml.rels', data: drawingRels }, { name: 'xl/worksheets/_rels/sheet1.xml.rels', data: sheet1Rels }, { name: '_rels/.rels', data: rels }, { name: 'docProps/core.xml', data: core },
+    { name: 'xl/workbook.xml', data: wb }, { name: 'xl/_rels/workbook.xml.rels', data: wbRels }, { name: 'xl/styles.xml', data: styles },
+    ...sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: s.xml }))
+  ]);
+}
+
+/* ---------- PDF (canvas pages → JPEG → PDF) ---------- */
+const PDF_W = 595.28, PDF_H = 841.89, PDF_K = 2.2;           // A4 in points, render scale
+const PDF_FONT = '"IBM Plex Sans Arabic","Readex Pro","Segoe UI",Tahoma,Arial,sans-serif';
+let LOGO_EL = null;
+async function logoImage() { if (LOGO_EL) return LOGO_EL; const im = new Image(); im.src = LOGO_SRC; try { await im.decode(); } catch (e) {} LOGO_EL = im; return im; }
+async function buildPdf(rep) {
+  const LOGO = await logoImage();
+  try { await Promise.all(['400 12px "IBM Plex Sans Arabic"', '700 12px "IBM Plex Sans Arabic"', '700 12px "Readex Pro"'].map(f => document.fonts.load(f))); } catch (e) {}
+  const M = 40, R = PDF_W - M, L = M, CW = R - L, FOOT = 34;
+  const pages = []; let ctx, y;
+  const red = (CFG.theme && CFG.theme.action) || '#D90F2C', yel = (CFG.theme && CFG.theme.yellow) || '#FFCD11';
+  const font = (sz, w = 400) => { ctx.font = `${w} ${sz}px ${PDF_FONT}`; };
+  function newPage(first) {
+    const c = document.createElement('canvas'); c.width = Math.round(PDF_W * PDF_K); c.height = Math.round(PDF_H * PDF_K);
+    ctx = c.getContext('2d'); ctx.scale(PDF_K, PDF_K); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PDF_W, PDF_H);
+    ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    pages.push(c);
+    const bandH = first ? 118 : 38;
+    ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, PDF_W, bandH); ctx.fillStyle = red; ctx.fillRect(0, bandH, PDF_W, 3);
+    // official logo
+    const logoAt = (x, yy, sz, r) => {
+      ctx.save(); ctx.beginPath(); ctx.moveTo(x + r, yy); ctx.arcTo(x + sz, yy, x + sz, yy + sz, r); ctx.arcTo(x + sz, yy + sz, x, yy + sz, r); ctx.arcTo(x, yy + sz, x, yy, r); ctx.arcTo(x, yy, x + sz, yy, r); ctx.closePath();
+      ctx.clip(); if (LOGO && LOGO.complete && LOGO.naturalWidth) ctx.drawImage(LOGO, x, yy, sz, sz); ctx.restore();
+      ctx.save(); ctx.strokeStyle = 'rgba(212,161,42,.55)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(x + r, yy); ctx.arcTo(x + sz, yy, x + sz, yy + sz, r); ctx.arcTo(x + sz, yy + sz, x, yy + sz, r); ctx.arcTo(x, yy + sz, x, yy, r); ctx.arcTo(x, yy, x + sz, yy, r); ctx.closePath(); ctx.stroke(); ctx.restore();
+    };
+    if (first) logoAt(L, 12, 94, 12);
+    else {
+      logoAt(L, 5, 28, 5);
+      ctx.direction = 'ltr'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; font(9, 700); ctx.fillText(EXP_TXT(CFG.identity.brandEn || 'NAIOSH').toUpperCase(), L + 36, 18);
+      ctx.fillStyle = '#9A9AA6'; font(6, 400); ctx.fillText(EXP_TXT(CFG.identity.brandSub || 'INTELLIGENCE').toUpperCase(), L + 36, 27);
+    }
+    ctx.direction = 'rtl'; ctx.textAlign = 'right';
+    if (first) {
+      ctx.fillStyle = yel; font(9, 700); ctx.fillText('CNS-001 · ' + rep.code.replace('_', ' '), R, 32);
+      ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
+      ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
+      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(expUser())} · ${expNow()}`, R, 86);
+      ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
+      y = bandH + 26;
+    } else {
+      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — CNS-001', R, 24);
+      y = bandH + 22;
+    }
+  }
+  function wrap(text, maxW) {
+    const out = []; String(text ?? '').split('\n').forEach(par => {
+      const words = par.split(/\s+/).filter(Boolean); let line = '';
+      if (!words.length) { out.push(''); return; }
+      for (const w of words) {
+        const t = line ? line + ' ' + w : w;
+        if (ctx.measureText(t).width <= maxW || !line) {
+          if (!line && ctx.measureText(w).width > maxW) { let cut = ''; for (const ch of w) { if (ctx.measureText(cut + ch).width > maxW) { out.push(cut); cut = ch; } else cut += ch; } line = cut; }
+          else line = t;
+        } else { out.push(line); line = w; }
+      }
+      out.push(line);
+    });
+    return out;
+  }
+  const room = (h) => { if (y + h > PDF_H - FOOT - 10) newPage(false); };
+  function heading(t, need = 48) {
+    room(need); y += 6;
+    ctx.fillStyle = red; ctx.fillRect(R - 3, y - 12, 3, 16);
+    ctx.fillStyle = '#0B0B0D'; font(13.5, 700); ctx.fillText(EXP_TXT(t), R - 10, y);
+    y += 14;
+  }
+  function para(t, sz = 10.5, color = '#24242B') {
+    font(sz, 400); const lines = wrap(EXP_TXT(t), CW), lh = sz * 1.75;
+    for (const ln of lines) { room(lh); ctx.fillStyle = color; font(sz, 400); ctx.fillText(ln, R, y + sz); y += lh; }
+    y += 4;
+  }
+  function kv(pairs) {
+    const lw = 150, pad = 7;
+    pairs.forEach(([k, v], i) => {
+      font(10, 400); const lines = wrap(EXP_TXT(v), CW - lw - pad * 3), h = Math.max(1, lines.length) * 16 + pad * 2 - 2;
+      room(h);
+      ctx.fillStyle = i % 2 ? '#FFFFFF' : '#F6F6F8'; ctx.fillRect(L, y, CW, h);
+      ctx.fillStyle = '#ECECF0'; ctx.fillRect(R - lw, y, lw, h);
+      ctx.strokeStyle = '#E2E2E8'; ctx.lineWidth = .6; ctx.strokeRect(L, y, CW, h);
+      ctx.fillStyle = '#4A4A55'; font(9.5, 700); wrap(EXP_TXT(k), lw - pad * 2).forEach((ln, j) => ctx.fillText(ln, R - pad, y + pad + 10 + j * 16));
+      ctx.fillStyle = '#16161A'; font(10, 400); lines.forEach((ln, j) => ctx.fillText(ln, R - lw - pad, y + pad + 10 + j * 16));
+      y += h;
+    });
+    y += 12;
+  }
+  function table(cols, rows) {
+    const sz = cols.length > 7 ? 8 : cols.length > 5 ? 8.6 : 9.5, lh = sz * 1.6, pad = 5;
+    // column widths: never narrower than the longest single word, extra space goes to longer text
+    const longestWord = (t, w) => { font(sz, w); return Math.max(0, ...EXP_TXT(t).split(/\s+/).map(x => ctx.measureText(x).width)); };
+    const fullW = (t) => { font(sz, 400); return ctx.measureText(EXP_TXT(t)).width; };
+    let mins = cols.map((c, i) => Math.min(CW * .28, Math.max(longestWord(c, 700), ...rows.map(r => longestWord(r[i], 400))) + pad * 2 + 2));
+    const want = cols.map((c, i) => Math.min(CW * .5, Math.max(mins[i], ...rows.map(r => fullW(r[i]) + pad * 2))));
+    const sumMin = mins.reduce((a, b) => a + b, 0);
+    if (sumMin > CW) mins = mins.map(m => m * CW / sumMin);
+    const spare = Math.max(0, CW - mins.reduce((a, b) => a + b, 0)), extra = want.map((w, i) => Math.max(0, w - mins[i])), sumExtra = extra.reduce((a, b) => a + b, 0);
+    const ws = mins.map((m, i) => m + (sumExtra ? spare * extra[i] / sumExtra : spare / cols.length));
+    font(sz, 400);
+    const xs = []; let x = R; ws.forEach(w => { xs.push(x); x -= w; });
+    const drawHead = () => {
+      font(sz, 700); const hl = cols.map((c, i) => wrap(EXP_TXT(c), ws[i] - pad * 2)), h = Math.max(...hl.map(l => l.length)) * lh + pad * 2;
+      room(h + lh * 2 + pad * 2);
+      ctx.fillStyle = '#16161A'; ctx.fillRect(L, y, CW, h);
+      ctx.fillStyle = '#FFFFFF'; hl.forEach((ls, i) => ls.forEach((ln, j) => ctx.fillText(ln, xs[i] - pad, y + pad + sz + j * lh)));
+      y += h;
+    };
+    drawHead();
+    rows.forEach((r, ri) => {
+      font(sz, 400); const cl = cols.map((c, i) => wrap(EXP_TXT(r[i]), ws[i] - pad * 2)), h = Math.max(1, ...cl.map(l => l.length)) * lh + pad * 2;
+      if (y + h > PDF_H - FOOT - 10) { newPage(false); drawHead(); }
+      ctx.fillStyle = ri % 2 ? '#F6F6F8' : '#FFFFFF'; ctx.fillRect(L, y, CW, h);
+      ctx.strokeStyle = '#E2E2E8'; ctx.lineWidth = .5; ctx.beginPath(); ctx.moveTo(L, y + h); ctx.lineTo(R, y + h); ctx.stroke();
+      ctx.fillStyle = '#1B1B21'; font(sz, 400); cl.forEach((ls, i) => ls.forEach((ln, j) => ctx.fillText(ln, xs[i] - pad, y + pad + sz + j * lh)));
+      y += h;
+    });
+    ctx.strokeStyle = '#D5D5DD'; ctx.lineWidth = .6; ctx.strokeRect(L, y - 0.3, CW, 0.3);
+    y += 14;
+  }
+  function bullets(items) {
+    items.forEach((b, i) => {
+      font(10.5, 400); const lines = wrap(EXP_TXT(b), CW - 22), h = lines.length * 18 + 4;
+      room(h);
+      ctx.fillStyle = red; ctx.beginPath(); ctx.arc(R - 4, y + 7, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1B1B21'; lines.forEach((ln, j) => ctx.fillText(ln, R - 16, y + 11 + j * 18));
+      y += h;
+    });
+    y += 10;
+  }
+  newPage(true);
+  for (const s of rep.sections) {
+    heading(s.h, s.cols ? 110 : s.kv ? 80 : 60);
+    if (s.note) para(s.note, 9.5, '#5A5A66');
+    if (s.text) para(s.text, 10.8);
+    if (s.kv) kv(s.kv);
+    if (s.cols) s.rows.length ? table(s.cols, s.rows) : para('لا توجد بيانات.', 10, '#777');
+    if (s.bullets) bullets(s.bullets);
+  }
+  // footer on every page (needs the total page count)
+  pages.forEach((c, i) => {
+    const g = c.getContext('2d'); g.save(); g.setTransform(PDF_K, 0, 0, PDF_K, 0, 0);
+    g.fillStyle = '#E4E4EA'; g.fillRect(L, PDF_H - FOOT + 4, CW, .6);
+    g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = '#6A6A76'; g.font = `400 8px ${PDF_FONT}`;
+    g.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${EXP_TXT(rep.title)} · داخلي — سري`, R, PDF_H - FOOT + 18);
+    g.direction = 'ltr'; g.textAlign = 'left'; g.fillText(`${i + 1} / ${pages.length}`, L, PDF_H - FOOT + 18);
+    g.restore();
+  });
+  return pdfFromCanvases(pages, rep.title);
+}
+function pdfFromCanvases(canvases, title) {
+  const enc = new TextEncoder(), chunks = [], offs = []; let pos = 0;
+  const push = (x) => { const b = typeof x === 'string' ? enc.encode(x) : x; chunks.push(b); pos += b.length; };
+  const obj = (n, body) => { offs[n] = pos; push(`${n} 0 obj\n`); body(); push('\nendobj\n'); };
+  const u16 = (s) => { let h = 'FEFF'; for (const ch of String(s)) { const c = ch.codePointAt(0); if (c > 0xFFFF) { const v = c - 0x10000; h += (0xD800 + (v >> 10)).toString(16).padStart(4, '0') + (0xDC00 + (v & 0x3FF)).toString(16).padStart(4, '0'); } else h += c.toString(16).padStart(4, '0'); } return '<' + h.toUpperCase() + '>'; };
+  const imgs = canvases.map(c => { const b64 = c.toDataURL('image/jpeg', 0.9).split(',')[1], bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return { u, w: c.width, h: c.height }; });
+  const n = imgs.length, pageObj = (i) => 3 + i * 3, total = 3 + n * 3;
+  push('%PDF-1.4\n'); push(new Uint8Array([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Count ${n} /Kids [${imgs.map((_, i) => pageObj(i) + ' 0 R').join(' ')}] >>`));
+  imgs.forEach((im, i) => {
+    const p = pageObj(i), content = `q ${PDF_W} 0 0 ${PDF_H} 0 0 cm /Im${i} Do Q`;
+    obj(p, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /XObject << /Im${i} ${p + 1} 0 R >> >> /Contents ${p + 2} 0 R >>`));
+    obj(p + 1, () => { push(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.u.length} >>\nstream\n`); push(im.u); push('\nendstream'); });
+    obj(p + 2, () => push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`));
+  });
+  obj(total, () => push(`<< /Title ${u16(title)} /Producer (NAIOSH Intelligence) /Creator (NAIOSH Intelligence) >>`));
+  const xref = pos;
+  push(`xref\n0 ${total + 1}\n0000000000 65535 f \n${Array.from({ length: total }, (_, i) => String(offs[i + 1]).padStart(10, '0') + ' 00000 n \n').join('')}`);
+  push(`trailer\n<< /Size ${total + 1} /Root 1 0 R /Info ${total} 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(chunks, { type: 'application/pdf' });
+}
+
+/* ---------- delivering the file ---------- */
+async function saveFile(filename, blob) {
+  if (!window.NAIOSH_SERVER && window.claude && typeof window.claude.use === 'function') {
+    let dl = null; try { dl = await window.claude.use('downloads'); } catch (e) {}
+    if (dl) {
+      try { await dl.save({ filename, data: blob }); toast('تم حفظ ' + filename); }
+      catch (e) { if (e && e.code === 'declined') toast('أُلغي الحفظ'); else if (e && e.code === 'rate_limited') toast('نافذة حفظ مفتوحة بالفعل — أكملها أولًا'); else toast('تعذّر حفظ الملف هنا' + (e && e.code ? ' (' + e.code + ')' : '')); }
+      return;
+    }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  toast('تم تنزيل ' + filename);
+}
+let EXPORTING = false;
+async function exportReport(code, fmt) {
+  if (EXPORTING) return; EXPORTING = true;
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const rep = buildReport(code);
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    const file = `NAIOSH_${code}_CNS-001_${expToday()}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`;
+    log('د. عدنان', `صدّر «${rep.title}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    if (!S.reports.some(r => r.n === rep.title && r.t === nowTime())) S.reports.unshift({ n: rep.title, t: nowTime(), code, fmt });
+    await saveFile(file, blob);
+    render();
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف: ' + (e && e.message ? e.message : e)); }
+  finally { EXPORTING = false; }
+}
+async function exportTable(name, title, cols, rows, fmt) {
+  const rep = { code: name, title, audience: '', sections: [{ h: title, cols, rows }] };
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    log('د. عدنان', `صدّر «${title}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    await saveFile(`NAIOSH_${name}_${expToday()}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`, blob);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
+function exportHandle(act, k) {
+  if (act === 'rep-pdf') { exportReport(k, 'pdf'); return true; }
+  if (act === 'rep-xlsx') { exportReport(k, 'xlsx'); return true; }
+  if (act === 'audit-xlsx' || act === 'audit-pdf') {
+    exportTable('AUDIT_LOG', 'سجل التدقيق', ['الوقت', 'الفاعل', 'الحدث', 'النوع'], (S.audit || []).map(a => [a.t, a.who, a.what, { user: 'مستخدم', sys: 'النظام', warn: 'تنبيه' }[a.kind] || a.kind]), act === 'audit-pdf' ? 'pdf' : 'xlsx');
+    return true;
+  }
+  return false;
+}
+const expBtns = (code, small) => `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="rep-pdf" data-k="${code}" title="تصدير PDF">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="rep-xlsx" data-k="${code}" title="تصدير Excel">${ic('chart', 14)}Excel</button></div>`;
+</script>
