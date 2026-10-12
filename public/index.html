@@ -256,6 +256,10 @@ svg.ic{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;strok
 }
 .brand-logo{width:46px;height:46px;border-radius:11px;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(212,161,42,.35),0 4px 14px rgba(0,0,0,.5)}
 .gate-logo{width:112px;height:112px;border-radius:22px;object-fit:cover;box-shadow:0 0 0 1px rgba(212,161,42,.4),0 14px 40px rgba(217,15,44,.25);margin-inline:auto}
+.nav .soon-tag{margin-inline-start:auto;font-size:10px;font-weight:600;color:#0B0B0D;background:var(--yellow);border-radius:6px;padding:1px 6px;letter-spacing:0}
+.nav button:has(.soon-tag) > span:not(.soon-tag){opacity:.75}
+.chip[aria-pressed]{cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--red)}
 </style>
 <script data-app="">
 /* ================= official NAIOSH logo (embedded) ================= */
@@ -452,7 +456,12 @@ const P = {
   whatif:'M4 6h10 M18 6h2 M4 12h4 M12 12h8 M4 18h12 M20 18h0 M14 4v4 M8 10v4 M16 16v4',
   memory:'M8 4h8l3 3v13H5V7z M9 10h6 M9 14h6 M9 18h3',
   ledger:'M5 3h11l3 3v15H5z M8 8h8 M8 12h8 M8 16h5 M15 15l1.5 1.5L19 14',
-  back:'M14 6l6 6-6 6 M20 12H5', up:'M12 19V5 M6 11l6-6 6 6', down:'M12 5v14 M6 13l6 6 6-6', copy:'M8 8h12v12H8z M4 16V4h12'
+  back:'M14 6l6 6-6 6 M20 12H5',
+  bench:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z M12 11.2v1.6 M13 11l7-7 M17 4h3v3',
+  safety:'M3 18h18 M5 18v-3a7 7 0 0 1 14 0v3 M10 8V5.5h4V8 M12 8v4',
+  self:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0 M19 3l.6 1.4L21 5l-1.4.6L19 7l-.6-1.4L17 5l1.4-.6z',
+  cv:'M4 5h16v14H4z M9.5 8.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M6.5 16.5a3 3 0 0 1 6 0 M14.5 9h3 M14.5 12h3 M14.5 15h2',
+  marriage:'M9 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M15 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M10 3.5l2 2 2-2', up:'M12 19V5 M6 11l6-6 6 6', down:'M12 5v14 M6 13l6 6 6-6', copy:'M8 8h12v12H8z M4 16V4h12'
 };
 const ic = (n, s = 18, extra = '') => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="${P[n] || ''}"/></svg>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -506,6 +515,8 @@ const NAV = [
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
+  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF']] },
+  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['cv','ذكاء السيرة الذاتية','CV'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -524,7 +535,9 @@ const TITLES = {
   quality: ['DIA-04 · بوابة جودة البيانات', 'جودة البيانات'], context: ['DIA-05 · لا تحليل بلا سياق', 'محرك السياق'],
   analysis: ['DIA-07 · الأنماط والمقارنات والعلاقات', 'التحليل والأنماط'], rootcause: ['DIA-09 · لماذا حدث فعلًا؟', 'السبب الجذري'],
   whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
-  ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات']
+  ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات'],
+  bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وذكاء المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'ذكاء السلامة وتحليل المخاطر'],
+  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
@@ -534,9 +547,9 @@ function renderSide() {
   const groups = NAV.map(g => `
     <div class="nav-g">
       ${g.t ? `<h4>${g.t}</h4>` : ''}
-      ${g.items.filter(([id]) => id !== 'settings' && (id === 'home' || modOn(id))).map(([id, label, code]) => `
+      ${g.items.filter(([id]) => id !== 'settings' && (id === 'home' || modOn(id))).map(([id, label, code, flag]) => `
         <button type="button" data-go="${id}" ${effRoute() === id ? 'aria-current="page"' : ''}>
-          ${ic(id, 18)}<span>${label}</span>${c[id] ? `<span class="cnt num">${c[id]}</span>` : ''}${code ? `<span class="dia-code">${code}</span>` : ''}
+          ${ic(id, 18)}<span>${label}</span>${c[id] ? `<span class="cnt num">${c[id]}</span>` : ''}${flag === 'soon' ? '<span class="soon-tag">قريبًا</span>' : code ? `<span class="dia-code">${code}</span>` : ''}
         </button>`).join('')}
     </div>`).join('');
   document.getElementById('side').innerHTML = `
@@ -2116,7 +2129,7 @@ function buildXlsx(rep) {
   const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
   const sheets = [];
   // cover sheet: title, metadata, summary text and every key/value section
-  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], ['الاستشارة', 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
   const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
   for (const sec of rep.sections) {
     if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
@@ -2191,14 +2204,14 @@ async function buildPdf(rep) {
     }
     ctx.direction = 'rtl'; ctx.textAlign = 'right';
     if (first) {
-      ctx.fillStyle = yel; font(9, 700); ctx.fillText('CNS-001 · ' + rep.code.replace('_', ' '), R, 32);
+      ctx.fillStyle = yel; font(9, 700); ctx.fillText((rep.ref || 'CNS-001') + ' · ' + String(rep.code).replace('_', ' '), R, 32);
       ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
       ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(expUser())} · ${expNow()}`, R, 86);
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
       y = bandH + 26;
     } else {
-      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — CNS-001', R, 24);
+      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — ' + (rep.ref || 'CNS-001'), R, 24);
       y = bandH + 22;
     }
   }
@@ -2376,6 +2389,616 @@ function exportHandle(act, k) {
   return false;
 }
 const expBtns = (code, small) => `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="rep-pdf" data-k="${code}" title="تصدير PDF">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="rep-xlsx" data-k="${code}" title="تصدير Excel">${ic('chart', 14)}Excel</button></div>`;
+</script>
+<script data-app="">
+/* ================= Specialized intelligence engines =================
+   DIA-BENCH (benchmarking & project intelligence) · DIA-SAF (safety & HSE) · DIA-SELF (self intelligence)
+   DIA-CV (CV & professional value) · DIA-MAR (pre-marital — coming soon) */
+
+const ENG_STATUS = { on: ['فعّال', 't-s'], link: ['مرتبط بالمنظومة', 't-i'], p2: ['المرحلة الثانية', 't-n'] };
+const engMap = (rows) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">${rows.map(([c, n, s]) => `<div class="sub" style="gap:4px"><div class="row between nowrap"><span class="mono faint" style="font-size:11px">${c}</span><span class="tag ${ENG_STATUS[s][1]}">${ENG_STATUS[s][0]}</span></div><b style="font-size:12.5px;line-height:1.5">${n}</b></div>`).join('')}</div>`;
+const engHead = (eyebrow, title, lead, extra = '') => `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">${eyebrow}</span>${extra}</div><h2 class="title-xl" style="font-size:24px">${title}</h2><p class="lead" style="font-size:14px;line-height:1.8">${lead}</p></section>`;
+const engExport = (code) => `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="eng-pdf" data-k="${code}">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="eng-xlsx" data-k="${code}">${ic('chart', 14)}Excel</button></div>`;
+const choice = (act, key, val, on, label) => `<button type="button" class="chip" data-act="${act}" data-k="${esc(key + '|' + val)}" aria-pressed="${!!on}" style="${on ? 'background:rgba(255,46,77,.14);border-color:var(--redline);color:#fff' : ''}">${on ? ic('check', 13, 'style="color:var(--red)"') : ''}${esc(label)}</button>`;
+
+/* =========================================================================================
+   DIA-BENCH — Global Benchmarking & Project Intelligence
+   ========================================================================================= */
+const BB = () => S.bench || (S.bench = { track: 'existing', lvl: 'ops', inp: { runway: 8, interviews: 18, wtp: 12, exp: 4, team: 55, legal: false } });
+const BENCH_LEVELS = [
+  { k: 'strategy', n: 'الاستراتيجية', items: 'وضوح الرؤية · نموذج العمل · الميزة التنافسية · قابلية التوسع', ex: [58, 66, 78], nw: [62, 60, 74],
+    kpi: { ex: [['وضوح نموذج العمل (مراجعة موثقة)', 'جزئي', 'موثق ومراجَع سنويًا', 'تقييم داخلي مقابل إطار EFQM', 'L2']], nw: [['وضوح القيمة المقترحة للعميل', 'مصاغة ولم تُختبر', 'مختبرة مع 30 عميلًا محتملًا', 'ممارسة إرشادية لاختبار الفكرة', 'L2']] } },
+  { k: 'market', n: 'السوق والعملاء', items: 'حجم الطلب · الشرائح · المنافسة · التسعير · الاحتفاظ', ex: [61, 68, 80], nw: [55, 62, 75],
+    kpi: { ex: [['معدل الاحتفاظ بالعملاء (12 شهرًا)', '71%', 'محلي 78% · دولي 86%', 'مرجع قطاعي منشور 2025 · عينة 42 منشأة', 'L3'], ['شكاوى لكل 1,000 معاملة', '9.4', 'محلي 6.1', 'سجل CRM الداخلي + مرجع قطاعي', 'L3']], nw: [['التحويل من اهتمام إلى طلب فعلي', '—', 'مستهدف ≥ 5% في التجربة', 'يُقاس في تجربة البيع المحدودة', 'L1']] } },
+  { k: 'finance', n: 'المال والاستثمار', items: 'رأس المال · التدفق النقدي · التكاليف · الهامش · نقطة التعادل', ex: [54, 63, 76], nw: [48, 58, 70],
+    kpi: { ex: [['تكلفة تقديم الخدمة للطلب الواحد', '42 د.أ', 'محلي 36 د.أ', 'ERP · مقارنة بفروع مماثلة الحجم', 'L3']], nw: [['أشهر التشغيل المغطاة بالسيولة', 'حسب المدخلات', '≥ 9 أشهر قبل التأسيس', 'ممارسة إرشادية للمشروعات الناشئة', 'L2']] } },
+  { k: 'ops', n: 'العمليات', items: 'الإنتاجية · زمن الإنجاز · جودة الخدمة · الهدر · الاستقرار', ex: [52, 70, 84], nw: [45, 55, 72],
+    kpi: { ex: [['زمن تقديم الخدمة (أيام)', '4.6', 'محلي 3.1 · دولي 1.9', 'ERP · DS-TASK-04 مقابل مرجع قطاعي 2025', 'L3'], ['نسبة إعادة العمل', '14%', 'محلي 8%', 'سجل الجودة الداخلي', 'L2']], nw: [['جاهزية إجراءات التشغيل الأساسية', '30%', '≥ 70% قبل الإطلاق', 'قائمة تحقق داخلية', 'L1']] } },
+  { k: 'quality', n: 'الجودة والتميز', items: 'إدارة الجودة · رضا العملاء · التحسين المستمر · الشكاوى', ex: [66, 71, 85], nw: [50, 58, 76],
+    kpi: { ex: [['رضا العملاء (CSAT)', '78%', 'محلي 82% · دولي 89%', 'استبيان العملاء الربعي', 'L3']], nw: [['خطة جودة متوافقة مع ISO 9001 (عند انطباقه)', 'غير موجودة', 'مسودة قبل الإطلاق', 'ISO 9001 — إطار إرشادي للمشروع', 'L2']] } },
+  { k: 'gov', n: 'الحوكمة والإدارة', items: 'المسؤوليات · الصلاحيات · السياسات · المخاطر · الرقابة', ex: [49, 64, 82], nw: [40, 55, 78],
+    kpi: { ex: [['قرارات موثقة بصاحب صلاحية', '58%', 'محلي 75%', 'سجل القرارات DIA-19', 'L3']], nw: [['مصفوفة صلاحيات معتمدة', 'لا', 'نعم قبل التأسيس', 'ISO 31000 — إرشادي', 'L2']] } },
+  { k: 'tech', n: 'التقنية والبيانات', items: 'التحول الرقمي · أمن المعلومات · جودة البيانات · الأتمتة', ex: [57, 62, 81], nw: [64, 60, 79],
+    kpi: { ex: [['حداثة بيانات الموارد البشرية', 'قبل 9 أيام', 'يومي', 'مركز ذكاء البيانات DIA-03', 'L3']], nw: [['خطة أمن معلومات أساسية', 'جزئية', 'ضوابط ISO/IEC 27001 الأساسية', 'ISO/IEC 27001 — مرجع', 'L2']] } },
+  { k: 'people', n: 'الإنسان والاستدامة', items: 'الكفاءات · القيادة · بيئة العمل · السلامة · الأثر', ex: [46, 63, 79], nw: [58, 60, 74],
+    kpi: { ex: [['ساعات التدريب الشهرية للموظف', '3', 'محلي 6 · دولي 8', 'LMS · DS-TRN-12', 'L3'], ['دوران الموظفين السنوي', '24%', 'محلي 15%', 'HR · DS-HR-OT', 'L3']], nw: [['اكتمال الفريق الأساسي', 'حسب المدخلات', '≥ 70%', 'تقييم داخلي', 'L1']] } }
+];
+const BENCH_CAUSES = [
+  ['01', 'الاستراتيجية ونموذج العمل', 'not', 'لا يوجد دليل على خلل في نموذج العمل نفسه.'],
+  ['02', 'السوق والعملاء', 'contrib', 'ارتفاع الشكاوى 9.4 لكل 1,000 معاملة مرتبط بتأخر التسليم.'],
+  ['03', 'القيادة وصاحب المشروع', 'hypo', 'آخر مراجعة لمؤشرات الفرع قبل 11 أسبوعًا — يحتاج تحقق قبل أي استنتاج.'],
+  ['04', 'المال والتمويل', 'not', 'التدفق النقدي ضمن الحدود؛ التكلفة أعلى من المرجع بسبب إعادة العمل.'],
+  ['05', 'العمليات والجودة', 'contrib', 'إعادة العمل 14% مقابل 8% في المرجع المحلي.'],
+  ['06', 'الموارد البشرية', 'confirmed', 'فقدان المعرفة بعد موجة مغادرة + انخفاض التدريب من 8 إلى 3 ساعات.'],
+  ['07', 'التقنية والبيانات', 'contrib', 'بيانات الموارد البشرية متأخرة 9 أيام؛ تؤخر الإنذار المبكر.'],
+  ['08', 'الحوكمة والمخاطر', 'hypo', '42% من القرارات التشغيلية دون صاحب صلاحية موثق.'],
+  ['09', 'العوامل الخارجية', 'not', 'لا تغيّر جوهري في السوق أو التنظيمات خلال الفترة.']
+];
+const CAUSE_ST = { confirmed: ['سبب مؤكد بالأدلة', 't-c'], contrib: ['عامل مساهم', 't-h'], hypo: ['فرضية تحتاج تحقق', 't-m'], not: ['لا دليل حاليًا', 't-n'] };
+const BENCH_SWOT = {
+  existing: { S: ['قاعدة عملاء مستقرة في الفرع الشمالي', 'بيانات ERP موثوقة بجودة 96%'], W: ['تدريب 3 ساعات شهريًا مقابل 6 محليًا', '41% من المهام على 3 موظفين فقط'], O: ['نقل ممارسات الفرع الجنوبي الأعلى أداءً', 'طلب متزايد على الخدمة الرقمية'], T: ['تسرّب الكفاءات إلى المنافسين', 'انتقال التراجع إلى الفروع المجاورة'] },
+  new: { S: ['خبرة صاحب الفكرة في القطاع', 'علاقات مهنية مع جهات تدريب'], W: ['فريق غير مكتمل', 'لا توجد أدلة دفع من العملاء بعد'], O: ['متطلبات تنظيمية جديدة ترفع الطلب على التدريب', 'سوق إقليمي غير مخدوم رقميًا'], T: ['منافسون قائمون بأسعار أقل', 'تأخر التراخيص يؤخر الإيرادات'] }
+};
+const BENCH_LINKS = {
+  existing: [['قوة + فرصة', 'بيانات موثوقة + ممارسات الفرع الجنوبي', 'مبادرة نمو: نقل الممارسة بتجربة محدودة 4 أسابيع'], ['ضعف + معيار متقدم', 'التدريب 3 مقابل 6 ساعات', 'فجوة تطوير ذات أولوية'], ['تهديد + ضعف داخلي', 'تسرّب الكفاءات + تركّز المهام', 'خطر مركب يحتاج معالجة فورية (R-01)'], ['أقل من المرجع + سبب قابل للتحكم', 'زمن الخدمة 4.6 مقابل 3.1 يوم', 'مشروع تحسين محدد لمسار الخدمة']],
+  new: [['قوة + فرصة', 'خبرة القطاع + متطلبات تنظيمية جديدة', 'شريحة أولى مستهدفة: المنشآت الملزمة حديثًا'], ['ضعف + معيار متقدم', 'لا أدلة دفع', 'اختبار سوقي قبل أي استثمار كبير'], ['تهديد + ضعف داخلي', 'منافسون أرخص + فريق ناقص', 'تمايز بالجودة والرقمنة بدل السعر'], ['أقل من المرجع + سبب قابل للتحكم', 'جاهزية إجراءات 30%', 'استكمال الإجراءات قبل الإطلاق']]
+};
+const BENCH_RECS = [
+  { gap: 'زمن تقديم الخدمة 4.6 يوم مقابل 3.1 في المرجع المحلي', ev: 'ERP · DS-TASK-04', cause: 'فرضية: إعادة العمل وتركّز الأحمال', act: 'تجربة تحسين محدودة لمسار الخدمة في فريق واحد لمدة 4 أسابيع قبل التعميم', own: 'مدير العمليات', res: 'منخفضة · 4 أسابيع', risk: 'تباطؤ مؤقت أثناء التجربة', kpi: '4.6 ← 3.5 يوم', ver: 'قياس قبل/بعد على نوع الطلبات نفسه', rev: 'بعد 30 يومًا' },
+  { gap: 'ساعات التدريب 3 شهريًا مقابل 6 محليًا و8 دوليًا', ev: 'LMS · DS-TRN-12', cause: 'مؤكد: إلغاء التدريب بعد موجة المغادرة', act: 'جدول تدريب 6 ساعات شهريًا للموظفين الجدد أولًا مع اختبار كفاءة', own: 'الموارد البشرية', res: 'متوسطة · 8 أسابيع', risk: 'ضغط إضافي على الفريق خلال التنفيذ', kpi: '3 ← 6 ساعات · كفاءة ≥ 80%', ver: 'اختبار الكفاءة لا حضور الدورة فقط', rev: 'كل شهر' },
+  { gap: '42% من القرارات دون صاحب صلاحية موثق', ev: 'سجل القرارات DIA-19', cause: 'فرضية: مصفوفة صلاحيات غير محدثة', act: 'تحديث مصفوفة الصلاحيات وربط القرارات التشغيلية بمركز القرار', own: 'الحوكمة', res: 'منخفضة · أسبوعان', risk: 'بطء القرار في البداية', kpi: '58% ← 90% موثق', ver: 'مراجعة سجل القرارات', rev: 'بعد 6 أسابيع' }
+];
+const BENCH_STD = [['ISO 9001', 'إدارة الجودة', 'شهادة'], ['ISO 14001', 'الإدارة البيئية', 'شهادة'], ['ISO 45001', 'السلامة والصحة المهنية', 'شهادة'], ['ISO 31000', 'إدارة المخاطر', 'إرشادي'], ['ISO 22301', 'استمرارية الأعمال', 'شهادة'], ['ISO/IEC 27001', 'أمن المعلومات', 'شهادة'], ['ISO 56002', 'إدارة الابتكار', 'إرشادي'], ['EFQM', 'التميز المؤسسي', 'إطار'], ['المحلي', 'التراخيص والاشتراطات البلدية والضريبية والعمالية', 'ملزم']];
+const STD_T = { 'ملزم': 't-c', 'شهادة': 't-i', 'إرشادي': 't-m', 'إطار': 't-n' };
+
+function benchDecision() {
+  const i = BB().inp;
+  const market = Math.round(Math.min(100, i.interviews * 2) * 0.5 + Math.min(100, i.wtp * 3) * 0.5);
+  const finance = Math.round(Math.min(100, i.runway / 12 * 100));
+  const fit = Math.round(Math.min(100, i.exp * 10) * 0.6 + i.team * 0.4);
+  const legal = i.legal ? 100 : 30;
+  const conds = [];
+  if (!i.legal) conds.push('حصر المتطلبات النظامية والتراخيص للنشاط والدولة');
+  if (i.interviews < 20) conds.push('رفع مقابلات العملاء المحتملين إلى 20 على الأقل');
+  if (i.wtp < 10) conds.push('اختبار الاستعداد للدفع بتجربة بيع محدودة');
+  if (i.runway < 9) conds.push('سيولة تغطي 9 أشهر تشغيل على الأقل');
+  if (i.team < 70) conds.push('استكمال الأدوار الأساسية في الفريق');
+  let d;
+  if (market < 15 && i.runway < 4) d = ['تأجيل المشروع أو عدم الاستثمار حاليًا', 't-c', 'الأدلة الحالية تُظهر طلبًا ضعيفًا وسيولة غير كافية.'];
+  else if (i.interviews < 10) d = ['طلب معلومات إضافية قبل أي قرار', 't-m', 'عدد المقابلات غير كافٍ لاستنتاج وجود طلب حقيقي.'];
+  else if (market < 35) d = ['تنفيذ تجربة سوقية مصغرة قبل الاستثمار الكامل', 't-h', 'هناك اهتمام، لكن لا يوجد دليل كافٍ على الاستعداد للدفع.'];
+  else if (i.runway < 6) d = ['تعديل نموذج العمل أو خطة التمويل', 't-h', 'الطلب واعد لكن السيولة لا تحتمل تأخر الإيرادات.'];
+  else if (i.exp < 2 && i.team < 50) d = ['طلب خبرة متخصصة أو شريك قبل التأسيس', 't-m', 'فجوة في الخبرة والفريق تزيد مخاطر التنفيذ.'];
+  else if (market >= 60 && i.runway >= 9 && i.legal) d = ['الاستعداد للانتقال إلى مرحلة التأسيس بعد استكمال الشروط', 't-s', 'الأدلة كافية للانتقال مع متابعة الشروط المتبقية.'];
+  else d = ['الاستعداد لاختبار المشروع ميدانيًا', 't-i', 'الأدلة كافية لاختبار ميداني محدود، لا لاستثمار كامل.'];
+  const be = Math.max(4, Math.round(20 - market / 7 - Math.min(i.runway, 12) / 4));
+  return { market, finance, fit, legal, conds, d, sc: [['متحفظ', be + 7, 'طلب أقل 30% وتكلفة أعلى 15%'], ['أساسي', be, 'افتراضات المدخلات الحالية'], ['متفائل', Math.max(3, be - 4), 'تحويل أعلى وتأخر أقل في التراخيص']] };
+}
+
+VIEWS.bench = () => {
+  const b = BB(), ex = b.track === 'existing', L = BENCH_LEVELS.find(x => x.k === b.lvl) || BENCH_LEVELS[0];
+  const bars = BENCH_LEVELS.map(x => {
+    const [me, loc, intl] = ex ? x.ex : x.nw, gap = loc - me;
+    return `<button type="button" class="list-btn" data-act="bench-lvl" data-k="${x.k}" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px;${x.k === b.lvl ? 'background:rgba(255,46,77,.08);border-color:var(--redline)' : ''}">
+      <div class="row between nowrap"><b style="font-size:13px">${x.n}</b><span class="mono" style="font-size:12px;color:${gap > 12 ? '#FF6B81' : gap > 0 ? 'var(--yellow)' : 'var(--green)'}">${gap > 0 ? 'أقل بـ ' + gap : gap < 0 ? 'أعلى بـ ' + Math.abs(gap) : 'مساوٍ'} من المحلي</span></div>
+      <div style="position:relative;height:8px;border-radius:4px;background:var(--sunk)">
+        <span style="position:absolute;inset-inline-start:0;top:0;bottom:0;width:${me}%;border-radius:4px;background:var(--red)"></span>
+        <span title="المرجع المحلي" style="position:absolute;inset-inline-start:${loc}%;top:-3px;width:2px;height:14px;background:var(--yellow)"></span>
+        <span title="المرجع الدولي" style="position:absolute;inset-inline-start:${intl}%;top:-3px;width:2px;height:14px;background:var(--blue)"></span>
+      </div>
+      <div class="row between nowrap faint" style="font-size:11px"><span>المشروع ${me}</span><span>محلي ${loc} · دولي ${intl}</span></div></button>`;
+  }).join('');
+  const kpis = ex ? L.kpi.ex : L.kpi.nw;
+  const sw = BENCH_SWOT[ex ? 'existing' : 'new'];
+  const SW = [['S', 'نقاط القوة', 'var(--green)'], ['W', 'نقاط الضعف', '#FF6B81'], ['O', 'الفرص', 'var(--blue)'], ['T', 'التهديدات', 'var(--orange)']];
+  const dec = benchDecision(), i = b.inp;
+  const slider = (k, label, min, max, unit) => `<label class="stack" style="gap:4px"><span class="row between"><span style="font-size:13px">${label}</span><b class="mono" id="bench-v-${k}" style="color:var(--yellow)">${i[k]}${unit}</b></span><input type="range" min="${min}" max="${max}" value="${i[k]}" data-bench="${k}" aria-label="${label}"></label>`;
+  return `
+  ${engHead('NAIOSH GLOBAL BENCHMARKING · DIA-BENCH', 'المقارنة المعيارية الدولية وذكاء المشروعات', 'لا نقارن لمجرد معرفة من الأفضل؛ نقارن لفهم الفجوة، ومعرفة أسبابها، وتحديد ما يجب تغييره، ثم إثبات أن التغيير حقق أثرًا حقيقيًا.', engExport('BENCH'))}
+  <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="${ex}" data-act="bench-track" data-k="existing">المسار الثاني · مشروع قائم (الفرع الشمالي)</button><button type="button" role="tab" aria-selected="${!ex}" data-act="bench-track" data-k="new">المسار الأول · مشروع جديد قبل التأسيس</button></div>
+  ${!ex ? `<section class="split">
+    <div class="card" style="gap:12px"><div class="row between"><h2 class="h-sec">فحص الفكرة قبل التأسيس</h2><span class="eyebrow">BEN-02 · BEN-04</span></div>
+      <p class="muted" style="font-size:13px">مثال: «مركز تدريب وتأهيل في السلامة المهنية — عمّان». حرّك المدخلات لترى أثرها على القرار.</p>
+      ${slider('interviews', 'مقابلات مع عملاء محتملين', 0, 60, '')}
+      ${slider('wtp', 'نسبة من أبدى استعدادًا فعليًا للدفع', 0, 40, '%')}
+      ${slider('runway', 'أشهر التشغيل المغطاة بالسيولة', 0, 24, ' شهر')}
+      ${slider('exp', 'سنوات خبرة صاحب الفكرة في القطاع', 0, 15, '')}
+      ${slider('team', 'اكتمال الفريق الأساسي', 0, 100, '%')}
+      <label class="row nowrap" style="gap:10px;cursor:pointer;min-height:40px"><input type="checkbox" data-bench-legal="1" ${i.legal ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--red)"><span style="font-size:13px">حُصرت المتطلبات النظامية والتراخيص</span></label>
+    </div>
+    <div class="stack" style="gap:16px" id="bench-dec">${benchDecisionHTML(dec)}</div>
+  </section>` : ''}
+  <section class="split">
+    <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">المقارنة على 8 مستويات</h2><span class="row nowrap faint" style="gap:10px;font-size:11px"><span><span style="display:inline-block;width:10px;height:4px;background:var(--red);border-radius:2px"></span> المشروع</span><span><span style="display:inline-block;width:2px;height:10px;background:var(--yellow)"></span> محلي</span><span><span style="display:inline-block;width:2px;height:10px;background:var(--blue)"></span> دولي</span></span></div>
+      <div class="stack" style="gap:6px">${bars}</div></div>
+    <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">${L.n}</h2><span class="eyebrow">BEN-07</span></div>
+      <p class="faint" style="font-size:12px">${L.items}</p>
+      ${kpis.map(([n, me, ref, src, tr]) => `<div class="sub" style="gap:6px"><b style="font-size:13px">${n}</b><div class="row between" style="gap:8px"><span>المشروع: <b class="mono" style="color:var(--yellow)">${me}</b></span><span class="soft">المرجع: ${ref}</span></div><span class="faint" style="font-size:11.5px">المصدر: ${src} · <span class="tag ${tr === 'L3' ? 't-s' : tr === 'L2' ? 't-m' : 't-h'}">${tr}</span></span></div>`).join('')}
+      <div class="sub" style="border-color:rgba(255,205,17,.3)"><span style="font-size:12.5px;line-height:1.7">المرجع مختار بحسب القطاع وحجم المنشأة والسوق ومرحلة المشروع. لا تُقارن منشأة ناشئة بشركة دولية مستقرة ثم يُعدّ الفارق دليل فشل. عند غياب بيانات موثوقة عن المنافسين، يُصرَّح بحدود المقارنة بدل اختلاق أرقام.</span></div>
+    </div>
+  </section>
+  <section class="split">
+    <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">تحليل سوات المرتبط بالمقارنة</h2><span class="eyebrow">BEN-08</span></div>
+      <div class="grid g2" style="gap:8px">${SW.map(([k, n, c]) => `<div class="sub" style="border-inline-start:3px solid ${c}"><b style="font-size:12.5px;color:${c}">${n}</b>${sw[k].map(t => `<span style="font-size:12.5px">• ${t}</span>`).join('')}</div>`).join('')}</div>
+      <div class="stack" style="gap:6px">${BENCH_LINKS[ex ? 'existing' : 'new'].map(([f, a, r]) => `<div class="row nowrap" style="gap:10px;font-size:12.5px;align-items:flex-start"><span class="chip" style="flex-shrink:0">${f}</span><span class="soft">${a}</span><span style="margin-inline-start:auto;color:var(--yellow);text-align:left">← ${r}</span></div>`).join('')}</div>
+    </div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">${ex ? 'تشخيص أسباب التعثر — 9 مجموعات' : 'منظومة المعايير المرجعية'}</h2><span class="eyebrow">${ex ? 'BEN-09' : 'BEN-05'}</span></div>
+      ${ex ? BENCH_CAUSES.map(([n, t, s, e]) => `<div class="row nowrap" style="gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)"><span class="mono faint" style="font-size:11px;padding-top:2px">${n}</span><div class="stack" style="gap:2px;flex:1"><b style="font-size:13px">${t}</b><span class="faint" style="font-size:12px">${e}</span></div><span class="tag ${CAUSE_ST[s][1]}" style="flex-shrink:0">${CAUSE_ST[s][0]}</span></div>`).join('') + '<p class="faint" style="font-size:11.5px;line-height:1.7">لا يُوصف صاحب المشروع أو موظف بعينه بأنه سبب الفشل دون أدلة مناسبة، ولا تُتجاهل العوامل الخارجية أو قصور النظام المؤسسي.</p>'
+        : BENCH_STD.map(([c, n, t]) => `<div class="row between nowrap" style="padding:6px 0;border-bottom:1px solid var(--line);gap:10px"><span><b class="mono" style="font-size:12.5px">${c}</b> <span class="soft" style="font-size:12.5px">${n}</span></span><span class="tag ${STD_T[t]}">${t}</span></div>`).join('') + '<p class="faint" style="font-size:11.5px;line-height:1.7">التوافق مع معيار لا يعني الحصول على شهادة، والشهادة لا تضمن النجاح التجاري.</p>'}
+    </div>
+  </section>
+  ${ex ? `<section class="card" style="padding:0"><div class="row between" style="padding:16px 18px 6px"><h2 class="h-sec">خطة التحسين — كل توصية قابلة للتنفيذ والقياس</h2><button type="button" class="btn sm primary" data-act="bench-send">${ic('decision', 14)}إرسال إلى مركز القرار</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>الفجوة والدليل</th><th>السبب</th><th>الإجراء المقترح</th><th>المسؤول والموارد</th><th>المؤشر</th><th>التحقق والمراجعة</th></tr></thead><tbody>
+    ${BENCH_RECS.map(r => `<tr><td><b style="font-size:12.5px">${r.gap}</b><div class="faint" style="font-size:11px">${r.ev}</div></td><td style="font-size:12.5px">${r.cause}</td><td style="font-size:12.5px">${r.act}<div class="faint" style="font-size:11px">خطر الإجراء: ${r.risk}</div></td><td style="font-size:12.5px">${r.own}<div class="faint" style="font-size:11px">${r.res}</div></td><td class="mono" style="font-size:12px;color:var(--yellow)">${r.kpi}</td><td style="font-size:12px">${r.ver}<div class="faint" style="font-size:11px">${r.rev}</div></td></tr>`).join('')}
+    </tbody></table></div></section>` : ''}
+  <section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">وحدات المحرك BEN-01 → BEN-16</h2><span class="faint" style="font-size:12px">الإصدار الأول: مشروع جديد + مشروع قائم ودورة العمل كاملة</span></div>
+    ${engMap([['BEN-01', 'استقبال بيانات المشروع وملفه', 'on'], ['BEN-02', 'المقابلة الذكية وتحليل الفكرة', 'on'], ['BEN-03', 'تحليل السوق والطلب والمنافسة', 'on'], ['BEN-04', 'رأس المال والجدوى المالية', 'on'], ['BEN-05', 'مكتبة المعايير الدولية والمحلية', 'on'], ['BEN-06', 'مستودع المشروعات المرجعية', 'p2'], ['BEN-07', 'محرك المقارنة المعيارية', 'on'], ['BEN-08', 'محرك تحليل سوات', 'on'], ['BEN-09', 'تشخيص الأسباب الجذرية', 'on'], ['BEN-10', 'تقييم النضج المؤسسي', 'p2'], ['BEN-11', 'المخاطر والفرص', 'link'], ['BEN-12', 'التوصيات والحلول', 'on'], ['BEN-13', 'السيناريوهات والاستشراف', 'link'], ['BEN-14', 'مركز القرار وخطة التنفيذ', 'link'], ['BEN-15', 'قياس الأثر وإعادة المقارنة', 'link'], ['BEN-16', 'الحوكمة والأدلة والتدقيق', 'link']])}
+  </section>`;
+};
+function benchDecisionHTML(dec) {
+  const bar = (n, v) => `<div class="stack" style="gap:4px"><div class="row between"><span style="font-size:12.5px">${n}</span><b class="mono" style="font-size:12.5px;color:${confColor(v)}">${v}</b></div><div style="height:6px;border-radius:3px;background:var(--sunk)"><div style="height:100%;width:${v}%;border-radius:3px;background:${confColor(v)}"></div></div></div>`;
+  return `<div class="card" style="gap:10px;border-color:var(--redline)"><span class="eyebrow">قرار ما قبل التأسيس</span>
+      <div class="row nowrap" style="gap:10px;align-items:flex-start"><span class="tag ${dec.d[1]}" style="font-size:13px;padding:6px 10px;white-space:normal;line-height:1.6;text-align:right">${dec.d[0]}</span></div>
+      <p class="soft" style="font-size:13px">${dec.d[2]}</p>
+      ${bar('أدلة السوق والطلب', dec.market)}${bar('الجاهزية المالية', dec.finance)}${bar('ملاءمة صاحب المشروع والفريق', dec.fit)}${bar('الوضوح النظامي', dec.legal)}
+      ${dec.conds.length ? `<div class="sub"><b style="font-size:12.5px">الشروط قبل الانتقال</b>${dec.conds.map(c => `<span style="font-size:12.5px">• ${c}</span>`).join('')}</div>` : ''}
+      <p class="faint" style="font-size:11.5px">توصية مدعومة بالأدلة، وليست موافقة استثمارية تلقائية.</p></div>
+    <div class="card" style="padding:0"><div class="row between" style="padding:14px 16px 4px"><h2 class="h-sec">سيناريوهات نقطة التعادل</h2><span class="eyebrow">BEN-13</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>السيناريو</th><th>التعادل المتوقع</th><th>الافتراضات</th></tr></thead><tbody>${dec.sc.map(([n, m, a]) => `<tr><td><b>${n}</b></td><td class="mono" style="color:var(--yellow)">الشهر ${m}</td><td class="faint" style="font-size:12px">${a}</td></tr>`).join('')}</tbody></table></div>
+      <p class="faint" style="font-size:11.5px;padding:8px 16px 14px">التوقعات ليست حقائق مؤكدة؛ تُعرض مع افتراضاتها.</p></div>`;
+}
+
+/* =========================================================================================
+   DIA-SAF — Safety Intelligence & Risk Analysis Engine
+   ========================================================================================= */
+const SF = () => S.saf || (S.saf = { a: { type: 'build', phase: 'build', country: 'sa', haz: ['heights', 'electric', 'fire'], inc: 'unknown', ra: 'some', ev: 'some', people: 'mix', size: 'mid' }, f: {}, view: 'inh', sel: null, reviewed: false });
+const SAF_Q = [
+  ['type', 'ما نوع المشروع؟', [['build', 'إنشائي أو هندسي'], ['ind', 'صناعي أو إنتاجي'], ['svc', 'خدمي أو تجاري'], ['env', 'بيئي أو استدامة'], ['home', 'منزل أو منشأة مجتمعية']]],
+  ['phase', 'ما مرحلة المشروع؟', [['plan', 'فكرة أو تخطيط'], ['build', 'تحت الإنشاء أو التجهيز'], ['run', 'قائم ويعمل'], ['change', 'توسعة أو تغيير عمليات']]],
+  ['country', 'في أي دولة يقع المشروع؟', [['sa', 'المملكة العربية السعودية'], ['us', 'الولايات المتحدة'], ['other', 'دولة أخرى']]],
+  ['haz', 'ما المخاطر المعروفة أو المحتملة؟ (اختر كل ما ينطبق)', [['heights', 'العمل على ارتفاعات'], ['machine', 'الآلات والطاقة الخطرة'], ['electric', 'الكهرباء'], ['chem', 'مواد كيميائية أو خطرة'], ['fire', 'الحريق والانفجار'], ['vehicle', 'المركبات وحركة النقل'], ['manual', 'المناولة اليدوية'], ['envr', 'التسربات والنفايات والأثر البيئي']], true],
+  ['inc', 'هل وقعت حوادث أو إصابات أو حالات وشيكة خلال 12 شهرًا؟', [['yes', 'نعم'], ['no', 'لا، حسب السجلات'], ['unknown', 'لا أعرف / لا سجلات كافية']]],
+  ['ra', 'هل توجد تقييمات مخاطر وإجراءات وقائية مكتوبة ومحدثة؟', [['yes', 'نعم، ومطبقة ويُتحقق منها'], ['some', 'بعضها أو تحتاج تحديثًا'], ['no', 'لا توجد أو لا أعرف']]],
+  ['ev', 'ما الأدلة المتاحة للتحقق؟', [['all', 'سجلات الحوادث والتفتيش والتدريب والصيانة'], ['some', 'بعض السجلات'], ['none', 'لا سجلات كافية']]],
+  ['people', 'من يعمل أو يستخدم المنشأة؟', [['staff', 'موظفون وعمال فقط'], ['contract', 'مقاولون ومقاولو باطن'], ['public', 'زوار أو جمهور'], ['mix', 'مزيج من الجميع']]],
+  ['size', 'الحجم التقريبي للمشروع', [['small', 'صغير أو محدود المخاطر'], ['mid', 'متوسط أو متعدد الأنشطة'], ['large', 'كبير أو متعدد المقاولين']]]
+];
+const SAF_HAZ = {
+  heights: { n: 'السقوط من ارتفاع', peem: 'E', cat: 'المعدات/البيئة', ev: 'سقوط عامل أثناء العمل على سطح أو سقالة', cons: 'وفاة أو إصابة جسيمة', L: 4, Sv: 5, life: true, ref: 'OSHA 1926 Subpart M · ISO 45001', q: 'هل توجد وسائل منع سقوط موثقة ومفحوصة؟', evid: 'خطة الحماية من السقوط · التفتيش · التدريب', capa: 'تطبيق نظام منع السقوط وفحص السقالات قبل أي عمل على ارتفاع', hier: ['تنفيذ العمل على الأرض أو تقليل العمل على ارتفاع', 'منصات عمل بدل السلالم', 'حواجز حماية وشبكات أمان', 'تصريح عمل وإشراف وتدريب', 'أحزمة أمان مع نقاط تثبيت معتمدة'] },
+  machine: { n: 'التشغيل المفاجئ للآلات / الطاقة الخطرة', peem: 'E', cat: 'المعدات', ev: 'تشغيل آلة أثناء الصيانة', cons: 'بتر أو وفاة', L: 3, Sv: 5, life: true, ref: 'OSHA 1910.147 (LOTO) · 1910.212 · ISO 12100', q: 'هل يُعزل مصدر الطاقة قبل الصيانة (LOTO) وبإجراء مكتوب؟', evid: 'إجراء عزل الطاقة · سجلات التدريب والتحقق', capa: 'برنامج عزل طاقة مكتوب ومطبق مع تدريب وتحقق', hier: ['إزالة الحاجة للتدخل اليدوي', 'آلات بحواجز مدمجة', 'حواجز وأقفال تعشيق', 'برنامج LOTO وتصاريح', 'قفازات ونظارات مناسبة'] },
+  electric: { n: 'الصعق الكهربائي', peem: 'E', cat: 'المعدات', ev: 'ملامسة أجزاء مكهربة أو تمديدات مؤقتة غير محمية', cons: 'وفاة أو حروق', L: 3, Sv: 5, life: true, ref: 'OSHA 1926 Subpart K · 1910 Subpart S', q: 'هل التمديدات المؤقتة محمية بالتأريض وقواطع التسرب (GFCI)؟', evid: 'سجل فحص كهربائي · شهادات الفنيين', capa: 'فحص التمديدات المؤقتة وتركيب قواطع تسرب وتأريض', hier: ['فصل الكهرباء أثناء العمل', 'جهد منخفض حيث أمكن', 'قواطع تسرب وتأريض', 'تصاريح عمل كهربائي وفنيون مؤهلون', 'قفازات وأدوات معزولة'] },
+  chem: { n: 'التعرض لمواد كيميائية', peem: 'M', cat: 'المواد', ev: 'استنشاق أو ملامسة مادة خطرة', cons: 'تسمم أو أمراض مهنية', L: 3, Sv: 4, life: false, ref: 'OSHA 1910.1200 (HazCom) · 1910.134', q: 'هل المواد مصنفة وموسومة ولها نشرات بيانات سلامة (SDS) متاحة؟', evid: 'جرد المواد · SDS · الملصقات · التدريب', capa: 'توفير نشرات SDS والملصقات وتدريب العاملين على التداول', hier: ['استبعاد المادة إن أمكن', 'استبدالها بمادة أقل خطورة', 'تهوية موضعية وأنظمة مغلقة', 'إجراءات تداول وتخزين', 'كمامات وقفازات مناسبة'] },
+  fire: { n: 'الحريق والانفجار', peem: 'M', cat: 'المواد/البيئة', ev: 'اشتعال مواد قابلة للاشتعال أثناء اللحام أو التخزين', cons: 'وفيات وخسائر في المنشأة', L: 3, Sv: 5, life: true, ref: 'OSHA 1910 Subpart L · 1926 Subpart J · الدفاع المدني', q: 'هل توجد خطة إخلاء وطوارئ مجربة وسجلات تمارين؟', evid: 'خطة الطوارئ · مسارات الإخلاء · سجلات التمارين', capa: 'إعداد خطة طوارئ واختبارها بتمرين موثق', hier: ['إزالة مصادر الاشتعال', 'تخزين في أماكن معزولة', 'أنظمة كشف وإطفاء', 'تصاريح أعمال ساخنة وتمارين إخلاء', 'ملابس مقاومة للهب'] },
+  vehicle: { n: 'حوادث المركبات والرافعات الشوكية', peem: 'P', cat: 'الأشخاص/المعدات', ev: 'اصطدام مركبة بعامل في منطقة مشتركة', cons: 'إصابة جسيمة', L: 3, Sv: 4, life: false, ref: 'OSHA 1910.178 · ISO 39001', q: 'هل مشغلو الرافعات والمركبات مدربون ومقيّمون، والمسارات مفصولة؟', evid: 'شهادات المشغلين · مخطط الحركة · فحص المعدات', capa: 'فصل مسارات المشاة وتقييم المشغلين وفحص المعدات', hier: ['فصل حركة المركبات عن المشاة', 'تقليل الرجوع للخلف بتصميم المسارات', 'حواجز ومرايا وإنذارات', 'تدريب المشغلين وحدود السرعة', 'سترات عاكسة'] },
+  manual: { n: 'الإجهاد العضلي من المناولة اليدوية', peem: 'P', cat: 'الأشخاص', ev: 'رفع أحمال ثقيلة متكررة', cons: 'إصابات عضلية هيكلية', L: 4, Sv: 2, life: false, ref: 'ISO 45001 · إرشادات بيئة العمل', q: 'هل جرى تقييم المناولة اليدوية وتوفير وسائل رفع؟', evid: 'تقييم المناولة · سجل الإصابات العضلية', capa: 'تقييم المناولة وتوفير وسائل رفع ميكانيكية', hier: ['إلغاء الرفع اليدوي', 'وسائل رفع ميكانيكية', 'تعديل ارتفاع الأسطح', 'تدوير المهام والتدريب', 'دعامات (لا تكفي وحدها)'] },
+  envr: { n: 'التسربات والانبعاثات والنفايات', peem: 'E', cat: 'البيئة', ev: 'تسرب مواد إلى التربة أو المياه', cons: 'تلوث ومخالفة بيئية', L: 3, Sv: 3, life: false, ref: 'ISO 14001 · نظام البيئة المحلي', q: 'هل توجد بيانات عن الانبعاثات والنفايات والتصاريح البيئية؟', evid: 'سجل الجوانب البيئية · القياسات · التصاريح', capa: 'تحديد المصادر والقياسات والتصاريح المطلوبة', hier: ['تقليل المصدر', 'مواد أقل أثرًا', 'أحواض احتواء وفلاتر', 'خطة طوارئ للانسكاب', 'معدات تنظيف وحماية'] },
+  excav: { n: 'انهيار جدران الحفريات', peem: 'E', cat: 'البيئة/المعدات', ev: 'انهيار تربة على عامل داخل حفرية', cons: 'وفاة', L: 3, Sv: 5, life: true, ref: 'OSHA 1926.651 · 1926.652 (Subpart P)', q: 'هل توجد حفريات بنظام حماية موثق (تدعيم/تدرّج)؟', evid: 'تصنيف التربة · تصميم نظام الحماية · تفتيش يومي', capa: 'تصنيف التربة وتصميم نظام حماية والتفتيش اليومي قبل الدخول', hier: ['تقليل الحاجة للحفر اليدوي', 'تنفيذ آلي دون دخول', 'تدعيم أو تدرّج أو صناديق حماية', 'تفتيش يومي ومنافذ آمنة', 'خوذات (لا تكفي)'] }
+};
+const SAF_ANS = [['ev', 'نعم، ومثبت بالأدلة'], ['part', 'موجود جزئيًا أو غير موثق'], ['no', 'لا يوجد'], ['unk', 'غير معروف']];
+const SAF_ST = { ev: ['مطبق ومثبت بالأدلة', 't-s'], part: ['مطبق جزئيًا', 't-m'], no: ['غير مطبق', 't-c'], unk: ['غير معروف', 't-n'], na: ['غير منطبق', 't-n'] };
+function safModel() {
+  const s = SF(), a = s.a;
+  const haz = [...(a.haz || [])];
+  if (a.type === 'build' && (a.phase === 'build' || a.phase === 'change')) haz.push('excav');
+  const bump = a.size === 'large' ? 1 : a.size === 'small' ? -1 : 0;
+  const rows = haz.filter(h => SAF_HAZ[h]).map(h => {
+    const H = SAF_HAZ[h], st = s.f[h] || 'unk';
+    const L = Math.max(1, Math.min(5, H.L + bump));
+    const red = st === 'ev' ? 2 : st === 'part' ? 1 : 0;
+    const rL = Math.max(1, L - red), inh = L * H.Sv, res = rL * H.Sv;
+    let pr = res >= 15 ? 1 : res >= 10 ? 2 : res >= 5 ? 3 : 4;
+    const stop = H.life && st !== 'ev';
+    if (stop) pr = Math.min(pr, H.life && (st === 'no' || st === 'unk') ? 1 : 2);
+    return { id: h, ...H, st, L, rL, inh, res, pr, stop };
+  });
+  const local = a.country === 'sa' ? ['نظام العمل ولوائح السلامة والصحة المهنية', 'المجلس الوطني للسلامة والصحة المهنية', 'كود البناء السعودي وأكواد الحريق', 'متطلبات الدفاع المدني', 'نظام البيئة ولوائحه والمركز الوطني للرقابة على الالتزام البيئي', 'لوائح الهيئة السعودية للمواصفات والمقاييس والجودة', 'اشتراطات البلديات والمدن الصناعية']
+    : a.country === 'us' ? ['OSHA 29 CFR 1926 / 1910 — ملزمة في نطاق انطباقها', 'متطلبات الولاية والمدينة', 'متطلبات EPA البيئية']
+    : ['حدّد الدولة في ملف المشروع لتحميل المتطلبات المحلية الملزمة', 'تُستخدم OSHA كمرجعية فنية فقط — لا تحل محل التشريع المحلي'];
+  const maturity = a.ra === 'yes' && a.ev === 'all' ? ['متقدم', 't-s'] : a.ra === 'no' || a.ev === 'none' ? ['ضعيف', 't-c'] : ['متوسط', 't-m'];
+  const extra = [];
+  if (a.ra !== 'yes') extra.push(['moc', 'هل جرى تقييم المخاطر قبل تغيير العملية أو المعدات؟', 'منع إدخال مخاطر جديدة بسبب التغيير', 'سجل إدارة التغيير · الموافقات']);
+  if (a.inc === 'yes') extra.push(['inv', 'هل تُحلل الحوادث والحالات الوشيكة وتُغلق إجراءاتها؟', 'كشف الأسباب المتكررة والتحقق من فعالية التصحيح', 'تقارير التحقيق · أدلة الإغلاق']);
+  return { rows: rows.sort((x, y) => x.pr - y.pr || y.res - x.res), local, maturity, extra };
+}
+const PR = { 1: ['P1 — حرج', 't-c', 'تصعيد فوري للمسؤول المخول وإيقاف النشاط الخطر عند الضرورة', 'خلال 24 ساعة'], 2: ['P2 — مرتفع', 't-h', 'إجراء محدد ومسؤول وموعد ومراجعة', 'خلال 7 أيام'], 3: ['P3 — متوسط', 't-m', 'معالجة ضمن برنامج زمني معتمد', 'خلال 30 يومًا'], 4: ['P4 — منخفض', 't-s', 'متابعة دورية وتحسين مستمر', 'دوري'] };
+VIEWS.safety = () => {
+  const s = SF(), a = s.a, m = safModel(), sel = m.rows.find(r => r.id === s.sel) || m.rows[0];
+  const qs = SAF_Q.map(([k, t, opts, multi], n) => `<div class="stack" style="gap:6px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px"><span class="mono faint">${n + 1}.</span> ${t}</span><div class="row" style="gap:6px">${opts.map(([v, l]) => choice(multi ? 'saf-m' : 'saf-a', k, v, multi ? (a[k] || []).includes(v) : a[k] === v, l)).join('')}</div></div>`).join('');
+  const follow = m.rows.map(r => `<div class="sub" style="gap:6px"><div class="row between nowrap" style="gap:8px"><b style="font-size:12.5px">${r.q}</b><span class="mono faint" style="font-size:10.5px;flex-shrink:0">${r.ref.split(' · ')[0]}</span></div><span class="faint" style="font-size:11.5px">الأدلة المطلوبة: ${r.evid}</span><div class="row" style="gap:6px">${SAF_ANS.map(([v, l]) => choice('saf-f', r.id, v, s.f[r.id] === v, l)).join('')}</div></div>`).join('')
+    + m.extra.map(([k, q, why, ev]) => `<div class="sub" style="gap:6px"><b style="font-size:12.5px">${q}</b><span class="faint" style="font-size:11.5px">لماذا: ${why} · الأدلة: ${ev}</span><div class="row" style="gap:6px">${SAF_ANS.map(([v, l]) => choice('saf-f', k, v, s.f[k] === v, l)).join('')}</div></div>`).join('');
+  const key = s.view === 'res' ? 'res' : 'inh';
+  const cell = (L, Sv) => { const v = L * Sv, bg = v >= 15 ? 'rgba(255,46,77,.35)' : v >= 10 ? 'rgba(255,138,31,.3)' : v >= 5 ? 'rgba(255,205,17,.22)' : 'rgba(47,210,122,.18)'; const here = m.rows.filter(r => (key === 'res' ? r.rL : r.L) === L && r.Sv === Sv); return `<div style="aspect-ratio:1/1;border-radius:6px;background:${bg};display:flex;flex-wrap:wrap;gap:2px;align-content:center;justify-content:center;padding:2px">${here.map(r => `<button type="button" data-act="saf-sel" data-k="${r.id}" title="${r.n}" style="width:22px;height:22px;border-radius:11px;border:1.5px solid ${r.id === (sel && sel.id) ? '#fff' : 'rgba(0,0,0,.35)'};background:${r.stop ? 'var(--red)' : 'var(--yellow)'};padding:0;cursor:pointer"></button>`).join('')}</div>`; };
+  let matrix = ''; for (let L = 5; L >= 1; L--) for (let Sv = 1; Sv <= 5; Sv++) matrix += cell(L, Sv);
+  const counts = [1, 2, 3, 4].map(p => m.rows.filter(r => r.pr === p).length);
+  return `
+  ${engHead('NAIOSH SAFETY INTELLIGENCE · DIA-SAF', 'ذكاء السلامة وتحليل المخاطر والامتثال المعياري', 'اكتشف الخطر، تحقق من الأدلة، اختر وسيلة السيطرة الأكثر فاعلية، نفّذ، تحقق من الفاعلية، وتعلّم قبل تكرار الخطأ. هذا تشخيص أولي ولا يُصدر حكمًا نهائيًا على سلامة المشروع.', engExport('SAF'))}
+  <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${[1, 2, 3, 4].map((p, i) => `<div class="card tight"><span class="tag ${PR[p][1]}">${PR[p][0]}</span><b class="num" style="font-size:26px">${counts[i]}</b><span class="faint" style="font-size:11.5px">${PR[p][3]}</span></div>`).join('')}</section>
+  <section class="split">
+    <div class="card" style="gap:4px"><div class="row between"><h2 class="h-sec">الاستبيان الذكي — SAF-02</h2><span class="tag ${m.maturity[1]}">نضج الإدارة: ${m.maturity[0]}</span></div>${qs}
+      <div class="stack" style="gap:8px;padding-top:12px"><div class="row between"><h3 class="h-sec" style="font-size:14px">أسئلة تكميلية ولّدها النظام من إجاباتك</h3><span class="chip">${m.rows.length + m.extra.length} سؤال</span></div>${follow || '<p class="muted" style="font-size:13px">اختر المخاطر المعروفة لتظهر الأسئلة التكميلية.</p>'}
+      <p class="faint" style="font-size:11.5px;line-height:1.7">اختيار إجابة لا يثبت الامتثال؛ يُسجَّل كإقرار أولي حتى تقديم الأدلة. «غير منطبق» ≠ «غير معروف» ≠ «غير ممتثل».</p></div></div>
+    <div class="stack" style="gap:16px">
+      <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">مصفوفة المخاطر 5×5</h2><div class="tabs" role="tablist" style="margin:0"><button type="button" role="tab" aria-selected="${key === 'inh'}" data-act="saf-view" data-k="inh">قبل الضوابط</button><button type="button" role="tab" aria-selected="${key === 'res'}" data-act="saf-view" data-k="res">المتبقي</button></div></div>
+        <div class="row nowrap" style="gap:6px;align-items:stretch"><span class="faint" style="writing-mode:vertical-rl;font-size:11px;text-align:center">الاحتمال ←</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;max-width:360px">${matrix}</div></div>
+        <span class="faint" style="font-size:11px;text-align:center">الشدة ←</span>
+        <div class="sub" style="border-color:var(--redline)"><span style="font-size:12px;line-height:1.7"><b style="color:var(--red)">قاعدة حاكمة:</b> الأخطار التي قد تسبب وفاة أو انهيارًا أو تعرضًا غير مسيطر عليه لطاقة خطرة تستدعي ضوابط إلزامية أو إيقاف العمل حتى لو كانت درجتها منخفضة. النقطة الحمراء = يتطلب إيقافًا أو تصعيدًا.</span></div></div>
+      ${sel ? `<div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">${sel.n}</h2><span class="tag ${PR[sel.pr][1]}">${PR[sel.pr][0]}</span></div>
+        <span class="faint" style="font-size:12px">PEEM: ${sel.cat} · الحدث: ${sel.ev} · العاقبة: ${sel.cons}</span>
+        <div class="row" style="gap:14px;font-size:12.5px"><span>قبل الضوابط: <b class="mono">${sel.L}×${sel.Sv}=${sel.inh}</b></span><span>المتبقي: <b class="mono" style="color:var(--yellow)">${sel.rL}×${sel.Sv}=${sel.res}</b></span></div>
+        <b style="font-size:12.5px;margin-top:4px">التسلسل الهرمي للسيطرة</b>
+        ${['الإزالة', 'الاستبدال', 'الضوابط الهندسية', 'الضوابط الإدارية', 'معدات الوقاية الشخصية'].map((h, i) => `<div class="row nowrap" style="gap:8px;font-size:12.5px"><span class="mono" style="width:18px;height:18px;border-radius:9px;background:${['var(--green)', '#7BD88F', 'var(--yellow)', 'var(--orange)', '#FF6B81'][i]};color:#0B0B0D;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;flex-shrink:0">${i + 1}</span><b style="min-width:110px">${h}</b><span class="soft">${sel.hier[i]}</span></div>`).join('')}
+        <p class="faint" style="font-size:11.5px">لا تُعتمد معدات الوقاية الشخصية وحدها حلًا كافيًا لخطر جسيم يمكن إزالته أو السيطرة عليه بوسيلة أعلى.</p></div>` : ''}
+      <div class="card" style="gap:6px"><div class="row between"><h2 class="h-sec">طبقة المتطلبات المحلية</h2><span class="eyebrow">SAF-03</span></div>${m.local.map(t => `<span style="font-size:12.5px">• ${t}</span>`).join('')}<p class="faint" style="font-size:11.5px">يجب التحقق من الإصدار الساري لكل مرجع قبل أي حكم بالامتثال.</p></div>
+    </div>
+  </section>
+  <section class="card" style="padding:0"><div class="row between" style="padding:16px 18px 6px"><h2 class="h-sec">سجل الأخطار ومصفوفة الامتثال — SAF-04 · SAF-05</h2><span class="faint" style="font-size:12px">${m.rows.length} خطر</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>الخطر</th><th>PEEM</th><th>المرجع</th><th>حالة الضوابط</th><th>قبل</th><th>المتبقي</th><th>الأولوية</th></tr></thead><tbody>
+    ${m.rows.map(r => `<tr class="click" data-act="saf-sel" data-k="${r.id}" tabindex="0"><td><b style="font-size:12.5px">${r.n}</b>${r.stop ? ' <span class="tag t-c">يتطلب إيقاف/تصعيد</span>' : ''}</td><td class="soft" style="font-size:12px">${r.cat}</td><td class="mono faint" style="font-size:11px">${r.ref}</td><td><span class="tag ${SAF_ST[r.st][1]}">${SAF_ST[r.st][0]}</span></td><td class="mono">${r.inh}</td><td class="mono" style="color:var(--yellow)">${r.res}</td><td><span class="tag ${PR[r.pr][1]}">${PR[r.pr][0]}</span></td></tr>`).join('') || '<tr><td colspan="7" class="muted">لا توجد أخطار محددة بعد.</td></tr>'}
+    </tbody></table></div></section>
+  <section class="card" style="padding:0"><div class="row between" style="padding:16px 18px 6px"><h2 class="h-sec">خطة الإجراءات التصحيحية والوقائية — SAF-09</h2><button type="button" class="btn sm ${s.reviewed ? '' : 'primary'}" data-act="saf-review">${ic('governance', 14)}${s.reviewed ? 'أُرسلت للمراجعة البشرية' : 'رفع للمراجعة البشرية'}</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>الإجراء</th><th>الخطر</th><th>المسؤول</th><th>الموعد</th><th>آلية التعامل</th></tr></thead><tbody>
+    ${m.rows.filter(r => r.st !== 'ev').map(r => `<tr><td style="font-size:12.5px">${r.capa}</td><td class="soft" style="font-size:12px">${r.n}</td><td style="font-size:12px">${r.pr <= 2 ? 'مدير الموقع + مسؤول السلامة' : 'مسؤول السلامة'}</td><td class="mono" style="font-size:12px">${PR[r.pr][3]}</td><td class="faint" style="font-size:12px">${PR[r.pr][2]}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">كل الضوابط مثبتة بالأدلة — متابعة دورية.</td></tr>'}
+    </tbody></table></div><p class="faint" style="font-size:11.5px;padding:8px 18px 14px">النتائج الحرجة تتطلب مراجعة مختص مؤهل. لا يستطيع النموذج اللغوي اختراع مادة قانونية أو إعلان الامتثال دون دليل.</p></section>
+  <section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">وحدات المحرك SAF-01 → SAF-16</h2><span class="faint" style="font-size:12px">ترتبط بمحرك المخاطر ومركز التنفيذ والحوكمة الحالية</span></div>
+    ${engMap([['SAF-01', 'ملف المشروع', 'on'], ['SAF-02', 'الاستبيان الذكي المتكيف', 'on'], ['SAF-03', 'سجل المتطلبات المحلية والدولية', 'on'], ['SAF-04', 'محرك PEEM', 'on'], ['SAF-05', 'تقييم المخاطر 5×5', 'on'], ['SAF-06', 'المقارنة المعيارية', 'link'], ['SAF-07', 'التفتيش الميداني والأدلة', 'p2'], ['SAF-08', 'التحقيق في الحوادث', 'p2'], ['SAF-09', 'خطة المعالجة CAPA', 'on'], ['SAF-10', 'مراقبة المخاطر والحساسات', 'p2'], ['SAF-11', 'التنبؤ والاستشراف', 'link'], ['SAF-12', 'التدريب والكفاءة', 'p2'], ['SAF-13', 'الجودة والبيئة', 'on'], ['SAF-14', 'مؤشرات الأداء', 'p2'], ['SAF-15', 'التقارير التنفيذية', 'on'], ['SAF-16', 'الحوكمة والتدقيق', 'link']])}
+  </section>`;
+};
+
+/* =========================================================================================
+   DIA-SELF — Self Intelligence
+   ========================================================================================= */
+const SELF_DOMAINS = [
+  { k: 'identity', n: 'الهوية وفهم الذات', q: ['كيف تصف نفسك بثلاث صفات؟', 'ما أكثر شيء تقدّره في نفسك؟', 'ما الجانب الذي ترغب في تغييره أو تطويره؟'], goal: 'كتابة ثلاث قيم شخصية ومراجعة قرار أسبوعي في ضوئها' },
+  { k: 'challenges', n: 'المشكلات والتحديات', q: ['ما التحدي الأبرز الذي تواجهه حاليًا؟', 'متى يظهر، وما أثره عليك؟', 'كيف تعاملت معه حتى الآن، وما الذي ساعدك؟'], goal: 'تجربة خطوة واحدة صغيرة للتعامل مع التحدي ومراجعة أثرها بعد أسبوعين' },
+  { k: 'joy', n: 'السعادة والنجاح والعلاقات الإيجابية', q: ['متى شعرت مؤخرًا بالرضا أو الفرح؟', 'ما الإنجاز الذي تفخر به؟', 'من الأشخاص الذين يمنحونك الدعم؟'], goal: 'تخصيص وقت أسبوعي لنشاط أو علاقة تمنحك الرضا' },
+  { k: 'skills', n: 'المهارات والقدرات والخبرات', q: ['ما المهارات التي تتقنها؟', 'ما المهارة التي تحتاج إلى تطويرها؟', 'ما الخبرة التي تعلمت منها أكثر؟'], goal: 'خطة تعلّم لمهارة واحدة: مصدر، تمرين، ودليل على الإتقان' },
+  { k: 'work', n: 'العمل والرضا المهني', q: ['ما مدى ملاءمة عملك الحالي لقدراتك؟', 'كيف تصف علاقاتك مع الزملاء والرؤساء؟', 'ما الذي يضغطك في العمل، وما الذي يمنحك الرضا؟'], goal: 'محادثة مهنية واحدة حول ما يضغطك وما يمكن تعديله' },
+  { k: 'future', n: 'الرغبات والطموحات والمستقبل', q: ['أين تريد أن تكون بعد سنة؟ وبعد خمس سنوات؟', 'ما الذي ترغب في تغييره في حياتك؟', 'ما العائق الأكبر أمام هدفك؟'], goal: 'تحويل هدف السنة إلى ثلاث خطوات بمواعيد' }
+];
+const SELF_ALL = ['الهوية والصورة الذاتية', 'القيم والمبادئ', 'الشخصية والسلوك', 'المشاعر والرفاه النفسي', 'الصراعات الداخلية', 'التاريخ الشخصي', 'الأسرة والعائلة', 'العلاقات الاجتماعية', 'المدرسة والجامعة', 'الحياة المهنية', 'المهارات والكفاءات', 'التعليم والتعلم', 'نقاط القوة', 'نقاط التحسين', 'السعادة والرضا', 'اتخاذ القرار', 'إدارة الوقت والذات', 'المخاطر والتعافي', 'الرغبات والطموحات', 'خطة التطور الشخصي'];
+const SELF_V1 = new Set([0, 4, 7, 9, 10, 14, 18]);
+const SL = () => S.self || (S.self = { consent: false, purpose: 'understand', dom: 'identity', ans: {}, skip: {}, sat: {}, imp: {}, goals: {}, approved: false, link: false, del: false });
+const SELF_CONFLICT = /خلاف|مشكل|ضغط|صعب|توتر|قلق|حزن|فشل|conflict|stress/i;
+function selfFollow(text) {
+  const t = String(text || '').trim();
+  if (!t) return '';
+  if (SELF_CONFLICT.test(t)) return 'ما الذي جربته للتعامل مع ذلك؟ وهل يوجد موقف أو علاقة مشابهة نجحت ويمكن التعلم منها؟';
+  if (t.length < 18) return 'هل يمكنك إعطاء مثال محدد يوضح ذلك؟';
+  return '';
+}
+function selfModel() {
+  const s = SL();
+  const doms = SELF_DOMAINS.map(d => {
+    const answered = d.q.filter((_, i) => (s.ans[d.k + i] || '').trim()).length, skipped = d.q.filter((_, i) => s.skip[d.k + i]).length;
+    const sat = s.sat[d.k] ?? null, imp = s.imp[d.k] ?? null;
+    return { ...d, answered, skipped, done: answered + skipped === d.q.length, sat, imp, gap: sat !== null && imp !== null ? imp - sat : null };
+  });
+  const pri = doms.filter(d => d.gap !== null && d.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 3);
+  return { doms, pri, complete: doms.filter(d => d.done).length };
+}
+VIEWS.self = () => {
+  const s = SL();
+  if (!s.consent) return `
+  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'ذكاء الذات والتحليل الشخصي المتكامل', 'فهم الإنسان، واكتشاف قدراته، واستيعاب تحدياته، ومساعدته على بناء مستقبل يختاره بنفسه. التحليل متوازن: لا يدرس المشكلات وحدها، بل الفرح والنجاح والعلاقات الداعمة أيضًا.')}
+  <section class="split">
+    <div class="card" style="gap:12px"><h2 class="h-sec">قبل أن نبدأ — موافقتك</h2>
+      <span class="lbl">ما هدفك من التحليل؟</span>
+      <div class="row" style="gap:6px">${[['understand', 'فهم نفسي أكثر'], ['goals', 'تحديد أهداف واضحة'], ['career', 'الاستعداد لتغيير مهني'], ['balance', 'تحسين التوازن في حياتي']].map(([v, l]) => choice('self-purpose', 'p', v, s.purpose === v, l)).join('')}</div>
+      <div class="sub" style="gap:6px">${['يحق لك تخطي أي سؤال أو إيقاف المقابلة في أي وقت، ولا يُعدّ التخطي علامة سلبية.', 'إجاباتك خاصة بك: لا تُعرض على أسرتك أو جهة عملك أو أي طرف آخر.', 'لا تُستخدم النتائج في قرارات توظيف أو ترقية أو عقوبة.', 'النظام لا يشخّص الشخصية أو أي اضطراب نفسي؛ هو أداة للفهم والتخطيط.', 'تستطيع مراجعة تقريرك وتصحيحه وحذف بياناتك متى شئت.'].map(t => `<span style="font-size:13px">• ${t}</span>`).join('')}</div>
+      <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" id="self-agree" style="width:20px;height:20px;accent-color:var(--red)"><span style="font-size:13px">قرأت ما سبق وأوافق على بدء التحليل</span></label>
+      <button type="button" class="btn primary" data-act="self-start">ابدأ رحلة فهم الذات</button>
+    </div>
+    <div class="card" style="gap:10px"><h2 class="h-sec">خريطة مجالات الحياة — 20 مجالًا</h2><p class="faint" style="font-size:12px">الإصدار الأول يغطي 6 محاور أساسية؛ تتوسع لاحقًا إلى المجالات العشرين.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">${SELF_ALL.map((n, i) => `<span class="chip" style="justify-content:space-between;${SELF_V1.has(i) ? 'border-color:rgba(47,210,122,.4)' : 'opacity:.55'}">${n}${SELF_V1.has(i) ? '' : ' <span class="faint" style="font-size:10px">لاحقًا</span>'}</span>`).join('')}</div>
+    </div>
+  </section>`;
+  const M = selfModel(), D = SELF_DOMAINS.find(d => d.k === s.dom) || SELF_DOMAINS[0], dm = M.doms.find(d => d.k === D.k);
+  const qcard = D.q.map((q, i) => {
+    const k = D.k + i, v = s.ans[k] || '', f = selfFollow(v), sk = s.skip[k];
+    return `<div class="stack" style="gap:6px;padding:10px 0;border-bottom:1px solid var(--line)"><div class="row between nowrap" style="gap:8px"><label for="self-a-${k}" style="font-size:13.5px;font-weight:600">${q}</label><button type="button" class="btn sm" data-act="self-skip" data-k="${k}">${sk ? 'إلغاء التخطي' : 'تخطي'}</button></div>
+      ${sk ? '<span class="faint" style="font-size:12px">تم التخطي — لا يؤثر على التحليل.</span>' : `<textarea id="self-a-${k}" rows="2" data-self="${k}" placeholder="اكتب بحرية…">${esc(v)}</textarea>`}
+      <span id="self-f-${k}" class="row nowrap" style="gap:6px;font-size:12px;color:var(--yellow)">${f && !sk ? ic('ask', 13) + 'سؤال متابعة مقترح: ' + f : ''}</span></div>`;
+  }).join('');
+  const sl = (key, label, val) => `<label class="stack" style="gap:4px"><span class="row between"><span style="font-size:12.5px">${label}</span><b class="mono" id="self-v-${key}-${D.k}" style="color:var(--yellow)">${val ?? '—'}</b></span><input type="range" min="0" max="10" value="${val ?? 5}" data-self-sl="${key}" aria-label="${label}"></label>`;
+  return `
+  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'ذكاء الذات والتحليل الشخصي المتكامل', 'الذكاء الاصطناعي يحلل ويساعد على الفهم؛ أنت تراجع النتائج وتحتفظ بحق الاختيار.', `<span class="row nowrap" style="gap:6px"><span class="tag t-s">${ic('governance', 12)} بياناتك خاصة</span>${engExport('SELF')}</span>`)}
+  <section class="grid" style="grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,320px);align-items:start" id="self-grid">
+    <div class="card" style="gap:6px;padding:12px"><span class="lbl" style="padding:0 4px">المحاور — ${M.complete}/6 مكتملة</span>
+      ${M.doms.map(d => `<button type="button" class="list-btn" data-act="self-dom" data-k="${d.k}" style="align-items:center;${d.k === D.k ? 'background:rgba(255,46,77,.1);border-color:var(--redline)' : ''}"><span style="width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:${d.done ? 'var(--green)' : 'var(--sunk)'};flex-shrink:0">${d.done ? ic('check', 11, 'style="color:#0B0B0D;stroke-width:3"') : ''}</span><span style="flex:1;font-size:13px">${d.n}</span><span class="mono faint" style="font-size:11px">${d.answered}/3</span></button>`).join('')}
+    </div>
+    <div class="card" style="gap:4px"><div class="row between"><h2 class="h-sec">${D.n}</h2><span class="eyebrow">DIA-SELF-03</span></div>${qcard}
+      <div class="grid g2" style="gap:12px;padding-top:12px">${sl('sat', 'رضاك الحالي عن هذا المجال', s.sat[D.k])}${sl('imp', 'أهميته بالنسبة لك', s.imp[D.k])}</div>
+      <div class="row between" style="padding-top:10px"><span class="faint" style="font-size:11.5px">لكل مجال: جانب التحديات + جانب القوة + المقارنة والتطوير.</span><button type="button" class="btn sm primary" data-act="self-next">${D.k === 'future' ? 'عرض التقرير' : 'المحور التالي'}</button></div>
+    </div>
+    <div class="stack" style="gap:16px" id="self-side">${selfSide(M)}</div>
+  </section>
+  <section class="card" style="gap:10px" id="self-report"><div class="row between"><h2 class="h-sec">تقرير الذات وخطة التطور — DIA-SELF-11 · 12</h2><span class="faint" style="font-size:12px">تصريح شخصي · استنتاج احتمالي — مميَّزان دائمًا</span></div>
+    <div class="grid g2" style="gap:12px">
+      <div class="stack" style="gap:6px"><b style="font-size:13px">نقاط القوة والموارد كما وصفتها</b>${['joy0', 'joy1', 'joy2', 'skills0', 'identity1'].map(k => (s.ans[k] || '').trim()).filter(Boolean).map(t => `<div class="sub" style="gap:2px"><span style="font-size:12.5px">${esc(t)}</span><span class="tag t-i" style="align-self:flex-start">تصريح شخصي</span></div>`).join('') || '<span class="faint" style="font-size:12.5px">أجب عن محوري «السعادة والنجاح» و«المهارات» لتظهر هنا.</span>'}</div>
+      <div class="stack" style="gap:6px"><b style="font-size:13px">التحديات التي ترغب في العمل عليها</b>${['challenges0', 'identity2', 'skills1', 'future2'].map(k => (s.ans[k] || '').trim()).filter(Boolean).map(t => `<div class="sub" style="gap:2px"><span style="font-size:12.5px">${esc(t)}</span><span class="tag t-i" style="align-self:flex-start">تصريح شخصي</span></div>`).join('') || '<span class="faint" style="font-size:12.5px">لم تُذكر تحديات بعد.</span>'}</div>
+    </div>
+    <b style="font-size:13px">خطة تطوير مقترحة — اختر ما يناسبك فقط</b>
+    ${M.pri.length ? M.pri.map(d => `<label class="sub row nowrap" style="flex-direction:row;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" data-self-goal="${d.k}" ${s.goals[d.k] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--red);margin-top:2px"><span class="stack" style="gap:2px"><b style="font-size:12.5px">${d.n}</b><span style="font-size:12.5px">${d.goal}</span><span class="faint" style="font-size:11.5px">المؤشر: رضاك من ${d.sat} إلى ${Math.min(10, d.sat + 2)} · المراجعة: بعد 30 يومًا · <span class="tag t-m">استنتاج احتمالي من فجوة الأهمية والرضا</span></span></span></label>`).join('')
+      : '<p class="faint" style="font-size:12.5px">حدّد الرضا والأهمية لكل محور لتظهر الأولويات المقترحة.</p>'}
+    <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" data-self-link="1" ${s.link ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--red)"><span style="font-size:12.5px">ربط خطوات خطتي بمركز التنفيذ كمهام شخصية (اختياري — العناوين فقط، دون إجاباتك)</span></label>
+    <div class="row between" style="gap:10px"><button type="button" class="btn ${s.approved ? '' : 'primary'}" data-act="self-approve">${s.approved ? 'خطتك معتمدة ✓' : 'اعتماد خطتي'}</button><button type="button" class="btn sm" data-act="self-delete" style="${s.del ? 'border-color:var(--red);color:#FF6B81' : ''}">${s.del ? 'اضغط مرة أخرى للتأكيد — سيُحذف كل شيء' : 'حذف بياناتي'}</button></div>
+    <p class="faint" style="font-size:11.5px;line-height:1.7">هذا النظام ليس بديلًا عن الاستشارة المتخصصة. إذا كنت تمر بظرف صعب أو تشعر أنك في خطر، تواصل مع مختص أو جهة دعم موثوقة.</p>
+  </section>`;
+};
+function selfSide(M) {
+  const bar = (d) => `<div class="stack" style="gap:3px"><div class="row between"><span style="font-size:12px">${d.n}</span><span class="mono faint" style="font-size:11px">${d.sat ?? '—'} / ${d.imp ?? '—'}</span></div><div style="position:relative;height:8px;border-radius:4px;background:var(--sunk)">${d.sat !== null ? `<span style="position:absolute;inset-inline-start:0;top:0;bottom:0;width:${d.sat * 10}%;border-radius:4px;background:var(--green)"></span>` : ''}${d.imp !== null ? `<span title="الأهمية" style="position:absolute;inset-inline-start:${d.imp * 10}%;top:-3px;width:2px;height:14px;background:var(--yellow)"></span>` : ''}</div></div>`;
+  return `<div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">عجلة التوازن</h2><span class="faint" style="font-size:11px"><span style="color:var(--green)">■</span> الرضا · <span style="color:var(--yellow)">|</span> الأهمية</span></div>${M.doms.map(bar).join('')}</div>
+    <div class="card" style="gap:8px"><h2 class="h-sec">أولويات التطوير</h2>${M.pri.length ? M.pri.map((d, i) => `<div class="row between nowrap"><span style="font-size:12.5px">${i + 1}. ${d.n}</span><span class="tag t-m">فجوة ${d.gap}</span></div>`).join('') + '<span class="faint" style="font-size:11.5px">الأولوية = الأهمية − الرضا. استنتاج قابل للمراجعة، لا حكم عليك.</span>' : '<span class="faint" style="font-size:12.5px">تظهر بعد تحديد الرضا والأهمية.</span>'}</div>`;
+}
+
+/* =========================================================================================
+   DIA-CV — CV Intelligence & Professional Value
+   ========================================================================================= */
+const CVS = () => S.cv || (S.cv = { text: '', mode: 'job', job: 'hse', done: false });
+const CV_SAMPLE = `م. سارة الخطيب — مهندسة سلامة وصحة مهنية
+بكالوريوس هندسة كيميائية — الجامعة الأردنية، 2015
+شهادة NEBOSH International General Certificate، 2018
+مدقق رئيسي ISO 45001 Lead Auditor، 2021
+الخبرة: 8 سنوات في السلامة الصناعية والإنشاءات
+مسؤولة سلامة أولى — شركة إنشاءات (2020 – الآن)
+• قدت فريقًا من 6 مفتشين وأشرفت على 3 مشاريع متزامنة
+• خفضت معدل الإصابات المسجلة بنسبة 38% خلال سنتين عبر برنامج تقييم المخاطر JSA
+• طوّرت لوحة مؤشرات سلامة على Power BI تُستخدم أسبوعيًا من الإدارة
+• نفذت التحقيق في الحوادث وتحليل الأسباب الجذرية لـ 24 حالة وشيكة
+أخصائية سلامة — مصنع أغذية (2016 – 2020)
+• أعددت إجراءات عزل الطاقة LOTO وتدريب 120 عاملًا
+• شاركت في تطبيق ISO 14001 والحصول على الشهادة
+مهارات: تقييم المخاطر، HAZOP، التفتيش، Excel، Power BI، كتابة التقارير، تدريب الموظفين، التواصل
+الطموح: الانتقال إلى إدارة السلامة على مستوى المجموعة خلال 3 سنوات`;
+const CV_SKILLS = {
+  'فنية': ['تقييم المخاطر', 'HAZOP', 'HAZID', 'JSA', 'FMEA', 'التفتيش', 'التحقيق في الحوادث', 'LOTO', 'ISO 45001', 'ISO 14001', 'ISO 9001', 'AutoCAD', 'السلامة'],
+  'إدارية': ['إدارة المشاريع', 'التخطيط', 'الميزانية', 'إدارة الفرق', 'أشرفت', 'إدارة التغيير', 'المشتريات'],
+  'رقمية': ['Excel', 'Power BI', 'SQL', 'Python', 'ERP', 'SAP', 'Tableau', 'لوحة مؤشرات'],
+  'قيادية': ['قدت', 'قيادة', 'تدريب الموظفين', 'تدريب', 'توجيه', 'فريق'],
+  'تواصلية': ['التواصل', 'كتابة التقارير', 'عروض', 'التفاوض', 'العرض']
+};
+const CV_JOBS = {
+  hse: { n: 'مدير سلامة وصحة مهنية', req: [['بكالوريوس هندسة أو علوم ذات صلة', ['بكالوريوس', 'Bachelor'], 0, 1], ['شهادة مهنية في السلامة (NEBOSH / IOSH / OSHA)', ['NEBOSH', 'IOSH', 'OSHA'], 0, 1], ['7 سنوات خبرة أو أكثر', null, 7, 1], ['تقييم المخاطر (JSA / HAZOP)', ['JSA', 'HAZOP', 'HAZID', 'تقييم المخاطر'], 0, 0], ['التحقيق في الحوادث وتحليل الأسباب', ['التحقيق في الحوادث', 'الأسباب الجذرية'], 0, 0], ['تطبيق ISO 45001', ['ISO 45001', '45001'], 0, 0], ['تحليل البيانات والتقارير', ['Power BI', 'Excel', 'كتابة التقارير'], 0, 0], ['قيادة فريق وتدريب', ['قدت', 'فريق', 'تدريب'], 0, 0], ['إدارة الميزانية', ['الميزانية', 'ميزانية'], 0, 0]] },
+  data: { n: 'محلل بيانات', req: [['بكالوريوس في تخصص كمي أو تقني', ['بكالوريوس', 'Bachelor'], 0, 1], ['SQL', ['SQL'], 0, 0], ['Python أو R', ['Python', ' R '], 0, 0], ['Power BI أو Tableau', ['Power BI', 'Tableau'], 0, 0], ['3 سنوات خبرة أو أكثر', null, 3, 1], ['التحليل الإحصائي', ['إحصاء', 'إحصائي', 'statistics'], 0, 0], ['عرض النتائج للإدارة', ['لوحة مؤشرات', 'التواصل', 'عروض', 'كتابة التقارير'], 0, 0]] },
+  pm: { n: 'مدير مشروع', req: [['شهادة PMP أو ما يعادلها', ['PMP', 'PRINCE2'], 0, 1], ['10 سنوات خبرة أو أكثر', null, 10, 1], ['إدارة الميزانية', ['الميزانية', 'ميزانية'], 0, 0], ['إدارة المخاطر', ['تقييم المخاطر', 'إدارة المخاطر'], 0, 0], ['قيادة فرق متعددة', ['قدت', 'فريق', 'أشرفت'], 0, 0], ['إدارة أصحاب المصلحة', ['أصحاب المصلحة', 'التواصل', 'التفاوض'], 0, 0]] }
+};
+const CV_REL = { 'ISO 45001': ['ISO 14001', 'ISO 9001'], 'SQL': ['Excel'], 'PMP': ['إدارة المشاريع'], 'Python': ['Excel'] };
+const CVST = { clear: ['مستوفى بأدلة واضحة', 't-s'], part: ['مستوفى جزئيًا', 't-i'], check: ['يحتاج إلى تحقق إضافي', 't-m'], gap: ['فجوة تطويرية قابلة للمعالجة', 't-h'], na: ['غير متوافر وفق المعلومات الحالية', 't-n'] };
+const CV_VALUE = [
+  ['السلامة وإدارة المخاطر', /تقييم المخاطر|JSA|HAZOP|سلامة|ISO 45001|LOTO/i, 'تقليل التعرض للمخاطر وتحسين الضوابط ضمن اختصاصه', 'معدل الإصابات المسجلة · نسبة الإجراءات التصحيحية المغلقة في موعدها'],
+  ['تحسين الجودة', /جودة|ISO 9001|ISO 14001|تدقيق|Lead Auditor/i, 'رفع اتساق المخرجات وتقليل الأخطاء', 'نسبة إعادة العمل · نتائج التدقيق الداخلي'],
+  ['التخطيط واتخاذ القرار', /Power BI|لوحة مؤشرات|تحليل|Excel|SQL|Tableau/i, 'تحويل البيانات إلى مؤشرات وتوصيات للإدارة', 'زمن إعداد التقارير · قرارات مبنية على مؤشر موثق'],
+  ['القيادة والتطوير', /قدت|قيادة|فريق|تدريب|أشرفت/i, 'بناء الفرق ونقل المعرفة وتدريب الموظفين', 'نسبة الكفاءة المثبتة بعد التدريب · الاحتفاظ بالفريق'],
+  ['زيادة الإنتاجية', /أتمتة|طوّرت|تحسين|Lean|خفضت/i, 'تحسين سير العمل وتقليل الوقت الضائع', 'زمن الإنجاز قبل/بعد التحسين'],
+  ['خفض التكاليف', /الميزانية|خفض التكاليف|هدر|وفورات/i, 'اكتشاف الهدر وتحسين استخدام الموارد', 'التكلفة لكل وحدة مقابل خط الأساس'],
+  ['الابتكار والتحول الرقمي', /Power BI|Python|أتمتة|نظام جديد|ابتكر|طوّرت لوحة/i, 'اقتراح حلول رقمية أو أتمتة إجراءات مناسبة', 'عدد الإجراءات المؤتمتة · الوقت الموفّر الموثق'],
+  ['زيادة الإيرادات', /مبيعات|إيرادات|عملاء|تسويق/i, 'تطوير الخدمات وتجربة العملاء', 'نمو الإيرادات في نطاق مسؤوليته']
+];
+function cvAnalyze(text) {
+  const lines = String(text || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const hasNum = (l) => /\d+\s*%|\d+\s*(سنة|سنوات|عامل|عاملًا|عاملا|حالة|حالات|مشاريع|مشروع|مفتشين|موظف|موظفين|ساعة|ساعات|يوم|أيام|أسبوع)/.test(l);
+  const edu = lines.filter(l => /بكالوريوس|ماجستير|دكتوراه|دبلوم|Bachelor|Master|MBA|PhD/i.test(l));
+  const certs = lines.filter(l => /NEBOSH|IOSH|OSHA|PMP|PRINCE2|Lead Auditor|CSP|Six Sigma|شهادة/i.test(l) && !/^مهارات/.test(l));
+  let years = 0; (String(text).match(/(\d+)\s*(سنوات|سنة|عامًا|عاما|years)/gi) || []).forEach(m => { const n = parseInt(m, 10); if (n > years && n < 50) years = n; });
+  const roles = lines.filter(l => /مهندس|مدير|مسؤول|محلل|أخصائي|Engineer|Manager|Officer|Analyst|Specialist/i.test(l) && /\d{4}/.test(l));
+  const ach = lines.filter(l => /خفض|رفع|زيادة|تقليل|حقق|طوّر|طور|أطلق|قدت|نفذت|أعددت|reduced|increased|led/i.test(l)).map(l => ({ t: l.replace(/^[•\-\*]\s*/, ''), m: hasNum(l) }));
+  const skills = {};
+  for (const [cat, list] of Object.entries(CV_SKILLS)) {
+    skills[cat] = list.filter(s => text.includes(s)).map(s => ({ s, ev: lines.some(l => l.includes(s) && hasNum(l)) ? 'مدعوم بإنجاز رقمي' : 'مذكور فقط' }));
+  }
+  const ambition = lines.find(l => /الطموح|أطمح|الهدف المهني|ambition|objective/i.test(l)) || '';
+  const innov = ach.filter(a => /طوّر|طور|ابتكر|أتمتة|نظام|لوحة/.test(a.t));
+  return { lines, edu, certs, years, roles, ach, skills, ambition, innov };
+}
+function cvMatch(A, job, text) {
+  const J = CV_JOBS[job];
+  return J.req.map(([n, kws, minY, core]) => {
+    let st;
+    if (minY) st = A.years >= minY ? 'clear' : A.years >= minY - 2 && A.years > 0 ? 'check' : A.years ? 'gap' : 'na';
+    else {
+      const hit = kws.filter(k => text.includes(k));
+      if (hit.length) st = A.lines.some(l => hit.some(k => l.includes(k)) && /\d/.test(l)) ? 'clear' : 'part';
+      else {
+        const rel = kws.some(k => (CV_REL[k] || []).some(r => text.includes(r)));
+        st = rel ? 'check' : core ? 'na' : 'gap';
+      }
+    }
+    return { n, st, core };
+  });
+}
+VIEWS.cv = () => {
+  const c = CVS(), A = c.done ? cvAnalyze(c.text) : null;
+  const M = A && c.mode === 'job' ? cvMatch(A, c.job, c.text) : null;
+  const J = CV_JOBS[c.job];
+  const qs = [];
+  if (A) {
+    (M || []).filter(r => r.st === 'part' || r.st === 'check').forEach(r => qs.push(`ما الدليل على «${r.n}»؟ اذكر مثالًا محددًا ونتيجته.`));
+    A.ach.filter(a => !a.m).slice(0, 2).forEach(a => qs.push(`«${a.t.slice(0, 50)}…» — كيف قيست النتيجة؟`));
+    if (!A.ambition) qs.push('ما الدور الذي تطمح إليه خلال 3 سنوات؟');
+    if (!A.certs.length) qs.push('هل لديك شهادات مهنية لم تُذكر في السيرة؟');
+  }
+  const values = A ? CV_VALUE.filter(v => v[1].test(c.text)) : [];
+  const gaps = M ? M.filter(r => r.st === 'gap' || r.st === 'na' || r.st === 'check') : [];
+  return `
+  ${engHead('NAIOSH CV INTELLIGENCE · DIA-CV', 'ذكاء السيرة الذاتية والقيمة المهنية', 'لا نكتفي بقراءة السيرة الذاتية؛ بل نكتشف القدرات، ونوثق الإنجازات، ونربط المهارات باحتياجات العمل، ونحوّل الطموح المهني إلى خطة تطوير ومساهمة قابلة للقياس.', A ? engExport('CV') : '')}
+  <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="${c.mode === 'job'}" data-act="cv-mode" data-k="job">تحليل السيرة مقابل وظيفة</button><button type="button" role="tab" aria-selected="${c.mode === 'general'}" data-act="cv-mode" data-k="general">تحليل عام للقدرات</button></div>
+  <section class="split">
+    <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">السيرة الذاتية — DIA-CV-01</h2><button type="button" class="btn sm" data-act="cv-sample">استخدم سيرة تجريبية</button></div>
+      <textarea id="cv-text" rows="12" data-cv="text" placeholder="الصق نص السيرة الذاتية هنا…" style="font-size:13px;line-height:1.8">${esc(c.text)}</textarea>
+      ${c.mode === 'job' ? `<span class="lbl">الوظيفة المستهدفة</span><div class="row" style="gap:6px">${Object.entries(CV_JOBS).map(([k, j]) => choice('cv-job', 'j', k, c.job === k, j.n)).join('')}</div>` : ''}
+      <div class="row between"><span class="faint" style="font-size:11.5px">استخراج أولي بالقواعد — يُراجع بشريًا. لا يُستنتج شيء من أسلوب الكتابة أو تصميم السيرة.</span><button type="button" class="btn primary" data-act="cv-run">${ic('ask', 15)}تحليل السيرة</button></div>
+    </div>
+    <div class="stack" style="gap:16px">
+      ${A ? `<div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">الملف المهني المستخرج</h2><span class="mono" style="color:var(--yellow)">${A.years || '—'} سنة خبرة</span></div>
+        ${A.edu.map(e => `<span style="font-size:12.5px">🎓 ${esc(e)}</span>`).join('')}${A.certs.map(e => `<span style="font-size:12.5px">📜 ${esc(e)}</span>`).join('')}
+        ${A.roles.map(e => `<span class="soft" style="font-size:12.5px">💼 ${esc(e)}</span>`).join('')}
+        ${A.ambition ? `<div class="sub"><span class="lbl">الطموح المهني</span><span style="font-size:12.5px">${esc(A.ambition)}</span></div>` : ''}</div>
+      <div class="card" style="gap:8px"><h2 class="h-sec">خريطة المهارات — مستوى الدليل</h2>
+        ${Object.entries(A.skills).filter(([, l]) => l.length).map(([cat, l]) => `<div class="stack" style="gap:4px"><span class="lbl">${cat}</span><div class="row" style="gap:5px">${l.map(x => `<span class="chip" title="${x.ev}" style="${x.ev === 'مدعوم بإنجاز رقمي' ? 'border-color:rgba(47,210,122,.45);color:var(--greenfg)' : ''}">${esc(x.s)}</span>`).join('')}</div></div>`).join('') || '<span class="faint">لم تُكتشف مهارات من القاموس الحالي.</span>'}
+        <span class="faint" style="font-size:11px"><span style="color:var(--greenfg)">أخضر</span> = مدعوم بإنجاز رقمي · رمادي = مذكور فقط</span></div>`
+      : `<div class="card" style="gap:10px"><h2 class="h-sec">ماذا يفحص النظام؟</h2>${['البيانات الأساسية والتعليم والشهادات', 'المهارات الفنية والإدارية والرقمية والقيادية والتواصلية', 'الخبرات والإنجازات والأدلة', 'المواهب والابتكار وحل المشكلات', 'الطموح المهني والاستعداد للتطور', 'الملاءمة الوظيفية والقيمة المضافة للشركة'].map(t => `<span style="font-size:13px">• ${t}</span>`).join('')}
+        <div class="sub"><span style="font-size:12.5px">لا يسأل النظام فقط: ماذا فعل هذا الشخص؟ بل: ماذا يستطيع أن يفعل الآن، وما المشكلات التي يستطيع حلها للشركة؟</span></div></div>`}
+    </div>
+  </section>
+  ${A ? `
+  ${M ? `<section class="card" style="padding:0"><div class="row between" style="padding:16px 18px 6px"><h2 class="h-sec">الملاءمة مع «${J.n}» — DIA-CV-09</h2><span class="faint" style="font-size:12px">لا درجة آلية واحدة — حالة لكل متطلب</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>المتطلب</th><th>الحالة</th><th>نوعه</th></tr></thead><tbody>${M.map(r => `<tr><td style="font-size:13px">${r.n}</td><td><span class="tag ${CVST[r.st][1]}">${CVST[r.st][0]}</span></td><td class="faint" style="font-size:12px">${r.core ? 'أساسي' : 'قابل للتطوير'}</td></tr>`).join('')}</tbody></table></div>
+    <p class="faint" style="font-size:11.5px;padding:8px 18px 14px">غياب الدليل ≠ غياب المهارة: عدم ذكر مهارة في السيرة لا يثبت أن المرشح لا يمتلكها.</p></section>` : ''}
+  <section class="split">
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">الإنجازات والأدلة — DIA-CV-05</h2><span class="chip">${A.ach.length}</span></div>
+      ${A.ach.map(a => `<div class="row nowrap" style="gap:8px;align-items:flex-start;font-size:12.5px"><span class="tag ${a.m ? 't-s' : 't-m'}" style="flex-shrink:0">${a.m ? 'قابل للقياس' : 'يحتاج رقمًا'}</span><span>${esc(a.t)}</span></div>`).join('') || '<span class="faint">لم تُكتشف إنجازات.</span>'}
+      ${A.innov.length ? `<span class="lbl" style="margin-top:6px">الابتكار والمبادرات — DIA-CV-06</span>${A.innov.map(a => `<span style="font-size:12.5px">💡 ${esc(a.t)}</span>`).join('')}` : ''}</div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">أسئلة ذكية للمرشح</h2><span class="eyebrow">المعلومات الناقصة</span></div>
+      ${qs.length ? qs.map((q, i) => `<div class="row nowrap" style="gap:8px;font-size:12.5px;align-items:flex-start"><span class="mono faint">${i + 1}</span><span>${esc(q)}</span></div>`).join('') : '<span class="faint" style="font-size:12.5px">لا معلومات ناقصة جوهرية.</span>'}</div>
+  </section>
+  <section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">القيمة المضافة للشركة — DIA-CV-10</h2><span class="tag t-m">مساهمات محتملة تُختبر بعد التوظيف</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">${values.map(([n, , what, kpi]) => `<div class="sub" style="gap:4px"><b style="font-size:13px;color:var(--yellow)">${n}</b><span style="font-size:12.5px">${what}</span><span class="faint" style="font-size:11.5px">القياس: ${kpi}</span></div>`).join('') || '<span class="faint">لا مجالات قيمة مدعومة بالأدلة الحالية.</span>'}</div></section>
+  <section class="split">
+    <div class="card" style="padding:0"><div class="row between" style="padding:16px 18px 6px"><h2 class="h-sec">خطة المساهمة — أول 90 يومًا</h2><span class="eyebrow">DIA-CV-11</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>الفترة</th><th>النشاط</th><th>المخرج</th></tr></thead><tbody>
+      <tr><td class="mono">1–30</td><td style="font-size:12.5px">فهم العمل والأنظمة والتحديات${c.mode === 'job' ? ' في دور ' + J.n : ''}</td><td class="faint" style="font-size:12px">خريطة احتياجات وفرص تحسين</td></tr>
+      <tr><td class="mono">31–60</td><td style="font-size:12.5px">تحليل مشكلة ذات أولوية في ${values[0] ? values[0][0] : 'مجال الاختصاص'} مع الفريق</td><td class="faint" style="font-size:12px">مقترح تحسين مدعوم بالبيانات</td></tr>
+      <tr><td class="mono">61–90</td><td style="font-size:12.5px">تجربة التحسين المعتمد وقياس نتائجه</td><td class="faint" style="font-size:12px">تقرير نتائج ومؤشرات أثر</td></tr></tbody></table></div>
+      <p class="faint" style="font-size:11.5px;padding:8px 18px 14px">خطة استرشادية؛ لا تفترض تغيير إجراءات أو الوصول إلى بيانات دون صلاحية وموافقة.</p></div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div>
+      ${gaps.length ? gaps.map(g => `<div class="row nowrap" style="gap:8px;font-size:12.5px;align-items:flex-start"><span class="tag ${CVST[g.st][1]}" style="flex-shrink:0">${CVST[g.st][0]}</span><span>${g.st === 'check' ? 'تقديم دليل أو اختبار عملي لـ ' : 'برنامج تعلم موجّه لـ '}${g.n}</span></div>`).join('') : '<span class="faint" style="font-size:12.5px">لا فجوات جوهرية مقابل متطلبات الوظيفة.</span>'}
+      <div class="sub" style="gap:4px;margin-top:6px"><b style="font-size:12.5px">قواعد الحوكمة</b>${['لا يُختزل المرشح في درجة آلية واحدة', 'المعلومات المؤكدة مفصولة عن الادعاءات الذاتية والاستنتاجات', 'لا تُستخدم صفات شخصية حساسة أو غير مرتبطة بالوظيفة', 'القرار الوظيفي تحت إشراف بشري مسؤول'].map(t => `<span class="faint" style="font-size:11.5px">• ${t}</span>`).join('')}</div></div>
+  </section>` : ''}`;
+};
+
+/* =========================================================================================
+   DIA-MAR — Pre-Marital Intelligence (coming soon)
+   ========================================================================================= */
+VIEWS.marriage = () => `
+  ${engHead('NAIOSH PRE-MARITAL INTELLIGENCE · DIA-MAR', 'زواج أكثر وعيًا — ذكاء التوافق والاستعداد للزواج', 'أداة لبناء زواج أكثر وعيًا، لا لمنح شهادة بأن شخصًا مناسب أو غير مناسب. القرار النهائي يبقى للعريس والعروس.', '<span class="tag t-m" style="font-size:12.5px">قريبًا</span>')}
+  <section class="card" style="gap:10px;border-color:rgba(255,205,17,.35)"><div class="row nowrap" style="gap:12px;align-items:flex-start">${ic('clock', 22, 'style="color:var(--yellow);flex-shrink:0"')}<div class="stack" style="gap:4px"><b>لماذا هذه الوحدة لاحقًا؟</b><span class="soft" style="font-size:13px;line-height:1.8">تتعامل مع أكثر البيانات حساسية، وتحتاج قبل إطلاقها إلى: موافقة منفصلة من كل طرف، فصل التقرير الخاص عن التقرير المشترك، مسار خاص وآمن إذا أشار أحد الطرفين إلى ضغط أو إكراه، ومراجعة بنك الأسئلة مع مختصين أسريين للتحقق من وضوحه وعدم تحيزه.</span></div></div></section>
+  <section class="grid g3">${[['الملف الأول', 'تحليل العريس', 'الشخصية كما يصفها بنفسه، القيم، الطموح، الاستعداد، والتوقعات.'], ['الملف الثاني', 'تحليل العروس', 'المحاور نفسها بصورة مستقلة، مع حرية التعبير عن الرغبات والمخاوف والحدود دون ضغط.'], ['الملف الثالث', 'تحليل التوافق المشترك', 'يعتمد فقط على الإجابات التي وافق الطرفان على مشاركتها.']].map(([e, t, d]) => `<div class="card tight"><span class="eyebrow">${e}</span><b>${t}</b><span class="muted" style="font-size:12.5px;line-height:1.7">${d}</span></div>`).join('')}</section>
+  <section class="split">
+    <div class="card" style="gap:8px"><h2 class="h-sec">12 محورًا للأسئلة</h2><div class="grid g2" style="gap:6px">${['سبب الرغبة في الزواج', 'نظرة كل طرف إلى الحياة', 'تحليل الذات والشخصية', 'الطموح والمستقبل', 'المال والمسؤوليات الاقتصادية', 'العائلة الأصلية وتأثيرها', 'العلاقة الزوجية والتواصل', 'الأبناء والتربية', 'العمل والحياة اليومية', 'الدين والقيم والعادات', 'التجارب السابقة والمخاوف', 'الاستعداد الفعلي للزواج'].map((t, i) => `<span class="chip" style="justify-content:flex-start"><span class="mono faint">${String(i + 1).padStart(2, '0')}</span>${t}</span>`).join('')}</div></div>
+    <div class="card" style="gap:8px"><h2 class="h-sec">كيف تُعرض النتائج؟</h2>
+      ${[['اتفاق جوهري', 't-s'], ['اختلاف قابل للتفاوض', 't-i'], ['موضوع غير محسوم', 't-n'], ['اختلاف جوهري يحتاج معالجة', 't-h']].map(([t, c]) => `<span class="tag ${c}" style="align-self:flex-start">${t}</span>`).join('')}
+      <div class="sub"><span style="font-size:12.5px;line-height:1.7">لا «نسبة نجاح زواج»؛ لأنها تعطي انطباعًا زائفًا بالدقة. تُعرض نتيجة مستقلة لكل محور، مع درجة اكتمال المعلومات وأهمية الموضوع للطرفين.</span></div></div>
+  </section>
+  <section class="card" style="gap:10px"><h2 class="h-sec">الوحدات المخطط لها MAR-01 → MAR-14</h2>
+    ${engMap([['MAR-01', 'ملفات العريس والعروس', 'p2'], ['MAR-02', 'بنك الأسئلة والتقييم الذاتي', 'p2'], ['MAR-03', 'المقابلة التكيفية', 'link'], ['MAR-04', 'الشخصية والاستعداد', 'link'], ['MAR-05', 'محرك دوافع الزواج', 'p2'], ['MAR-06', 'الأسرة والبيئة الاجتماعية', 'p2'], ['MAR-07', 'القيم والطموحات', 'p2'], ['MAR-08', 'المسؤوليات المالية واليومية', 'p2'], ['MAR-09', 'محرك التوافق والمقارنة', 'p2'], ['MAR-10', 'الموضوعات الجوهرية والمخاطر', 'p2'], ['MAR-11', 'التقرير الفردي والمشترك', 'p2'], ['MAR-12', 'خطة الحوار والتطوير', 'p2'], ['MAR-13', 'أكاديمية الاستعداد للزواج', 'p2'], ['MAR-14', 'الخصوصية والموافقة والتدقيق', 'link']])}
+    <p class="faint" style="font-size:11.5px">«مرتبط بالمنظومة» = يعيد استخدام محرك المقابلة الذكية في ذكاء الذات وطبقة الحوكمة الحالية.</p></section>`;
+
+/* =========================================================================================
+   Handlers, live inputs, exports
+   ========================================================================================= */
+function engineHandle(act, k, el) {
+  if (!act || !/^(bench|saf|self|cv|eng)-/.test(act)) return false;
+  const [key, val] = String(k || '').split('|');
+  switch (act) {
+    case 'bench-track': BB().track = k; render(); return true;
+    case 'bench-lvl': BB().lvl = k; render(); return true;
+    case 'bench-send': log('د. عدنان', 'أرسل خطة تحسين المقارنة المعيارية (3 توصيات) إلى مركز القرار'); toast('أُرسلت التوصيات إلى مركز القرار'); go('decision'); return true;
+    case 'saf-a': SF().a[key] = val; render(); return true;
+    case 'saf-m': { const a = SF().a, arr = a[key] || (a[key] = []); const i = arr.indexOf(val); if (i >= 0) arr.splice(i, 1); else arr.push(val); render(); return true; }
+    case 'saf-f': { const f = SF().f; f[key] = f[key] === val ? undefined : val; if (!f[key]) delete f[key]; render(); return true; }
+    case 'saf-sel': SF().sel = k; render(); return true;
+    case 'saf-view': SF().view = k; render(); return true;
+    case 'saf-review': { const s = SF(); if (!s.reviewed) { s.reviewed = true; const m = safModel(); log('د. عدنان', `رفع تقييم السلامة للمراجعة البشرية — ${(n => n === 1 ? 'خطر حرج واحد' : n === 2 ? 'خطران حرجان' : n + ' أخطار حرجة')(m.rows.filter(r => r.pr === 1).length)}`); toast('أُرسل التقييم لمراجعة مختص السلامة'); } render(); return true; }
+    case 'self-purpose': SL().purpose = val; render(); return true;
+    case 'self-start': { const c = document.getElementById('self-agree'); if (!c || !c.checked) { toast('ضع علامة الموافقة أولًا'); return true; } SL().consent = true; log('د. عدنان', 'بدأ جلسة ذكاء الذات (بموافقة صريحة)'); render(); window.scrollTo(0, 0); return true; }
+    case 'self-dom': SL().dom = k; render(); return true;
+    case 'self-skip': { const s = SL(); s.skip[k] = !s.skip[k]; render(); return true; }
+    case 'self-next': { const s = SL(), i = SELF_DOMAINS.findIndex(d => d.k === s.dom); if (i < SELF_DOMAINS.length - 1) { s.dom = SELF_DOMAINS[i + 1].k; render(); window.scrollTo(0, 0); } else { render(); const r = document.getElementById('self-report'); if (r) r.scrollIntoView({ block: 'start' }); } return true; }
+    case 'self-approve': { const s = SL(); const n = Object.values(s.goals).filter(Boolean).length; if (!n) { toast('اختر هدفًا واحدًا على الأقل'); return true; } s.approved = true; log('د. عدنان', `اعتمد خطة تطوير شخصية (${n === 1 ? 'هدف واحد' : n === 2 ? 'هدفان' : n + ' أهداف'})${s.link ? ' وربطها بمركز التنفيذ' : ''}`); toast('اعتُمدت خطتك — المراجعة بعد 30 يومًا'); render(); return true; }
+    case 'self-delete': { const s = SL(); if (!s.del) { s.del = true; render(); return true; } S.self = undefined; delete S.self; log('د. عدنان', 'حذف بيانات ذكاء الذات بالكامل'); toast('حُذفت بياناتك'); render(); return true; }
+    case 'cv-mode': CVS().mode = k; render(); return true;
+    case 'cv-job': CVS().job = val; render(); return true;
+    case 'cv-sample': { const c = CVS(); c.text = CV_SAMPLE; c.done = true; render(); return true; }
+    case 'cv-run': { const c = CVS(), t = document.getElementById('cv-text'); if (t) c.text = t.value; if (c.text.trim().length < 40) { toast('الصق نص السيرة الذاتية أولًا'); return true; } c.done = true; log('د. عدنان', 'حلّل سيرة ذاتية في ذكاء السيرة الذاتية'); render(); return true; }
+    case 'cv-log': log('د. عدنان', 'أحال تقرير ملاءمة مرشح للقرار البشري'); toast('أُحيل التقرير لصاحب القرار — القرار الوظيفي بشري'); return true;
+    case 'eng-pdf': case 'eng-xlsx': engExportRun(k, act === 'eng-pdf' ? 'pdf' : 'xlsx'); return true;
+  }
+  return false;
+}
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset) return;
+  if (el.dataset.bench) {
+    const k = el.dataset.bench; BB().inp[k] = +el.value;
+    const v = document.getElementById('bench-v-' + k); if (v) v.textContent = el.value + (k === 'wtp' || k === 'team' ? '%' : k === 'runway' ? ' شهر' : '');
+    const d = document.getElementById('bench-dec'); if (d) d.innerHTML = brandify(benchDecisionHTML(benchDecision()));
+    save();
+  }
+  if (el.dataset.self) { SL().ans[el.dataset.self] = el.value; const h = document.getElementById('self-f-' + el.dataset.self), f = selfFollow(el.value); if (h) h.innerHTML = f ? ic('ask', 13) + 'سؤال متابعة مقترح: ' + f : ''; save(); }
+  if (el.dataset.selfSl) {
+    const s = SL(), key = el.dataset.selfSl; s[key][s.dom] = +el.value;
+    const v = document.getElementById('self-v-' + key + '-' + s.dom); if (v) v.textContent = el.value;
+    const side = document.getElementById('self-side'); if (side) side.innerHTML = selfSide(selfModel());
+    save();
+  }
+  if (el.dataset.cv) { CVS().text = el.value; save(); }
+});
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset) return;
+  if (el.dataset.benchLegal) { BB().inp.legal = el.checked; const d = document.getElementById('bench-dec'); if (d) d.innerHTML = brandify(benchDecisionHTML(benchDecision())); save(); }
+  if (el.dataset.selfGoal) { SL().goals[el.dataset.selfGoal] = el.checked; save(); }
+  if (el.dataset.selfLink) { SL().link = el.checked; save(); }
+});
+
+function engSections(code) {
+  if (code === 'BENCH') {
+    const b = BB(), ex = b.track === 'existing', dec = benchDecision();
+    const sec = [{ h: 'المسار', kv: [['نوع التحليل', ex ? 'مشروع قائم — الفرع الشمالي' : 'مشروع جديد قبل التأسيس'], ['القاعدة', 'نقارن لفهم الفجوة وأسبابها وتحديد ما يجب تغييره وإثبات الأثر']] },
+      { h: 'المقارنة على 8 مستويات', cols: ['المستوى', 'المشروع', 'المرجع المحلي', 'المرجع الدولي', 'الفجوة عن المحلي'], rows: BENCH_LEVELS.map(x => { const v = ex ? x.ex : x.nw; return [x.n, v[0], v[1], v[2], v[1] - v[0]]; }) },
+      { h: 'المؤشرات المرجعية ومصادرها', cols: ['المستوى', 'المؤشر', 'المشروع', 'المرجع', 'المصدر', 'الموثوقية'], rows: BENCH_LEVELS.flatMap(x => (ex ? x.kpi.ex : x.kpi.nw).map(k => [x.n, ...k])) }];
+    const sw = BENCH_SWOT[ex ? 'existing' : 'new'];
+    sec.push({ h: 'تحليل سوات المرتبط', cols: ['العنصر', 'البند'], rows: [['قوة', sw.S.join(' · ')], ['ضعف', sw.W.join(' · ')], ['فرصة', sw.O.join(' · ')], ['تهديد', sw.T.join(' · ')], ...BENCH_LINKS[ex ? 'existing' : 'new'].map(([f, a, r]) => [f, a + ' ← ' + r])] });
+    if (ex) {
+      sec.push({ h: 'تشخيص أسباب التعثر', cols: ['المجموعة', 'التصنيف', 'الدليل'], rows: BENCH_CAUSES.map(([n, t, s, e]) => [n + ' ' + t, CAUSE_ST[s][0], e]) });
+      sec.push({ h: 'خطة التحسين', cols: ['الفجوة', 'الدليل', 'السبب', 'الإجراء', 'المسؤول', 'المؤشر', 'التحقق', 'المراجعة'], rows: BENCH_RECS.map(r => [r.gap, r.ev, r.cause, r.act, r.own, r.kpi, r.ver, r.rev]) });
+    } else {
+      sec.push({ h: 'قرار ما قبل التأسيس', kv: [['القرار المقترح', dec.d[0]], ['المبرر', dec.d[2]], ['أدلة السوق', dec.market], ['الجاهزية المالية', dec.finance], ['ملاءمة صاحب المشروع والفريق', dec.fit], ['ملاحظة', 'توصية مدعومة بالأدلة، وليست موافقة استثمارية تلقائية']] });
+      if (dec.conds.length) sec.push({ h: 'الشروط قبل الانتقال', bullets: dec.conds });
+      sec.push({ h: 'سيناريوهات نقطة التعادل', cols: ['السيناريو', 'شهر التعادل', 'الافتراضات'], rows: dec.sc });
+    }
+    return { title: 'تقرير المقارنة المعيارية وذكاء المشروعات', audience: 'صاحب المشروع والإدارة', ref: 'DIA-BENCH', sections: sec };
+  }
+  if (code === 'SAF') {
+    const m = safModel(), a = SF().a, lab = (k, v) => ((SAF_Q.find(q => q[0] === k) || [])[2] || []).find(o => o[0] === v);
+    return { title: 'تقرير ذكاء السلامة وتقييم المخاطر', audience: 'الإدارة ومسؤول السلامة', ref: 'DIA-SAF', sections: [
+      { h: 'الملف التعريفي للمشروع', kv: [['نوع المشروع', (lab('type', a.type) || [, '—'])[1]], ['المرحلة', (lab('phase', a.phase) || [, '—'])[1]], ['الدولة', (lab('country', a.country) || [, '—'])[1]], ['الحجم', (lab('size', a.size) || [, '—'])[1]], ['نضج إدارة السلامة', m.maturity[0]], ['تنبيه', 'تشخيص أولي لا يُصدر حكمًا نهائيًا؛ النتائج الحرجة تتطلب مراجعة مختص']] },
+      { h: 'سجل الأخطار الموحد', cols: ['الخطر', 'PEEM', 'الحدث', 'العاقبة', 'قبل الضوابط', 'المتبقي', 'الأولوية', 'إيقاف/تصعيد'], rows: m.rows.map(r => [r.n, r.cat, r.ev, r.cons, r.inh, r.res, PR[r.pr][0], r.stop ? 'نعم' : '']) },
+      { h: 'مصفوفة الامتثال للمعايير والمتطلبات', cols: ['الخطر', 'المرجع', 'حالة الضوابط', 'الأدلة المطلوبة'], rows: m.rows.map(r => [r.n, r.ref, SAF_ST[r.st][0], r.evid]) },
+      { h: 'خطة الإجراءات التصحيحية والوقائية', cols: ['الإجراء', 'الخطر', 'الأولوية', 'الموعد', 'آلية التعامل'], rows: m.rows.filter(r => r.st !== 'ev').map(r => [r.capa, r.n, PR[r.pr][0], PR[r.pr][3], PR[r.pr][2]]) },
+      { h: 'طبقة المتطلبات المحلية', bullets: m.local }
+    ] };
+  }
+  if (code === 'SELF') {
+    const s = SL(), M = selfModel();
+    const ans = SELF_DOMAINS.flatMap(d => d.q.map((q, i) => [d.n, q, s.skip[d.k + i] ? '— تم التخطي' : (s.ans[d.k + i] || '—')]));
+    return { title: 'تقريري الشخصي — ذكاء الذات', audience: 'خاص بصاحب التقرير', ref: 'DIA-SELF', sections: [
+      { h: 'ملخص', text: `اكتمل ${M.complete} من 6 محاور. ${M.pri.length ? 'أولويات التطوير المقترحة: ' + M.pri.map(d => d.n).join('، ') + '.' : 'حدّد الرضا والأهمية لكل محور لاستخراج الأولويات.'} هذا التقرير يميّز بين التصريح الشخصي والاستنتاج الاحتمالي، ولا يتضمن أي تشخيص.` },
+      { h: 'عجلة التوازن', cols: ['المحور', 'الرضا (0–10)', 'الأهمية (0–10)', 'الفجوة'], rows: M.doms.map(d => [d.n, d.sat ?? '—', d.imp ?? '—', d.gap ?? '—']) },
+      { h: 'إجاباتي (تصريح شخصي)', cols: ['المحور', 'السؤال', 'الإجابة'], rows: ans },
+      { h: 'خطة التطوير المعتمدة', bullets: SELF_DOMAINS.filter(d => s.goals[d.k]).map(d => d.n + ': ' + d.goal) .concat(Object.values(s.goals).some(Boolean) ? [] : ['لم تُعتمد أهداف بعد']) }
+    ] };
+  }
+  if (code === 'CV') {
+    const c = CVS(), A = cvAnalyze(c.text), M = c.mode === 'job' ? cvMatch(A, c.job, c.text) : null;
+    const sec = [{ h: 'الملف المهني', kv: [['سنوات الخبرة', A.years || '—'], ['التعليم', A.edu.join(' · ') || '—'], ['الشهادات', A.certs.join(' · ') || '—'], ['الطموح المهني', A.ambition || '—']] },
+      { h: 'خريطة المهارات', cols: ['الفئة', 'المهارة', 'مستوى الدليل'], rows: Object.entries(A.skills).flatMap(([cat, l]) => l.map(x => [cat, x.s, x.ev])) },
+      { h: 'الإنجازات والأدلة', cols: ['الإنجاز', 'قابلية القياس'], rows: A.ach.map(a => [a.t, a.m ? 'قابل للقياس' : 'يحتاج رقمًا']) }];
+    if (M) sec.push({ h: 'الملاءمة مع ' + CV_JOBS[c.job].n, cols: ['المتطلب', 'الحالة', 'النوع'], rows: M.map(r => [r.n, CVST[r.st][0], r.core ? 'أساسي' : 'قابل للتطوير']) });
+    sec.push({ h: 'القيمة المضافة المحتملة', cols: ['المجال', 'المساهمة المحتملة', 'طريقة القياس بعد التوظيف'], rows: CV_VALUE.filter(v => v[1].test(c.text)).map(v => [v[0], v[2], v[3]]) });
+    sec.push({ h: 'ملاحظة حوكمة', text: 'لا يُختزل المرشح في درجة واحدة. غياب الدليل لا يعني غياب المهارة. القرار الوظيفي تحت إشراف بشري مسؤول، ولا تُشارك البيانات دون أساس مشروع وصلاحية.' });
+    return { title: 'تقرير ذكاء السيرة الذاتية والقيمة المهنية', audience: c.mode === 'job' ? 'جهة التوظيف (بموافقة المرشح)' : 'المرشح', ref: 'DIA-CV', sections: sec };
+  }
+  return null;
+}
+async function engExportRun(code, fmt) {
+  const r = engSections(code); if (!r) return;
+  const rep = { code, title: r.title, audience: r.audience, ref: r.ref, sections: r.sections };
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    log('د. عدنان', `صدّر «${r.title}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    await saveFile(`NAIOSH_${r.ref}_${expToday()}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`, blob);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -3085,7 +3708,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

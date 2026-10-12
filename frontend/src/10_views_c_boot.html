@@ -269,7 +269,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

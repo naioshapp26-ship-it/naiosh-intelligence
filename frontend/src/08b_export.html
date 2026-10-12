@@ -96,7 +96,7 @@ function buildXlsx(rep) {
   const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
   const sheets = [];
   // cover sheet: title, metadata, summary text and every key/value section
-  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], ['الاستشارة', 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
   const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
   for (const sec of rep.sections) {
     if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
@@ -171,14 +171,14 @@ async function buildPdf(rep) {
     }
     ctx.direction = 'rtl'; ctx.textAlign = 'right';
     if (first) {
-      ctx.fillStyle = yel; font(9, 700); ctx.fillText('CNS-001 · ' + rep.code.replace('_', ' '), R, 32);
+      ctx.fillStyle = yel; font(9, 700); ctx.fillText((rep.ref || 'CNS-001') + ' · ' + String(rep.code).replace('_', ' '), R, 32);
       ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
       ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(expUser())} · ${expNow()}`, R, 86);
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
       y = bandH + 26;
     } else {
-      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — CNS-001', R, 24);
+      ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — ' + (rep.ref || 'CNS-001'), R, 24);
       y = bandH + 22;
     }
   }
