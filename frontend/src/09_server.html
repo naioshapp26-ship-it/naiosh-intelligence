@@ -132,7 +132,7 @@ function svDetail(q) {
   <div class="card" style="gap:10px"><h3 class="h-sec">المرفقات (${q.files.length})</h3>
     ${q.files.length ? q.files.map(f => f.kind === 'video' && /^video\/(mp4|webm|quicktime)$/.test(f.mime)
       ? `<div class="stack" style="gap:6px"><video controls preload="metadata" src="/api/files/${f.id}?inline=1" style="width:100%;border-radius:10px;background:#000;max-height:280px"></video><a class="btn sm" href="/api/files/${f.id}" download>${ic('play', 14)}${esc(f.name)} · ${fmtSize(f.size)}</a></div>`
-      : `<a class="list-btn" href="/api/files/${f.id}" download style="align-items:center">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
+      : `<div class="row nowrap" style="gap:6px"><a class="list-btn" href="/api/files/${f.id}" download style="align-items:center;flex:1;min-width:0">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>${AN_DATA_RE.test(f.name) ? `<button type="button" class="btn sm primary" style="flex-shrink:0" data-act="an-srv" data-k="${esc(f.id)}" data-n="${esc(f.name)}" data-t="${esc((p.types || []).join(','))}" data-c="${esc(p.capex || '')}" data-cur="${esc(p.currency || '')}" data-ref="${esc(q.ref)}">${ic('chart', 14)}تحليل هذا الملف</button>` : ''}</div>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
   </div>
   ${SV.canManage ? `<form class="card" id="sv-status-form" style="gap:10px"><h3 class="h-sec">تحديث الحالة</h3>
     <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
@@ -292,7 +292,7 @@ async function serverSubmitRequest(r, c, dom) {
     S.requests = [mapReq(d.request), ...(S.requests || []).filter(q => q.ref !== ref)];
     S.audit.unshift({ t: nowTime(), who: 'المنسّق', what: `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, kind: 'sys' }, { t: nowTime(), who: ME.name, what: `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`, kind: 'user' });
     S.audit = S.audit.slice(0, 300);
-    S.reqDone = ref; S.req = freshReq();
+    anCapture(r, ref); S.reqDone = ref; S.req = freshReq();
     Object.keys(RQ_FILE_OBJ).forEach(k => delete RQ_FILE_OBJ[k]);
     Object.keys(RQ_VIDEO_URLS).forEach(k => { try { URL.revokeObjectURL(RQ_VIDEO_URLS[k]); } catch (e) {} delete RQ_VIDEO_URLS[k]; });
     toast('أُرسل الطلب ' + ref + (ids.length ? ' مع ' + ids.length + ' مرفق' : ''));

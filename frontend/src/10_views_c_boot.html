@@ -205,7 +205,7 @@ function render() {
   renderSide(); renderTop();
   const side = document.getElementById('side'), top = document.getElementById('top');
   side.innerHTML = brandify(side.innerHTML); top.innerHTML = brandify(top.innerHTML);
-  document.getElementById('view').innerHTML = R === 'settings' ? VIEWS.settings() : brandify(VIEWS[R]());
+  document.getElementById('view').innerHTML = R === 'settings' || R === 'results' ? VIEWS[R]() : brandify(VIEWS[R]());
   document.getElementById('app').classList.toggle('open', S.menu);
   document.getElementById('app').classList.toggle('touring', S.tour.on);
   renderTour(); const tr = document.getElementById('tour'); tr.innerHTML = brandify(tr.innerHTML); save();
@@ -269,7 +269,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!analyticsHandle(act, k, el) && !engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

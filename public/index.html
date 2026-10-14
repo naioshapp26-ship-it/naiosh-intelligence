@@ -170,6 +170,7 @@ textarea:focus,input:focus{border-color:var(--line3)}
 svg.ic{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--faint);font-family:var(--f-mono);font-size:10px}
+@media (max-width:640px){.an-chart text{font-size:19px}}
 
 /* ---------- stepper ---------- */
 .stepper{display:grid;grid-template-columns:repeat(13,minmax(64px,1fr));padding:12px 14px;margin:0;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
@@ -446,6 +447,7 @@ const P = {
   chart:'M4 20V10 M10 20V4 M16 20v-7 M22 20H2', clock:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7v5l3 2',
   fwd:'M9 6l6 6-6 6',
   coin:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M15 8.6c-.6-.9-1.7-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.2-1.6 M12 5.4v1.7 M12 17v1.6',
+  results:'M4 20V4 M4 20h16 M7 15l3-3 3 2 5-6 M16 8h2v2',
   request:'M6 3h9l5 5v13H6z M14 3v6h6 M9 17v-3 M12 17v-6 M15 17v-4',
   settings:'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M19.4 13.5l1.6 1.2-2 3.4-1.9-.7a7.5 7.5 0 0 1-2.1 1.2L14.7 21h-4l-.3-2.4a7.5 7.5 0 0 1-2.1-1.2l-1.9.7-2-3.4 1.6-1.2a7.6 7.6 0 0 1 0-2.4L4.4 9.9l2-3.4 1.9.7a7.5 7.5 0 0 1 2.1-1.2L10.7 3h4l.3 2.4a7.5 7.5 0 0 1 2.1 1.2l1.9-.7 2 3.4-1.6 1.2a7.6 7.6 0 0 1 0 2.4z',
   trash:'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13',
@@ -510,7 +512,7 @@ const diagConf = () => S.qDone ? 81 : 58;
 
 /* ================= navigation ================= */
 const NAV = [
-  { t: 'القيادة', items: [['home','مركز القيادة','01'],['ask','اسأل نايوش','02'],['request','طلب تحليل بيانات',''],['consult','مركز الاستشارات','']] },
+  { t: 'القيادة', items: [['home','مركز القيادة','01'],['ask','اسأل نايوش','02'],['request','طلب تحليل بيانات',''],['results','نتائج التحليل الفعلية',''],['consult','مركز الاستشارات','']] },
   { t: 'البيانات والسياق', items: [['data','مركز ذكاء البيانات','03'],['quality','جودة البيانات','04'],['context','محرك السياق','05'],['questionnaire','الاستبيان الذكي','06']] },
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
@@ -531,7 +533,7 @@ const TITLES = {
   integration: ['NAIOSH Integration Hub', 'مركز التكامل'], governance: ['الصلاحيات · القواعد · التدقيق', 'الحوكمة والتدقيق'],
   architecture: ['الوثائق الهندسية 2 → 5.10', 'المعمارية والوثائق'],
   settings: ['التحكم في المحتوى والبيانات', 'الإعدادات'],
-  request: ['نموذج مربوط بالمنظومة', 'طلب تحليل بيانات'],
+  request: ['نموذج مربوط بالمنظومة', 'طلب تحليل بيانات'], results: ['DIA-ANALYSIS · من بياناتك مباشرة', 'نتائج التحليل الفعلية'],
   quality: ['DIA-04 · بوابة جودة البيانات', 'جودة البيانات'], context: ['DIA-05 · لا تحليل بلا سياق', 'محرك السياق'],
   analysis: ['DIA-07 · الأنماط والمقارنات والعلاقات', 'التحليل والأنماط'], rootcause: ['DIA-09 · لماذا حدث فعلًا؟', 'السبب الجذري'],
   whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
@@ -1517,6 +1519,7 @@ VIEWS.request = () => {
         ${['سُجّل الطلب في مركز الاستشارات وسجل التدقيق.', 'بوابة الصلاحيات تتحقق من نطاق الوصول وتصنيف البيانات.', q.suff >= 80 ? 'البيانات كافية مبدئيًا: يبدأ فحص الجودة ثم التحليل.' : `البيانات الناقصة (${q.missing}) ستُطلب عبر استبيان ذكي قصير.`, 'تصلك النتيجة كـ' + q.output + ' مع درجة الثقة والأدلة، والقرار النهائي لك.'].map((t, i) => `<div class="row nowrap" style="font-size:13px;align-items:flex-start"><span class="mono" style="color:var(--yellow);width:18px">${i + 1}</span><span>${t}</span></div>`).join('')}</div>
       <div class="row">
         <button type="button" class="btn primary" data-go="${q.suff >= 80 ? 'diagnosis' : 'questionnaire'}">${q.suff >= 80 ? 'متابعة التحليل' : 'استكمال البيانات الناقصة'}</button>
+        ${AN_PENDING && AN_PENDING.ref === q.ref ? `<button type="button" class="btn primary" data-act="an-req">${ic('chart', 16)}عرض النتائج الفعلية من «${esc(AN_PENDING.file.name)}»</button>` : `<button type="button" class="btn" data-go="results">${ic('chart', 16)}رفع ملف بيانات لنتائج فورية</button>`}
         <button type="button" class="btn" data-go="consult">مركز الاستشارات</button>
         <button type="button" class="btn link" data-act="rq-new">طلب جديد</button>
       </div>
@@ -1691,7 +1694,7 @@ document.addEventListener('submit', (e) => {
   S.requests.unshift({ ref, title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
   log(r.name.trim(), `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`);
   log('المنسّق', `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, 'sys');
-  S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
+  anCapture(r, ref); S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
   toast('أُرسل الطلب ' + ref);
   render(); window.scrollTo(0, 0);
 });
@@ -3001,6 +3004,620 @@ async function engExportRun(code, fmt) {
 }
 </script>
 <script data-app="">
+/* ================= Real analysis engine — all 10 analysis types computed from the user's data =================
+   Input: CSV or Excel (.xlsx). Everything runs in the browser; no data leaves the page unless the user exports it. */
+
+/* ---------- parsing ---------- */
+const AN_DIGITS = { '٠': 0, '١': 1, '٢': 2, '٣': 3, '٤': 4, '٥': 5, '٦': 6, '٧': 7, '٨': 8, '٩': 9 };
+function anNum(v) {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim().replace(/[٠-٩]/g, d => AN_DIGITS[d]).replace(/٫/g, '.').replace(/[٬,\s]/g, '').replace(/%$/, '');
+  if (s === '' || !/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)) return null;
+  const n = parseFloat(s); return isFinite(n) ? n : null;
+}
+const AN_DATE_NAME = /date|month|period|time|تاريخ|شهر|الفترة|فترة|سنة|year|week|أسبوع|ربع|quarter/i;
+function anDate(v, colName) {
+  const s = String(v ?? '').trim().replace(/[٠-٩]/g, d => AN_DIGITS[d]);
+  let m;
+  if ((m = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.](\d{1,2}))?(?:[ T].*)?$/))) return iso(+m[1], +m[2], m[3] ? +m[3] : 1);
+  if ((m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/))) { const a = +m[1], b = +m[2]; return a > 12 ? iso(+m[3], b, a) : iso(+m[3], a > 12 ? b : b > 12 ? a : b, b > 12 ? b : a); }
+  if ((m = s.match(/^(\d{4})\s*[-]?\s*Q([1-4])$/i))) return iso(+m[1], (+m[2] - 1) * 3 + 1, 1);
+  const n = anNum(s);
+  if (n !== null && AN_DATE_NAME.test(colName || '') && n > 20000 && n < 80000) { const d = new Date(Math.round((n - 25569) * 86400e3)); return iso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate()); }
+  return null;
+  function iso(y, mo, d) { if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900 || y > 2200) return null; return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
+}
+function anParseCSV(text) {
+  text = String(text).replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const d = [',', ';', '\t'].sort((a, b) => first.split(b).length - first.split(a).length)[0];
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === d) { row.push(f); f = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(f); f = ''; if (row.some(x => x.trim() !== '')) rows.push(row); row = []; }
+    else f += ch;
+  }
+  row.push(f); if (row.some(x => x.trim() !== '')) rows.push(row);
+  return rows;
+}
+async function anUnzip(buf) {
+  const u = new Uint8Array(buf), dv = new DataView(buf); let e = -1;
+  for (let i = u.length - 22; i >= Math.max(0, u.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error('الملف ليس ملف Excel صالحًا (.xlsx).');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true); const out = {}, dec = new TextDecoder();
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = dec.decode(u.subarray(p + 46, p + 46 + nl)), start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+    out[name] = { method, data: u.subarray(start, start + csize) }; p += 46 + nl + xl + cl;
+  }
+  return out;
+}
+async function anInflate(e) {
+  if (e.method === 0) return e.data;
+  if (e.method !== 8) throw new Error('طريقة ضغط غير مدعومة في ملف Excel.');
+  if (typeof DecompressionStream === 'undefined') throw new Error('المتصفح لا يدعم قراءة Excel — احفظ الملف بصيغة CSV.');
+  const stream = new Blob([e.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function anParseXLSX(buf) {
+  const z = await anUnzip(buf), td = new TextDecoder();
+  const txt = async (n) => { const k = Object.keys(z).find(x => x.toLowerCase() === n.toLowerCase()); return k ? td.decode(await anInflate(z[k])) : null; };
+  const xml = (s) => new DOMParser().parseFromString(s, 'application/xml');
+  const wbT = await txt('xl/workbook.xml'); if (!wbT) throw new Error('لم يُعثر على ورقة عمل داخل الملف.');
+  const wb = xml(wbT), sheets = Array.from(wb.getElementsByTagName('sheet'));
+  const relsT = await txt('xl/_rels/workbook.xml.rels'), rels = relsT ? Array.from(xml(relsT).getElementsByTagName('Relationship')) : [];
+  const ssT = await txt('xl/sharedStrings.xml'), ss = ssT ? Array.from(xml(ssT).getElementsByTagName('si')).map(si => Array.from(si.getElementsByTagName('t')).map(t => t.textContent).join('')) : [];
+  const colIdx = (ref) => { const L = ref.replace(/\d+/g, ''); let n = 0; for (const ch of L) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  let best = null;
+  for (const sh of sheets) {
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    const rel = rels.find(r => r.getAttribute('Id') === rid); let target = rel ? rel.getAttribute('Target') : 'worksheets/sheet1.xml';
+    target = target.replace(/^\//, '').replace(/^xl\//, '');
+    const sT = await txt('xl/' + target); if (!sT) continue;
+    const rows = [];
+    for (const r of Array.from(xml(sT).getElementsByTagName('row'))) {
+      const arr = [];
+      for (const c of Array.from(r.getElementsByTagName('c'))) {
+        const ref = c.getAttribute('r'), col = ref ? colIdx(ref) : arr.length, t = c.getAttribute('t'), vv = c.getElementsByTagName('v')[0];
+        arr[col] = t === 's' ? (vv ? ss[+vv.textContent] || '' : '') : t === 'inlineStr' ? Array.from(c.getElementsByTagName('t')).map(x => x.textContent).join('') : vv ? vv.textContent : '';
+      }
+      const filled = Array.from(arr, x => x ?? '');
+      if (filled.some(x => String(x).trim() !== '')) rows.push(filled);
+    }
+    // the sheet with the most numeric cells is the data sheet (skips cover/summary sheets)
+    const score = rows.reduce((a, r) => a + r.filter(x => anNum(x) !== null).length, 0);
+    if (!best || score > best.score) best = { rows, score, name: sh.getAttribute('name') };
+  }
+  if (!best || best.rows.length < 2) throw new Error('الملف لا يحتوي على جدول بيانات.');
+  // skip leading title rows: header = first row with at least 2 non-empty cells followed by a row with numbers
+  let h = 0; while (h < best.rows.length - 2 && best.rows[h].filter(x => String(x).trim()).length < 2) h++;
+  return best.rows.slice(h);
+}
+async function anReadFile(file) {
+  const name = file.name || 'data';
+  if (/\.xlsx$/i.test(name)) return { name, rows: await anParseXLSX(await file.arrayBuffer()) };
+  if (/\.(csv|txt|tsv)$/i.test(name)) { const buf = await file.arrayBuffer(); let t = new TextDecoder('utf-8').decode(buf); if (t.includes('\uFFFD')) { try { t = new TextDecoder('windows-1256').decode(buf); } catch (e) {} } return { name, rows: anParseCSV(t) }; }
+  if (/\.xls$/i.test(name)) throw new Error('صيغة .xls القديمة غير مدعومة — احفظ الملف بصيغة .xlsx أو CSV.');
+  throw new Error('اختر ملف بيانات بصيغة CSV أو Excel (.xlsx).');
+}
+
+/* ---------- table model ---------- */
+function anTable(rows) {
+  if (!rows || rows.length < 3) throw new Error('البيانات قليلة جدًا — يلزم صف عناوين وصفّان على الأقل.');
+  const width = Math.max(...rows.slice(0, 50).map(r => r.length));
+  const head = Array.from({ length: width }, (_, i) => String(rows[0][i] ?? '').trim() || ('عمود ' + (i + 1)));
+  const body = rows.slice(1).map(r => head.map((_, i) => String(r[i] ?? '').trim())).filter(r => r.some(Boolean));
+  const cols = head.map((n, i) => {
+    const vals = body.map(r => r[i]).filter(v => v !== '');
+    const nums = vals.filter(v => anNum(v) !== null).length, dates = vals.filter(v => anDate(v, n)).length;
+    const uniq = new Set(vals).size;
+    let type = 'cat';
+    if (vals.length && dates >= vals.length * 0.8 && (AN_DATE_NAME.test(n) || vals.some(v => /[-\/]/.test(v)))) type = 'date';
+    else if (vals.length && nums >= vals.length * 0.8) type = 'num';
+    return { i, name: n, type, uniq, missing: body.length - vals.length };
+  });
+  return { head, body, cols, n: body.length };
+}
+function anDefaults(T) {
+  const nums = T.cols.filter(c => c.type === 'num'), dates = T.cols.filter(c => c.type === 'date');
+  const cats = T.cols.filter(c => c.type === 'cat' && c.uniq >= 2 && c.uniq <= 40);
+  const tgt = nums.find(c => /أداء|performance|kpi|مؤشر|score|مبيعات|sales|إيراد|revenue/i.test(c.name)) || nums[0];
+  return { target: tgt ? tgt.name : null, date: dates[0] ? dates[0].name : null, group: cats[0] ? cats[0].name : null };
+}
+const AN_TYPES = [['desc', 'وصفي'], ['diag', 'تشخيصي'], ['pred', 'تنبؤي'], ['fore', 'استشرافي وسيناريوهات'], ['feas', 'دراسة جدوى اقتصادية'], ['risk', 'تحليل مخاطر'], ['opp', 'فرص ونمو'], ['presc', 'توجيهي وحلول'], ['cmp', 'مقارنة'], ['imp', 'قياس أثر']];
+
+/* ---------- statistics ---------- */
+const st = {
+  mean: (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN,
+  sd(a) { if (a.length < 2) return 0; const m = st.mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); },
+  q(a, p) { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi] - s[lo]) * (i - lo); },
+  pearson(x, y) { const n = Math.min(x.length, y.length); if (n < 3) return NaN; const mx = st.mean(x.slice(0, n)), my = st.mean(y.slice(0, n)); let a = 0, b = 0, c = 0; for (let i = 0; i < n; i++) { a += (x[i] - mx) * (y[i] - my); b += (x[i] - mx) ** 2; c += (y[i] - my) ** 2; } return b && c ? a / Math.sqrt(b * c) : NaN; },
+  lin(x, y) { const n = x.length, mx = st.mean(x), my = st.mean(y); let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; } const b = sxx ? sxy / sxx : 0, a = my - b * mx; let sse = 0; for (let i = 0; i < n; i++) sse += (y[i] - a - b * x[i]) ** 2; const se = n > 2 && sxx ? Math.sqrt(sse / (n - 2) / sxx) : Infinity; const t = se ? b / se : 0; return { a, b, se, t, p: n > 2 ? st.tP(t, n - 2) : 1 }; },
+  normCdf(z) { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; },
+  // two-sided p-value of Student's t
+  tP(t, df) { if (!isFinite(t)) return 0; if (df <= 0) return 1; const x = df / (df + t * t); return Math.min(1, st.ibeta(x, df / 2, 0.5)); },
+  ibeta(x, a, b) { if (x <= 0) return 0; if (x >= 1) return 1; const lbt = st.lgam(a + b) - st.lgam(a) - st.lgam(b) + a * Math.log(x) + b * Math.log(1 - x); const bt = Math.exp(lbt); return x < (a + 1) / (a + b + 2) ? bt * st.bcf(x, a, b) / a : 1 - bt * st.bcf(1 - x, b, a) / b; },
+  bcf(x, a, b) { let m, aa, c = 1, d = 1 - (a + b) * x / (a + 1), h; if (Math.abs(d) < 1e-30) d = 1e-30; d = 1 / d; h = d; for (m = 1; m <= 200; m++) { const m2 = 2 * m; aa = m * (b - m) * x / ((a + m2 - 1) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30; c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30; d = 1 / d; h *= d * c; aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + m2 + 1)); d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30; c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-12) break; } return h; },
+  lgam(z) { const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5]; let x = z, y = z, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); let ser = 1.000000000190015; for (const c of g) ser += c / ++y; return -tmp + Math.log(2.5066282746310005 * ser / x); },
+  welch(a, b) { const ma = st.mean(a), mb = st.mean(b), va = st.sd(a) ** 2, vb = st.sd(b) ** 2, se = Math.sqrt(va / a.length + vb / b.length); const t = se ? (mb - ma) / se : 0; const df = se ? (va / a.length + vb / b.length) ** 2 / ((va / a.length) ** 2 / (a.length - 1) + (vb / b.length) ** 2 / (b.length - 1)) : 1; const sp = Math.sqrt(((a.length - 1) * va + (b.length - 1) * vb) / (a.length + b.length - 2)); return { ma, mb, t, df, p: st.tP(t, df), d: sp ? (mb - ma) / sp : 0 }; },
+  ols(X, y) { // X: rows of features (no intercept); returns {beta:[b0,b1..], r2}
+    const n = y.length, k = X[0].length + 1, A = Array.from({ length: k }, () => Array(k).fill(0)), v = Array(k).fill(0);
+    for (let i = 0; i < n; i++) { const row = [1, ...X[i]]; for (let r = 0; r < k; r++) { v[r] += row[r] * y[i]; for (let c = 0; c < k; c++) A[r][c] += row[r] * row[c]; } }
+    for (let r = 0; r < k; r++) A[r][r] += 1e-9;
+    for (let c = 0; c < k; c++) { let piv = c; for (let r = c + 1; r < k; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r; [A[c], A[piv]] = [A[piv], A[c]]; [v[c], v[piv]] = [v[piv], v[c]]; for (let r = 0; r < k; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let cc = c; cc < k; cc++) A[r][cc] -= f * A[c][cc]; v[r] -= f * v[c]; } }
+    const beta = v.map((x, i) => x / A[i][i]); const my = st.mean(y); let sse = 0, sst = 0;
+    for (let i = 0; i < n; i++) { const pred = beta[0] + X[i].reduce((s, x, j) => s + x * beta[j + 1], 0); sse += (y[i] - pred) ** 2; sst += (y[i] - my) ** 2; }
+    return { beta, r2: sst ? 1 - sse / sst : 0, rmse: Math.sqrt(sse / Math.max(1, n - k)) };
+  },
+  holt(y, h) { // double exponential smoothing; alpha/beta by grid search on one-step SSE
+    let best = null;
+    for (let a = 0.1; a <= 0.95; a += 0.05) for (let b = 0.05; b <= 0.6; b += 0.05) {
+      let l = y[0], t = y.length > 1 ? y[1] - y[0] : 0, sse = 0;
+      for (let i = 1; i < y.length; i++) { const f = l + t; sse += (y[i] - f) ** 2; const nl = a * y[i] + (1 - a) * (l + t); t = b * (nl - l) + (1 - b) * t; l = nl; }
+      if (!best || sse < best.sse) best = { a, b, sse, l, t };
+    }
+    const rmse = Math.sqrt(best.sse / Math.max(1, y.length - 2));
+    return { alpha: best.a, beta: best.b, rmse, f: Array.from({ length: h }, (_, i) => best.l + best.t * (i + 1)), level: best.l, trend: best.t };
+  }
+};
+const fmtN = (v, d) => { if (v === null || v === undefined || !isFinite(v)) return '—'; const a = Math.abs(v); const dd = d ?? (a >= 1000 ? 0 : a >= 100 ? 1 : 2); return Number(v).toLocaleString('en-US', { maximumFractionDigits: dd, minimumFractionDigits: 0 }); };
+const fmtP = (v) => !isFinite(v) ? '—' : (v > 0 ? '+' : '') + fmtN(v, 1) + '%';
+const fmtPv = (p) => !isFinite(p) ? '—' : p < 0.001 ? '<0.001' : fmtN(p, 3);
+const AN_OUTCOME = /مبيعات|sales|إيراد|revenue|رضا|satisfaction|ربح|profit|دخل|income/i;
+const pctCh = (a, b) => a ? (b - a) / Math.abs(a) * 100 : NaN;
+
+/* ---------- series building ---------- */
+function anSeries(T, cfg, col, focus) {
+  const ci = T.head.indexOf(col), di = T.head.indexOf(cfg.date), gi = T.head.indexOf(cfg.group);
+  const rows = T.body.filter(r => !(focus && focus !== 'all' && gi >= 0) || r[gi] === focus);
+  if (di < 0) return { keys: rows.map((_, i) => String(i + 1)), y: rows.map(r => anNum(r[ci])) };
+  const map = new Map();
+  for (const r of rows) { const k = anDate(r[di], cfg.date); const v = anNum(r[ci]); if (!k || v === null) continue; if (!map.has(k)) map.set(k, []); map.get(k).push(v); }
+  const keys = [...map.keys()].sort();
+  return { keys, y: keys.map(k => st.mean(map.get(k))) };
+}
+const anLabel = (keys) => { const monthly = keys.every(k => k.endsWith('-01')); return keys.map(k => monthly ? k.slice(0, 7) : k); };
+
+/* ---------- the analyses ---------- */
+const AN_ACTION = [
+  [/تدريب|training/i, 'رفع ساعات التدريب'], [/إضافي|overtime/i, 'خفض العمل الإضافي بإعادة توزيع المهام'], [/دوران|turnover|مغادرة|attrition/i, 'خطة احتفاظ بالموظفين'],
+  [/شكاوى|complaint/i, 'معالجة أسباب الشكاوى'], [/تسليم|delivery|زمن|lead/i, 'تقليص زمن التسليم'], [/رضا|satisfaction|csat/i, 'تحسين تجربة العملاء'],
+  [/تكلفة|cost|مصروف/i, 'ضبط التكاليف'], [/مبيعات|sales|إيراد|revenue/i, 'تنشيط المبيعات'], [/موظف|staff|عدد/i, 'مواءمة عدد الموظفين مع الحمل']
+];
+const anAct = (name) => (AN_ACTION.find(([r]) => r.test(name)) || [null, 'تحريك'])[1];
+
+function anRun(T, cfg) {
+  const out = {}, tgt = cfg.target, focus = cfg.focus || 'all';
+  const gi = T.head.indexOf(cfg.group), ti = T.head.indexOf(tgt);
+  const groups = gi >= 0 ? [...new Set(T.body.map(r => r[gi]).filter(Boolean))] : [];
+  const S0 = anSeries(T, cfg, tgt, focus), y = S0.y.filter(v => v !== null && isFinite(v)), keys = S0.keys, lab = anLabel(keys);
+  const n = y.length, w = Math.max(2, Math.min(6, Math.round(n * 0.25)));
+  const recent = y.slice(-w), prev = y.slice(-2 * w, -w);
+  const focusName = focus === 'all' ? (groups.length ? 'كل الوحدات' : 'البيانات كاملة') : '«' + focus + '»';
+  const numCols = T.cols.filter(c => c.type === 'num' && c.name !== tgt);
+  const drivers = numCols.map(c => {
+    const s = anSeries(T, cfg, c.name, focus); const pairs = s.keys.map((k, i) => [s.y[i], y[keys.indexOf(k)]]).filter(([a, b]) => a !== null && b !== undefined && isFinite(a) && isFinite(b));
+    const xs = pairs.map(p => p[0]), ys = pairs.map(p => p[1]); const r = st.pearson(xs, ys), L = xs.length >= 4 ? st.lin(xs, ys) : null;
+    const dx = s.y.filter(v => v !== null), xr = dx.slice(-w), xp = dx.slice(-2 * w, -w), ch = pctCh(st.mean(xp), st.mean(xr)), sdx = st.sd(dx);
+    const z = sdx ? (st.mean(xr) - st.mean(xp)) / sdx : 0, pr = isFinite(r) ? st.tP(r * Math.sqrt((xs.length - 2) / Math.max(1e-9, 1 - r * r)), xs.length - 2) : 1;
+    return { name: c.name, r, p: pr, ch, z, strength: isFinite(r) ? Math.abs(r) * Math.abs(z) : 0, slope: L ? L.b : 0, last: dx[dx.length - 1], sd: sdx, all: dx, mean: st.mean(dx), xr: st.mean(xr), xp: st.mean(xp), p90: st.q(dx, 0.9), p10: st.q(dx, 0.1) };
+  }).filter(d => isFinite(d.r)).sort((a, b) => b.strength - a.strength || Math.abs(b.r) - Math.abs(a.r));
+  const conf = Math.round(Math.max(20, Math.min(95, 40 + Math.min(30, n * 1.5) + (T.cols[ti] ? -T.cols[ti].missing / Math.max(1, T.n) * 100 : 0))));
+  const gate = n < 6 ? ['low', 'البيانات أقل من 6 فترات — النتائج مؤشرات أولية فقط.'] : (T.cols[ti] && T.cols[ti].missing / T.n > 0.3) ? ['low', 'أكثر من 30% من قيم المؤشر ناقصة.'] : n < 12 ? ['warn', 'أقل من 12 فترة — التنبؤات بثقة محدودة.'] : ['good', 'البيانات كافية للتحليل.'];
+  const groupStats = groups.map(g => { const s = anSeries(T, cfg, tgt, g), v = s.y.filter(x => x !== null); const L = v.length >= 3 ? st.lin(v.map((_, i) => i), v) : { b: 0, p: 1 }; return { g, mean: st.mean(v), last: v[v.length - 1], first: v[0], slope: L.b, p: L.p, ch: pctCh(st.mean(v.slice(-2 * w, -w)), st.mean(v.slice(-w))), v }; }).sort((a, b) => b.mean - a.mean);
+  const ctx = { y, keys, lab, n, w, recent, prev, drivers, groups, groupStats, focusName, tgt, conf, gate };
+
+  // 1. Descriptive
+  if (cfg.types.includes('desc')) {
+    const fb = focus !== 'all' && gi >= 0 ? T.body.filter(r => r[gi] === focus) : T.body;
+    const rows = T.cols.filter(c => c.type === 'num').map(c => { const v = fb.map(r => anNum(r[c.i])).filter(x => x !== null); const m = st.mean(v), s = st.sd(v); return [c.name, fmtN(m), fmtN(st.q(v, .5)), fmtN(Math.min(...v)), fmtN(Math.max(...v)), fmtN(s), m ? fmtN(s / Math.abs(m) * 100, 1) + '%' : '—', fmtN(c.missing / T.n * 100, 1) + '%']; });
+    const tv = fb.map(r => anNum(r[ti])).filter(x => x !== null), q1 = st.q(tv, .25), q3 = st.q(tv, .75), iqr = q3 - q1, outl = tv.filter(v => v < q1 - 1.5 * iqr || v > q3 + 1.5 * iqr).length;
+    const dup = T.n - new Set(T.body.map(r => r.join('\u0001'))).size;
+    const lastCh = pctCh(y[n - 2], y[n - 1]);
+    out.desc = { title: 'التحليل الوصفي — ماذا حدث؟', summary: `${fmtN(T.n, 0)} سجل · ${n} فترة${groups.length ? ' · ' + groups.length + ' وحدات في «' + cfg.group + '»' : ''}. متوسط «${tgt}» في ${focusName}: ${fmtN(st.mean(y))}، وآخر قيمة ${fmtN(y[n - 1])} (${fmtP(lastCh)} عن الفترة السابقة)، وأدنى قيمة ${fmtN(Math.min(...y))} وأعلى قيمة ${fmtN(Math.max(...y))}.`,
+      kpis: [['المتوسط', fmtN(st.mean(y))], ['آخر قيمة', fmtN(y[n - 1])], ['التغير الأخير', fmtP(lastCh), lastCh < 0 ? 'bad' : 'good'], ['قيم شاذة', outl], ['صفوف مكررة', dup], ['قيم ناقصة', fmtN(T.cols[ti].missing / T.n * 100, 1) + '%']],
+      chart: { lab, series: [{ y, c: 'var(--red)', n: tgt + ' — ' + focusName }], extra: focus !== 'all' ? [{ y: anSeries(T, cfg, tgt, 'all').y, c: 'var(--blue)', n: 'المتوسط العام' }] : [] },
+      tables: [{ h: 'إحصاءات المتغيرات الرقمية — ' + focusName, cols: ['المتغير', 'المتوسط', 'الوسيط', 'الأدنى', 'الأعلى', 'الانحراف المعياري', 'معامل التباين', 'الناقص'], rows }]
+        .concat(groups.length ? [{ h: '«' + tgt + '» حسب ' + cfg.group, cols: [cfg.group, 'المتوسط', 'آخر قيمة', 'الاتجاه لكل فترة'], rows: groupStats.map(s => [s.g, fmtN(s.mean), fmtN(s.last), (s.slope >= 0 ? '+' : '') + fmtN(s.slope)]) }] : []) };
+  }
+  // 2. Diagnostic
+  if (cfg.types.includes('diag')) {
+    const d = st.mean(recent) - st.mean(prev), dp = pctCh(st.mean(prev), st.mean(recent));
+    const top = drivers.slice(0, 6);
+    const contrib = focus === 'all' && groupStats.length ? groupStats.map(s => [s.g, fmtP(s.ch)]).sort((a, b) => parseFloat(a[1]) - parseFloat(b[1])) : [];
+    out.diag = { title: 'التحليل التشخيصي — لماذا حدث؟', summary: `${d < 0 ? 'انخفض' : 'ارتفع'} «${tgt}» في ${focusName} بنسبة ${fmtN(Math.abs(dp), 1)}% في آخر ${w} فترات مقارنة بالـ ${w} السابقة (${fmtN(st.mean(prev))} ← ${fmtN(st.mean(recent))}). ${top.length ? 'أقوى العوامل المرتبطة بالتغير: ' + top.slice(0, 3).map(x => `«${x.name}» (${fmtP(x.ch)}، r=${fmtN(x.r, 2)})`).join('، ') + '.' : 'لا توجد متغيرات رقمية أخرى لتفسير التغير.'}`,
+      kpis: [['قبل', fmtN(st.mean(prev))], ['بعد', fmtN(st.mean(recent))], ['التغير', fmtP(dp), dp < 0 ? 'bad' : 'good']],
+      tables: [{ h: 'العوامل المرتبطة مرتبة حسب قوة الأثر', cols: ['العامل', 'تغيره بين الفترتين', 'الارتباط r', 'الدلالة p', 'قوة الأثر', 'التفسير'], rows: top.map(x => [x.name, fmtP(x.ch), fmtN(x.r, 2), fmtPv(x.p), fmtN(x.strength, 2), (x.r > 0 ? 'يتحرك مع ' : 'يتحرك عكس ') + tgt + (x.p < 0.05 ? ' — ارتباط ذو دلالة' : ' — ارتباط ضعيف الدلالة')]) }]
+        .concat(contrib.length ? [{ h: 'مساهمة ' + cfg.group + ' في التغير', cols: [cfg.group, 'التغير بين الفترتين'], rows: contrib }] : []),
+      notes: ['الارتباط لا يثبت السببية: هذه فرضيات مرتبة بالأدلة، وتحتاج تحققًا ميدانيًا قبل اعتمادها سببًا جذريًا.'] };
+  }
+  // 3. Predictive
+  const H = 6; let fc = null;
+  if (n >= 4) {
+    fc = st.holt(y, H);
+    const hold = Math.max(2, Math.min(6, Math.floor(n / 4)));
+    let mape = NaN; if (n - hold >= 4) { const bt = st.holt(y.slice(0, n - hold), hold); mape = st.mean(bt.f.map((f, i) => Math.abs((y[n - hold + i] - f) / (y[n - hold + i] || 1)) * 100)); }
+    fc.mape = mape; fc.hold = hold;
+  }
+  const nextLab = (i) => { const k = keys[keys.length - 1]; if (/^\d{4}-\d{2}-01$/.test(k || '')) { const [Y, M] = k.split('-').map(Number); const d = new Date(Date.UTC(Y, M - 1 + i, 1)); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'); } return '+' + i; };
+  if (cfg.types.includes('pred')) {
+    out.pred = fc ? { title: 'التحليل التنبؤي — ماذا سيحدث؟', summary: `بنموذج الاتجاه (Holt) المدرَّب على ${n} فترة، يُتوقع أن يصل «${tgt}» في ${focusName} إلى ${fmtN(fc.f[H - 1])} بعد ${H} فترات (${fmtP(pctCh(y[n - 1], fc.f[H - 1]))} عن آخر قيمة). اختبار النموذج على آخر ${fc.hold} فترات فعلية أعطى خطأ متوسطًا ${isFinite(fc.mape) ? fmtN(fc.mape, 1) + '%' : 'غير متاح'}.`,
+      kpis: [['التوقع بعد ' + H + ' فترات', fmtN(fc.f[H - 1])], ['الاتجاه لكل فترة', (fc.trend >= 0 ? '+' : '') + fmtN(fc.trend), fc.trend < 0 ? 'bad' : 'good'], ['خطأ الاختبار MAPE', isFinite(fc.mape) ? fmtN(fc.mape, 1) + '%' : '—'], ['دقة النموذج', isFinite(fc.mape) ? (fc.mape < 5 ? 'مرتفعة' : fc.mape < 10 ? 'جيدة' : fc.mape < 20 ? 'متوسطة' : 'ضعيفة') : '—']],
+      chart: { lab: lab.concat(fc.f.map((_, i) => nextLab(i + 1))), series: [{ y, c: 'var(--red)', n: 'فعلي' }], fc: { from: n - 1, y: fc.f, lo: fc.f.map((f, i) => f - 1.96 * fc.rmse * Math.sqrt(i + 1)), hi: fc.f.map((f, i) => f + 1.96 * fc.rmse * Math.sqrt(i + 1)) } },
+      tables: [{ h: 'التوقعات مع نطاق الثقة 95%', cols: ['الفترة', 'التوقع', 'الحد الأدنى', 'الحد الأعلى'], rows: fc.f.map((f, i) => [nextLab(i + 1), fmtN(f), fmtN(f - 1.96 * fc.rmse * Math.sqrt(i + 1)), fmtN(f + 1.96 * fc.rmse * Math.sqrt(i + 1))]) }],
+      notes: ['التوقع يفترض استمرار النمط الحالي؛ أي تدخل أو صدمة خارجية يغيّره. النطاق يتسع كلما ابتعدنا في الزمن.'] }
+      : { title: 'التحليل التنبؤي', summary: 'يلزم 4 فترات زمنية على الأقل لبناء توقع.', kpis: [], tables: [] };
+  }
+  // 4. Foresight / scenarios
+  const topD = drivers.filter(d => Math.abs(d.r) >= 0.2).slice(0, 3);
+  let model = null;
+  if (topD.length && n >= 8) {
+    const rowsX = [], ys = [];
+    keys.forEach((k, i) => { const xs = topD.map(d => { const s = anSeries(T, cfg, d.name, focus); const j = s.keys.indexOf(k); return j >= 0 ? s.y[j] : null; }); if (xs.every(v => v !== null && isFinite(v)) && isFinite(y[i])) { rowsX.push(xs); ys.push(y[i]); } });
+    if (ys.length >= topD.length + 4) model = st.ols(rowsX, ys);
+  }
+  if (cfg.types.includes('fore')) {
+    if (model && fc) {
+      const base = fc.f[H - 1], eff = (k) => topD.reduce((s, d, j) => s + model.beta[j + 1] * Math.sign(model.beta[j + 1] || 1) * d.sd * k, 0);
+      const opt = base + eff(1), pes = base - eff(1), shock = base - eff(1) - Math.abs(model.beta[1]) * topD[0].sd;
+      const sc = [['متفائل', opt, '25%', 'تحسن العوامل الثلاثة بمقدار انحراف معياري واحد'], ['أساسي', base, '50%', 'استمرار الاتجاه الحالي'], ['متشائم', pes, '20%', 'تراجع العوامل بمقدار انحراف معياري واحد'], ['صدمة', shock, '5%', 'تراجع حاد في «' + topD[0].name + '» مع تراجع بقية العوامل']];
+      out.fore = { title: 'الاستشراف والسيناريوهات — ماذا يمكن أن يحدث؟', summary: `نموذج انحدار يربط «${tgt}» بـ ${topD.map(d => '«' + d.name + '»').join(' و')} يفسّر ${fmtN(model.r2 * 100, 0)}% من التغير. بعد ${H} فترات: المسار الأساسي ${fmtN(base)}، والمتفائل ${fmtN(opt)}، والمتشائم ${fmtN(pes)}، وفي حالة الصدمة ${fmtN(shock)}.`,
+        kpis: [['قوة النموذج R²', fmtN(model.r2 * 100, 0) + '%'], ['المدى بين الأسوأ والأفضل', fmtN(opt - shock)]],
+        tables: [{ h: 'السيناريوهات', cols: ['السيناريو', 'القيمة المتوقعة', 'التغير عن الآن', 'الاحتمال التقديري', 'الافتراض'], rows: sc.map(([a, v, p, t]) => [a, fmtN(v), fmtP(pctCh(y[n - 1], v)), p, t]) },
+          { h: 'معاملات النموذج', cols: ['العامل', 'الأثر لكل وحدة', 'الانحراف المعياري للعامل'], rows: topD.map((d, j) => [d.name, (model.beta[j + 1] >= 0 ? '+' : '') + fmtN(model.beta[j + 1], 3), fmtN(d.sd)]) }],
+        notes: ['الاحتمالات تقديرية لأغراض التخطيط وليست احتمالات إحصائية دقيقة.'] };
+    } else out.fore = { title: 'الاستشراف والسيناريوهات', summary: 'يلزم 8 فترات على الأقل ومتغير واحد على الأقل مرتبط بالمؤشر (|r| ≥ 0.2) لبناء السيناريوهات.', kpis: [], tables: [] };
+  }
+  // 5. Feasibility
+  if (cfg.types.includes('feas')) out.feas = anFeas(T, cfg, ctx);
+  // 6. Risk
+  if (cfg.types.includes('risk')) {
+    const ch = y.slice(1).map((v, i) => pctCh(y[i], v)).filter(isFinite), vol = st.sd(ch);
+    let peak = -Infinity, mdd = 0; y.forEach(v => { peak = Math.max(peak, v); mdd = Math.min(mdd, pctCh(peak, v)); });
+    const thr = st.q(y, 0.25), f1 = fc ? fc.f[0] : y[n - 1], se1 = fc ? fc.rmse : st.sd(y), pBelow = se1 ? st.normCdf((thr - f1) / se1) * 100 : NaN;
+    const m = st.mean(y), s = st.sd(y), anom = y.map((v, i) => [lab[i], v, s ? (v - m) / s : 0]).filter(a => Math.abs(a[2]) >= 2);
+    const reg = drivers.slice(0, 6).map(d => { const Ld = st.lin(d.all.slice(-12).map((_, i) => i), d.all.slice(-12)); const adverse = Math.sign(Ld.b) * Math.sign(d.r) < 0; const like = Math.max(1, Math.min(5, Math.round(Math.abs(Ld.t)))); const imp = Math.max(1, Math.min(5, Math.round(Math.abs(d.r) * 5))); return { d, adverse, like, imp, sc: like * imp }; }).filter(x => x.adverse).sort((a, b) => b.sc - a.sc);
+    out.risk = { title: 'تحليل المخاطر — ما الذي يهددنا؟', summary: `تذبذب «${tgt}» ${fmtN(vol, 1)}% لكل فترة، وأكبر تراجع من القمة ${fmtN(Math.abs(mdd), 1)}%. احتمال أن تقل القيمة في الفترة القادمة عن ${fmtN(thr)} (الربيع الأدنى تاريخيًا) يقارب ${fmtN(pBelow, 0)}%. ${reg.length ? 'عوامل تتحرك حاليًا في الاتجاه الضار: ' + reg.slice(0, 3).map(r => '«' + r.d.name + '»').join('، ') + '.' : 'لا عوامل تتحرك في اتجاه ضار بوضوح.'}`,
+      kpis: [['التذبذب لكل فترة', fmtN(vol, 1) + '%'], ['أكبر تراجع', fmtN(mdd, 1) + '%', 'bad'], ['احتمال النزول تحت الحد', fmtN(pBelow, 0) + '%', pBelow > 30 ? 'bad' : ''], ['قيم شاذة', anom.length]],
+      tables: [{ h: 'سجل المخاطر المستخرج من البيانات', cols: ['الخطر', 'الاحتمال (1–5)', 'الأثر (1–5)', 'الدرجة', 'المستوى'], rows: reg.map(r => [`استمرار ${r.d.ch < 0 ? 'انخفاض' : 'ارتفاع'} «${r.d.name}»`, r.like, r.imp, r.sc, r.sc >= 15 ? 'حرج' : r.sc >= 10 ? 'مرتفع' : r.sc >= 5 ? 'متوسط' : 'منخفض']) }]
+        .concat(anom.length ? [{ h: 'فترات شاذة (|z| ≥ 2)', cols: ['الفترة', 'القيمة', 'z'], rows: anom.map(a => [a[0], fmtN(a[1]), fmtN(a[2], 2)]) }] : []),
+      notes: ['الاحتمال مبني على اتجاه العامل في آخر 12 فترة، والأثر على قوة ارتباطه بالمؤشر.'] };
+  }
+  // 7. Opportunities
+  if (cfg.types.includes('opp')) {
+    const opps = [];
+    const me = focus !== 'all' ? groupStats.find(s => s.g === focus) : null, best = groupStats[0];
+    if (me && best && best.g !== me.g) opps.push(['نقل ممارسات «' + best.g + '»', `«${best.g}» أعلى بـ ${fmtN(best.mean - me.mean)} في المتوسط`, best.mean - me.mean, 'دراسة ما يفعله «' + best.g + '» بشكل مختلف وتجربته في ' + focus]);
+    else if (groupStats.length > 1) groupStats.slice(-2).forEach(s => opps.push(['رفع «' + s.g + '» إلى مستوى «' + best.g + '»', `الفجوة ${fmtN(best.mean - s.mean)}`, best.mean - s.mean, 'تطبيق ممارسات الأفضل أداءً']));
+    drivers.filter(d => !AN_OUTCOME.test(d.name)).forEach(d => { const good = d.slope > 0 ? d.p90 : d.p10, cur = d.last, gain = d.slope * (good - cur); if (gain > 0 && Math.abs(d.r) >= 0.3) opps.push([`${anAct(d.name)}: «${d.name}» من ${fmtN(cur)} إلى ${fmtN(good)}`, 'أفضل مستوى تحقق سابقًا في بياناتكم', gain, 'الأثر المتوقع على ' + tgt]); });
+    opps.sort((a, b) => b[2] - a[2]);
+    out.opp = { title: 'الفرص والنمو — أين القيمة غير المستغلة؟', summary: opps.length ? `أكبر فرصة: ${opps[0][0]} — بأثر تقديري +${fmtN(opps[0][2])} على «${tgt}». الفرص محسوبة من مستويات تحققت فعلًا في بياناتكم، لا من افتراضات خارجية.` : 'لم تُكتشف فرص واضحة من البيانات الحالية.',
+      kpis: [['عدد الفرص', opps.length], ['أكبر أثر تقديري', opps.length ? '+' + fmtN(opps[0][2]) : '—', 'good']],
+      tables: [{ h: 'الفرص مرتبة حسب الأثر', cols: ['الفرصة', 'الدليل', 'الأثر التقديري', 'الخطوة التالية'], rows: opps.map(o => [o[0], o[1], '+' + fmtN(o[2]), o[3]]) }] };
+  }
+  // 8. Prescriptive
+  if (cfg.types.includes('presc')) {
+    const goal = st.mean(prev) > st.mean(recent) ? st.mean(prev) : Math.max(...y), gap = goal - st.mean(recent);
+    const acts = drivers.filter(d => Math.abs(d.r) >= 0.3 && d.slope && !AN_OUTCOME.test(d.name)).map(d => { const need = gap / d.slope, to = d.xr + need, ease = d.sd ? Math.abs(need) / d.sd : Infinity; return { d, need, to, ease, feasible: to >= Math.min(...d.all) - d.sd && to <= Math.max(...d.all) + d.sd }; }).sort((a, b) => a.ease - b.ease);
+    out.presc = { title: 'التحليل التوجيهي — ماذا ينبغي أن نفعل؟', summary: gap > 0 && acts.length ? `لاستعادة «${tgt}» إلى ${fmtN(goal)} (فجوة ${fmtN(gap)}): الإجراء الأسهل هو ${anAct(acts[0].d.name)} — تحريك «${acts[0].d.name}» من ${fmtN(acts[0].d.xr)} إلى نحو ${fmtN(acts[0].to)}. الأفضل الجمع بين إجراءين بتغيير أصغر في كل منهما.` : gap <= 0 ? 'المؤشر عند أفضل مستوياته أو أعلى من الفترة السابقة — التوصية: الحفاظ على العوامل الحالية ومراقبتها.' : 'لا توجد عوامل مرتبطة بقوة كافية لاقتراح إجراءات كمية.',
+      kpis: [['الهدف', fmtN(goal)], ['الفجوة', fmtN(gap), gap > 0 ? 'bad' : 'good']],
+      tables: [{ h: 'الإجراءات المقترحة مرتبة حسب السهولة', cols: ['الإجراء', 'العامل', 'الحالي', 'المطلوب وحده', 'حجم التغيير', 'واقعية التغيير'], rows: acts.map(a => [anAct(a.d.name), a.d.name, fmtN(a.d.xr), fmtN(a.to), fmtN(a.ease, 1) + ' انحراف معياري', a.ease < 1 ? 'سهل' : a.ease < 2 ? 'متوسط' : 'صعب' + (a.feasible ? '' : ' — خارج المدى التاريخي')]) }],
+      notes: ['كل إجراء محسوب منفردًا من علاقة العامل بالمؤشر في بياناتكم. يُنصح بتجربة محدودة وقياسها قبل التعميم.'] };
+  }
+  // 9. Comparative
+  if (cfg.types.includes('cmp')) {
+    if (groupStats.length > 1) {
+      const all = groupStats.flatMap(s => s.v), gm = st.mean(all); let ssb = 0, ssw = 0; groupStats.forEach(s => { ssb += s.v.length * (s.mean - gm) ** 2; s.v.forEach(v => ssw += (v - s.mean) ** 2); });
+      const k = groupStats.length, N = all.length, F = ssw ? (ssb / (k - 1)) / (ssw / (N - k)) : 0, eta = ssb + ssw ? ssb / (ssb + ssw) : 0;
+      out.cmp = { title: 'التحليل المقارن — ما الأفضل والأسوأ؟', summary: `الأفضل أداءً: «${groupStats[0].g}» (${fmtN(groupStats[0].mean)})، والأضعف: «${groupStats[k - 1].g}» (${fmtN(groupStats[k - 1].mean)}). الفروق بين وحدات «${cfg.group}» تفسّر ${fmtN(eta * 100, 0)}% من التباين في «${tgt}» (F=${fmtN(F, 1)}).`,
+        kpis: [['الأفضل', groupStats[0].g, 'good'], ['الأضعف', groupStats[k - 1].g, 'bad'], ['حجم الفروق η²', fmtN(eta * 100, 0) + '%']],
+        chart: { bars: groupStats.map(s => [s.g, s.mean]) },
+        tables: [{ h: 'الترتيب', cols: ['الترتيب', cfg.group, 'المتوسط', 'آخر قيمة', 'الاتجاه لكل فترة', 'دلالة الاتجاه p', 'التغير الأخير'], rows: groupStats.map((s, i) => [i + 1, s.g, fmtN(s.mean), fmtN(s.last), (s.slope >= 0 ? '+' : '') + fmtN(s.slope), fmtPv(s.p), fmtP(s.ch)]) }] };
+    } else {
+      const h1 = y.slice(0, Math.floor(n / 2)), h2 = y.slice(Math.floor(n / 2)), wt = st.welch(h1, h2);
+      out.cmp = { title: 'التحليل المقارن', summary: `لا يوجد عمود تصنيف للمقارنة؛ قورن النصف الأول من الفترة بالنصف الثاني: ${fmtN(wt.ma)} ← ${fmtN(wt.mb)} (p=${fmtPv(wt.p)}).`, kpis: [], tables: [] };
+    }
+  }
+  // 10. Impact
+  if (cfg.types.includes('imp')) {
+    const cut = cfg.cut && keys.includes(cfg.cut) ? keys.indexOf(cfg.cut) : Math.max(2, Math.floor(n * 2 / 3));
+    const before = y.slice(0, cut), after = y.slice(cut), wt = st.welch(before, after);
+    let did = null;
+    if (focus !== 'all' && groups.length > 1) { const o = anSeries(T, cfg, tgt, 'all'); const oy = o.y; const ob = oy.slice(0, cut), oa = oy.slice(cut); did = (wt.mb - wt.ma) - (st.mean(oa) - st.mean(ob)); }
+    out.imp = { title: 'قياس الأثر — هل تغيّر شيء بعد التاريخ المحدد؟', summary: `قبل ${lab[cut]}: ${fmtN(wt.ma)} · بعده: ${fmtN(wt.mb)} (${fmtP(pctCh(wt.ma, wt.mb))}). الفرق ${wt.p < 0.05 ? 'ذو دلالة إحصائية' : 'غير دال إحصائيًا'} (p=${fmtPv(wt.p)}، حجم الأثر d=${fmtN(wt.d, 2)}).${did !== null ? ` مقارنة بالمتوسط العام في الفترة نفسها، الأثر الصافي على «${focus}» = ${(did >= 0 ? '+' : '') + fmtN(did)}.` : ''}`,
+      kpis: [['قبل', fmtN(wt.ma)], ['بعد', fmtN(wt.mb)], ['الدلالة p', fmtPv(wt.p)], ['حجم الأثر d', fmtN(wt.d, 2)]].concat(did !== null ? [['الأثر الصافي (فرق الفروق)', (did >= 0 ? '+' : '') + fmtN(did), did < 0 ? 'bad' : 'good']] : []),
+      cut: true, notes: ['غيّر «تاريخ التدخل» لقياس أثر أي إجراء نُفّذ. الأثر الصافي يستبعد ما حدث للجميع في الفترة نفسها.'] };
+  }
+  return { out, ctx, groups };
+}
+
+/* ---------- feasibility (inputs editable) ---------- */
+function anFeasDefaults(T, cfg) {
+  const f = {};
+  const find = (re) => T.cols.find(c => c.type === 'num' && re.test(c.name));
+  const rev = find(/مبيعات|sales|إيراد|revenue/i), cost = find(/تكلفة|cost|مصروف|expense/i);
+  const monthly = (() => { const s = cfg.date ? anSeries(T, cfg, cfg.target, 'all').keys : []; return s.length && s.every(k => k.endsWith('-01')); })();
+  const annual = (col) => { if (!col) return null; const s = anSeries(T, cfg, col.name, cfg.focus || 'all').y.filter(v => v !== null); const last = s.slice(-12); return Math.round(st.mean(last) * (monthly ? 12 : 1)); };
+  f.rev = annual(rev) || 300000; f.opex = annual(cost) || Math.round(f.rev * 0.7);
+  f.capex = (S.res && S.res.capex) || Math.max(50000, Math.round(f.rev * 0.75 / 1000) * 1000); f.rate = 10; f.years = 5; f.growth = 3; f.src = (rev ? `الإيرادات والتكاليف من «${rev.name}»${cost ? ' و«' + cost.name + '»' : ''}` : 'الإيرادات والتكاليف افتراضية — عدّلها') + ((S.res && S.res.capex) ? '، والاستثمار من طلب التحليل' : '، والاستثمار الأولي تقدير افتراضي (75% من الإيرادات السنوية) — أدخل القيمة الفعلية');
+  return f;
+}
+function anFeasCalc(f) {
+  const cf = [-f.capex]; for (let t = 1; t <= f.years; t++) cf.push(f.rev * (1 + f.growth / 100) ** (t - 1) - f.opex * 1.03 ** (t - 1));
+  const npv = (r) => cf.reduce((s, c, t) => s + c / (1 + r) ** t, 0);
+  let lo = -0.99, hi = 5, irr = NaN; if (npv(lo) * npv(hi) < 0) { for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (npv(lo) * npv(m) <= 0) hi = m; else lo = m; } irr = (lo + hi) / 2 * 100; }
+  let cum = 0, pay = null; for (let t = 0; t < cf.length; t++) { const prevCum = cum; cum += cf[t]; if (pay === null && t > 0 && cum >= 0) pay = t - 1 + (-prevCum) / cf[t]; }
+  const NPV = npv(f.rate / 100), pvIn = NPV + f.capex;
+  const sens = [['الإيرادات −20%', { ...f, rev: f.rev * 0.8 }], ['الإيرادات +20%', { ...f, rev: f.rev * 1.2 }], ['التكاليف +20%', { ...f, opex: f.opex * 1.2 }], ['معدل الخصم +2', { ...f, rate: f.rate + 2 }]].map(([n, g]) => { const c2 = [-g.capex]; for (let t = 1; t <= g.years; t++) c2.push(g.rev * (1 + g.growth / 100) ** (t - 1) - g.opex * 1.03 ** (t - 1)); return [n, c2.reduce((s, c, t) => s + c / (1 + g.rate / 100) ** t, 0)]; });
+  // break-even annual revenue (NPV = 0), by bisection on revenue
+  let a = 0, b = Math.max(f.rev, f.opex) * 4 + f.capex; const nv = (rv) => { let s = -f.capex; for (let t = 1; t <= f.years; t++) s += (rv * (1 + f.growth / 100) ** (t - 1) - f.opex * 1.03 ** (t - 1)) / (1 + f.rate / 100) ** t; return s; };
+  for (let i = 0; i < 100; i++) { const m = (a + b) / 2; if (nv(m) < 0) a = m; else b = m; }
+  return { cf, NPV, irr, pay, pi: f.capex ? pvIn / f.capex : NaN, be: (a + b) / 2, sens, ok: NPV > 0 && (!isFinite(irr) || irr > f.rate) };
+}
+function anFeas(T, cfg) {
+  const f = Object.assign(anFeasDefaults(T, cfg), (S.res && S.res.feas) || {});
+  const r = anFeasCalc(f), cur = (S.res && S.res.currency) || '';
+  return { title: 'دراسة الجدوى الاقتصادية — هل المشروع مجدٍ؟', feas: f, summary: `${r.ok ? 'مجدٍ اقتصاديًا وفق الافتراضات' : 'غير مجدٍ وفق الافتراضات الحالية'}: صافي القيمة الحالية ${fmtN(r.NPV, 0)}${cur ? " " + cur : ""}، ومعدل العائد الداخلي ${isFinite(r.irr) ? fmtN(r.irr, 1) + '%' : 'غير محدد'} مقابل معدل خصم ${f.rate}%، وفترة الاسترداد ${r.pay !== null ? fmtN(r.pay, 1) + ' سنة' : 'أطول من ' + f.years + ' سنوات'}. الإيرادات السنوية اللازمة للتعادل ≈ ${fmtN(r.be, 0)}.`,
+    kpis: [['صافي القيمة الحالية NPV', fmtN(r.NPV, 0), r.NPV > 0 ? 'good' : 'bad'], ['العائد الداخلي IRR', isFinite(r.irr) ? fmtN(r.irr, 1) + '%' : '—'], ['فترة الاسترداد', r.pay !== null ? fmtN(r.pay, 1) + ' سنة' : '—'], ['مؤشر الربحية', fmtN(r.pi, 2)]],
+    tables: [{ h: 'التدفقات النقدية', cols: ['السنة', 'التدفق', 'التراكمي'], rows: r.cf.map((c, t) => [t, fmtN(c, 0), fmtN(r.cf.slice(0, t + 1).reduce((a, b) => a + b, 0), 0)]) }, { h: 'تحليل الحساسية', cols: ['الحالة', 'صافي القيمة الحالية'], rows: r.sens.map(([a, b]) => [a, fmtN(b, 0)]) }],
+    notes: ['المصادر: ' + f.src + '. التكاليف تنمو 3% سنويًا للتضخم. الأرقام تقديرية للتخطيط وليست ضمانًا.'] };
+}
+
+/* ---------- sample dataset ---------- */
+function anSampleCSV() {
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }, nrm = () => { let s = 0; for (let i = 0; i < 6; i++) s += rnd(); return s - 3; };
+  const br = [['الفرع الشمالي', 0], ['الفرع الجنوبي', 4], ['الفرع الشرقي', 0], ['الفرع الغربي', -2]];
+  const lines = ['الشهر,الفرع,مؤشر_الأداء,المبيعات,التكلفة,ساعات_التدريب,ساعات_العمل_الإضافي,دوران_الموظفين,الشكاوى,رضا_العملاء,زمن_التسليم_بالأيام'];
+  for (let m = 0; m < 24; m++) {
+    const d = new Date(Date.UTC(2024, 10 + m, 1)), key = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+    for (const [b, off] of br) {
+      const north = b === 'الفرع الشمالي' && m >= 16, k = north ? (m - 15) / 8 : 0;
+      const tr = Math.max(1, 8 - 5 * k + nrm() * 0.5), ot = 18 + 22 * k + nrm() * 2.5, dl = 3 + 1.6 * k + nrm() * 0.15, to = 1.2 + 2.2 * k + Math.abs(nrm()) * 0.3;
+      const perf = 64 + 1.8 * tr - 0.15 * ot - 1.5 * (dl - 3) + off + nrm() * 1.2, comp = Math.max(0, Math.round(6 + (dl - 3) * 7 + nrm() * 1.5)), sat = 90 - comp * 0.8 + nrm();
+      lines.push([key, b, perf.toFixed(1), Math.round(perf * 1500 + nrm() * 2000), Math.round(60000 + ot * 800 + nrm() * 1500), tr.toFixed(1), ot.toFixed(1), to.toFixed(1), comp, sat.toFixed(1), dl.toFixed(2)].join(','));
+    }
+  }
+  return lines.join('\n');
+}
+</script>
+<script data-app="">
+/* ================= DIA-ANALYSIS — actual results view =================
+   Upload CSV/XLSX (or use a request attachment / the sample) → all 10 analysis types computed from the data. */
+let AN = null;          // runtime: { T: table, R: anRun result, err }
+let AN_PENDING = null;  // data file captured from the last submitted request { file, types, capex, currency, ref }
+const AN_SRC = { sample: 'بيانات تجريبية', upload: 'ملف مرفوع', request: 'مرفق طلب تحليل' };
+const AN_DATA_RE = /\.(csv|xlsx|tsv|txt)$/i;
+
+function anRowsToCSV(rows) { return rows.map(r => r.map(v => { v = String(v ?? ''); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\n'); }
+function anCompute() {
+  if (!AN || !AN.T || !S.res) return;
+  try { AN.R = anRun(AN.T, S.res.cfg); AN.err = null; }
+  catch (e) { console.error(e); AN.R = null; AN.err = 'تعذّر الحساب بهذا الإعداد: ' + (e && e.message ? e.message : e); }
+}
+function anEnsure() {
+  if (AN && AN.T) return true;
+  const r = S.res; if (!r) return false;
+  const text = r.src && r.src.kind === 'sample' ? anSampleCSV() : r.csv;
+  if (!text) return false;
+  try { AN = { T: anTable(anParseCSV(text)) }; anCompute(); return true; } catch (e) { AN = null; return false; }
+}
+function anLoad(rows, name, kind, opt = {}) {
+  const T = anTable(rows), d = anDefaults(T);
+  if (!d.target) throw new Error('لم يُعثر على عمود رقمي في الملف — يلزم عمود رقمي واحد على الأقل (مثل المبيعات أو مؤشر الأداء).');
+  const valid = AN_TYPES.map(t => t[0]);
+  const types = (opt.types && opt.types.length ? opt.types : valid).filter(t => valid.includes(t));
+  const csv = kind === 'sample' ? null : anRowsToCSV(rows);
+  S.res = { src: { name, kind, ref: opt.ref || '', n: T.n, at: nowTime() }, csv: csv && csv.length < 200000 ? csv : null, big: !!(csv && csv.length >= 200000),
+    cfg: { ...d, focus: 'all', types: types.length ? types : valid, cut: null }, feas: {}, capex: anNum(opt.capex) || null, currency: opt.currency || '' };
+  AN = { T }; anCompute();
+  log('د. عدنان', `شغّل التحليل الفعلي على «${name}» — ${T.n} سجل، ${S.res.cfg.types.length} أنواع تحليل${opt.ref ? ' (' + opt.ref + ')' : ''}`);
+  return T;
+}
+async function anLoadFile(file, opt = {}) {
+  if (!file) return;
+  if (file.size > 15 * 1048576) { toast('الملف أكبر من 15MB — قسّمه أو احفظه CSV'); return; }
+  toast('جارٍ قراءة البيانات…');
+  try {
+    const { name, rows } = await anReadFile(file);
+    const T = anLoad(rows, name, opt.ref ? 'request' : 'upload', opt);
+    toast(`قُرئ ${T.n} سجل · ${T.cols.length} عمود`);
+    if (S.route !== 'results') go('results'); else { render(); window.scrollTo(0, 0); }
+  } catch (e) { console.error(e); toast(e && e.message ? e.message : 'تعذّرت قراءة الملف'); }
+}
+function anCapture(r, ref) {
+  const f = (r.files || []).find(x => AN_DATA_RE.test(x.n) && RQ_FILE_OBJ[x.key]);
+  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref } : null;
+}
+
+/* ---------- rendering helpers ---------- */
+const anTone = (t) => t === 'good' ? 'var(--greenfg)' : t === 'bad' ? 'var(--redsoft)' : 'var(--fg)';
+const anIsNum = (v) => /^[<>≈]?[-+−]?[\d,]*\.?\d+%?$/.test(String(v).trim());
+const anRich = (t) => String(t ?? '').split(/((?:[rpdF]=|R²=)?[<>≈]?[-+−]?\d[\d,]*(?:\.\d+)?%?)/).map((p, i) => i % 2 ? `<bdi dir="ltr">${esc(p)}</bdi>` : esc(p)).join('');
+const anKpis = (k) => k && k.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">${k.map(([l, v, t]) => `<div class="kpi" style="padding:12px 14px;gap:4px"><span class="lbl">${esc(l)}</span><span class="v" dir="auto" style="font-size:19px;color:${anTone(t)};overflow-wrap:anywhere;text-align:right">${esc(v)}</span></div>`).join('')}</div>` : '';
+const anTbl = (t) => `<div class="stack" style="gap:6px"><span class="lbl">${esc(t.h)}</span>${t.rows.length ? `<div class="tbl-wrap"><table><thead><tr>${t.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map(v => `<td${anIsNum(v) ? ' class="mono" dir="ltr" style="font-size:12.5px;text-align:right"' : ' style="font-size:12.5px"'}>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<span class="faint" style="font-size:12.5px">لا توجد عناصر لعرضها من البيانات الحالية.</span>'}</div>`;
+function anChart(ch) {
+  if (!ch) return '';
+  if (ch.bars) {
+    const vs = ch.bars.map(b => b[1]), mx = Math.max(...vs), mn = Math.min(...vs), base = mn - (mx - mn || Math.abs(mx) || 1) * 0.6;
+    return `<div class="stack" style="gap:7px">${ch.bars.map(([g, v], i) => `<div class="row nowrap" style="gap:10px"><span style="min-width:120px;max-width:40%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g)}</span><div style="flex:1;height:10px;border-radius:5px;background:var(--sunk);overflow:hidden"><div style="width:${Math.max(3, (v - base) / ((mx - base) || 1) * 100).toFixed(1)}%;height:100%;border-radius:5px;background:${i === 0 ? 'var(--green)' : i === ch.bars.length - 1 ? 'var(--red)' : 'var(--line3)'}"></div></div><span class="mono" style="min-width:58px;text-align:left;font-size:12px">${fmtN(v)}</span></div>`).join('')}</div>`;
+  }
+  const W = 720, H = 230, pl = 52, pr = 14, pt = 12, pb = 30, N = ch.lab.length;
+  const fin = (v) => v !== null && v !== undefined && isFinite(v);
+  const all = [...ch.series.flatMap(s => s.y), ...(ch.extra || []).flatMap(s => s.y), ...(ch.fc ? [...ch.fc.lo, ...ch.fc.hi] : [])].filter(fin);
+  if (!all.length) return '';
+  let lo = Math.min(...all), hi = Math.max(...all); if (hi === lo) { hi += 1; lo -= 1; } const pv = (hi - lo) * 0.08; lo -= pv; hi += pv;
+  const X = (i) => pl + (N > 1 ? i * (W - pl - pr) / (N - 1) : 0), Y = (v) => pt + (hi - v) / (hi - lo) * (H - pt - pb);
+  const path = (ys, off = 0) => ys.map((v, i) => fin(v) ? [X(i + off), Y(v)] : null).filter(Boolean).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtN(v)}</text>`; }
+  const step = Math.max(1, Math.ceil(N / 6));
+  for (let i = 0; i < N; i += step) g += `<text x="${X(i).toFixed(1)}" y="${H - 9}" text-anchor="middle">${esc(ch.lab[i])}</text>`;
+  if (ch.fc) {
+    const f = ch.fc, y0 = ch.series[0].y[f.from], x0 = X(f.from);
+    const up = [[x0, Y(y0)], ...f.hi.map((v, i) => [X(f.from + 1 + i), Y(v)])], dn = [...f.lo.map((v, i) => [X(f.from + 1 + i), Y(v)])].reverse().concat([[x0, Y(y0)]]);
+    g += `<polygon points="${up.concat(dn).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" style="fill:rgba(255,205,17,.13);stroke:none"/>`;
+    g += `<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${pt}" y2="${H - pb}" style="stroke:var(--line3);stroke-dasharray:3 4"/>`;
+    g += `<path d="${path([y0, ...f.y], f.from)}" style="fill:none;stroke:var(--yellow);stroke-width:2.2;stroke-dasharray:6 5"/>`;
+  }
+  (ch.extra || []).forEach(s => { g += `<path d="${path(s.y)}" style="fill:none;stroke:${s.c};stroke-width:1.6;opacity:.75"/>`; });
+  ch.series.forEach(s => { g += `<path d="${path(s.y)}" style="fill:none;stroke:${s.c};stroke-width:2.4;stroke-linejoin:round"/>`; const li = s.y.length - 1; if (fin(s.y[li])) g += `<circle cx="${X(li).toFixed(1)}" cy="${Y(s.y[li]).toFixed(1)}" r="3.6" style="fill:${s.c}"/>`; });
+  const leg = [...ch.series, ...(ch.extra || [])].map(s => [s.c, s.n]).concat(ch.fc ? [['var(--yellow)', 'التوقع'], ['rgba(255,205,17,.35)', 'نطاق الثقة 95%']] : []);
+  return `<div class="stack" style="gap:6px"><svg class="chart an-chart" viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="رسم بياني">${g}</svg>
+    <div class="row" style="gap:12px;font-size:11.5px">${leg.map(([c, n]) => `<span class="row nowrap" style="gap:5px"><span style="width:14px;height:3px;border-radius:2px;background:${c}"></span><span class="faint">${esc(n)}</span></span>`).join('')}</div></div>`;
+}
+const anSelStyle = 'min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:0 10px;width:100%';
+const anSel = (k, label, opts, val) => `<label class="stack" style="gap:5px"><span class="lbl">${label}</span><select data-an-cfg="${k}" style="${anSelStyle}">${opts.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(val ?? '') ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+const AN_FEAS_IN = [['capex', 'الاستثمار الأولي'], ['rev', 'الإيرادات السنوية'], ['opex', 'التكاليف التشغيلية السنوية'], ['rate', 'معدل الخصم %'], ['years', 'عمر المشروع (سنوات)'], ['growth', 'نمو الإيرادات السنوي %']];
+function anFeasInputs(f) {
+  return `<div class="sub" style="gap:10px"><div class="row between"><span class="lbl">افتراضات الدراسة — عدّلها وتُعاد الحسابات فورًا</span>
+    <select data-an-cur="1" aria-label="العملة" style="min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 8px"><option value="">بدون عملة</option>${(typeof RQ_CURRENCY !== 'undefined' ? RQ_CURRENCY : []).map(([c, n]) => `<option value="${c}" ${S.res.currency === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">${AN_FEAS_IN.map(([k, l]) => `<label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">${l}</span><input type="text" inputmode="decimal" dir="ltr" style="text-align:right" data-anf="${k}" value="${esc(String(Math.round(f[k] * 100) / 100))}"></label>`).join('')}</div></div>`;
+}
+function anBody(id, o) {
+  const c = AN.R.ctx;
+  let cut = '';
+  if (o.cut && c.keys.length > 4) {
+    const def = Math.max(2, Math.floor(c.n * 2 / 3)), cur = S.res.cfg.cut && c.keys.includes(S.res.cfg.cut) ? S.res.cfg.cut : c.keys[def];
+    cut = `<div style="max-width:320px">${anSel('cut', 'تاريخ التدخل (بداية فترة «بعد»)', c.keys.slice(2, -1).map((k, i) => [k, c.lab[i + 2]]), cur)}</div>`;
+  }
+  return `<p style="font-size:14px;line-height:1.95;color:var(--fg2)">${anRich(o.summary)}</p>${anKpis(o.kpis)}${anChart(o.chart)}${cut}${(o.tables || []).map(anTbl).join('')}${(o.notes || []).map(n => `<p class="faint" style="font-size:11.5px;line-height:1.7">ⓘ ${esc(n)}</p>`).join('')}`;
+}
+function anSecHTML(id, o) {
+  const lbl = (AN_TYPES.find(t => t[0] === id) || [, id])[1];
+  return `<section class="card" id="an-sec-${id}" style="gap:12px"><div class="row between nowrap" style="gap:10px;align-items:flex-start"><h2 class="h-sec">${esc(o.title)}</h2><span class="tag t-i" style="flex-shrink:0">${lbl}</span></div>
+    ${id === 'feas' ? anFeasInputs(o.feas) : ''}<div id="an-body-${id}" class="stack" style="gap:12px">${anBody(id, o)}</div></section>`;
+}
+
+VIEWS.results = () => {
+  const r = S.res, has = !!r && anEnsure(), R = has && AN.R;
+  const exp = R ? `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button></div>` : '';
+  const head = `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">DIA-ANALYSIS · محسوبة من بياناتك مباشرة</span>${exp}</div>
+    <h2 class="title-xl" style="font-size:24px">نتائج التحليل الفعلية</h2>
+    <p class="lead" style="font-size:14px;line-height:1.8">ارفع ملف بيانات (CSV أو Excel) فيحسب النظام أنواع التحليل العشرة من أرقامك: الإحصاءات، والعوامل المرتبطة بالتغير، والتنبؤ، والسيناريوهات، والجدوى، والمخاطر، والفرص، والإجراءات، والمقارنة، وقياس الأثر. الشروحات مولّدة من الأرقام بقواعد ثابتة، وكل رقم قابل للتتبع إلى البيانات.</p></section>`;
+  const src = `<section class="card" style="gap:12px">
+    <div class="row between"><h2 class="h-sec">مصدر البيانات</h2>${r ? `<span class="chip" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.src.name)}</span>` : ''}</div>
+    <div class="row" style="gap:8px">
+      <label class="btn primary" style="cursor:pointer;position:relative">${ic('clip', 16)}${r ? 'رفع ملف آخر' : 'رفع ملف CSV أو Excel'}<input type="file" data-an-upload="1" accept=".csv,.xlsx,.tsv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer"></label>
+      <button type="button" class="btn" data-act="an-sample">${ic('play', 16)}تشغيل على بيانات تجريبية</button>
+      <button type="button" class="btn link" data-act="an-sample-dl">تنزيل ملف العينة</button>
+      ${r ? '<button type="button" class="btn link" data-act="an-reset">مسح</button>' : ''}
+    </div>
+    ${r ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${[['المصدر', AN_SRC[r.src.kind] + (r.src.ref ? ' · ' + r.src.ref : '')], ['السجلات', fmtN(r.src.n, 0)], ['الأعمدة', has ? AN.T.cols.length : '—'], ['وقت التشغيل', r.src.at]].map(([l, v]) => `<div class="sub" style="background:var(--sunk);gap:3px"><span class="lbl">${l}</span><b style="font-size:13.5px">${esc(v)}</b></div>`).join('')}</div>` : ''}
+    ${r && !has ? `<div class="banner y" style="font-size:13px">${ic('warn', 16)}<span>${r.big ? 'الملف كبير فلم يُحفظ في المتصفح بعد إغلاق الصفحة' : 'تعذّر استرجاع البيانات'} — أعد رفع الملف لعرض النتائج.</span></div>` : ''}
+    ${!r ? `<div class="sub" style="gap:6px"><b style="font-size:13px">شكل الملف المناسب</b>
+      ${['الصف الأول عناوين الأعمدة، وكل صف بعده سجل واحد (شهر، أو شهر × فرع…).', 'عمود تاريخ أو فترة (مثل 2026-01) لتفعيل التنبؤ وقياس الأثر.', 'عمود تصنيف اختياري (فرع، قسم، منتج) لتفعيل المقارنة.', 'أعمدة رقمية: المؤشر المستهدف والعوامل التي قد تؤثر فيه (تدريب، تكلفة، شكاوى…).'].map(t => `<span class="soft" style="font-size:12.5px">• ${t}</span>`).join('')}
+      <span class="faint" style="font-size:11.5px">يُقرأ الملف داخل متصفحك فقط ولا يُرسل إلى أي خدمة خارجية.</span></div>` : ''}
+  </section>`;
+  if (!has) return head + src;
+  const T = AN.T, cfg = r.cfg;
+  const nums = T.cols.filter(c => c.type === 'num'), dates = T.cols.filter(c => c.type === 'date'), cats = T.cols.filter(c => c.type === 'cat' && c.uniq >= 2 && c.uniq <= 40);
+  const gi = T.head.indexOf(cfg.group), groups = gi >= 0 ? [...new Set(T.body.map(x => x[gi]).filter(Boolean))] : [];
+  const TYPEN = { num: 'رقمي', date: 'تاريخ', cat: 'تصنيفي' };
+  const conf = `<section class="card" style="gap:12px">
+    <div class="row between"><h2 class="h-sec">إعداد التحليل</h2><span class="faint" style="font-size:12px">اكتُشفت الأعمدة تلقائيًا — عدّلها إن لزم</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${anSel('target', 'المؤشر المستهدف', nums.map(c => [c.name, c.name]), cfg.target)}
+      ${anSel('date', 'عمود التاريخ / الفترة', [['', 'بدون — ترتيب الصفوف']].concat(dates.map(c => [c.name, c.name])), cfg.date)}
+      ${anSel('group', 'عمود التصنيف (فرع، قسم…)', [['', 'بدون']].concat(cats.map(c => [c.name, c.name])), cfg.group)}
+      ${anSel('focus', 'نطاق التحليل', [['all', groups.length ? 'الكل (المتوسط)' : 'البيانات كاملة']].concat(groups.map(g => [g, g])), cfg.focus)}
+    </div>
+    <div class="stack" style="gap:6px"><span class="lbl">أنواع التحليل (${cfg.types.length} من ${AN_TYPES.length})</span>
+      <div class="row" style="gap:6px">${AN_TYPES.map(([id, l]) => { const on = cfg.types.includes(id); return `<button type="button" class="chip" data-act="an-type" data-k="${id}" aria-pressed="${on}" style="${on ? 'background:rgba(255,46,77,.14);border-color:var(--redline);color:#fff' : ''}">${on ? ic('check', 13, 'style="color:var(--red)"') : ''}${l}</button>`; }).join('')}
+      <button type="button" class="btn link sm" data-act="an-all">${cfg.types.length === AN_TYPES.length ? 'نوع واحد' : 'الكل'}</button></div></div>
+    <details><summary class="faint" style="cursor:pointer;font-size:12.5px">الأعمدة المكتشفة (${T.cols.length})</summary>
+      <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>العمود</th><th>النوع</th><th>قيم مختلفة</th><th>الناقص</th></tr></thead><tbody>${T.cols.map(c => `<tr><td style="font-size:12.5px">${esc(c.name)}</td><td><span class="tag ${c.type === 'num' ? 't-i' : c.type === 'date' ? 't-m' : 't-n'}">${TYPEN[c.type]}</span></td><td class="mono" style="font-size:12px">${c.uniq}</td><td class="mono" style="font-size:12px">${c.missing}</td></tr>`).join('')}</tbody></table></div></details>
+  </section>`;
+  if (!R) return head + src + conf + `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>`;
+  const c = R.ctx, gate = { good: ['t-s', 'var(--greenfg)'], warn: ['t-m', 'var(--yellow)'], low: ['t-c', 'var(--redsoft)'] }[c.gate[0]];
+  const worst = cfg.focus === 'all' ? [...c.groupStats].filter(s => isFinite(s.ch)).sort((a, b) => a.ch - b.ch)[0] : null;
+  const status = `<section class="card" style="gap:10px"><div class="row between" style="gap:10px"><div class="row nowrap" style="gap:10px"><span class="tag ${gate[0]}">${c.gate[0] === 'good' ? 'بوابة الجودة: مقبولة' : c.gate[0] === 'warn' ? 'بوابة الجودة: تحذير' : 'بوابة الجودة: بيانات غير كافية'}</span><span style="font-size:13px;color:${gate[1]}">${esc(c.gate[1])}</span></div><span class="mono faint" style="font-size:12px">الثقة ${c.conf}% · ${c.n} فترة · النطاق: ${esc(c.focusName)}</span></div>
+    ${worst && worst.ch < -3 ? `<div class="row between sub" style="gap:10px"><span style="font-size:13px">${ic('warn', 15, 'style="color:var(--orange)"')} أكبر تراجع في آخر الفترات: <b>«${esc(worst.g)}»</b> (<bdi dir="ltr">${fmtP(worst.ch)}</bdi>). التحليل المركّز عليه يكشف أسبابه.</span><button type="button" class="btn sm" data-act="an-focus" data-k="${esc(worst.g)}">حلّل «${esc(worst.g)}»</button></div>` : ''}
+    ${cfg.focus !== 'all' ? `<div class="row" style="gap:8px"><span class="faint" style="font-size:12.5px">تعرض النتائج «${esc(cfg.focus)}» فقط.</span><button type="button" class="btn link sm" data-act="an-focus" data-k="all">عرض الكل</button></div>` : ''}</section>`;
+  const secs = AN_TYPES.filter(([id]) => cfg.types.includes(id) && R.out[id]).map(([id]) => anSecHTML(id, R.out[id])).join('');
+  return head + src + conf + status + secs;
+};
+
+/* ---------- export ---------- */
+function anReport(fmt) {
+  const r = S.res, R = AN.R, c = R.ctx, notes = [];
+  const val = (v) => { if (fmt === 'xlsx' && /^-?[\d,]*\.?\d+$/.test(String(v))) { const n = Number(String(v).replace(/,/g, '')); if (isFinite(n)) return n; } return String(v); };
+  const sections = [{ h: 'مصدر البيانات والإعداد', kv: [['الملف', r.src.name], ['المصدر', AN_SRC[r.src.kind] + (r.src.ref ? ' · ' + r.src.ref : '')], ['عدد السجلات', fmtN(r.src.n, 0)], ['المؤشر المستهدف', r.cfg.target], ['نطاق التحليل', c.focusName], ['عمود التاريخ', r.cfg.date || '—'], ['عمود التصنيف', r.cfg.group || '—'], ['بوابة الجودة', c.gate[1]], ['مستوى الثقة', c.conf + '%'], ['طريقة الشرح', 'مولّد من الأرقام بقواعد ثابتة؛ لا يُستخدم نموذج لغوي في الحساب']] }];
+  AN_TYPES.filter(([id]) => r.cfg.types.includes(id) && R.out[id]).forEach(([id, lbl]) => {
+    const o = R.out[id];
+    sections.push({ h: o.title, text: o.summary });
+    if (o.kpis && o.kpis.length) sections.push({ h: lbl + ' · المؤشرات', kv: o.kpis.map(k => [k[0], String(k[1])]) });
+    (o.tables || []).forEach(t => sections.push({ h: lbl + ' · ' + t.h, cols: t.cols, rows: t.rows.map(row => row.map(val)) }));
+    (o.notes || []).forEach(n => notes.push(lbl + ': ' + n));
+  });
+  if (notes.length) sections.push({ h: 'ملاحظات منهجية', bullets: notes });
+  return { code: 'ANALYSIS', title: 'نتائج التحليل الفعلية — ' + r.src.name, audience: 'الإدارة وصاحب القرار', ref: 'DIA-ANALYSIS', sections };
+}
+async function anExport(fmt) {
+  if (!AN || !AN.R) return;
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const rep = anReport(fmt);
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    log('د. عدنان', `صدّر نتائج التحليل الفعلية لـ «${S.res.src.name}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    await saveFile(`NAIOSH_DIA-ANALYSIS_${expToday()}.${fmt}`, blob);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
+
+/* ---------- events ---------- */
+function analyticsHandle(act, k, el) {
+  if (!act || !/^an-/.test(act)) return false;
+  switch (act) {
+    case 'an-sample': { const T = anLoad(anParseCSV(anSampleCSV()), 'بيانات_تجريبية_الفروع.csv', 'sample'); toast(`شُغّل التحليل على ${T.n} سجل تجريبي`); if (S.route !== 'results') go('results'); else render(); return true; }
+    case 'an-sample-dl': saveFile('NAIOSH_sample_data.csv', new Blob(['﻿' + anSampleCSV()], { type: 'text/csv;charset=utf-8' })); return true;
+    case 'an-reset': S.res = null; AN = null; render(); toast('مُسحت بيانات التحليل'); return true;
+    case 'an-type': { const t = S.res.cfg.types, i = t.indexOf(k); if (i >= 0) { if (t.length === 1) { toast('اختر نوع تحليل واحدًا على الأقل'); return true; } t.splice(i, 1); } else t.push(k); anCompute(); render(); return true; }
+    case 'an-all': S.res.cfg.types = S.res.cfg.types.length === AN_TYPES.length ? ['desc'] : AN_TYPES.map(t => t[0]); anCompute(); render(); return true;
+    case 'an-focus': S.res.cfg.focus = k || 'all'; anCompute(); render(); window.scrollTo(0, 0); return true;
+    case 'an-pdf': anExport('pdf'); return true;
+    case 'an-xlsx': anExport('xlsx'); return true;
+    case 'an-req': if (AN_PENDING) anLoadFile(AN_PENDING.file, AN_PENDING); else go('results'); return true;
+    case 'an-srv': {
+      const d = el.dataset; toast('جارٍ جلب الملف…');
+      fetch('/api/files/' + encodeURIComponent(k), { credentials: 'same-origin' })
+        .then(res => { if (!res.ok) throw new Error('تعذّر جلب الملف (' + res.status + ')'); return res.blob(); })
+        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref }))
+        .catch(e => toast(e.message));
+      return true;
+    }
+  }
+  return false;
+}
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset) return;
+  if (el.dataset.anUpload) { const f = el.files && el.files[0]; el.value = ''; if (f) anLoadFile(f); return; }
+  if (el.dataset.anCfg && S.res) {
+    const k = el.dataset.anCfg, cfg = S.res.cfg; cfg[k] = el.value || (k === 'focus' ? 'all' : null);
+    if (k === 'group') cfg.focus = 'all';
+    if (k === 'date') cfg.cut = null;
+    anCompute(); render(); return;
+  }
+  if (el.dataset.anCur && S.res) { S.res.currency = el.value; anFeasRefresh(); }
+});
+function anFeasRefresh() {
+  if (!AN || !AN.R || !S.res.cfg.types.includes('feas')) return;
+  AN.R.out.feas = anFeas(AN.T, S.res.cfg);
+  const b = document.getElementById('an-body-feas'); if (b) b.innerHTML = anBody('feas', AN.R.out.feas);
+  save();
+}
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.anf || !S.res) return;
+  let v = anNum(el.value); if (v === null) return;
+  const k = el.dataset.anf;
+  if (k === 'years') v = Math.max(1, Math.min(30, Math.round(v)));
+  if (k === 'rate') v = Math.max(0, Math.min(100, v));
+  S.res.feas[k] = v; anFeasRefresh();
+});
+</script>
+<script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
    Sign-in, shared settings, per-user progress, real uploads, decision ledger and audit trail. */
 window.SERVER_ROUTES = new Set(['inbox', 'users', 'account']);
@@ -3134,7 +3751,7 @@ function svDetail(q) {
   <div class="card" style="gap:10px"><h3 class="h-sec">المرفقات (${q.files.length})</h3>
     ${q.files.length ? q.files.map(f => f.kind === 'video' && /^video\/(mp4|webm|quicktime)$/.test(f.mime)
       ? `<div class="stack" style="gap:6px"><video controls preload="metadata" src="/api/files/${f.id}?inline=1" style="width:100%;border-radius:10px;background:#000;max-height:280px"></video><a class="btn sm" href="/api/files/${f.id}" download>${ic('play', 14)}${esc(f.name)} · ${fmtSize(f.size)}</a></div>`
-      : `<a class="list-btn" href="/api/files/${f.id}" download style="align-items:center">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
+      : `<div class="row nowrap" style="gap:6px"><a class="list-btn" href="/api/files/${f.id}" download style="align-items:center;flex:1;min-width:0">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>${AN_DATA_RE.test(f.name) ? `<button type="button" class="btn sm primary" style="flex-shrink:0" data-act="an-srv" data-k="${esc(f.id)}" data-n="${esc(f.name)}" data-t="${esc((p.types || []).join(','))}" data-c="${esc(p.capex || '')}" data-cur="${esc(p.currency || '')}" data-ref="${esc(q.ref)}">${ic('chart', 14)}تحليل هذا الملف</button>` : ''}</div>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
   </div>
   ${SV.canManage ? `<form class="card" id="sv-status-form" style="gap:10px"><h3 class="h-sec">تحديث الحالة</h3>
     <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
@@ -3294,7 +3911,7 @@ async function serverSubmitRequest(r, c, dom) {
     S.requests = [mapReq(d.request), ...(S.requests || []).filter(q => q.ref !== ref)];
     S.audit.unshift({ t: nowTime(), who: 'المنسّق', what: `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, kind: 'sys' }, { t: nowTime(), who: ME.name, what: `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`, kind: 'user' });
     S.audit = S.audit.slice(0, 300);
-    S.reqDone = ref; S.req = freshReq();
+    anCapture(r, ref); S.reqDone = ref; S.req = freshReq();
     Object.keys(RQ_FILE_OBJ).forEach(k => delete RQ_FILE_OBJ[k]);
     Object.keys(RQ_VIDEO_URLS).forEach(k => { try { URL.revokeObjectURL(RQ_VIDEO_URLS[k]); } catch (e) {} delete RQ_VIDEO_URLS[k]; });
     toast('أُرسل الطلب ' + ref + (ids.length ? ' مع ' + ids.length + ' مرفق' : ''));
@@ -3644,7 +4261,7 @@ function render() {
   renderSide(); renderTop();
   const side = document.getElementById('side'), top = document.getElementById('top');
   side.innerHTML = brandify(side.innerHTML); top.innerHTML = brandify(top.innerHTML);
-  document.getElementById('view').innerHTML = R === 'settings' ? VIEWS.settings() : brandify(VIEWS[R]());
+  document.getElementById('view').innerHTML = R === 'settings' || R === 'results' ? VIEWS[R]() : brandify(VIEWS[R]());
   document.getElementById('app').classList.toggle('open', S.menu);
   document.getElementById('app').classList.toggle('touring', S.tour.on);
   renderTour(); const tr = document.getElementById('tour'); tr.innerHTML = brandify(tr.innerHTML); save();
@@ -3708,7 +4325,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!analyticsHandle(act, k, el) && !engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

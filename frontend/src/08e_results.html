@@ -1,0 +1,233 @@
+<script data-app="">
+/* ================= DIA-ANALYSIS — actual results view =================
+   Upload CSV/XLSX (or use a request attachment / the sample) → all 10 analysis types computed from the data. */
+let AN = null;          // runtime: { T: table, R: anRun result, err }
+let AN_PENDING = null;  // data file captured from the last submitted request { file, types, capex, currency, ref }
+const AN_SRC = { sample: 'بيانات تجريبية', upload: 'ملف مرفوع', request: 'مرفق طلب تحليل' };
+const AN_DATA_RE = /\.(csv|xlsx|tsv|txt)$/i;
+
+function anRowsToCSV(rows) { return rows.map(r => r.map(v => { v = String(v ?? ''); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\n'); }
+function anCompute() {
+  if (!AN || !AN.T || !S.res) return;
+  try { AN.R = anRun(AN.T, S.res.cfg); AN.err = null; }
+  catch (e) { console.error(e); AN.R = null; AN.err = 'تعذّر الحساب بهذا الإعداد: ' + (e && e.message ? e.message : e); }
+}
+function anEnsure() {
+  if (AN && AN.T) return true;
+  const r = S.res; if (!r) return false;
+  const text = r.src && r.src.kind === 'sample' ? anSampleCSV() : r.csv;
+  if (!text) return false;
+  try { AN = { T: anTable(anParseCSV(text)) }; anCompute(); return true; } catch (e) { AN = null; return false; }
+}
+function anLoad(rows, name, kind, opt = {}) {
+  const T = anTable(rows), d = anDefaults(T);
+  if (!d.target) throw new Error('لم يُعثر على عمود رقمي في الملف — يلزم عمود رقمي واحد على الأقل (مثل المبيعات أو مؤشر الأداء).');
+  const valid = AN_TYPES.map(t => t[0]);
+  const types = (opt.types && opt.types.length ? opt.types : valid).filter(t => valid.includes(t));
+  const csv = kind === 'sample' ? null : anRowsToCSV(rows);
+  S.res = { src: { name, kind, ref: opt.ref || '', n: T.n, at: nowTime() }, csv: csv && csv.length < 200000 ? csv : null, big: !!(csv && csv.length >= 200000),
+    cfg: { ...d, focus: 'all', types: types.length ? types : valid, cut: null }, feas: {}, capex: anNum(opt.capex) || null, currency: opt.currency || '' };
+  AN = { T }; anCompute();
+  log('د. عدنان', `شغّل التحليل الفعلي على «${name}» — ${T.n} سجل، ${S.res.cfg.types.length} أنواع تحليل${opt.ref ? ' (' + opt.ref + ')' : ''}`);
+  return T;
+}
+async function anLoadFile(file, opt = {}) {
+  if (!file) return;
+  if (file.size > 15 * 1048576) { toast('الملف أكبر من 15MB — قسّمه أو احفظه CSV'); return; }
+  toast('جارٍ قراءة البيانات…');
+  try {
+    const { name, rows } = await anReadFile(file);
+    const T = anLoad(rows, name, opt.ref ? 'request' : 'upload', opt);
+    toast(`قُرئ ${T.n} سجل · ${T.cols.length} عمود`);
+    if (S.route !== 'results') go('results'); else { render(); window.scrollTo(0, 0); }
+  } catch (e) { console.error(e); toast(e && e.message ? e.message : 'تعذّرت قراءة الملف'); }
+}
+function anCapture(r, ref) {
+  const f = (r.files || []).find(x => AN_DATA_RE.test(x.n) && RQ_FILE_OBJ[x.key]);
+  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref } : null;
+}
+
+/* ---------- rendering helpers ---------- */
+const anTone = (t) => t === 'good' ? 'var(--greenfg)' : t === 'bad' ? 'var(--redsoft)' : 'var(--fg)';
+const anIsNum = (v) => /^[<>≈]?[-+−]?[\d,]*\.?\d+%?$/.test(String(v).trim());
+const anRich = (t) => String(t ?? '').split(/((?:[rpdF]=|R²=)?[<>≈]?[-+−]?\d[\d,]*(?:\.\d+)?%?)/).map((p, i) => i % 2 ? `<bdi dir="ltr">${esc(p)}</bdi>` : esc(p)).join('');
+const anKpis = (k) => k && k.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">${k.map(([l, v, t]) => `<div class="kpi" style="padding:12px 14px;gap:4px"><span class="lbl">${esc(l)}</span><span class="v" dir="auto" style="font-size:19px;color:${anTone(t)};overflow-wrap:anywhere;text-align:right">${esc(v)}</span></div>`).join('')}</div>` : '';
+const anTbl = (t) => `<div class="stack" style="gap:6px"><span class="lbl">${esc(t.h)}</span>${t.rows.length ? `<div class="tbl-wrap"><table><thead><tr>${t.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map(v => `<td${anIsNum(v) ? ' class="mono" dir="ltr" style="font-size:12.5px;text-align:right"' : ' style="font-size:12.5px"'}>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<span class="faint" style="font-size:12.5px">لا توجد عناصر لعرضها من البيانات الحالية.</span>'}</div>`;
+function anChart(ch) {
+  if (!ch) return '';
+  if (ch.bars) {
+    const vs = ch.bars.map(b => b[1]), mx = Math.max(...vs), mn = Math.min(...vs), base = mn - (mx - mn || Math.abs(mx) || 1) * 0.6;
+    return `<div class="stack" style="gap:7px">${ch.bars.map(([g, v], i) => `<div class="row nowrap" style="gap:10px"><span style="min-width:120px;max-width:40%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g)}</span><div style="flex:1;height:10px;border-radius:5px;background:var(--sunk);overflow:hidden"><div style="width:${Math.max(3, (v - base) / ((mx - base) || 1) * 100).toFixed(1)}%;height:100%;border-radius:5px;background:${i === 0 ? 'var(--green)' : i === ch.bars.length - 1 ? 'var(--red)' : 'var(--line3)'}"></div></div><span class="mono" style="min-width:58px;text-align:left;font-size:12px">${fmtN(v)}</span></div>`).join('')}</div>`;
+  }
+  const W = 720, H = 230, pl = 52, pr = 14, pt = 12, pb = 30, N = ch.lab.length;
+  const fin = (v) => v !== null && v !== undefined && isFinite(v);
+  const all = [...ch.series.flatMap(s => s.y), ...(ch.extra || []).flatMap(s => s.y), ...(ch.fc ? [...ch.fc.lo, ...ch.fc.hi] : [])].filter(fin);
+  if (!all.length) return '';
+  let lo = Math.min(...all), hi = Math.max(...all); if (hi === lo) { hi += 1; lo -= 1; } const pv = (hi - lo) * 0.08; lo -= pv; hi += pv;
+  const X = (i) => pl + (N > 1 ? i * (W - pl - pr) / (N - 1) : 0), Y = (v) => pt + (hi - v) / (hi - lo) * (H - pt - pb);
+  const path = (ys, off = 0) => ys.map((v, i) => fin(v) ? [X(i + off), Y(v)] : null).filter(Boolean).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtN(v)}</text>`; }
+  const step = Math.max(1, Math.ceil(N / 6));
+  for (let i = 0; i < N; i += step) g += `<text x="${X(i).toFixed(1)}" y="${H - 9}" text-anchor="middle">${esc(ch.lab[i])}</text>`;
+  if (ch.fc) {
+    const f = ch.fc, y0 = ch.series[0].y[f.from], x0 = X(f.from);
+    const up = [[x0, Y(y0)], ...f.hi.map((v, i) => [X(f.from + 1 + i), Y(v)])], dn = [...f.lo.map((v, i) => [X(f.from + 1 + i), Y(v)])].reverse().concat([[x0, Y(y0)]]);
+    g += `<polygon points="${up.concat(dn).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" style="fill:rgba(255,205,17,.13);stroke:none"/>`;
+    g += `<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${pt}" y2="${H - pb}" style="stroke:var(--line3);stroke-dasharray:3 4"/>`;
+    g += `<path d="${path([y0, ...f.y], f.from)}" style="fill:none;stroke:var(--yellow);stroke-width:2.2;stroke-dasharray:6 5"/>`;
+  }
+  (ch.extra || []).forEach(s => { g += `<path d="${path(s.y)}" style="fill:none;stroke:${s.c};stroke-width:1.6;opacity:.75"/>`; });
+  ch.series.forEach(s => { g += `<path d="${path(s.y)}" style="fill:none;stroke:${s.c};stroke-width:2.4;stroke-linejoin:round"/>`; const li = s.y.length - 1; if (fin(s.y[li])) g += `<circle cx="${X(li).toFixed(1)}" cy="${Y(s.y[li]).toFixed(1)}" r="3.6" style="fill:${s.c}"/>`; });
+  const leg = [...ch.series, ...(ch.extra || [])].map(s => [s.c, s.n]).concat(ch.fc ? [['var(--yellow)', 'التوقع'], ['rgba(255,205,17,.35)', 'نطاق الثقة 95%']] : []);
+  return `<div class="stack" style="gap:6px"><svg class="chart an-chart" viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="رسم بياني">${g}</svg>
+    <div class="row" style="gap:12px;font-size:11.5px">${leg.map(([c, n]) => `<span class="row nowrap" style="gap:5px"><span style="width:14px;height:3px;border-radius:2px;background:${c}"></span><span class="faint">${esc(n)}</span></span>`).join('')}</div></div>`;
+}
+const anSelStyle = 'min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:0 10px;width:100%';
+const anSel = (k, label, opts, val) => `<label class="stack" style="gap:5px"><span class="lbl">${label}</span><select data-an-cfg="${k}" style="${anSelStyle}">${opts.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(val ?? '') ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+const AN_FEAS_IN = [['capex', 'الاستثمار الأولي'], ['rev', 'الإيرادات السنوية'], ['opex', 'التكاليف التشغيلية السنوية'], ['rate', 'معدل الخصم %'], ['years', 'عمر المشروع (سنوات)'], ['growth', 'نمو الإيرادات السنوي %']];
+function anFeasInputs(f) {
+  return `<div class="sub" style="gap:10px"><div class="row between"><span class="lbl">افتراضات الدراسة — عدّلها وتُعاد الحسابات فورًا</span>
+    <select data-an-cur="1" aria-label="العملة" style="min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 8px"><option value="">بدون عملة</option>${(typeof RQ_CURRENCY !== 'undefined' ? RQ_CURRENCY : []).map(([c, n]) => `<option value="${c}" ${S.res.currency === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">${AN_FEAS_IN.map(([k, l]) => `<label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">${l}</span><input type="text" inputmode="decimal" dir="ltr" style="text-align:right" data-anf="${k}" value="${esc(String(Math.round(f[k] * 100) / 100))}"></label>`).join('')}</div></div>`;
+}
+function anBody(id, o) {
+  const c = AN.R.ctx;
+  let cut = '';
+  if (o.cut && c.keys.length > 4) {
+    const def = Math.max(2, Math.floor(c.n * 2 / 3)), cur = S.res.cfg.cut && c.keys.includes(S.res.cfg.cut) ? S.res.cfg.cut : c.keys[def];
+    cut = `<div style="max-width:320px">${anSel('cut', 'تاريخ التدخل (بداية فترة «بعد»)', c.keys.slice(2, -1).map((k, i) => [k, c.lab[i + 2]]), cur)}</div>`;
+  }
+  return `<p style="font-size:14px;line-height:1.95;color:var(--fg2)">${anRich(o.summary)}</p>${anKpis(o.kpis)}${anChart(o.chart)}${cut}${(o.tables || []).map(anTbl).join('')}${(o.notes || []).map(n => `<p class="faint" style="font-size:11.5px;line-height:1.7">ⓘ ${esc(n)}</p>`).join('')}`;
+}
+function anSecHTML(id, o) {
+  const lbl = (AN_TYPES.find(t => t[0] === id) || [, id])[1];
+  return `<section class="card" id="an-sec-${id}" style="gap:12px"><div class="row between nowrap" style="gap:10px;align-items:flex-start"><h2 class="h-sec">${esc(o.title)}</h2><span class="tag t-i" style="flex-shrink:0">${lbl}</span></div>
+    ${id === 'feas' ? anFeasInputs(o.feas) : ''}<div id="an-body-${id}" class="stack" style="gap:12px">${anBody(id, o)}</div></section>`;
+}
+
+VIEWS.results = () => {
+  const r = S.res, has = !!r && anEnsure(), R = has && AN.R;
+  const exp = R ? `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button></div>` : '';
+  const head = `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">DIA-ANALYSIS · محسوبة من بياناتك مباشرة</span>${exp}</div>
+    <h2 class="title-xl" style="font-size:24px">نتائج التحليل الفعلية</h2>
+    <p class="lead" style="font-size:14px;line-height:1.8">ارفع ملف بيانات (CSV أو Excel) فيحسب النظام أنواع التحليل العشرة من أرقامك: الإحصاءات، والعوامل المرتبطة بالتغير، والتنبؤ، والسيناريوهات، والجدوى، والمخاطر، والفرص، والإجراءات، والمقارنة، وقياس الأثر. الشروحات مولّدة من الأرقام بقواعد ثابتة، وكل رقم قابل للتتبع إلى البيانات.</p></section>`;
+  const src = `<section class="card" style="gap:12px">
+    <div class="row between"><h2 class="h-sec">مصدر البيانات</h2>${r ? `<span class="chip" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.src.name)}</span>` : ''}</div>
+    <div class="row" style="gap:8px">
+      <label class="btn primary" style="cursor:pointer;position:relative">${ic('clip', 16)}${r ? 'رفع ملف آخر' : 'رفع ملف CSV أو Excel'}<input type="file" data-an-upload="1" accept=".csv,.xlsx,.tsv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer"></label>
+      <button type="button" class="btn" data-act="an-sample">${ic('play', 16)}تشغيل على بيانات تجريبية</button>
+      <button type="button" class="btn link" data-act="an-sample-dl">تنزيل ملف العينة</button>
+      ${r ? '<button type="button" class="btn link" data-act="an-reset">مسح</button>' : ''}
+    </div>
+    ${r ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${[['المصدر', AN_SRC[r.src.kind] + (r.src.ref ? ' · ' + r.src.ref : '')], ['السجلات', fmtN(r.src.n, 0)], ['الأعمدة', has ? AN.T.cols.length : '—'], ['وقت التشغيل', r.src.at]].map(([l, v]) => `<div class="sub" style="background:var(--sunk);gap:3px"><span class="lbl">${l}</span><b style="font-size:13.5px">${esc(v)}</b></div>`).join('')}</div>` : ''}
+    ${r && !has ? `<div class="banner y" style="font-size:13px">${ic('warn', 16)}<span>${r.big ? 'الملف كبير فلم يُحفظ في المتصفح بعد إغلاق الصفحة' : 'تعذّر استرجاع البيانات'} — أعد رفع الملف لعرض النتائج.</span></div>` : ''}
+    ${!r ? `<div class="sub" style="gap:6px"><b style="font-size:13px">شكل الملف المناسب</b>
+      ${['الصف الأول عناوين الأعمدة، وكل صف بعده سجل واحد (شهر، أو شهر × فرع…).', 'عمود تاريخ أو فترة (مثل 2026-01) لتفعيل التنبؤ وقياس الأثر.', 'عمود تصنيف اختياري (فرع، قسم، منتج) لتفعيل المقارنة.', 'أعمدة رقمية: المؤشر المستهدف والعوامل التي قد تؤثر فيه (تدريب، تكلفة، شكاوى…).'].map(t => `<span class="soft" style="font-size:12.5px">• ${t}</span>`).join('')}
+      <span class="faint" style="font-size:11.5px">يُقرأ الملف داخل متصفحك فقط ولا يُرسل إلى أي خدمة خارجية.</span></div>` : ''}
+  </section>`;
+  if (!has) return head + src;
+  const T = AN.T, cfg = r.cfg;
+  const nums = T.cols.filter(c => c.type === 'num'), dates = T.cols.filter(c => c.type === 'date'), cats = T.cols.filter(c => c.type === 'cat' && c.uniq >= 2 && c.uniq <= 40);
+  const gi = T.head.indexOf(cfg.group), groups = gi >= 0 ? [...new Set(T.body.map(x => x[gi]).filter(Boolean))] : [];
+  const TYPEN = { num: 'رقمي', date: 'تاريخ', cat: 'تصنيفي' };
+  const conf = `<section class="card" style="gap:12px">
+    <div class="row between"><h2 class="h-sec">إعداد التحليل</h2><span class="faint" style="font-size:12px">اكتُشفت الأعمدة تلقائيًا — عدّلها إن لزم</span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${anSel('target', 'المؤشر المستهدف', nums.map(c => [c.name, c.name]), cfg.target)}
+      ${anSel('date', 'عمود التاريخ / الفترة', [['', 'بدون — ترتيب الصفوف']].concat(dates.map(c => [c.name, c.name])), cfg.date)}
+      ${anSel('group', 'عمود التصنيف (فرع، قسم…)', [['', 'بدون']].concat(cats.map(c => [c.name, c.name])), cfg.group)}
+      ${anSel('focus', 'نطاق التحليل', [['all', groups.length ? 'الكل (المتوسط)' : 'البيانات كاملة']].concat(groups.map(g => [g, g])), cfg.focus)}
+    </div>
+    <div class="stack" style="gap:6px"><span class="lbl">أنواع التحليل (${cfg.types.length} من ${AN_TYPES.length})</span>
+      <div class="row" style="gap:6px">${AN_TYPES.map(([id, l]) => { const on = cfg.types.includes(id); return `<button type="button" class="chip" data-act="an-type" data-k="${id}" aria-pressed="${on}" style="${on ? 'background:rgba(255,46,77,.14);border-color:var(--redline);color:#fff' : ''}">${on ? ic('check', 13, 'style="color:var(--red)"') : ''}${l}</button>`; }).join('')}
+      <button type="button" class="btn link sm" data-act="an-all">${cfg.types.length === AN_TYPES.length ? 'نوع واحد' : 'الكل'}</button></div></div>
+    <details><summary class="faint" style="cursor:pointer;font-size:12.5px">الأعمدة المكتشفة (${T.cols.length})</summary>
+      <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>العمود</th><th>النوع</th><th>قيم مختلفة</th><th>الناقص</th></tr></thead><tbody>${T.cols.map(c => `<tr><td style="font-size:12.5px">${esc(c.name)}</td><td><span class="tag ${c.type === 'num' ? 't-i' : c.type === 'date' ? 't-m' : 't-n'}">${TYPEN[c.type]}</span></td><td class="mono" style="font-size:12px">${c.uniq}</td><td class="mono" style="font-size:12px">${c.missing}</td></tr>`).join('')}</tbody></table></div></details>
+  </section>`;
+  if (!R) return head + src + conf + `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>`;
+  const c = R.ctx, gate = { good: ['t-s', 'var(--greenfg)'], warn: ['t-m', 'var(--yellow)'], low: ['t-c', 'var(--redsoft)'] }[c.gate[0]];
+  const worst = cfg.focus === 'all' ? [...c.groupStats].filter(s => isFinite(s.ch)).sort((a, b) => a.ch - b.ch)[0] : null;
+  const status = `<section class="card" style="gap:10px"><div class="row between" style="gap:10px"><div class="row nowrap" style="gap:10px"><span class="tag ${gate[0]}">${c.gate[0] === 'good' ? 'بوابة الجودة: مقبولة' : c.gate[0] === 'warn' ? 'بوابة الجودة: تحذير' : 'بوابة الجودة: بيانات غير كافية'}</span><span style="font-size:13px;color:${gate[1]}">${esc(c.gate[1])}</span></div><span class="mono faint" style="font-size:12px">الثقة ${c.conf}% · ${c.n} فترة · النطاق: ${esc(c.focusName)}</span></div>
+    ${worst && worst.ch < -3 ? `<div class="row between sub" style="gap:10px"><span style="font-size:13px">${ic('warn', 15, 'style="color:var(--orange)"')} أكبر تراجع في آخر الفترات: <b>«${esc(worst.g)}»</b> (<bdi dir="ltr">${fmtP(worst.ch)}</bdi>). التحليل المركّز عليه يكشف أسبابه.</span><button type="button" class="btn sm" data-act="an-focus" data-k="${esc(worst.g)}">حلّل «${esc(worst.g)}»</button></div>` : ''}
+    ${cfg.focus !== 'all' ? `<div class="row" style="gap:8px"><span class="faint" style="font-size:12.5px">تعرض النتائج «${esc(cfg.focus)}» فقط.</span><button type="button" class="btn link sm" data-act="an-focus" data-k="all">عرض الكل</button></div>` : ''}</section>`;
+  const secs = AN_TYPES.filter(([id]) => cfg.types.includes(id) && R.out[id]).map(([id]) => anSecHTML(id, R.out[id])).join('');
+  return head + src + conf + status + secs;
+};
+
+/* ---------- export ---------- */
+function anReport(fmt) {
+  const r = S.res, R = AN.R, c = R.ctx, notes = [];
+  const val = (v) => { if (fmt === 'xlsx' && /^-?[\d,]*\.?\d+$/.test(String(v))) { const n = Number(String(v).replace(/,/g, '')); if (isFinite(n)) return n; } return String(v); };
+  const sections = [{ h: 'مصدر البيانات والإعداد', kv: [['الملف', r.src.name], ['المصدر', AN_SRC[r.src.kind] + (r.src.ref ? ' · ' + r.src.ref : '')], ['عدد السجلات', fmtN(r.src.n, 0)], ['المؤشر المستهدف', r.cfg.target], ['نطاق التحليل', c.focusName], ['عمود التاريخ', r.cfg.date || '—'], ['عمود التصنيف', r.cfg.group || '—'], ['بوابة الجودة', c.gate[1]], ['مستوى الثقة', c.conf + '%'], ['طريقة الشرح', 'مولّد من الأرقام بقواعد ثابتة؛ لا يُستخدم نموذج لغوي في الحساب']] }];
+  AN_TYPES.filter(([id]) => r.cfg.types.includes(id) && R.out[id]).forEach(([id, lbl]) => {
+    const o = R.out[id];
+    sections.push({ h: o.title, text: o.summary });
+    if (o.kpis && o.kpis.length) sections.push({ h: lbl + ' · المؤشرات', kv: o.kpis.map(k => [k[0], String(k[1])]) });
+    (o.tables || []).forEach(t => sections.push({ h: lbl + ' · ' + t.h, cols: t.cols, rows: t.rows.map(row => row.map(val)) }));
+    (o.notes || []).forEach(n => notes.push(lbl + ': ' + n));
+  });
+  if (notes.length) sections.push({ h: 'ملاحظات منهجية', bullets: notes });
+  return { code: 'ANALYSIS', title: 'نتائج التحليل الفعلية — ' + r.src.name, audience: 'الإدارة وصاحب القرار', ref: 'DIA-ANALYSIS', sections };
+}
+async function anExport(fmt) {
+  if (!AN || !AN.R) return;
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const rep = anReport(fmt);
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    log('د. عدنان', `صدّر نتائج التحليل الفعلية لـ «${S.res.src.name}» بصيغة ${fmt === 'pdf' ? 'PDF' : 'Excel'}`);
+    await saveFile(`NAIOSH_DIA-ANALYSIS_${expToday()}.${fmt}`, blob);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
+
+/* ---------- events ---------- */
+function analyticsHandle(act, k, el) {
+  if (!act || !/^an-/.test(act)) return false;
+  switch (act) {
+    case 'an-sample': { const T = anLoad(anParseCSV(anSampleCSV()), 'بيانات_تجريبية_الفروع.csv', 'sample'); toast(`شُغّل التحليل على ${T.n} سجل تجريبي`); if (S.route !== 'results') go('results'); else render(); return true; }
+    case 'an-sample-dl': saveFile('NAIOSH_sample_data.csv', new Blob(['﻿' + anSampleCSV()], { type: 'text/csv;charset=utf-8' })); return true;
+    case 'an-reset': S.res = null; AN = null; render(); toast('مُسحت بيانات التحليل'); return true;
+    case 'an-type': { const t = S.res.cfg.types, i = t.indexOf(k); if (i >= 0) { if (t.length === 1) { toast('اختر نوع تحليل واحدًا على الأقل'); return true; } t.splice(i, 1); } else t.push(k); anCompute(); render(); return true; }
+    case 'an-all': S.res.cfg.types = S.res.cfg.types.length === AN_TYPES.length ? ['desc'] : AN_TYPES.map(t => t[0]); anCompute(); render(); return true;
+    case 'an-focus': S.res.cfg.focus = k || 'all'; anCompute(); render(); window.scrollTo(0, 0); return true;
+    case 'an-pdf': anExport('pdf'); return true;
+    case 'an-xlsx': anExport('xlsx'); return true;
+    case 'an-req': if (AN_PENDING) anLoadFile(AN_PENDING.file, AN_PENDING); else go('results'); return true;
+    case 'an-srv': {
+      const d = el.dataset; toast('جارٍ جلب الملف…');
+      fetch('/api/files/' + encodeURIComponent(k), { credentials: 'same-origin' })
+        .then(res => { if (!res.ok) throw new Error('تعذّر جلب الملف (' + res.status + ')'); return res.blob(); })
+        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref }))
+        .catch(e => toast(e.message));
+      return true;
+    }
+  }
+  return false;
+}
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset) return;
+  if (el.dataset.anUpload) { const f = el.files && el.files[0]; el.value = ''; if (f) anLoadFile(f); return; }
+  if (el.dataset.anCfg && S.res) {
+    const k = el.dataset.anCfg, cfg = S.res.cfg; cfg[k] = el.value || (k === 'focus' ? 'all' : null);
+    if (k === 'group') cfg.focus = 'all';
+    if (k === 'date') cfg.cut = null;
+    anCompute(); render(); return;
+  }
+  if (el.dataset.anCur && S.res) { S.res.currency = el.value; anFeasRefresh(); }
+});
+function anFeasRefresh() {
+  if (!AN || !AN.R || !S.res.cfg.types.includes('feas')) return;
+  AN.R.out.feas = anFeas(AN.T, S.res.cfg);
+  const b = document.getElementById('an-body-feas'); if (b) b.innerHTML = anBody('feas', AN.R.out.feas);
+  save();
+}
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.anf || !S.res) return;
+  let v = anNum(el.value); if (v === null) return;
+  const k = el.dataset.anf;
+  if (k === 'years') v = Math.max(1, Math.min(30, Math.round(v)));
+  if (k === 'rate') v = Math.max(0, Math.min(100, v));
+  S.res.feas[k] = v; anFeasRefresh();
+});
+</script>

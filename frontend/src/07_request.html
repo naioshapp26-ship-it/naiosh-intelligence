@@ -102,6 +102,7 @@ VIEWS.request = () => {
         ${['سُجّل الطلب في مركز الاستشارات وسجل التدقيق.', 'بوابة الصلاحيات تتحقق من نطاق الوصول وتصنيف البيانات.', q.suff >= 80 ? 'البيانات كافية مبدئيًا: يبدأ فحص الجودة ثم التحليل.' : `البيانات الناقصة (${q.missing}) ستُطلب عبر استبيان ذكي قصير.`, 'تصلك النتيجة كـ' + q.output + ' مع درجة الثقة والأدلة، والقرار النهائي لك.'].map((t, i) => `<div class="row nowrap" style="font-size:13px;align-items:flex-start"><span class="mono" style="color:var(--yellow);width:18px">${i + 1}</span><span>${t}</span></div>`).join('')}</div>
       <div class="row">
         <button type="button" class="btn primary" data-go="${q.suff >= 80 ? 'diagnosis' : 'questionnaire'}">${q.suff >= 80 ? 'متابعة التحليل' : 'استكمال البيانات الناقصة'}</button>
+        ${AN_PENDING && AN_PENDING.ref === q.ref ? `<button type="button" class="btn primary" data-act="an-req">${ic('chart', 16)}عرض النتائج الفعلية من «${esc(AN_PENDING.file.name)}»</button>` : `<button type="button" class="btn" data-go="results">${ic('chart', 16)}رفع ملف بيانات لنتائج فورية</button>`}
         <button type="button" class="btn" data-go="consult">مركز الاستشارات</button>
         <button type="button" class="btn link" data-act="rq-new">طلب جديد</button>
       </div>
@@ -276,7 +277,7 @@ document.addEventListener('submit', (e) => {
   S.requests.unshift({ ref, title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
   log(r.name.trim(), `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`);
   log('المنسّق', `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, 'sys');
-  S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
+  anCapture(r, ref); S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
   toast('أُرسل الطلب ' + ref);
   render(); window.scrollTo(0, 0);
 });
