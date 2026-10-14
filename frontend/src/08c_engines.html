@@ -468,7 +468,7 @@ VIEWS.cv = () => {
       <tr><td class="mono">31–60</td><td style="font-size:12.5px">تحليل مشكلة ذات أولوية في ${values[0] ? values[0][0] : 'مجال الاختصاص'} مع الفريق</td><td class="faint" style="font-size:12px">مقترح تحسين مدعوم بالبيانات</td></tr>
       <tr><td class="mono">61–90</td><td style="font-size:12.5px">تجربة التحسين المعتمد وقياس نتائجه</td><td class="faint" style="font-size:12px">تقرير نتائج ومؤشرات أثر</td></tr></tbody></table></div>
       <p class="faint" style="font-size:11.5px;padding:8px 18px 14px">خطة استرشادية؛ لا تفترض تغيير إجراءات أو الوصول إلى بيانات دون صلاحية وموافقة.</p></div>
-    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="skl-cv">${ic('skills', 14)}مطابقة في ذكاء المهارات</button><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div></div>
       ${gaps.length ? gaps.map(g => `<div class="row nowrap" style="gap:8px;font-size:12.5px;align-items:flex-start"><span class="tag ${CVST[g.st][1]}" style="flex-shrink:0">${CVST[g.st][0]}</span><span>${g.st === 'check' ? 'تقديم دليل أو اختبار عملي لـ ' : 'برنامج تعلم موجّه لـ '}${g.n}</span></div>`).join('') : '<span class="faint" style="font-size:12.5px">لا فجوات جوهرية مقابل متطلبات الوظيفة.</span>'}
       <div class="sub" style="gap:4px;margin-top:6px"><b style="font-size:12.5px">قواعد الحوكمة</b>${['لا يُختزل المرشح في درجة آلية واحدة', 'المعلومات المؤكدة مفصولة عن الادعاءات الذاتية والاستنتاجات', 'لا تُستخدم صفات شخصية حساسة أو غير مرتبطة بالوظيفة', 'القرار الوظيفي تحت إشراف بشري مسؤول'].map(t => `<span class="faint" style="font-size:11.5px">• ${t}</span>`).join('')}</div></div>
   </section>` : ''}`;
@@ -595,7 +595,7 @@ function engSections(code) {
     sec.push({ h: 'ملاحظة حوكمة', text: 'لا يُختزل المرشح في درجة واحدة. غياب الدليل لا يعني غياب المهارة. القرار الوظيفي تحت إشراف بشري مسؤول، ولا تُشارك البيانات دون أساس مشروع وصلاحية.' });
     return { title: 'تقرير ذكاء السيرة الذاتية والقيمة المهنية', audience: c.mode === 'job' ? 'جهة التوظيف (بموافقة المرشح)' : 'المرشح', ref: 'DIA-CV', sections: sec };
   }
-  return null;
+  return typeof engSections2 === 'function' ? engSections2(code) : null;
 }
 async function engExportRun(code, fmt) {
   const r = engSections(code); if (!r) return;

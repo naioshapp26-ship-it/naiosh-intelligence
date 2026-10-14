@@ -171,6 +171,7 @@ svg.ic{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;strok
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--faint);font-family:var(--f-mono);font-size:10px}
 @media (max-width:640px){.an-chart text{font-size:19px}}
+.chip[data-act="eg-set"],.chip[data-act="eg-tog"]{min-width:44px;min-height:36px;justify-content:center}
 
 /* ---------- stepper ---------- */
 .stepper{display:grid;grid-template-columns:repeat(13,minmax(64px,1fr));padding:12px 14px;margin:0;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
@@ -461,6 +462,11 @@ const P = {
   back:'M14 6l6 6-6 6 M20 12H5',
   bench:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z M12 11.2v1.6 M13 11l7-7 M17 4h3v3',
   safety:'M3 18h18 M5 18v-3a7 7 0 0 1 14 0v3 M10 8V5.5h4V8 M12 8v4',
+  eco:'M3 17l5-5 4 4 8-8 M14 8h6v6',
+  supply:'M2 7h11v9H2z M13 10h4l3 3v3h-7 M6 17.5a1.6 1.6 0 1 0 0 .01 M17 17.5a1.6 1.6 0 1 0 0 .01',
+  sustain:'M5 19c0-8 6-14 15-14 0 9-6 15-14 15 M5 19l8-8',
+  skills:'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6l-4.9 2.6.9-5.5-4-3.9 5.5-.8z',
+  career:'M2 9l10-5 10 5-10 5z M6 11v5c3 2 9 2 12 0v-5 M22 9v6',
   self:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0 M19 3l.6 1.4L21 5l-1.4.6L19 7l-.6-1.4L17 5l1.4-.6z',
   cv:'M4 5h16v14H4z M9.5 8.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M6.5 16.5a3 3 0 0 1 6 0 M14.5 9h3 M14.5 12h3 M14.5 15h2',
   marriage:'M9 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M15 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M10 3.5l2 2 2-2', up:'M12 19V5 M6 11l6-6 6 6', down:'M12 5v14 M6 13l6 6 6-6', copy:'M8 8h12v12H8z M4 16V4h12'
@@ -517,8 +523,8 @@ const NAV = [
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
-  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF']] },
-  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['cv','ذكاء السيرة الذاتية','CV'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF'],['eco','المرونة الاقتصادية والمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS']] },
+  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['career','المسار الجامعي والمهني','CPA'],['cv','ذكاء السيرة الذاتية','CV'],['skills','ذكاء المهارات وسوق العمل','SKL'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -539,7 +545,9 @@ const TITLES = {
   whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
   ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات'],
   bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وذكاء المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'ذكاء السلامة وتحليل المخاطر'],
-  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا']
+  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا'],
+  eco: ['DIA-ECO · Economic Resilience & Side Business', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية'], supply: ['DIA-SCM · Global Supply Chain & Logistics', 'ذكاء سلاسل الإمداد واللوجستيات'],
+  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'ذكاء المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
@@ -2863,7 +2871,7 @@ VIEWS.cv = () => {
       <tr><td class="mono">31–60</td><td style="font-size:12.5px">تحليل مشكلة ذات أولوية في ${values[0] ? values[0][0] : 'مجال الاختصاص'} مع الفريق</td><td class="faint" style="font-size:12px">مقترح تحسين مدعوم بالبيانات</td></tr>
       <tr><td class="mono">61–90</td><td style="font-size:12.5px">تجربة التحسين المعتمد وقياس نتائجه</td><td class="faint" style="font-size:12px">تقرير نتائج ومؤشرات أثر</td></tr></tbody></table></div>
       <p class="faint" style="font-size:11.5px;padding:8px 18px 14px">خطة استرشادية؛ لا تفترض تغيير إجراءات أو الوصول إلى بيانات دون صلاحية وموافقة.</p></div>
-    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="skl-cv">${ic('skills', 14)}مطابقة في ذكاء المهارات</button><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div></div>
       ${gaps.length ? gaps.map(g => `<div class="row nowrap" style="gap:8px;font-size:12.5px;align-items:flex-start"><span class="tag ${CVST[g.st][1]}" style="flex-shrink:0">${CVST[g.st][0]}</span><span>${g.st === 'check' ? 'تقديم دليل أو اختبار عملي لـ ' : 'برنامج تعلم موجّه لـ '}${g.n}</span></div>`).join('') : '<span class="faint" style="font-size:12.5px">لا فجوات جوهرية مقابل متطلبات الوظيفة.</span>'}
       <div class="sub" style="gap:4px;margin-top:6px"><b style="font-size:12.5px">قواعد الحوكمة</b>${['لا يُختزل المرشح في درجة آلية واحدة', 'المعلومات المؤكدة مفصولة عن الادعاءات الذاتية والاستنتاجات', 'لا تُستخدم صفات شخصية حساسة أو غير مرتبطة بالوظيفة', 'القرار الوظيفي تحت إشراف بشري مسؤول'].map(t => `<span class="faint" style="font-size:11.5px">• ${t}</span>`).join('')}</div></div>
   </section>` : ''}`;
@@ -2990,7 +2998,7 @@ function engSections(code) {
     sec.push({ h: 'ملاحظة حوكمة', text: 'لا يُختزل المرشح في درجة واحدة. غياب الدليل لا يعني غياب المهارة. القرار الوظيفي تحت إشراف بشري مسؤول، ولا تُشارك البيانات دون أساس مشروع وصلاحية.' });
     return { title: 'تقرير ذكاء السيرة الذاتية والقيمة المهنية', audience: c.mode === 'job' ? 'جهة التوظيف (بموافقة المرشح)' : 'المرشح', ref: 'DIA-CV', sections: sec };
   }
-  return null;
+  return typeof engSections2 === 'function' ? engSections2(code) : null;
 }
 async function engExportRun(code, fmt) {
   const r = engSections(code); if (!r) return;
@@ -3616,6 +3624,677 @@ document.addEventListener('input', (e) => {
   if (k === 'rate') v = Math.max(0, Math.min(100, v));
   S.res.feas[k] = v; anFeasRefresh();
 });
+</script>
+<script data-app="">
+/* ================= Engines wave 2 — shared toolkit =================
+   DIA-ECO (economic resilience & side business) · DIA-SCM (supply chain) · DIA-SUS (Sustain 360)
+   DIA-SKL (skills intelligence) · DIA-CPA (academic & career path) */
+const egGet = (o, p) => String(p).split('.').reduce((a, k) => a == null ? a : a[k], o);
+function egSet(o, p, v) { const ks = String(p).split('.'); let a = o; for (let i = 0; i < ks.length - 1; i++) { if (a[ks[i]] == null) a[ks[i]] = /^\d+$/.test(ks[i + 1]) ? [] : {}; a = a[ks[i]]; } a[ks[ks.length - 1]] = v; }
+const EG_INIT = {}, EG_OUT = {};
+const egS = (e) => S['eg_' + e] || (S['eg_' + e] = EG_INIT[e]());
+const egN = (v) => { const n = typeof v === 'number' ? v : anNum(v); return n === null || !isFinite(n) ? 0 : n; };
+const egNum = (e, p, label, hint = '') => `<label class="stack" style="gap:4px;min-width:0"><span class="faint" style="font-size:11.5px">${label}</span><input type="text" inputmode="decimal" dir="ltr" style="text-align:right" data-eg="${e}" data-p="${p}" data-num="1" value="${esc(egGet(egS(e), p) ?? '')}">${hint ? `<span class="faint" style="font-size:10.5px">${hint}</span>` : ''}</label>`;
+const egTxt = (e, p, label, ph = '') => `<label class="stack" style="gap:4px;min-width:0"><span class="faint" style="font-size:11.5px">${label}</span><input type="text" data-eg="${e}" data-p="${p}" placeholder="${esc(ph)}" value="${esc(egGet(egS(e), p) ?? '')}"></label>`;
+const egSelStyle = 'min-height:40px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:0 8px;width:100%';
+const egSel = (e, p, label, opts) => { const v = egGet(egS(e), p); return `<label class="stack" style="gap:4px;min-width:0">${label ? `<span class="faint" style="font-size:11.5px">${label}</span>` : ''}<select data-eg="${e}" data-p="${p}" style="${egSelStyle}">${opts.map(([k, l]) => `<option value="${esc(k)}" ${String(k) === String(v ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`; };
+const egCh = (e, p, opts, multi) => { const v = egGet(egS(e), p); return `<div class="row" style="gap:6px">${opts.map(([k, l]) => choice(multi ? 'eg-tog' : 'eg-set', e + '.' + p, k, multi ? (v || []).includes(k) : String(v) === String(k), l)).join('')}</div>`; };
+const egQ = (n, t, body) => `<div class="stack" style="gap:6px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">${n ? `<span class="mono faint">${n}.</span> ` : ''}${t}</span>${body}</div>`;
+const egTabs = (e, tabs) => `<section class="card tight" style="padding:10px 12px"><div class="row" style="gap:6px">${tabs.map(([k, l], i) => choice('eg-set', e + '.tab', k, egS(e).tab === k, (i + 1) + ' · ' + l)).join('')}</div></section>`;
+const egGrid = (min, inner) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(${min}px,1fr));gap:10px">${inner}</div>`;
+const egNote = (t) => `<p class="faint" style="font-size:11.5px;line-height:1.7">ⓘ ${t}</p>`;
+const egOut = (e) => `<div id="eg-out-${e}" class="stack" style="gap:16px">${EG_OUT[e]()}</div>`;
+function egRefresh(e) { const o = document.getElementById('eg-out-' + e); if (o) o.innerHTML = brandify(EG_OUT[e]()); }
+const egCard = (title, tag, body) => `<section class="card" style="gap:12px"><div class="row between nowrap" style="gap:10px;align-items:flex-start"><h2 class="h-sec">${title}</h2>${tag ? `<span class="tag t-i" style="flex-shrink:0">${tag}</span>` : ''}</div>${body}</section>`;
+const egStatus = (pct) => pct >= 75 ? ['t-s', 'var(--greenfg)'] : pct >= 50 ? ['t-m', 'var(--yellow)'] : ['t-c', 'var(--redsoft)'];
+const egBar = (label, pct, extra = '') => { const [, c] = egStatus(pct); return `<div class="stack" style="gap:4px"><div class="row between nowrap" style="font-size:12.5px"><span>${label}</span><span class="mono" style="color:${c}">${Math.round(pct)}${extra}</span></div><div style="height:7px;border-radius:4px;background:var(--sunk);overflow:hidden"><div style="height:100%;width:${Math.max(2, Math.min(100, pct))}%;background:${c};border-radius:4px"></div></div></div>`; };
+const REC_ST = ['مسودة', 'تحتاج بيانات', 'قيد المراجعة', 'معتمدة', 'قيد التنفيذ', 'مكتملة', 'معدّلة', 'مرفوضة', 'متوقفة'];
+
+/* =========================================================================================
+   DIA-ECO — Economic Resilience, Cost Optimization & Side Business Intelligence (ECO-01..15)
+   ========================================================================================= */
+const ECO_WHO = [['A', 'فرد أو موظف يريد حماية دخله'], ['B', 'متجر أو مشروع تجاري'], ['C', 'منشأة خدمية أو صناعية أو مقاولات'], ['D', 'شخص يريد مشروعًا جانبيًا جديدًا']];
+const ECO_PROB = [['sales', 'انخفاض المبيعات أو العملاء'], ['cost', 'ارتفاع تكاليف التشغيل'], ['cash', 'ضعف السيولة أو تأخر التحصيل'], ['income', 'الدخل الشخصي لا يغطي الاحتياجات'], ['profit', 'المبيعات مستمرة لكن الأرباح تتراجع'], ['side', 'البحث عن دخل أو مشروع جانبي'], ['mixed', 'مجموعة مشكلات']];
+// [key, name, typical verifiable saving rate, solutions, fixed/variable, protected, months to impact]
+const ECO_CB = [
+  ['purch', 'المشتريات والمواد', 0.06, 'تفاوض، تجميع مشتريات، مقارنة الموردين، تحسين شروط الدفع', 'var', 0, 1],
+  ['inv', 'المخزون والتخزين', 0.10, 'إعادة الطلب حسب الاستهلاك، تقليل التكدس، تصريف مدروس للراكد', 'var', 0, 2],
+  ['ops', 'التشغيل والهدر وإعادة العمل', 0.08, 'تحسين الإجراءات، تقليل الأخطاء، الصيانة الوقائية', 'var', 0, 2],
+  ['energy', 'الطاقة والمرافق', 0.10, 'كشف الهدر والتسرب، تحسين ساعات التشغيل، كفاءة الطاقة', 'var', 0, 2],
+  ['labor', 'الرواتب والعمالة', 0.03, 'إعادة توزيع المهام وتقليل الأعمال المكررة والانتظار — لا تسريح كخيار أول', 'fix', 0, 3],
+  ['mkt', 'التسويق والمبيعات', 0.15, 'إعادة تخصيص الميزانية للقنوات ذات العائد المثبت', 'var', 0, 1],
+  ['rent', 'الإيجار والمساحات', 0.03, 'إعادة التفاوض عند التجديد أو استثمار المساحة غير المستغلة', 'fix', 0, 6],
+  ['tech', 'الاشتراكات والتقنية', 0.20, 'دمج الأدوات وإلغاء غير المستخدم بعد مراجعة الاعتماديات', 'fix', 0, 1],
+  ['svc', 'العقود والخدمات الخارجية', 0.07, 'إعادة تسعير مدروس أو تعديل نطاق العمل وفق العقد', 'var', 0, 3],
+  ['safety', 'السلامة والصيانة الحرجة والتراخيص', 0, 'محمي — لا يُخفض لتحقيق وفر قصير الأجل', 'fix', 1, 0]
+];
+const ECO_CP = [
+  ['housing', 'السكن', 0.03, 'مراجعة البدائل أو التفاوض عند التجديد', 'fix', 0, 6], ['food', 'الغذاء والمستلزمات', 0.08, 'تخطيط المشتريات وتقليل الهدر', 'var', 0, 1],
+  ['transport', 'المواصلات', 0.10, 'مشاركة الرحلات وتجميع المشاوير', 'var', 0, 1], ['utilities', 'الكهرباء والماء والاتصالات', 0.10, 'ترشيد الاستهلاك وباقات أنسب', 'var', 0, 1],
+  ['subs', 'الاشتراكات', 0.30, 'إلغاء غير المستخدم', 'fix', 0, 1], ['leisure', 'الترفيه والكماليات', 0.20, 'سقف شهري متفق عليه', 'var', 0, 1],
+  ['other', 'مصروفات أخرى', 0.10, 'مراجعة البنود وتصنيفها', 'var', 0, 1], ['health', 'الصحة والتعليم والتأمين', 0, 'محمي — لا يُخفض', 'fix', 1, 0]
+];
+const ECO_CLS = [['ess', 'ضرورية'], ['opt', 'قابلة للتحسين'], ['neg', 'قابلة للتفاوض'], ['stop', 'قابلة للإيقاف'], ['inv', 'استثمارية']];
+const ECO_CLSF = { ess: 0.25, opt: 1, neg: 1, stop: 1, inv: 0 };
+const ECO_SK = [['consult', 'الاستشارات والخبرة الإدارية'], ['train', 'التدريب ونقل المعرفة'], ['technical', 'مهارات فنية وصيانة'], ['digital', 'مهارات رقمية'], ['trade', 'بيع وتوريد وعلاقات تجارية'], ['creative', 'تصميم ومحتوى']];
+const ECO_AS = [['clients', 'قاعدة عملاء حاليين'], ['suppliers', 'شبكة موردين'], ['equip', 'معدات أو أدوات'], ['space', 'مساحة أو مستودع'], ['vehicle', 'مركبة'], ['knowhow', 'معرفة تشغيلية موثقة']];
+const ECO_TRACKS = ['', 'تحويل الخبرة إلى خدمة مدفوعة', 'خدمات أو منتجات مكملة للعملاء الحاليين', 'استثمار الأصول والقدرات غير المستغلة', 'تحويل المعرفة إلى منتج رقمي', 'خدمات الربط والتوريد بين المنشآت'];
+const ECO_IDEAS = [
+  { k: 'consult', t: 1, n: 'استشارات متخصصة في مجال خبرتك', sk: ['consult'], as: [], cost: 150, wk: 2, mg: 70, hrs: 5, rel: 1, scale: 2, risk: 1 },
+  { k: 'train', t: 1, n: 'ورش عمل ودورات تدريبية قصيرة', sk: ['train'], as: ['knowhow'], cost: 400, wk: 4, mg: 60, hrs: 6, rel: 1, scale: 3, risk: 1 },
+  { k: 'tech', t: 1, n: 'خدمات فنية أو صيانة عند الطلب', sk: ['technical'], as: ['equip'], cost: 600, wk: 2, mg: 45, hrs: 10, rel: 1, scale: 2, risk: 2 },
+  { k: 'compl', t: 2, n: 'منتج أو خدمة مكملة لعملائك الحاليين', sk: ['trade'], as: ['clients'], cost: 800, wk: 3, mg: 35, hrs: 6, rel: 2, scale: 3, risk: 2 },
+  { k: 'bundle', t: 2, n: 'باقات اشتراك أو صيانة دورية للعملاء الحاليين', sk: [], as: ['clients'], cost: 300, wk: 3, mg: 50, hrs: 5, rel: 2, scale: 3, risk: 1 },
+  { k: 'rent', t: 3, n: 'تأجير معدات أو مساحات غير مستغلة (إن كان مسموحًا)', sk: [], as: ['equip', 'space'], cost: 200, wk: 2, mg: 60, hrs: 2, rel: 2, scale: 1, risk: 2 },
+  { k: 'delivery', t: 3, n: 'خدمات توصيل أو نقل بالمركبة المتاحة', sk: [], as: ['vehicle'], cost: 250, wk: 1, mg: 30, hrs: 10, rel: 1, scale: 1, risk: 3 },
+  { k: 'digital', t: 4, n: 'قوالب وأدلة تشغيل ومواد تدريبية رقمية', sk: ['digital', 'consult'], as: ['knowhow'], cost: 300, wk: 6, mg: 80, hrs: 4, rel: 1, scale: 3, risk: 1 },
+  { k: 'content', t: 4, n: 'محتوى أو اشتراك معرفي متخصص لقطاعك', sk: ['digital', 'creative'], as: ['knowhow'], cost: 200, wk: 8, mg: 75, hrs: 5, rel: 1, scale: 3, risk: 1 },
+  { k: 'broker', t: 5, n: 'توريد حسب الطلب أو ربط موردين بعملاء (بترخيص)', sk: ['trade'], as: ['suppliers', 'clients'], cost: 1000, wk: 4, mg: 15, hrs: 8, rel: 2, scale: 2, risk: 3 }
+];
+const ECO_FQ = {
+  A: ['ما صافي الدخل الشهري بعد الاستقطاعات؟', 'ما المصروفات الضرورية والثابتة والمتغيرة؟', 'هل توجد ديون أو التزامات شهرية أو متأخرات؟', 'ما المهارات التي يمكن تقديم خدمة مدفوعة بها دون تعارض مع الوظيفة؟', 'كم ساعة متاحة؟ وهل توجد قيود تعاقدية أو مهنية؟', 'هل الهدف زيادة الدخل أم تقليل الإنفاق أم كليهما؟'],
+  B: ['كيف تغيرت المبيعات شهريًا خلال آخر 6–12 شهرًا؟', 'ما هامش الربح لكل منتج أو خدمة؟', 'ما المنتجات بطيئة الحركة أو منخفضة الربحية؟', 'ما نسبة العملاء المتكررين؟ ولماذا يخسر المشروع العملاء؟', 'ما تكلفة الإيجار والعمالة والشحن والمخزون والتسويق؟', 'كم يبلغ متوسط فترة التحصيل ومدة بقاء المخزون؟', 'هل توجد منتجات أو خدمات يمكن بيعها لنفس العملاء بتكلفة إضافية محدودة؟'],
+  C: ['ما تكلفة تنفيذ كل مشروع أو أمر عمل؟', 'ما نسبة استغلال العمالة والمعدات؟', 'ما حجم الهدر وإعادة العمل والتأخير؟', 'هل توجد معدات أو مساحات أو قدرات إنتاجية غير مستغلة؟', 'هل تتأخر مستخلصات العملاء أو تتغير أسعار المواد؟', 'ما العقود ذات الهامش الضعيف أو شروط الدفع غير المناسبة؟', 'ما الخدمات المكملة التي يمكن بيعها لعملاء حاليين؟'],
+  D: ['من العميل الذي سيشتري؟ وما المشكلة التي سيدفع لحلها؟', 'ما الدليل على وجود طلب حقيقي؟', 'هل يمكن اختبار الفكرة بخدمة تجريبية أو طلب مسبق؟', 'ما التكاليف الأولية والثابتة والمتغيرة؟', 'هل يحتاج النشاط إلى ترخيص أو موافقات أو تأمين؟', 'هل تستطيع تقديم الخدمة بنفسك؟ وما البديل إذا لم ينجح الاختبار؟']
+};
+EG_INIT.eco = () => ({
+  tab: 'case', cur: 'JOD', who: 'B', country: 'الأردن', sector: 'تجارة تجزئة', problem: 'profit', risk: 'mid', hours: '5-10', goal: 'استعادة هامش ربح 10% وتأمين سيولة تغطي 3 أشهر',
+  fin: { rev: 18000, revPrev: 21000, expPrev: 16900, cash: 9000, recv: 7000, coll: 52, debt: 900, repeat: 35, top: 28, act1: '', act2: '', act3: '' },
+  exp: { purch: 7200, inv: 900, ops: 800, energy: 650, labor: 4200, mkt: 900, rent: 1500, tech: 380, svc: 600, safety: 350, housing: 450, food: 380, transport: 160, utilities: 90, subs: 45, leisure: 120, other: 80, health: 70 },
+  cls: { tech: 'stop' }, st: {}, skills: ['consult', 'train'], assets: ['clients', 'knowhow'], capital: 1500, sideRev: 900, pick: ''
+});
+const ECO_HRS = { '<5': 4, '5-10': 8, '10+': 15, full: 40 };
+function ecoModel() {
+  const s = egS('eco'), f = s.fin, A = s.who === 'A', C = A ? ECO_CP : ECO_CB;
+  const rev = egN(f.rev), revPrev = egN(f.revPrev), debt = egN(f.debt), cash = egN(f.cash), recv = egN(f.recv), coll = egN(f.coll);
+  const items = C.map(c => ({ k: c[0], n: c[1], rate: c[2], sol: c[3], fix: c[4] === 'fix', prot: !!c[5], months: c[6], amt: egN(s.exp[c[0]]) }));
+  const exp = items.reduce((a, x) => a + x.amt, 0), out = exp + debt, net = rev - out, netPrev = revPrev - egN(f.expPrev) - debt;
+  const fixed = items.filter(x => x.fix).reduce((a, x) => a + x.amt, 0) + debt, varExp = exp + debt - fixed;
+  const margin = rev ? net / rev * 100 : NaN, revCh = pctCh(revPrev, rev), expCh = pctCh(egN(f.expPrev), exp);
+  const be = rev && varExp < rev ? fixed / (1 - varExp / rev) : NaN, runway = net < 0 ? cash / -net : Infinity;
+  const H = [];
+  const add = (id, title, cond, known, forE, against, need, decision) => H.push({ id, title, st: !known ? 'need' : cond ? 'sup' : 'no', conf: !known ? 25 : cond ? Math.min(85, 50 + forE.length * 12) : 40, forE, against, need, decision });
+  if (A) {
+    add('H-INC', 'الدخل لا يغطي الإنفاق الشهري', net < 0, rev > 0, [`صافي الشهر ${fmtN(net, 0)}`], net >= 0 ? ['الدخل يغطي المصروفات حاليًا'] : [], ['كشف حساب 3 أشهر لتأكيد المتوسط'], 'هل نبدأ بخفض الإنفاق أم بدخل إضافي؟');
+    add('H-DEBT', 'عبء الديون والأقساط مرتفع', rev && debt / rev > 0.3, rev > 0, [`الأقساط ${fmtN(debt / rev * 100, 0)}% من الدخل`], [], ['جدول الأقساط ومواعيد الاستحقاق وأسعار الفائدة'], 'إعادة جدولة الالتزامات وفق العقود');
+    add('H-FIX', 'الالتزامات الثابتة تقيّد المرونة', out && fixed / out > 0.6, out > 0, [`الثابت ${fmtN(fixed / out * 100, 0)}% من الإنفاق`], [], ['العقود ومدد الاشتراكات'], 'مراجعة البنود الثابتة عند التجديد');
+  } else {
+    add('H-REV', 'تراجع المبيعات أو عدد العملاء', revCh <= -5, revPrev > 0, [`الإيراد ${fmtP(revCh)} خلال 6 أشهر`].concat(egN(f.repeat) < 40 ? [`العملاء العائدون ${fmtN(egN(f.repeat), 0)}% فقط`] : []), egN(f.repeat) >= 40 ? [`نسبة العملاء العائدين ${fmtN(egN(f.repeat), 0)}% جيدة نسبيًا`] : [], ['المبيعات حسب المنتج والقناة شهريًا', 'عدد العملاء الجدد والمفقودين'], 'تحديد هل المشكلة طلب أم تسعير أم قناة');
+    add('H-COST', 'ارتفاع التكاليف أسرع من الإيراد', isFinite(expCh) && expCh - (isFinite(revCh) ? revCh : 0) > 5, egN(f.expPrev) > 0, [`المصروفات ${fmtP(expCh)} مقابل الإيراد ${fmtP(revCh)}`], [], ['تفصيل تكلفة المواد والطاقة والشحن والهدر'], 'أي بنود تُراجع أولًا في محرك خفض التكاليف');
+    add('H-LIQ', 'السيولة تتآكل بسبب بطء التحصيل', coll > 45 || recv > rev * 0.35, coll > 0, [`متوسط التحصيل ${fmtN(coll, 0)} يومًا`, `مستحقات لدى العملاء ${fmtN(recv, 0)}`], coll <= 30 ? ['التحصيل ضمن 30 يومًا'] : [], ['أعمار الذمم المدينة حسب العميل'], 'تسريع التحصيل قبل أي اقتراض');
+    add('H-CONC', 'الاعتماد على عميل رئيسي واحد', egN(f.top) > 25, egN(f.top) > 0, [`أكبر عميل ${fmtN(egN(f.top), 0)}% من الإيراد`], [], ['حصة أكبر 5 عملاء وشروط عقودهم'], 'تنويع قاعدة العملاء');
+    add('H-MRG', 'تآكل الهامش (تسعير أو مزيج منتجات)', isFinite(margin) && margin < 8 && !(revCh <= -5), rev > 0, [`صافي الهامش ${fmtN(margin, 1)}%`, `الصافي قبل 6 أشهر ${fmtN(netPrev, 0)} والآن ${fmtN(net, 0)}`], revCh <= -5 ? ['التراجع يفسره انخفاض الإيراد أكثر من الهامش'] : [], ['هامش كل منتج وخدمة', 'الخصومات الممنوحة'], 'إعادة تسعير مدروسة وتعديل المزيج');
+    add('H-FIX', 'التكاليف الثابتة مرتفعة (رافعة تشغيلية)', out && fixed / out > 0.55, out > 0, [`الثابت ${fmtN(fixed / out * 100, 0)}% من التكاليف`], [], ['العقود الثابتة ومددها'], 'خفض نقطة التعادل');
+  }
+  // cost initiatives (ECO-06 → ECO-18)
+  const inits = items.filter(x => x.amt > 0).map(x => {
+    const cls = x.prot ? 'ess' : (s.cls[x.k] || 'opt'), sav = x.prot ? 0 : cls === 'stop' ? x.amt : x.amt * x.rate * ECO_CLSF[cls];
+    return { ...x, cls, sav, impl: Math.round(sav * 0.5), status: s.st[x.k] || 'مسودة' };
+  }).sort((a, b) => b.sav - a.sav);
+  const live = inits.filter(i => !['مرفوضة', 'متوقفة'].includes(i.status));
+  const savTotal = live.reduce((a, i) => a + i.sav, 0), implTotal = live.reduce((a, i) => a + i.impl, 0);
+  // side business (ECO-08/09/19)
+  const hrsAvail = ECO_HRS[s.hours] || 8, cap = egN(s.capital), tol = { low: 1.5, mid: 1, high: 0.7 }[s.risk] || 1;
+  const ideas = ECO_IDEAS.map(I => {
+    const fit = I.sk.length ? I.sk.filter(k => s.skills.includes(k)).length / I.sk.length : 0.5;
+    const asset = I.as.length ? I.as.filter(k => s.assets.includes(k)).length / I.as.length : 0.5;
+    const crit = [fit, 0.5, cap ? Math.max(0, Math.min(1, 1 - I.cost / (cap * 2))) : 0, I.mg / 100, 1 - Math.min(1, I.wk / 12), asset, I.cost <= 500 && I.wk <= 4 ? 1 : 0.6, Math.max(0, 1 - (I.risk - 1) / 2 * tol), I.hrs > hrsAvail ? 0.3 : (I.rel === 2 && s.who !== 'A' && s.who !== 'D' ? 0.9 : 0.6), I.scale / 3];
+    const W = [15, 15, 10, 10, 10, 10, 10, 10, 5, 5];
+    const score = crit.reduce((a, c, i) => a + c * W[i], 0);
+    const blocked = (I.as.length && asset === 0) ? 'يتطلب أصلًا غير متوفر' : I.cost > cap ? 'تكلفة البدء تتجاوز رأس المال المتاح' : '';
+    return { ...I, fit, asset, crit, score, blocked };
+  }).sort((a, b) => (!!a.blocked - !!b.blocked) || b.score - a.score);
+  const pick = ideas.find(i => i.k === s.pick && !i.blocked) || ideas.find(i => !i.blocked) || null;
+  const sideNet = pick ? egN(s.sideRev) * pick.mg / 100 : 0;
+  // 90-day forecast (ECO-12 / section 20)
+  const sc = (inF, outF) => { let c = cash; const v = [c]; for (let t = 1; t <= 3; t++) { c += inF(t) - outF(t); v.push(c); } return v; };
+  const realize = [0.3, 0.6, 0.9], ramp = [0, 0.5, 1];
+  const base = sc(() => rev, () => out);
+  const improve = sc((t) => rev + sideNet * ramp[t - 1] + (t === 1 && coll > 30 ? recv * 0.25 : 0), (t) => out - savTotal * 0.5 * realize[t - 1] + (t === 1 ? implTotal + (pick ? pick.cost : 0) : 0));
+  const stress = sc((t) => rev * 0.85 - (t === 1 ? recv * 0.2 : 0), () => exp * 1.05 + debt);
+  const firstNeg = (v) => { const i = v.findIndex((x, j) => j > 0 && x < 0); return i > 0 ? i : null; };
+  const acts = [f.act1, f.act2, f.act3].map(v => v === '' || v == null ? null : egN(v));
+  return { s, A, items, exp, out, net, netPrev, fixed, varExp, margin, revCh, expCh, be, runway, rev, cash, recv, coll, debt, H, inits, savTotal, implTotal, ideas, pick, sideNet, hrsAvail, cap, fc: { base, improve, stress, negB: firstNeg(base), negS: firstNeg(stress), negI: firstNeg(improve) }, acts };
+}
+const ECO_HST = { sup: ['مدعومة بالبيانات', 't-h'], no: ['غير مدعومة حاليًا', 't-n'], need: ['تحتاج بيانات', 't-m'] };
+EG_OUT.eco = () => {
+  const m = ecoModel(), s = m.s, cur = s.cur || '';
+  if (s.tab === 'case') {
+    return egCard('أسئلة المتابعة التكيفية — المسار ' + s.who, 'ECO-01 · قسم 17', `<p class="soft" style="font-size:13px;line-height:1.8">كل سؤال مرتبط بفرضية أو قرار، ولا يُطرح سؤال أجيب عنه إلا للتحقق من تناقض.</p>
+      ${ECO_FQ[s.who].map((q, i) => `<div class="row nowrap" style="gap:8px;font-size:13px;align-items:flex-start"><span class="mono faint">${i + 1}</span><span>${q}</span></div>`).join('')}
+      ${m.H.filter(h => h.st !== 'no').length ? `<span class="lbl" style="margin-top:6px">أسئلة مولّدة من الفرضيات الحالية</span>${m.H.filter(h => h.st !== 'no').map(h => `<div class="sub" style="gap:3px"><b style="font-size:12.5px">${h.need[0]}</b><span class="faint" style="font-size:11.5px">لماذا: لاختبار فرضية «${h.title}» · القرار المتأثر: ${h.decision}</span></div>`).join('')}` : ''}
+      ${egNote('هذه المرحلة لا تُصدر حكمًا نهائيًا ولا تضمن ربحًا. الخطوة التالية: إدخال الأرقام في تبويب «المالية والتشخيص».')}`);
+  }
+  if (s.tab === 'fin') {
+    const k = m.A ? [['صافي الشهر', fmtN(m.net, 0), m.net < 0 ? 'bad' : 'good'], ['نسبة الادخار', fmtN(m.margin, 1) + '%', m.margin < 0 ? 'bad' : ''], ['الالتزامات الثابتة', fmtN(m.fixed / m.out * 100, 0) + '%'], ['السيولة تكفي', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز', isFinite(m.runway) && m.runway < 3 ? 'bad' : 'good']]
+      : [['صافي الربح الشهري', fmtN(m.net, 0), m.net < 0 ? 'bad' : 'good'], ['صافي الهامش', fmtN(m.margin, 1) + '%', m.margin < 8 ? 'bad' : 'good'], ['تغير الإيراد', fmtP(m.revCh), m.revCh < 0 ? 'bad' : 'good'], ['نقطة التعادل الشهرية', fmtN(m.be, 0)], ['التكاليف الثابتة', fmtN(m.fixed / m.out * 100, 0) + '%'], ['السيولة تكفي', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز حالي', isFinite(m.runway) && m.runway < 3 ? 'bad' : 'good']];
+    return egCard('الوضع المالي — الربح ليس هو السيولة', 'ECO-04/05 · أقسام 8–9', `${anKpis(k)}
+      <div class="sub" style="gap:4px;font-size:12.5px"><span>الربح المحاسبي الشهري: <b>${fmtN(m.net, 0)}</b> ${cur} · النقد المتاح: <b>${fmtN(m.cash, 0)}</b> · مستحقات لم تُحصّل: <b>${fmtN(m.recv, 0)}</b>${m.coll ? ' (متوسط ' + fmtN(m.coll, 0) + ' يومًا)' : ''}</span><span class="faint">قد تكون المنشأة رابحة على الورق وتعاني عجزًا نقديًا إذا تأخر التحصيل — لذلك يُعرض الاثنان منفصلين.</span></div>`)
+      + egCard('خريطة الأسباب الجذرية — فرضيات مرتبة بالأدلة', 'ECO-03 · قسم 10', m.H.map(h => `<div class="sub" style="gap:6px"><div class="row between nowrap" style="gap:8px"><b style="font-size:13px">${h.id} · ${h.title}</b><span class="tag ${ECO_HST[h.st][1]}" style="flex-shrink:0">${ECO_HST[h.st][0]}</span></div>
+        ${h.st !== 'need' ? `<span style="font-size:12px;color:var(--greenfg)">يؤيدها: ${h.forE.join(' · ')}</span>` : ''}${h.against.length ? `<span style="font-size:12px;color:var(--soft)">قد ينفيها: ${h.against.join(' · ')}</span>` : ''}
+        <span class="faint" style="font-size:11.5px">بيانات للتأكيد: ${h.need.join('، ')} · الثقة ${h.conf}% · القرار المتأثر: ${h.decision}</span></div>`).join('') + egNote('الارتباط وحده لا يثبت السببية؛ يمكن أن تتزامن أسباب مالية وتشغيلية وسوقية.'));
+  }
+  if (s.tab === 'cost') {
+    return egCard('سجل مبادرات خفض التكاليف دون الإضرار بالنشاط', 'ECO-06 · أقسام 12 و18', `${anKpis([['وفر نظري شهري', fmtN(m.savTotal, 0), 'good'], ['وفر نظري سنوي', fmtN(m.savTotal * 12, 0)], ['من إجمالي المصروفات', fmtN(m.exp ? m.savTotal / m.exp * 100 : 0, 1) + '%'], ['تكلفة تنفيذ تقديرية', fmtN(m.implTotal, 0)]])}
+      <div class="tbl-wrap"><table><thead><tr><th>البند</th><th>التكلفة الحالية</th><th>التصنيف</th><th>الوفر المحتمل/شهر</th><th>زمن الأثر</th><th>الحل بعد التحقق</th><th>الحالة</th></tr></thead><tbody>
+      ${m.inits.map(i => `<tr><td style="font-size:12.5px"><b>${i.n}</b></td><td class="mono" style="font-size:12px">${fmtN(i.amt, 0)}</td>
+        <td>${i.prot ? '<span class="tag t-s">محمي</span>' : `<select data-eg="eco" data-p="cls.${i.k}" style="${egSelStyle};min-height:34px;font-size:12px">${ECO_CLS.map(([k, l]) => `<option value="${k}" ${i.cls === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`}</td>
+        <td class="mono" style="font-size:12px;color:${i.sav ? 'var(--greenfg)' : 'var(--faint)'}">${fmtN(i.sav, 0)}</td><td class="faint" style="font-size:12px">${i.months ? i.months + ' شهر' : '—'}</td><td style="font-size:12px">${i.sol}</td>
+        <td>${i.prot ? '—' : `<select data-eg="eco" data-p="st.${i.k}" style="${egSelStyle};min-height:34px;font-size:12px">${REC_ST.map(x => `<option ${i.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</td></tr>`).join('')}</tbody></table></div>
+      ${egNote('الوفر نظري ولا يُسجَّل وفرًا محققًا إلا بعد قياسه. النسب مبنية على نطاقات تحسين محافظة لكل بند ويجب التحقق منها. لا يوصي النظام بخفض السلامة أو الصيانة الحرجة أو التراخيص أو الرقابة المالية. التغييرات الجوهرية تحتاج موافقة المسؤول المخول.')}`);
+  }
+  if (s.tab === 'side') {
+    const P = m.pick;
+    return egCard('المشاريع الجانبية المرتبة حسب الملاءمة', 'ECO-08/09 · أقسام 15 و19', `<div class="tbl-wrap"><table><thead><tr><th>الفكرة</th><th>المسار</th><th>درجة الملاءمة</th><th>تكلفة البدء</th><th>أول عميل</th><th>الهامش</th><th>ملاحظة</th></tr></thead><tbody>
+      ${m.ideas.map(I => `<tr style="${I.blocked ? 'opacity:.55' : ''}"><td style="font-size:12.5px"><button type="button" class="btn link sm" style="padding:0;min-height:0;text-align:right" data-act="eg-set" data-k="${esc('eco.pick|' + I.k)}" ${I.blocked ? 'disabled' : ''}>${P && P.k === I.k ? '● ' : ''}${I.n}</button></td><td class="faint" style="font-size:11.5px">${ECO_TRACKS[I.t]}</td><td class="mono" style="font-size:12px;color:${egStatus(I.score)[1]}">${fmtN(I.score, 0)}</td><td class="mono" style="font-size:12px">${fmtN(I.cost, 0)}</td><td class="faint" style="font-size:12px">${I.wk} أسابيع</td><td class="mono" style="font-size:12px">${I.mg}%</td><td class="faint" style="font-size:11.5px">${I.blocked || (I.hrs > m.hrsAvail ? 'يحتاج وقتًا أكثر من المتاح' : I.rel === 2 ? 'مرتبط بالنشاط الرئيسي' : 'مستقل')}</td></tr>`).join('')}</tbody></table></div>
+      ${P ? `<div class="sub" style="gap:6px"><b style="font-size:13.5px;color:var(--yellow)">خطة تجربة قبل الاستثمار — ${P.n}</b>
+        ${['مقابلة 8–10 عملاء محتملين والتحقق من احتياجهم واستعدادهم للدفع', 'عرض تجريبي واضح بسعر محدد ونطاق محدود', 'الحصول على طلبات أو حجوزات مسبقة نظامية قبل أي توسع', 'تنفيذ عدد محدود من الطلبات وقياس التكلفة والهامش الفعليين', 'مقارنة الهامش الفعلي بالتقدير (' + P.mg + '%) ثم قرار الاستمرار أو التعديل أو الإيقاف'].map((t, i) => `<span style="font-size:12.5px"><span class="mono faint">${i + 1}</span> ${t}</span>`).join('')}
+        <span class="faint" style="font-size:12px">الحد الأقصى للخسارة المقبولة: <b style="color:var(--fg)">${fmtN(Math.min(m.cap, P.cost * 1.5), 0)}</b> ${cur} · معيار الإيقاف: أقل من 3 عملاء يدفعون خلال 6 أسابيع، أو هامش فعلي أقل من نصف المقدَّر.</span></div>` : '<span class="faint">لا توجد فكرة مؤهلة بالمهارات والأصول الحالية.</span>'}
+      ${egNote('الفكرة فرضية حتى تُختبر مع عميل حقيقي. معيار «الطلب» يبقى 50% حتى يثبت بالتجربة، ولا تحصل الفكرة على تقييم مرتفع لمجرد أن تكلفتها منخفضة. تحقق من التراخيص وتعارض المصالح قبل البدء.')}`);
+  }
+  // forecast
+  const F = m.fc, lab = ['الآن', 'الشهر 1', 'الشهر 2', 'الشهر 3'];
+  const varRows = m.acts.map((a, i) => a === null ? null : [lab[i + 1], fmtN(F.base[i + 1], 0), fmtN(a, 0), fmtN(a - F.base[i + 1], 0), Math.abs(a - F.base[i + 1]) / Math.max(1, Math.abs(F.base[i + 1])) > 0.1 ? 'انحراف جوهري — راجع الافتراضات' : 'ضمن الحدود']).filter(Boolean);
+  const alert = F.negB || F.negS;
+  return egCard('توقع السيولة لمدة 90 يومًا — ثلاثة سيناريوهات', 'ECO-12 · قسم 20', `${alert ? `<div class="banner r">${ic('warn', 16)}<span>إنذار سيولة مبكر: ${F.negB ? 'في السيناريو الأساسي يصبح النقد سالبًا في الشهر ' + F.negB : 'في سيناريو الضغط يصبح النقد سالبًا في الشهر ' + F.negS}. الإجراءات المقترحة: تسريع التحصيل، التفاوض على شروط الموردين، تقليل المخزون غير الضروري، أو إعادة جدولة الالتزامات وفق العقود.</span></div>` : '<div class="banner g">لا يظهر عجز نقدي خلال 90 يومًا في السيناريوهات الثلاثة وفق الافتراضات الحالية.</div>'}
+    ${anChart({ lab, series: [{ y: F.improve, c: 'var(--green)', n: 'سيناريو التحسن' }, { y: F.base, c: 'var(--blue)', n: 'الأساسي' }, { y: F.stress, c: 'var(--red)', n: 'الضغط' }] })}
+    ${anTbl({ h: 'رصيد النقد المتوقع نهاية كل شهر', cols: ['السيناريو', 'الشهر 1', 'الشهر 2', 'الشهر 3', 'أول شهر عجز'], rows: [['الأساسي', ...F.base.slice(1).map(v => fmtN(v, 0)), F.negB ? 'الشهر ' + F.negB : '—'], ['التحسن', ...F.improve.slice(1).map(v => fmtN(v, 0)), F.negI ? 'الشهر ' + F.negI : '—'], ['الضغط', ...F.stress.slice(1).map(v => fmtN(v, 0)), F.negS ? 'الشهر ' + F.negS : '—']] })}
+    ${anTbl({ h: 'الافتراضات المعلنة', cols: ['السيناريو', 'الافتراض'], rows: [['الأساسي', 'استمرار الإيراد والمصروفات الحالية'], ['التحسن', `تحقق 50% من الوفر النظري تدريجيًا (30%←60%←90%)، تحصيل 25% من المستحقات مبكرًا إن كان التحصيل > 30 يومًا، دخل جانبي صافٍ يصل إلى ${fmtN(m.sideNet, 0)} في الشهر الثالث، وتكلفة التنفيذ والتجربة في الشهر الأول`], ['الضغط', 'تراجع الإيراد 15%، ارتفاع التكاليف 5%، وتأخر 20% من التحصيل']] })}
+    <div class="stack" style="gap:6px"><span class="lbl">مقارنة المتوقع بالفعلي (أدخل رصيد النقد الفعلي نهاية كل شهر)</span>${egGrid(140, [1, 2, 3].map(i => egNum('eco', 'fin.act' + i, 'الفعلي — الشهر ' + i)).join(''))}</div>
+    ${varRows.length ? anTbl({ h: 'سجل الانحرافات', cols: ['الشهر', 'المتوقع', 'الفعلي', 'الفرق', 'التقييم'], rows: varRows }) : ''}
+    ${egNote('التوقع ليس ضمانًا؛ يُحدَّث شهريًا عند تغير معلومات جوهرية، وتُستخدم الانحرافات لتحسين الافتراضات.')}`);
+};
+VIEWS.eco = () => {
+  const s = egS('eco'), A = s.who === 'A', C = A ? ECO_CP : ECO_CB;
+  let inputs = '';
+  if (s.tab === 'case') inputs = egCard('استبيان التشخيص المبدئي', 'ECO-01 · أقسام 2 و5 و16',
+    egQ(1, 'من هو المستفيد من التحليل؟', egCh('eco', 'who', ECO_WHO)) + egQ(2, 'السوق والقطاع', egGrid(180, egTxt('eco', 'country', 'الدولة أو السوق') + egTxt('eco', 'sector', 'القطاع أو طبيعة النشاط') + egSel('eco', 'cur', 'العملة', [['JOD', 'دينار أردني'], ['SAR', 'ريال سعودي'], ['AED', 'درهم إماراتي'], ['USD', 'دولار'], ['CAD', 'دولار كندي']])))
+    + egQ(3, 'المشكلة الأكثر إلحاحًا', egCh('eco', 'problem', ECO_PROB)) + egQ(4, 'مستوى تقبل المخاطر المالية', egCh('eco', 'risk', [['low', 'منخفض — أحافظ على السيولة'], ['mid', 'متوسط — تجربة صغيرة بضوابط'], ['high', 'مرتفع نسبيًا بعد التحقق']]))
+    + egQ(5, 'الوقت المتاح أسبوعيًا لمشروع جانبي', egCh('eco', 'hours', [['<5', 'أقل من 5 ساعات'], ['5-10', '5–10 ساعات'], ['10+', 'أكثر من 10'], ['full', 'دوام كامل']])) + egQ(6, 'النتيجة المطلوبة خلال 3 أشهر', egTxt('eco', 'goal', '')));
+  if (s.tab === 'fin') inputs = egCard(A ? 'الدخل والإنفاق الشهري' : 'الإيرادات والمصروفات والالتزامات الشهرية', 'ECO-02 · أقسام 7–9',
+    egGrid(150, egNum('eco', 'fin.rev', A ? 'صافي الدخل الشهري الحالي' : 'الإيراد الشهري الحالي') + egNum('eco', 'fin.revPrev', A ? 'الدخل قبل 6 أشهر' : 'الإيراد قبل 6 أشهر') + egNum('eco', 'fin.expPrev', 'إجمالي المصروفات قبل 6 أشهر') + egNum('eco', 'fin.debt', 'أقساط وديون شهرية') + egNum('eco', 'fin.cash', 'النقد المتاح الآن')
+      + (A ? '' : egNum('eco', 'fin.recv', 'مستحقات لدى العملاء') + egNum('eco', 'fin.coll', 'متوسط التحصيل (يوم)') + egNum('eco', 'fin.repeat', 'العملاء العائدون %') + egNum('eco', 'fin.top', 'حصة أكبر عميل %')))
+    + `<span class="lbl" style="margin-top:4px">المصروفات الشهرية حسب البند</span>` + egGrid(150, C.map(c => egNum('eco', 'exp.' + c[0], c[1] + (c[5] ? ' 🔒' : ''))).join(''))
+    + egNote('اترك الحقل فارغًا إذا كانت القيمة غير معروفة؛ لا يصحح النظام أي قيمة مالية بصمت. كل رقم بالعملة المختارة وعن شهر واحد.'));
+  if (s.tab === 'cost') inputs = '';
+  if (s.tab === 'side') inputs = egCard('المهارات والأصول والموارد', 'ECO-08 · قسم 14', egQ(1, 'المهارات والخبرات التي يمكن استثمارها', egCh('eco', 'skills', ECO_SK, true)) + egQ(2, 'الأصول والموارد المتاحة (بصلاحية استخدام مؤكدة)', egCh('eco', 'assets', ECO_AS, true))
+    + egGrid(180, egNum('eco', 'capital', 'رأس مال يمكن تخصيصه دون تعريض الاحتياجات للخطر') + egNum('eco', 'sideRev', 'إيراد شهري متوقع من التجربة (افتراض)')));
+  if (s.tab === 'fcst') inputs = '';
+  return `${engHead('NAIOSH ECONOMIC RESILIENCE · DIA-ECO', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية', 'لا نقترح مشروعًا جانبيًا قبل فهم المشكلة الاقتصادية، ولا خفض تكلفة قبل معرفة أثرها، ولا تنبؤًا قبل توضيح البيانات والافتراضات. اجمع ← تحقق ← اكتشف السبب ← اختبر الحل ← نفّذ ← قِس ← تعلّم.', engExport('ECO'))}
+  ${egTabs('eco', [['case', 'الحالة والأسئلة'], ['fin', 'المالية والتشخيص'], ['cost', 'خفض التكاليف'], ['side', 'المشاريع الجانبية'], ['fcst', 'توقع 90 يومًا']])}
+  ${inputs}${egOut('eco')}`;
+};
+
+/* =========================================================================================
+   DIA-SCM — Global Supply Chain & Logistics Intelligence
+   ========================================================================================= */
+const SCM_CASES = [['SC-01', 'نقص المواد أو توقف التوريد'], ['SC-02', 'ارتفاع تكاليف الشراء'], ['SC-03', 'تعطل النقل أو الممرات'], ['SC-04', 'ارتفاع تكاليف الشحن والتأمين'], ['SC-05', 'ضعف إدارة المخزون والمستودعات'], ['SC-06', 'تأخر التخليص والعبور'], ['SC-07', 'الاعتماد على مورد أو مصدر واحد'], ['SC-08', 'العقود والالتزامات التجارية'], ['SC-09', 'العقوبات والقيود والحظر التجاري'], ['SC-10', 'ضعف التخطيط والتنبؤ بالطلب'], ['SC-11', 'ضعف التنسيق بين الإدارات'], ['SC-12', 'المرونة الشاملة واستمرارية الأعمال']];
+const SCM_Q = {
+  sup: ['ما نسبة الاعتماد على أكبر مورد لكل مادة حرجة؟', 'ما دولة المنشأ ودولة الشحن ودولة العبور؟', 'ما مدة التوريد المعتادة، وما المدة الفعلية خلال آخر ستة أشهر؟', 'هل توجد بدائل معتمدة فنيًا وتجاريًا؟ وكم يستغرق اعتمادها؟'],
+  inv: ['ما الحد الأدنى والحد الأقصى ونقطة إعادة الطلب لكل مادة؟', 'ما نسبة المواد الراكدة أو التالفة أو المنتهية الصلاحية؟', 'هل توجد فروقات بين المخزون الفعلي والنظام؟', 'ما تكلفة نفاد كل مادة من حيث توقف الإنتاج أو الخدمة؟'],
+  route: ['ما نقطة الانطلاق والوجهة النهائية ونقاط العبور؟', 'هل يوجد ميناء أو معبر أو ممر بديل قابل للاستخدام؟', 'هل ارتفعت أقساط التأمين بسبب مخاطر الحرب أو التوترات الأمنية؟', 'ما الأثر المتوقع إذا تعطل المسار الأساسي لمدة أسبوعين أو شهر؟'],
+  cost: ['ما التكلفة الكلية الواصلة للمادة، وليس سعر الشراء فقط؟', 'هل ترتبط شروط الدفع للموردين بمواعيد التحصيل من العملاء؟', 'هل أدى ارتفاع المخزون إلى تجميد السيولة؟', 'ما الحد الأقصى المقبول لزيادة التكلفة قبل أن يصبح العقد غير مجدٍ؟'],
+  legal: ['من يتحمل الرسوم الإضافية والتأخير؟ وما شروط القوة القاهرة وتغيير المسار؟', 'هل توجد قيود مؤكدة أو قرارات رسمية تؤثر في المورد أو السلعة أو المسار؟ (لا يُعتمد على إشاعة)', 'هل يتطلب المسار موافقات خاصة أو تغييرات في المنشأ أو مستندات إضافية؟'],
+  plan: ['ما الطلب المتوقع وخطة الإنتاج أو المشاريع للأشهر الثلاثة القادمة؟', 'أين تنقطع المعلومات بين المشتريات والمستودعات والإنتاج والنقل؟', 'ما أقصى مدة توقف يمكن تحملها لكل خدمة حرجة؟']
+};
+const SCM_QMAP = { 'SC-01': ['inv', 'sup'], 'SC-02': ['cost'], 'SC-03': ['route'], 'SC-04': ['route', 'cost'], 'SC-05': ['inv'], 'SC-06': ['route', 'legal'], 'SC-07': ['sup'], 'SC-08': ['legal'], 'SC-09': ['legal'], 'SC-10': ['plan', 'inv'], 'SC-11': ['plan'], 'SC-12': ['plan', 'sup', 'route'] };
+const SCM_QN = { sup: 'الموردون والمشتريات', inv: 'المستودعات والمخزون', route: 'النقل والممرات', cost: 'التكلفة والسيولة', legal: 'العقود والامتثال والقيود', plan: 'التخطيط والتنسيق والاستمرارية' };
+EG_INIT.scm = () => ({
+  tab: 'case', client: 'contract', sector: 'construction', cases: ['SC-01', 'SC-07', 'SC-04'], modes: ['sea', 'land'], origin: 'mixed', horizon: '90', svc: '95', cur: 'USD',
+  mats: [
+    { n: 'حديد التسليح', d: 40, stock: 900, lt: 35, ltv: 12, sup: 1, crit: 'crit', cost: 520, stop: 18000 },
+    { n: 'كابلات كهربائية', d: 120, stock: 5200, lt: 28, ltv: 6, sup: 3, crit: 'imp', cost: 9, stop: 4000 },
+    { n: 'مضخات ومعدات ميكانيكية', d: 0.6, stock: 9, lt: 60, ltv: 20, sup: 1, crit: 'crit', cost: 4200, stop: 9000 }
+  ],
+  routes: [
+    { n: 'بحري عبر الممر الحالي', price: 520, freight: 38, ins: 9, duty: 26, clr: 6, store: 4, days: 35, rel: 72, geo: 4, flex: 2 },
+    { n: 'بحري عبر ميناء بديل ثم بري', price: 520, freight: 55, ins: 6, duty: 26, clr: 8, store: 5, days: 41, rel: 86, geo: 2, flex: 3 },
+    { n: 'مورد إقليمي بديل (بري)', price: 565, freight: 22, ins: 3, duty: 10, clr: 4, store: 3, days: 14, rel: 90, geo: 1, flex: 4 }
+  ],
+  delayCost: 2.5
+});
+const SCM_CRIT = [['crit', 'حرجة'], ['imp', 'مهمة'], ['low', 'غير حرجة']];
+function scmModel() {
+  const s = egS('scm'), z = { '90': 1.28, '95': 1.65, '98': 2.05, '99': 2.33 }[s.svc] || 1.65;
+  const mats = (s.mats || []).map((x, i) => {
+    const d = egN(x.d), stock = egN(x.stock), lt = egN(x.lt), ltv = egN(x.ltv), sup = egN(x.sup);
+    const cover = d ? stock / d : Infinity, ss = z * d * ltv, rop = d * lt + ss, gap = Math.max(0, lt + ltv - cover);
+    const reorderNow = stock <= rop, exposure = gap * egN(x.stop);
+    const L = Math.max(1, Math.min(5, Math.round(gap > 0 ? 3 + gap / 10 : reorderNow ? 3 : cover < lt * 2 ? 2 : 1) + (sup <= 1 ? 1 : 0)));
+    const I = x.crit === 'crit' ? 5 : x.crit === 'imp' ? 3 : 1;
+    return { i, n: x.n || 'مادة ' + (i + 1), d, stock, lt, ltv, sup, crit: x.crit, cost: egN(x.cost), stopC: egN(x.stop), cover, ss, rop, gap, reorderNow, exposure, L, I, sc: L * I, ttImpact: isFinite(cover) ? Math.max(0, Math.round(cover)) : null };
+  });
+  const dc = egN(s.delayCost);
+  const routes = (s.routes || []).map((r, i) => {
+    const landed = ['price', 'freight', 'ins', 'duty', 'clr', 'store'].reduce((a, k) => a + egN(r[k]), 0);
+    const expDelay = (1 - egN(r.rel) / 100) * egN(r.days) * 0.5, riskAdj = landed * (1 + egN(r.geo) * 0.02) + expDelay * dc;
+    return { i, n: r.n || 'بديل ' + (i + 1), landed, days: egN(r.days), rel: egN(r.rel), geo: egN(r.geo), flex: egN(r.flex), expDelay, riskAdj };
+  });
+  if (routes.length) {
+    const mn = (k) => Math.min(...routes.map(r => r[k])), mx = (k) => Math.max(...routes.map(r => r[k]));
+    const nrm = (v, a, b, inv) => b === a ? 1 : inv ? (b - v) / (b - a) : (v - a) / (b - a);
+    routes.forEach(r => { r.score = 100 * (0.35 * nrm(r.riskAdj, mn('riskAdj'), mx('riskAdj'), 1) + 0.2 * nrm(r.days, mn('days'), mx('days'), 1) + 0.2 * nrm(r.rel, mn('rel'), mx('rel')) + 0.15 * nrm(r.geo, mn('geo'), mx('geo'), 1) + 0.1 * nrm(r.flex, mn('flex'), mx('flex'))); });
+  }
+  const cheapest = [...routes].sort((a, b) => a.landed - b.landed)[0], resilient = [...routes].sort((a, b) => (b.rel - b.geo * 10) - (a.rel - a.geo * 10))[0], best = [...routes].sort((a, b) => b.score - a.score)[0];
+  const primary = routes[0], alt = best && best !== primary ? best : routes[1];
+  // risk register
+  const reg = [];
+  mats.forEach(m => {
+    if (m.gap > 0) reg.push({ code: 'SC-01', r: `نفاد «${m.n}» قبل وصول التوريد التالي`, cause: `التغطية ${fmtN(m.cover, 0)} يومًا مقابل مهلة توريد ${m.lt}±${m.ltv} يومًا`, L: m.L, I: m.I, t: m.ttImpact, impact: `توقف محتمل ${fmtN(m.gap, 0)} يومًا ≈ ${fmtN(m.exposure, 0)}`, act: 'طلب فوري + شحن جزئي أسرع للكمية الحرجة + تفعيل مورد بديل مؤهل' });
+    else if (m.reorderNow) reg.push({ code: 'SC-05', r: `«${m.n}» تحت نقطة إعادة الطلب`, cause: `المخزون ${fmtN(m.stock, 0)} ≤ نقطة إعادة الطلب ${fmtN(m.rop, 0)}`, L: m.L, I: m.I, t: m.ttImpact, impact: 'خطر نفاد إذا تأخر الطلب', act: 'إصدار أمر الشراء الآن وفق نقطة إعادة الطلب' });
+    if (m.sup <= 1 && m.crit !== 'low') reg.push({ code: 'SC-07', r: `مصدر واحد لـ«${m.n}»`, cause: 'لا يوجد مورد بديل مؤهل', L: 3, I: m.I, t: null, impact: 'نقطة فشل منفردة — ليس انقطاعًا مؤكدًا', act: 'تأهيل مورد بديل أو مخزون احتياطي محسوب أو عقد أكثر مرونة' });
+  });
+  routes.forEach(r => { if (r.geo >= 4) reg.push({ code: 'SC-03', r: `اضطراب محتمل في «${r.n}»`, cause: `درجة المخاطر الجيوسياسية ${r.geo}/5 وموثوقية ${r.rel}%`, L: Math.min(5, r.geo), I: 4, t: null, impact: `تأخير متوقع ${fmtN(r.expDelay, 1)} يومًا لكل شحنة`, act: 'توزيع الشحنات على مسار بديل وتحديث بيانات الممر من مصدر رسمي' }); });
+  if (primary && cheapest && primary.landed > cheapest.landed * 1.05) reg.push({ code: 'SC-04', r: 'تكلفة واصلة أعلى من البديل الأرخص', cause: `${fmtN(primary.landed, 1)} مقابل ${fmtN(cheapest.landed, 1)} للوحدة`, L: 3, I: 2, t: null, impact: `${fmtP(pctCh(cheapest.landed, primary.landed))} لكل وحدة`, act: 'إعادة التفاوض أو نقل جزء من الكميات' });
+  reg.forEach(x => { x.sc = x.L * x.I; x.lvl = x.sc >= 15 ? ['حرج', 't-c'] : x.sc >= 10 ? ['مرتفع', 't-h'] : x.sc >= 5 ? ['متوسط', 't-m'] : ['منخفض', 't-s']; });
+  reg.sort((a, b) => b.sc - a.sc);
+  // scenarios on critical materials
+  const scen = [['الأساسي', 1, 1, 0], ['الضغط (مهلة +30% وتكلفة +15%)', 1.3, 1.15, 0], ['التعطل الشديد (توقف المصدر/المسار الأساسي والتحول لبديل يحتاج تأهيلًا 21 يومًا)', 0, 1, 1]].map(([n, ltF, cF, sev]) => {
+    let stopDays = 0, stopCost = 0, extra = 0;
+    mats.filter(m => m.crit !== 'low').forEach(m => {
+      const lt = sev ? Math.max(m.lt * 1.5, (alt ? alt.days : m.lt) + 21) + m.ltv : m.lt * ltF;
+      const g = Math.max(0, lt - m.cover); stopDays = Math.max(stopDays, g); stopCost += g * m.stopC;
+      extra += m.d * 30 * m.cost * (cF - 1) + (sev && alt && primary ? m.d * 30 * Math.max(0, alt.landed - primary.landed) / Math.max(1, primary.landed) * m.cost : 0);
+    });
+    return [n, fmtN(stopDays, 0) + ' يوم', fmtN(stopCost, 0), fmtN(extra, 0)];
+  });
+  return { s, z, mats, routes, best, cheapest, resilient, reg, scen };
+}
+EG_OUT.scm = () => {
+  const m = scmModel(), s = m.s;
+  if (s.tab === 'case') {
+    const groups = [...new Set((s.cases || []).flatMap(c => SCM_QMAP[c] || []))];
+    return egCard('الأسئلة التكيفية حسب المسارات المختارة', 'أقسام 6 و17', groups.length ? groups.map(g => `<div class="stack" style="gap:5px"><span class="lbl">${SCM_QN[g]}</span>${SCM_Q[g].map(q => `<span style="font-size:12.5px">• ${q}</span>`).join('')}</div>`).join('') + egNote('يجب التمييز بين الخبر المؤكد والتوقع والاحتمال والافتراض، ولا يُقرَّر وجود حصار أو عقوبة اعتمادًا على إشاعة.') : '<span class="faint">اختر مسارًا واحدًا على الأقل.</span>');
+  }
+  if (s.tab === 'mat') {
+    const crit = m.mats.filter(x => x.gap > 0);
+    return egCard('تغطية المخزون ونقاط إعادة الطلب', 'أقسام 8–9 و13', `${anKpis([['مواد معرّضة للنفاد', crit.length, crit.length ? 'bad' : 'good'], ['مواد بمصدر واحد', m.mats.filter(x => x.sup <= 1).length, m.mats.some(x => x.sup <= 1) ? 'bad' : ''], ['تكلفة التوقف المعرّضة', fmtN(m.mats.reduce((a, x) => a + x.exposure, 0), 0), crit.length ? 'bad' : ''], ['مستوى الخدمة المستهدف', s.svc + '%']])}
+      ${anTbl({ h: 'تحليل المواد', cols: ['المادة', 'التغطية (يوم)', 'المهلة ± التذبذب', 'مخزون الأمان', 'نقطة إعادة الطلب', 'الحالة'], rows: m.mats.map(x => [x.n, isFinite(x.cover) ? fmtN(x.cover, 0) : '—', x.lt + ' ± ' + x.ltv, fmtN(x.ss, 0), fmtN(x.rop, 0), x.gap > 0 ? 'خطر نفاد خلال ' + fmtN(x.cover, 0) + ' يومًا' : x.reorderNow ? 'اطلب الآن' : 'كافٍ'] ) })}
+      ${egNote(`مخزون الأمان = z (${m.z}) × الاستهلاك اليومي × تذبذب المهلة. نقطة إعادة الطلب = الاستهلاك × المهلة + مخزون الأمان. «خطر النفاد» يعني أن التغطية أقل من المهلة القصوى المتوقعة.`)}`);
+  }
+  if (s.tab === 'route') {
+    return egCard('مقارنة البدائل بالتكلفة الكلية الواصلة والمرونة', 'أقسام 10 و12 و14', `${anKpis([['الأقل تكلفة', m.cheapest ? m.cheapest.n : '—'], ['الأكثر مرونة', m.resilient ? m.resilient.n : '—'], ['الأفضل في التقييم المتوازن', m.best ? m.best.n : '—', 'good']])}
+      ${anTbl({ h: 'المقارنة', cols: ['البديل', 'التكلفة الواصلة/وحدة', 'زمن التوريد', 'الموثوقية', 'تأخير متوقع', 'التكلفة المعدّلة بالمخاطر', 'التقييم'], rows: m.routes.map(r => [r.n, fmtN(r.landed, 1), r.days + ' يوم', r.rel + '%', fmtN(r.expDelay, 1) + ' يوم', fmtN(r.riskAdj, 1), fmtN(r.score, 0)]) })}
+      ${anChart({ bars: [...m.routes].sort((a, b) => b.score - a.score).map(r => [r.n, Math.round(r.score)]) })}
+      ${egNote('التكلفة الواصلة = السعر + الشحن + التأمين + الرسوم + التخليص + التخزين. التكلفة المعدّلة تضيف 2% لكل درجة مخاطر جيوسياسية وتكلفة التأخير المتوقع. الأوزان: تكلفة 35% · زمن 20% · موثوقية 20% · مخاطر 15% · مرونة 10%. قد يكون الحل الأمثل مزيجًا من بديلين لا اختيار بديل واحد.')}`);
+  }
+  return egCard('سجل المخاطر والسيناريوهات والتوصيات', 'أقسام 11 و15 و18–20', `${anKpis([['مخاطر حرجة', m.reg.filter(r => r.sc >= 15).length, m.reg.some(r => r.sc >= 15) ? 'bad' : 'good'], ['مخاطر مرتفعة', m.reg.filter(r => r.sc >= 10 && r.sc < 15).length], ['إجمالي المخاطر', m.reg.length]])}
+    <div class="tbl-wrap"><table><thead><tr><th>الرمز</th><th>الخطر</th><th>السبب والدليل</th><th>الاحتمال</th><th>الأثر</th><th>المستوى</th><th>وقت ظهور الأثر</th><th>التوصية</th></tr></thead><tbody>${m.reg.map(r => `<tr><td class="mono" style="font-size:11.5px">${r.code}</td><td style="font-size:12.5px"><b>${esc(r.r)}</b><br><span class="faint" style="font-size:11px">${esc(r.impact)}</span></td><td class="faint" style="font-size:12px">${esc(r.cause)}</td><td class="mono">${r.L}</td><td class="mono">${r.I}</td><td><span class="tag ${r.lvl[1]}">${r.lvl[0]}</span></td><td class="faint" style="font-size:12px">${r.t === null ? '—' : r.t + ' يوم'}</td><td style="font-size:12px">${r.act}</td></tr>`).join('')}</tbody></table></div>
+    ${anTbl({ h: 'أثر السيناريوهات على المواد الحرجة والمهمة', cols: ['السيناريو', 'أطول توقف محتمل', 'تكلفة التوقف', 'تكلفة شراء إضافية/شهر'], rows: m.scen })}
+    ${egNote('الاعتماد على مورد واحد نقطة ضعف وليس انقطاعًا مؤكدًا. تغيير مورد أو مسار أو عقد لا يُنفذ تلقائيًا؛ التوصية تُرفع لصاحب الصلاحية مع مبرراتها.')}`);
+};
+VIEWS.supply = () => {
+  const s = egS('scm');
+  let inputs = '';
+  if (s.tab === 'case') inputs = egCard('نموذج تحديد حالة سلسلة الإمداد', 'أقسام 2 و5 و16',
+    egQ(1, 'نوع العميل', egCh('scm', 'client', [['gov', 'جهة حكومية'], ['private', 'شركة خاصة'], ['factory', 'مصنع'], ['contract', 'مقاولات ومشاريع'], ['logistics', 'نقل وخدمات لوجستية'], ['health', 'صحي أو دوائي'], ['retail', 'تجارة وتوزيع']]))
+    + egQ(2, 'ما الحالات التي تريد تحليلها؟ اختر كل ما ينطبق', egCh('scm', 'cases', SCM_CASES.map(([k, l]) => [k, k + ' · ' + l]), true))
+    + egQ(3, 'وسائل النقل المستخدمة', egCh('scm', 'modes', [['land', 'بري'], ['sea', 'بحري'], ['air', 'جوي'], ['rail', 'سكك حديدية'], ['multi', 'متعدد الوسائط']], true))
+    + egQ(4, 'مصدر المواد', egCh('scm', 'origin', [['local', 'السوق المحلي'], ['intl', 'موردون دوليون'], ['mixed', 'محلي ودولي']]))
+    + egQ(5, 'أفق التحليل', egCh('scm', 'horizon', [['30', '30 يومًا — معالجة عاجلة'], ['90', '90 يومًا — تخطيط تشغيلي'], ['365', '12 شهرًا — استراتيجي']])));
+  if (s.tab === 'mat') inputs = egCard('المواد الحرجة والمخزون', 'نموذج البيانات · قسم 4', `${(s.mats || []).map((x, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(x.n || 'مادة ' + (i + 1))}</b><button type="button" class="btn link sm" data-act="scm-del" data-k="${i}">حذف</button></div>
+      ${egGrid(130, egTxt('scm', `mats.${i}.n`, 'اسم المادة') + egNum('scm', `mats.${i}.d`, 'الاستهلاك اليومي') + egNum('scm', `mats.${i}.stock`, 'المخزون المتاح') + egNum('scm', `mats.${i}.lt`, 'مهلة التوريد (يوم)') + egNum('scm', `mats.${i}.ltv`, 'تذبذب المهلة ± يوم') + egNum('scm', `mats.${i}.sup`, 'عدد الموردين المؤهلين') + egNum('scm', `mats.${i}.cost`, 'سعر الوحدة') + egNum('scm', `mats.${i}.stop`, 'تكلفة يوم التوقف') + egSel('scm', `mats.${i}.crit`, 'الأهمية', SCM_CRIT))}</div>`).join('')}
+    <div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="scm-add">${ic('plus', 14)}إضافة مادة</button>${egSel('scm', 'svc', '', [['90', 'مستوى خدمة 90%'], ['95', 'مستوى خدمة 95%'], ['98', 'مستوى خدمة 98%'], ['99', 'مستوى خدمة 99%']])}</div>`);
+  if (s.tab === 'route') inputs = egCard('بدائل الموردين والمسارات (للوحدة الواحدة)', 'قسم 14', (s.routes || []).map((r, i) => `<div class="sub" style="gap:8px"><b style="font-size:13px">${i === 0 ? 'الوضع الحالي — ' : 'بديل ' + i + ' — '}${esc(r.n || '')}</b>${egGrid(120, egTxt('scm', `routes.${i}.n`, 'الاسم') + egNum('scm', `routes.${i}.price`, 'سعر الشراء') + egNum('scm', `routes.${i}.freight`, 'الشحن') + egNum('scm', `routes.${i}.ins`, 'التأمين') + egNum('scm', `routes.${i}.duty`, 'الرسوم والجمارك') + egNum('scm', `routes.${i}.clr`, 'التخليص') + egNum('scm', `routes.${i}.store`, 'التخزين') + egNum('scm', `routes.${i}.days`, 'زمن التوريد (يوم)') + egNum('scm', `routes.${i}.rel`, 'الموثوقية %') + egNum('scm', `routes.${i}.geo`, 'مخاطر جيوسياسية 1–5') + egNum('scm', `routes.${i}.flex`, 'المرونة 1–5'))}</div>`).join('') + egGrid(200, egNum('scm', 'delayCost', 'تكلفة يوم التأخير لكل وحدة')));
+  return `${engHead('NAIOSH SUPPLY CHAIN INTELLIGENCE · DIA-SCM', 'ذكاء سلاسل الإمداد واللوجستيات العالمية', 'لا يكتفي النظام بإخبارك أن هناك خطرًا؛ بل يوضح ما الذي قد يتأثر، ومتى، وبأي تكلفة محتملة، وما البدائل المتاحة، وما الأدلة التي تدعم التوصية.', engExport('SCM'))}
+  ${egTabs('scm', [['case', 'تحديد الحالة'], ['mat', 'المواد والمخزون'], ['route', 'البدائل والمسارات'], ['risk', 'المخاطر والسيناريوهات']])}
+  ${inputs}${egOut('scm')}`;
+};
+</script>
+<script data-app="">
+/* =========================================================================================
+   DIA-SUS — NAIOSH SUSTAIN 360 (16 axes · 8 continuity domains · NSCI)
+   ========================================================================================= */
+const SUS_DOM = [['eco', 'الديمومة الاقتصادية', 20], ['ops', 'الديمومة التشغيلية', 15], ['hum', 'الديمومة البشرية', 15], ['env', 'الديمومة البيئية', 15], ['inst', 'الديمومة المؤسسية', 15], ['know', 'الديمومة المعرفية', 10], ['infra', 'ديمومة البنية والخدمات', 5], ['soc', 'الديمومة المجتمعية', 5]];
+// [code, name, domain, respondent, questions [id, text, critical, inverted]]
+const SUS_AX = [
+  ['GOV', 'الاستراتيجية والحوكمة', 'inst', 'الإدارة العليا ومجلس الإدارة', [['GOV-1', 'هل توجد رؤية استراتيجية موثقة للسنوات الخمس القادمة؟'], ['GOV-2', 'هل توجد صلاحيات ومسؤوليات واضحة لقرارات الاستدامة؟'], ['GOV-3', 'هل يمكن تتبع كل قرار مهم إلى بياناته وموافقاته؟']]],
+  ['FIN', 'المالية والاقتصاد', 'eco', 'المالية والاستثمار وإدارة المخاطر', [['FIN-1', 'هل تستطيع المؤسسة الاستمرار 6 أشهر على الأقل إذا انخفضت إيراداتها 30%؟', 1], ['FIN-2', 'هل الإيرادات موزعة دون اعتماد على عميل أو سوق أو ممول واحد؟'], ['FIN-3', 'هل توجد مخصصات مالية للطوارئ والتجديد والتطوير؟']]],
+  ['MKT', 'الأسواق والتوظيف', 'eco', 'التسويق والموارد البشرية', [['MKT-1', 'هل تُتابَع اتجاهات الطلب على المنتجات والخدمات بانتظام؟'], ['MKT-2', 'هل حُددت المهارات التي سيحتاجها العاملون خلال 5 سنوات؟'], ['MKT-3', 'هل توجد قدرة على إعادة تأهيل العاملين المعرضة وظائفهم للأتمتة؟']]],
+  ['OPS', 'التشغيل والإنتاج', 'ops', 'العمليات والإنتاج والصيانة', [['OPS-1', 'هل توجد خطط صيانة وقائية وتنبؤية مطبقة؟'], ['OPS-2', 'هل للعمليات المعتمدة على فرد أو مورد واحد بدائل جاهزة؟'], ['OPS-3', 'هل يُقاس الهدر والفاقد وإعادة التشغيل دوريًا؟']]],
+  ['ENV', 'البيئة والتلوث', 'env', 'إدارة البيئة', [['ENV-1', 'هل توجد قياسات دورية لجودة الهواء والمياه والتربة؟'], ['ENV-2', 'هل تجاوزت أي قياسات الحدود النظامية خلال آخر 12 شهرًا؟', 1, 1], ['ENV-3', 'هل توجد شكاوى مجتمعية متكررة مرتبطة بالتلوث؟', 0, 1]]],
+  ['RES', 'الطاقة والمياه والموارد', 'env', 'المرافق والطاقة', [['RES-1', 'هل يُقاس استهلاك الطاقة والمياه لكل وحدة إنتاج؟'], ['RES-2', 'هل توجد خطة لندرة المياه أو اضطراب إمداد الطاقة؟'], ['RES-3', 'هل تُستعاد أو تُدوَّر الموارد والمخلفات القابلة لذلك؟']]],
+  ['HSE', 'السلامة والصحة', 'hum', 'السلامة والصحة المهنية', [['HSE-1', 'هل ارتفعت معدلات الإصابات أو الأمراض المهنية خلال آخر 12 شهرًا؟', 1, 1], ['HSE-2', 'هل تُحلَّل الحوادث الوشيكة قبل وقوع الإصابات؟'], ['HSE-3', 'هل جاهزية الاستجابة للطوارئ مختبرة بتمارين فعلية؟', 1]]],
+  ['QMS', 'الجودة والتحسين', 'inst', 'إدارة الجودة', [['QMS-1', 'هل تُقاس نسبة المنتجات أو الخدمات غير المطابقة؟'], ['QMS-2', 'هل تُقاس فاعلية الإجراءات التصحيحية بعد إغلاقها؟'], ['QMS-3', 'هل تتكرر المشكلات بعد إغلاقها؟', 0, 1]]],
+  ['HRM', 'الموارد البشرية والتعلم', 'hum', 'الموارد البشرية', [['HRM-1', 'هل توجد خطط لتعاقب القيادات؟'], ['HRM-2', 'هل تُوثَّق معرفة الخبراء الحرجة؟'], ['HRM-3', 'هل تُقاس فاعلية التدريب بعد تطبيقه؟']]],
+  ['DIG', 'التحول الرقمي والأمن', 'know', 'تقنية المعلومات', [['DIG-1', 'هل توجد نسخ احتياطية مع اختبارات استعادة فعلية؟', 1], ['DIG-2', 'هل توجد خطة استجابة للحوادث السيبرانية؟'], ['DIG-3', 'هل تُراجَع قرارات الذكاء الاصطناعي المؤثرة بشريًا؟']]],
+  ['LOG', 'النقل واللوجستيات', 'infra', 'النقل والتوزيع', [['LOG-1', 'هل توجد طرق أو موانئ بديلة عند إغلاق المسار الرئيسي؟'], ['LOG-2', 'هل يُقاس معدل تأخر الشحنات وأسبابه؟'], ['LOG-3', 'هل يُقاس استهلاك الوقود لكل طن أو رحلة؟']]],
+  ['SUP', 'سلاسل الإمداد', 'ops', 'المشتريات وسلاسل الإمداد', [['SUP-1', 'هل توجد مصادر بديلة مؤهلة للمواد الحرجة؟'], ['SUP-2', 'هل يُقيَّم الموردون من حيث الجودة والسلامة والالتزام البيئي؟'], ['SUP-3', 'هل حُددت مستويات المخزون الآمن للمواد الحرجة؟']]],
+  ['SOC', 'المجتمع وجودة الحياة', 'soc', 'العلاقات المجتمعية', [['SOC-1', 'هل تُستشار المجتمعات المتأثرة قبل القرارات المؤثرة؟'], ['SOC-2', 'هل توجد آلية لاستقبال الشكاوى المجتمعية ومعالجتها؟'], ['SOC-3', 'هل توجد خطة لمعالجة الآثار الاجتماعية عند الإغلاق أو التوسع؟']]],
+  ['RSK', 'المخاطر والمرونة', 'inst', 'إدارة المخاطر', [['RSK-1', 'هل يوجد سجل محدث لأهم الأخطار مع حدود تدخل رقمية؟'], ['RSK-2', 'هل اختُبرت سيناريوهات الأزمات وحُددت أقصى مدة توقف مقبولة؟', 1], ['RSK-3', 'هل تُوثَّق الدروس المستفادة من الأزمات؟']]],
+  ['INN', 'الابتكار والاستشراف', 'know', 'التخطيط والبحث والتطوير', [['INN-1', 'هل توجد ميزانية للبحث والتطوير واختبار الأفكار؟'], ['INN-2', 'هل حُددت التقنيات التي قد تغير القطاع في السنوات القادمة؟'], ['INN-3', 'هل تُستكشف فرص من المخلفات أو الموارد غير المستغلة؟']]],
+  ['PRJ', 'المشاريع والجدوى', 'eco', 'إدارة المشاريع والمالية', [['PRJ-1', 'هل تُبنى دراسات الجدوى على افتراضات موثقة قابلة للمراجعة؟'], ['PRJ-2', 'هل تُقارَن النتائج الفعلية للمشاريع بدراسة الجدوى؟'], ['PRJ-3', 'هل تُختبر حساسية المشاريع لتغير أسعار الطاقة والمواد؟']]]
+];
+const SUS_SECT = { industry: ['الصناعة والمدن الصناعية', [['IND-1', 'هل تُقاس الانبعاثات والتصريفات حسب النوع والكمية؟', 'ENV'], ['IND-2', 'هل توجد خطة لإعادة تأهيل الموقع عند انتهاء عمر المشروع؟', 'ENV']]], transport: ['النقل', [['TRN-1', 'هل تُقاس جاهزية الأسطول وصيانته؟', 'LOG'], ['TRN-2', 'هل تُحلَّل مخاطر السلامة المرورية؟', 'HSE']]], health: ['الصحة', [['HLT-1', 'هل تُدار النفايات الطبية وفق مسار معتمد وموثق؟', 'ENV'], ['HLT-2', 'هل توجد خطة لاستمرارية الخدمات الحرجة للمرضى؟', 'RSK']]], education: ['التعليم', [['EDU-1', 'هل تُقاس جودة التعلم وفرص الخريجين؟', 'MKT'], ['EDU-2', 'هل توجد خطة لاستمرارية التعليم عند الانقطاع؟', 'RSK']]], agri: ['الزراعة والأغذية', [['AGR-1', 'هل تُقاس كفاءة المياه وجودة التربة؟', 'RES'], ['AGR-2', 'هل توجد خطة لمخاطر المواسم والطقس؟', 'RSK']]], startup: ['المشاريع الناشئة', [['STP-1', 'هل توجد أدلة على ملاءمة المنتج للسوق؟', 'MKT'], ['STP-2', 'هل تكفي السيولة 12 شهرًا وفق الخطة؟', 'FIN']]] };
+const SUS_CLAIMS = [['CL-ENV', 'تصريح الإدارة: المنشأة ملتزمة بيئيًا بالكامل', (a) => a['ENV-2'] === 'y' || a['ENV-3'] === 'y', 'تصريح الإدارة بالالتزام البيئي يتعارض مع إجابة تجاوز الحدود النظامية أو الشكاوى المتكررة'], ['CL-HSE', 'تصريح الإدارة: بيئة العمل آمنة ولا توجد مخاطر جسيمة', (a) => a['HSE-1'] === 'y' || a['HSE-3'] === 'n', 'تصريح الأمان يتعارض مع ارتفاع الإصابات أو غياب تمارين الطوارئ'], ['CL-DIG', 'تصريح تقنية المعلومات: يمكن استعادة الأنظمة خلال ساعات', (a) => a['DIG-1'] === 'n' || a['DIG-1'] === 'p', 'تصريح الاستعادة السريعة لا تدعمه اختبارات استعادة فعلية']];
+const SUS_INIT = {
+  GOV: ['اعتماد استراتيجية ديمومة خمسية بمسؤوليات موثقة', 'نسبة المبادرات ذات مالك وموعد', 'الإدارة العليا', '6 أشهر'], FIN: ['اختبار ضغط مالي (−30% إيراد) وتكوين احتياطي طوارئ', 'أشهر الاستمرار تحت الضغط', 'المالية', '3 أشهر'],
+  MKT: ['خريطة المهارات المستقبلية وخطة إعادة التأهيل', 'نسبة العاملين في برامج إعادة التأهيل', 'الموارد البشرية', '6 أشهر'], OPS: ['برنامج صيانة وقائية وبدائل لنقاط الفشل المنفردة', 'زمن التوقف غير المخطط', 'العمليات', '6 أشهر'],
+  ENV: ['برنامج رصد بيئي ومعالجة التجاوزات عند المصدر', 'عدد التجاوزات للحدود النظامية', 'إدارة البيئة', '3–12 شهرًا'], RES: ['عدادات فرعية للطاقة والمياه وخطة كفاءة', 'الاستهلاك لكل وحدة إنتاج', 'المرافق', '6 أشهر'],
+  HSE: ['تحليل الحوادث الوشيكة وتمارين طوارئ دورية', 'معدل الإصابات المسجلة ونسبة التمارين المنفذة', 'السلامة', '3 أشهر'], QMS: ['قياس فاعلية الإجراءات التصحيحية ومنع التكرار', 'نسبة المشكلات المتكررة', 'الجودة', '6 أشهر'],
+  HRM: ['خطة تعاقب وتوثيق معرفة الخبراء', 'نسبة المناصب الحرجة ذات بديل جاهز', 'الموارد البشرية', '12 شهرًا'], DIG: ['اختبارات استعادة فعلية وخطة استجابة سيبرانية', 'زمن الاستعادة المختبر', 'تقنية المعلومات', '3 أشهر'],
+  LOG: ['مسارات بديلة وقياس أسباب التأخير', 'نسبة التسليم في الموعد', 'النقل', '6 أشهر'], SUP: ['تأهيل موردين بدلاء ومخزون أمان للمواد الحرجة', 'نسبة المواد الحرجة بمصدر بديل', 'المشتريات', '6 أشهر'],
+  SOC: ['آلية شكاوى مجتمعية واستشارة أصحاب المصلحة', 'زمن معالجة الشكوى', 'العلاقات المجتمعية', '6 أشهر'], RSK: ['سجل مخاطر بحدود تدخل وتمارين سيناريو', 'نسبة المخاطر ذات حدود إنذار', 'إدارة المخاطر', '3 أشهر'],
+  INN: ['محفظة ابتكار وميزانية تجارب', 'عدد التجارب المكتملة وقراراتها', 'التخطيط', '12 شهرًا'], PRJ: ['مراجعة ما بعد التنفيذ لدراسات الجدوى', 'انحراف النتائج عن دراسة الجدوى', 'إدارة المشاريع', '6 أشهر']
+};
+const SUS_ANS = [['y', 'نعم'], ['p', 'جزئي'], ['n', 'لا'], ['u', 'لا أعرف']];
+EG_INIT.sus = () => ({ tab: 'bank', sector: 'industry', org: 'مصنع مواد بناء — مدينة صناعية', ans: { 'GOV-1': 'y', 'GOV-2': 'p', 'GOV-3': 'p', 'FIN-1': 'p', 'FIN-2': 'n', 'FIN-3': 'p', 'MKT-1': 'y', 'MKT-2': 'n', 'MKT-3': 'p', 'OPS-1': 'p', 'OPS-2': 'n', 'OPS-3': 'y', 'ENV-1': 'p', 'ENV-2': 'y', 'ENV-3': 'p', 'RES-1': 'p', 'RES-2': 'n', 'RES-3': 'p', 'HSE-1': 'n', 'HSE-2': 'p', 'HSE-3': 'p', 'QMS-1': 'y', 'QMS-2': 'p', 'QMS-3': 'p', 'HRM-1': 'n', 'HRM-2': 'p', 'HRM-3': 'n', 'DIG-1': 'p', 'DIG-2': 'n', 'DIG-3': 'u', 'LOG-1': 'p', 'LOG-2': 'y', 'LOG-3': 'u', 'SUP-1': 'n', 'SUP-2': 'p', 'SUP-3': 'p', 'SOC-1': 'n', 'SOC-2': 'p', 'SOC-3': 'u', 'RSK-1': 'p', 'RSK-2': 'n', 'RSK-3': 'p', 'INN-1': 'n', 'INN-2': 'p', 'INN-3': 'y', 'PRJ-1': 'y', 'PRJ-2': 'p', 'PRJ-3': 'n', 'IND-1': 'p', 'IND-2': 'n', 'CL-ENV': 'y', 'CL-HSE': 'y', 'CL-DIG': 'u' }, ev: { 'GOV-1': true, 'MKT-1': true, 'OPS-3': true, 'ENV-2': true, 'QMS-1': true, 'LOG-2': true, 'PRJ-1': true, 'INN-3': true } });
+function susQs() { const s = egS('sus'), ext = (SUS_SECT[s.sector] || [, []])[1]; return SUS_AX.map(([c, n, d, who, qs]) => ({ c, n, d, who, qs: qs.map(([id, t, crit, inv]) => ({ id, t, crit: !!crit, inv: !!inv })).concat(ext.filter(x => x[2] === c).map(([id, t]) => ({ id, t, crit: false, inv: false, sect: true }))) })); }
+function susModel() {
+  const s = egS('sus'), a = s.ans || {}, ev = s.ev || {}, axes = susQs();
+  let total = 0, answered = 0, evid = 0;
+  const flags = [], unknownCrit = [];
+  axes.forEach(ax => {
+    const vals = [];
+    ax.qs.forEach(q => {
+      total++; const v = a[q.id];
+      if (!v || v === 'u') { if (q.crit) unknownCrit.push(q); return; }
+      answered++; if (ev[q.id]) evid++;
+      let x = { y: 1, p: 0.5, n: 0 }[v]; if (q.inv) x = 1 - x; if (x === 1 && !ev[q.id]) x = 0.75;
+      vals.push(x); q.score = x;
+      if (q.crit && x <= 0.25) flags.push(q);
+    });
+    ax.score = vals.length ? st.mean(vals) * 100 : null; ax.cnt = vals.length;
+  });
+  const doms = SUS_DOM.map(([k, n, w]) => { const xs = axes.filter(x => x.d === k && x.score !== null); return { k, n, w, score: xs.length ? st.mean(xs.map(x => x.score)) : null }; });
+  const wd = doms.filter(d => d.score !== null), nsci = wd.length ? wd.reduce((t, d) => t + d.score * d.w, 0) / wd.reduce((t, d) => t + d.w, 0) : 0;
+  const band = flags.length ? ['يحتاج تدخلًا — مقيّد بخطر حرج', 't-c'] : nsci >= 75 ? ['ديمومة متقدمة', 't-s'] : nsci >= 55 ? ['ديمومة متوسطة', 't-m'] : ['ديمومة ضعيفة', 't-c'];
+  const conflicts = SUS_CLAIMS.filter(([id, , test]) => a[id] === 'y' && test(a)).map(([id, t, , msg]) => ({ id, t, msg }));
+  const weak = axes.filter(x => x.score !== null).sort((p, q) => p.score - q.score);
+  const warn = [];
+  flags.forEach(q => warn.push(['حرج', q.id, q.t, q.inv ? 'الإجابة تشير إلى خطر قائم' : 'ضابط حرج غير موجود', 'تدخل فوري وتحقق ميداني']));
+  unknownCrit.forEach(q => warn.push(['يحتاج تحقق', q.id, q.t, 'بيانات غير متوفرة لسؤال حرج', 'تعيين مالك بيانات وجمع الدليل']));
+  weak.filter(x => x.score < 40).forEach(x => warn.push(['مرتفع', x.c, x.n, 'درجة المحور ' + Math.round(x.score), 'إدراج في الاستراتيجية خلال الدورة الحالية']));
+  conflicts.forEach(c => warn.push(['تعارض', c.id, c.t, c.msg, 'تسجيل التعارض والتحقق بالقياسات لا بالتصريح']));
+  return { s, axes, doms, nsci, band, flags, unknownCrit, conflicts, weak, warn, total, answered, evid, dataConf: total ? (answered / total) * (0.6 + 0.4 * (answered ? evid / answered : 0)) * 100 : 0 };
+}
+EG_OUT.sus = () => {
+  const m = susModel(), s = m.s;
+  if (s.tab === 'bank') return egCard('حالة البيانات', 'Data Intelligence', `${anKpis([['أسئلة مجابة', m.answered + ' / ' + m.total], ['إجابات بأدلة', m.evid, m.evid < m.answered / 2 ? 'bad' : 'good'], ['ثقة البيانات', fmtN(m.dataConf, 0) + '%', m.dataConf < 50 ? 'bad' : ''], ['تعارضات', m.conflicts.length, m.conflicts.length ? 'bad' : 'good']])}${egNote('«نعم» دون دليل تُحتسب 75% فقط. الأسئلة المعكوسة (مثل تجاوز الحدود النظامية) تُحتسب «نعم» فيها سلبًا. «لا أعرف» لا تُحتسب صفرًا لكنها تخفض ثقة البيانات.')}`);
+  if (s.tab === 'score') return egCard('مؤشر نايوش للديمومة — NSCI', 'Sustainability Scoring', `<div class="row" style="gap:16px;align-items:center"><div class="stack" style="gap:2px"><span class="num" style="font-size:44px;font-weight:700;color:${egStatus(m.nsci)[1]}">${fmtN(m.nsci, 0)}</span><span class="faint" style="font-size:12px">/ 100 · مؤشر مرجّح</span></div><div class="stack" style="gap:6px"><span class="tag ${m.band[1]}">${m.band[0]}</span><span class="faint" style="font-size:12px">ثقة البيانات ${fmtN(m.dataConf, 0)}% · ${m.answered} إجابة من ${m.total}</span></div></div>
+      ${m.flags.length ? `<div class="banner r">${ic('warn', 16)}<span>${m.flags.length === 1 ? 'خطر حرج واحد' : m.flags.length + ' أخطار حرجة'} لا يعوّضها أداء المجالات الأخرى: ${m.flags.map(q => q.id).join('، ')}</span></div>` : ''}
+      <div class="stack" style="gap:10px">${m.doms.map(d => d.score === null ? `<div class="row between" style="font-size:12.5px"><span>${d.n} (${d.w}%)</span><span class="faint">لا بيانات</span></div>` : egBar(`${d.n} <span class="faint">(${d.w}%)</span>`, d.score)).join('')}</div>
+      ${anTbl({ h: 'المحاور الستة عشر', cols: ['الرمز', 'المحور', 'المجال', 'الجهة المستجيبة', 'الدرجة', 'إجابات'], rows: m.axes.map(x => [x.c, x.n, (SUS_DOM.find(d => d[0] === x.d) || [, ''])[1], x.who, x.score === null ? '—' : fmtN(x.score, 0), x.cnt + '/' + x.qs.length]) })}
+      ${egNote('الأوزان والدرجات منهجية أولية قابلة للمعايرة لكل قطاع، وليست شهادة اعتماد. لا تخفي الدرجة الإجمالية أي خطر جسيم أو مخالفة نظامية.')}`);
+  if (s.tab === 'risk') return egCard('سجل المخاطر والإنذار المبكر والتعارضات', 'Risk & Early Warning', `${m.conflicts.length ? m.conflicts.map(c => `<div class="sub" style="gap:4px;border-color:var(--redline)"><b style="font-size:13px;color:var(--redsoft)">تعارض ${c.id}</b><span style="font-size:12.5px">${c.msg}</span><span class="faint" style="font-size:11.5px">يُسجَّل كتعارض يحتاج تحققًا بالقياسات، ولا يُكتفى بإجابة الإدارة.</span></div>`).join('') : ''}
+      ${anTbl({ h: 'الإنذارات وأولويات التدخل', cols: ['المستوى', 'المرجع', 'البند', 'الدليل', 'الإجراء'], rows: m.warn })}
+      ${egNote('يُفصل بين: حقيقة مثبتة (قياس أو سجل)، واستنتاج تحليلي (نموذج وافتراضات)، وتوصية (تحتاج اعتمادًا بشريًا).')}`);
+  const plan = m.weak.slice(0, 6).map((x, i) => { const t = SUS_INIT[x.c]; return [i + 1, x.c + ' · ' + x.n, fmtN(x.score, 0), t[0], t[1], t[2], t[3]]; });
+  return egCard('استراتيجية الديمومة المقترحة', 'Strategy Engine', `${anTbl({ h: 'المبادرات ذات الأولوية (أضعف المحاور أولًا)', cols: ['#', 'المحور', 'الدرجة', 'المبادرة', 'مؤشر الأداء', 'المسؤول', 'الأفق'], rows: plan })}
+    ${anTbl({ h: 'المخرجات الستة للمؤسسة', cols: ['المخرج', 'الحالة'], rows: [['تقرير تشخيص الديمومة', 'جاهز للتصدير'], ['سجل المخاطر والإنذار المبكر', m.warn.length + ' بند'], ['استراتيجية الديمومة', plan.length + ' مبادرات — تحتاج اعتمادًا'], ['دراسات الجدوى والسيناريوهات', 'عبر «نتائج التحليل الفعلية» أو دراسة الجدوى'], ['خطة الجودة والتحسين', 'من محور QMS'], ['لوحة الاستشراف والمتابعة', 'تُحدَّث مع كل دورة تقييم']] })}
+    ${egNote('التوصيات تحتاج مراجعة واعتمادًا بشريًا قبل التنفيذ، وتُربط لاحقًا بأنظمة نايوش المتخصصة (السلامة، الجودة، الإمداد) بدل تكرار سجلاتها.')}`);
+};
+VIEWS.sustain = () => {
+  const s = egS('sus'), axes = susQs();
+  const bank = s.tab === 'bank' ? egCard('بنك الأسئلة — 16 محورًا', s.org ? esc(s.org) : '', egGrid(220, egTxt('sus', 'org', 'المؤسسة أو المشروع') + egSel('sus', 'sector', 'القطاع (يضيف بنكًا قطاعيًا)', Object.entries(SUS_SECT).map(([k, v]) => [k, v[0]])))
+    + axes.map(ax => `<details ${ax.c === 'GOV' || ax.c === 'ENV' ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>${ax.c}</b> · ${ax.n} <span class="faint" style="font-size:11.5px">— ${ax.who}</span></summary>
+      ${ax.qs.map(q => `<div class="stack" style="gap:6px;padding:8px 0"><span style="font-size:12.5px"><span class="mono faint">${q.id}</span> ${q.t} ${q.crit ? '<span class="tag t-c">حرج</span>' : ''}${q.sect ? '<span class="tag t-i">قطاعي</span>' : ''}</span><div class="row" style="gap:6px">${SUS_ANS.map(([k, l]) => choice('eg-set', 'sus.ans.' + q.id, k, (s.ans || {})[q.id] === k, l)).join('')}${choice('eg-set', 'sus.ev.' + q.id, (s.ev || {})[q.id] ? '' : '1', !!(s.ev || {})[q.id], '📎 يوجد دليل')}</div></div>`).join('')}</details>`).join('')
+    + `<div class="stack" style="gap:6px;padding-top:10px"><span class="lbl">تصريحات تُقارن بالقياسات (كشف التعارض)</span>${SUS_CLAIMS.map(([id, t]) => `<div class="stack" style="gap:6px;padding:6px 0"><span style="font-size:12.5px"><span class="mono faint">${id}</span> ${t}</span><div class="row" style="gap:6px">${SUS_ANS.map(([k, l]) => choice('eg-set', 'sus.ans.' + id, k, (s.ans || {})[id] === k, l)).join('')}</div></div>`).join('')}</div>`) : '';
+  return `${engHead('NAIOSH SUSTAIN 360 · DIA-SUS', 'منظومة الاستدامة والديمومة والاستشراف الاستراتيجي', 'تحليل واقع أي مؤسسة أو مشروع أو قطاع، واستكشاف المخاطر والفرص التي تؤثر في استمراريته، ثم اقتراح استراتيجيات قابلة للتنفيذ والقياس. لا يعوّض النجاح في مجال فشلًا خطيرًا في مجال آخر.', engExport('SUS'))}
+  ${egTabs('sus', [['bank', 'بنك الأسئلة'], ['score', 'مؤشر الديمومة'], ['risk', 'المخاطر والتعارضات'], ['plan', 'الاستراتيجية']])}
+  ${bank}${egOut('sus')}`;
+};
+
+/* =========================================================================================
+   DIA-SKL — Skills Intelligence & Talent Ecosystem (SKL-01..16)
+   ========================================================================================= */
+const SKL_CAT = [['apt', 'القدرات والاستعدادات'], ['beh', 'السلوكية والشخصية'], ['cog', 'المعرفية'], ['tech', 'الفنية والتخصصية'], ['dig', 'الرقمية والذكاء الاصطناعي'], ['biz', 'الإدارية والتجارية'], ['lead', 'القيادية والاستراتيجية'], ['sec', 'القطاعية والتنظيمية'], ['fut', 'المستقبلية والقابلة للنقل']];
+// [id, ar, en, cat, detection regex, automation exposure h/m/l]
+const SKL = [
+  ['SKL-001', 'التواصل', 'Communication', 'beh', /التواصل|عروض|العرض/, 'l'], ['SKL-002', 'العمل الجماعي', 'Teamwork', 'beh', /فريق/, 'l'], ['SKL-003', 'التفاوض', 'Negotiation', 'beh', /التفاوض/, 'l'], ['SKL-036', 'كتابة التقارير', 'Report writing', 'beh', /تقارير|كتابة التقارير/, 'h'],
+  ['SKL-004', 'التفكير النقدي', 'Critical thinking', 'cog', /نقدي|تحليل/, 'l'], ['SKL-005', 'حل المشكلات', 'Problem solving', 'cog', /حل المشكلات|الأسباب الجذرية/, 'l'], ['SKL-006', 'اتخاذ القرار', 'Decision making', 'cog', /قرار/, 'l'],
+  ['SKL-007', 'تحليل البيانات', 'Data analysis', 'dig', /تحليل البيانات|Power BI|Tableau|إحصاء/, 'm'], ['SKL-008', 'Excel المتقدم', 'Advanced Excel', 'dig', /Excel/, 'h'], ['SKL-009', 'SQL', 'SQL', 'dig', /SQL/, 'm'], ['SKL-010', 'Python', 'Python', 'dig', /Python/, 'm'], ['SKL-011', 'لوحات المؤشرات', 'BI dashboards', 'dig', /Power BI|Tableau|لوحة مؤشرات/, 'm'], ['SKL-012', 'أدوات الذكاء الاصطناعي', 'AI tools', 'dig', /ذكاء اصطناعي|\bAI\b|ChatGPT/, 'm'], ['SKL-013', 'الأمن السيبراني', 'Cybersecurity', 'dig', /سيبراني|أمن المعلومات|27001/, 'l'],
+  ['SKL-014', 'إدارة المشاريع', 'Project management', 'biz', /إدارة المشاريع|PMP|PRINCE2/, 'l'], ['SKL-015', 'التخطيط', 'Planning', 'biz', /التخطيط|خطة/, 'm'], ['SKL-016', 'إدارة الميزانية والتكاليف', 'Budget & cost control', 'biz', /الميزانية|التكاليف|تكلفة/, 'm'], ['SKL-017', 'المشتريات', 'Procurement', 'biz', /المشتريات|موردين/, 'm'], ['SKL-018', 'المبيعات وخدمة العملاء', 'Sales', 'biz', /مبيعات|عملاء/, 'm'],
+  ['SKL-019', 'قيادة الفرق', 'Team leadership', 'lead', /قدت|قيادة|أشرفت|إدارة الفرق/, 'l'], ['SKL-020', 'إدارة التغيير', 'Change management', 'lead', /إدارة التغيير/, 'l'], ['SKL-021', 'بناء الاستراتيجية', 'Strategy', 'lead', /استراتيج/, 'l'], ['SKL-022', 'إدارة الأداء', 'Performance management', 'lead', /مؤشرات الأداء|KPI|الأداء/, 'm'], ['SKL-032', 'التدريب ونقل المعرفة', 'Training & mentoring', 'lead', /تدريب|درّبت|توجيه/, 'l'],
+  ['SKL-023', 'تقييم المخاطر', 'Risk assessment', 'sec', /تقييم المخاطر|JSA|HAZOP|HAZID|FMEA/, 'l'], ['SKL-024', 'السلامة والصحة المهنية', 'OHS / ISO 45001', 'sec', /ISO 45001|السلامة|NEBOSH|IOSH|OSHA/, 'l'], ['SKL-025', 'التحقيق في الحوادث', 'Incident investigation', 'sec', /التحقيق في الحوادث/, 'l'], ['SKL-026', 'إدارة الجودة', 'Quality / ISO 9001', 'sec', /ISO 9001|جودة|تدقيق/, 'm'], ['SKL-027', 'إدارة المرافق', 'Facility management', 'sec', /المرافق/, 'm'], ['SKL-028', 'الخدمات اللوجستية', 'Logistics', 'sec', /لوجست|سلاسل الإمداد|مستودع/, 'm'],
+  ['SKL-029', 'صيانة المعدات', 'Equipment maintenance', 'tech', /صيانة/, 'm'], ['SKL-030', 'المحاسبة', 'Accounting', 'tech', /محاسب|IFRS/, 'h'], ['SKL-031', 'الرسم الهندسي AutoCAD', 'AutoCAD', 'tech', /AutoCAD/, 'h'],
+  ['SKL-033', 'التعلم المستمر', 'Continuous learning', 'fut', /شهادة|دورة|تعلم/, 'l'], ['SKL-034', 'التكيف', 'Adaptability', 'fut', null, 'l'], ['SKL-035', 'التفكير المنظومي', 'Systems thinking', 'fut', null, 'l'], ['SKL-037', 'سرعة التعلم', 'Learning agility', 'apt', null, 'l'], ['SKL-038', 'الاستدلال الكمي', 'Quantitative reasoning', 'apt', /إحصائي|كمي/, 'l']
+];
+const SKLm = Object.fromEntries(SKL.map(x => [x[0], x]));
+// occupations: [key, sector, subdomain, family, name, tasks, req [[skill, weight, level, mandatory]]]
+const SKL_OCC = [
+  ['hse', 'الطاقة والصناعة', 'السلامة والصحة المهنية', 'الإدارة الفنية', 'مدير سلامة وصحة مهنية', 'تقييم المخاطر · التفتيش · التحقيق · قيادة فريق السلامة', [['SKL-024', 3, 3, 1], ['SKL-023', 3, 3, 1], ['SKL-025', 2, 3, 0], ['SKL-019', 2, 3, 0], ['SKL-001', 2, 3, 0], ['SKL-026', 1, 2, 0], ['SKL-007', 1, 2, 0], ['SKL-036', 1, 3, 0]]],
+  ['data', 'التقنية', 'البيانات', 'التحليل', 'محلل بيانات', 'جمع البيانات · التحليل الإحصائي · لوحات المؤشرات · عرض النتائج', [['SKL-007', 3, 3, 1], ['SKL-009', 3, 3, 0], ['SKL-010', 2, 2, 0], ['SKL-011', 2, 3, 0], ['SKL-008', 1, 3, 0], ['SKL-004', 2, 3, 0], ['SKL-038', 2, 3, 0], ['SKL-001', 1, 2, 0]]],
+  ['ba', 'الخدمات المهنية', 'الاستشارات', 'تحليل الأعمال', 'محلل أعمال', 'تحليل العمليات · المتطلبات · دراسات الحالة · التوصيات', [['SKL-004', 3, 3, 0], ['SKL-005', 3, 3, 0], ['SKL-007', 2, 2, 0], ['SKL-015', 2, 3, 0], ['SKL-001', 2, 3, 0], ['SKL-016', 2, 2, 0], ['SKL-036', 2, 3, 0]]],
+  ['cost', 'المالية', 'الرقابة المالية', 'التحليل المالي', 'محلل تكاليف وأداء', 'تحليل التكلفة · الموازنات · مؤشرات الأداء · التقارير', [['SKL-016', 3, 3, 1], ['SKL-008', 3, 3, 0], ['SKL-007', 2, 2, 0], ['SKL-030', 2, 2, 0], ['SKL-022', 2, 2, 0], ['SKL-036', 1, 2, 0]]],
+  ['pm', 'البناء والمشاريع', 'إدارة المشاريع', 'الإدارة', 'مدير مشروع', 'التخطيط · الميزانية · المخاطر · قيادة الفريق · أصحاب المصلحة', [['SKL-014', 3, 3, 1], ['SKL-015', 3, 3, 0], ['SKL-016', 2, 3, 0], ['SKL-023', 2, 2, 0], ['SKL-019', 3, 3, 0], ['SKL-003', 2, 2, 0], ['SKL-001', 2, 3, 0]]],
+  ['opx', 'الصناعة', 'التشغيل', 'تحسين العمليات', 'أخصائي تحسين العمليات', 'تحليل العمليات · خفض الهدر · قياس الأداء · إدارة التغيير', [['SKL-005', 3, 3, 0], ['SKL-007', 2, 2, 0], ['SKL-022', 2, 3, 0], ['SKL-020', 2, 2, 0], ['SKL-035', 2, 2, 0], ['SKL-026', 1, 2, 0]]],
+  ['fac', 'إدارة المنشآت', 'المرافق', 'التشغيل والصيانة', 'مدير مرافق', 'الصيانة الوقائية · عقود الخدمات · السلامة · الميزانية', [['SKL-027', 3, 3, 1], ['SKL-029', 2, 2, 0], ['SKL-024', 2, 2, 0], ['SKL-016', 2, 2, 0], ['SKL-019', 2, 2, 0], ['SKL-017', 1, 2, 0]]],
+  ['scm', 'اللوجستيات', 'سلاسل الإمداد', 'المشتريات والتخطيط', 'أخصائي سلاسل إمداد', 'تخطيط المخزون · تقييم الموردين · التفاوض · المخاطر', [['SKL-028', 3, 3, 0], ['SKL-017', 3, 3, 0], ['SKL-003', 2, 2, 0], ['SKL-008', 2, 3, 0], ['SKL-023', 1, 2, 0], ['SKL-007', 1, 2, 0]]],
+  ['trn', 'التعليم والتدريب', 'التدريب المهني', 'التطوير', 'مدرب ومطور مهني', 'تصميم البرامج · التدريب · قياس الأثر', [['SKL-032', 3, 3, 0], ['SKL-001', 3, 3, 0], ['SKL-015', 1, 2, 0], ['SKL-012', 1, 2, 0], ['SKL-033', 2, 3, 0]]]
+];
+const SKL_LV = [['', 'غير محدد'], ['0', 'لا أمتلكها'], ['1', 'مبتدئ'], ['2', 'ممارس'], ['3', 'متقدم'], ['4', 'خبير']];
+const SKL_EV = [['claim', 'تصريح ذاتي'], ['cv', 'مذكور في السيرة'], ['cert', 'شهادة'], ['proj', 'إنجاز أو مشروع موثق'], ['test', 'اختبار عملي أو تقييم مشرف']];
+const SKL_EVS = { claim: 0.3, cv: 0.45, cert: 0.65, proj: 0.8, test: 1 };
+const SKL_TRAIN = { tech: 'تدريب عملي مع مشرف + مشروع تطبيقي', dig: 'دورة تطبيقية + مشروع على بيانات حقيقية', sec: 'برنامج معتمد في المجال + تطبيق ميداني موثق', biz: 'دورة قصيرة + تكليف بمهمة فعلية', lead: 'برنامج قيادة + قيادة مهمة صغيرة بإشراف', beh: 'ورشة تطبيقية + تقييم 360', cog: 'دراسات حالة محلولة + مراجعة خبير', fut: 'خطة تعلم ذاتي موثقة', apt: 'تمارين تطبيقية متدرجة' };
+EG_INIT.skl = () => ({ tab: 'profile', src: '', lv: {}, ev: {}, learn: { speed: 'mid', transfer: 'mid', persist: 'mid' }, target: 'hse', focus: 'SKL-023' });
+function sklImport(text, src) {
+  const s = egS('skl'), lines = String(text).split(/\n+/);
+  const hasNum = (l) => /\d+\s*%|\d+\s*(سنة|سنوات|حالة|مشاريع|مشروع|موظف|موظفين|ساعة|يوم)/.test(l);
+  s.lv = {}; s.ev = {};
+  SKL.forEach(([id, , , , re]) => { if (!re) return; const hit = lines.filter(l => re.test(l)); if (!hit.length) return; const proof = hit.some(hasNum), cert = hit.some(l => /NEBOSH|IOSH|PMP|شهادة|ISO/i.test(l)); s.lv[id] = proof ? '3' : '2'; s.ev[id] = proof ? 'proj' : cert ? 'cert' : 'cv'; });
+  s.src = src; s.tab = 'match';
+}
+function sklMatch(occ) {
+  const s = egS('skl'), g = { low: 0.3, mid: 0.6, high: 0.9 }, growth = st.mean([g[s.learn.speed], g[s.learn.transfer], g[s.learn.persist]].map(x => x ?? 0.6));
+  let W = 0, Wk = 0, has = 0, mast = 0, evW = 0, evS = 0, M = 0;
+  const gates = [], gaps = [];
+  occ[6].forEach(([id, w, req, mand]) => {
+    W += w; const raw = s.lv[id], known = raw !== undefined && raw !== '';
+    if (!known) { gaps.push({ id, w, req, lv: null, mand }); if (mand) gates.push({ id, t: 'يحتاج تحقق' }); return; }
+    const lv = +raw, e = SKL_EVS[s.ev[id] || 'claim'];
+    Wk += w; if (lv > 0) { has += w; evW += w; evS += w * e; }
+    mast += w * Math.min(1, lv / req); M += w * Math.min(1, lv / req) * (0.6 + 0.4 * e);
+    if (lv < req) { gaps.push({ id, w, req, lv, mand }); if (mand) gates.push({ id, t: 'شرط إلزامي غير مستوفى' }); }
+  });
+  const mandReq = occ[6].filter(r => r[3]), task = mandReq.length ? mandReq.filter(([id, , req]) => +(s.lv[id] || 0) >= req).length / mandReq.length : (Wk ? mast / Wk : 0);
+  const score = Wk ? M / Wk * 100 : 0, cover = W ? Wk / W * 100 : 0;
+  const tier = gates.some(x => x.t === 'شرط إلزامي غير مستوفى') ? (score >= 40 ? 'reach' : 'far') : score >= 70 && cover >= 60 ? 'now' : score >= 40 ? 'reach' : 'far';
+  const rank = score * (0.5 + 0.5 * cover / 100);
+  return { occ, score, cover, rank, dims: [['تطابق المهارات', Wk ? has / Wk * 100 : 0], ['مستوى الإتقان', Wk ? mast / Wk * 100 : 0], ['قوة الأدلة', evW ? evS / evW * 100 : 0], ['ملاءمة المهام الجوهرية', task * 100], ['الاستعداد للتطور', growth * 100]], gates, gaps, tier };
+}
+const SKL_TIER = { now: ['مناسبة حاليًا', 't-s'], reach: ['ممكنة بعد تدريب محدد', 't-m'], far: ['بعيدة حاليًا', 't-n'] };
+EG_OUT.skl = () => {
+  const s = egS('skl'), filled = Object.values(s.lv).filter(v => v !== '' && v != null).length;
+  if (!filled && s.tab !== 'tax') return egCard('لا يوجد ملف مهارات بعد', '', `<p class="soft" style="font-size:13px;line-height:1.8">استورد المهارات من «ذكاء السيرة الذاتية» (SKL-03)، أو حدد مستوى كل مهارة يدويًا في تبويب «ملف المهارات».</p><div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="skl-cv">${ic('reports', 15)}استيراد من ذكاء السيرة الذاتية</button></div>`);
+  const all = SKL_OCC.map(sklMatch).sort((a, b) => b.rank - a.rank), T = all.find(x => x.occ[0] === s.target) || all[0];
+  if (s.tab === 'profile') {
+    const byCat = SKL_CAT.map(([c, n]) => [n, SKL.filter(x => x[3] === c && s.lv[x[0]] !== undefined && s.lv[x[0]] !== '').length]).filter(x => x[1]);
+    return egCard('ملخص ملف المهارات', s.src ? 'المصدر: ' + s.src : '', `${anKpis([['مهارات محددة', filled], ['مدعومة بإنجاز أو اختبار', Object.entries(s.ev).filter(([id, e]) => (e === 'proj' || e === 'test') && +(s.lv[id] || 0) > 0).length, 'good'], ['تصريح ذاتي فقط', Object.entries(s.ev).filter(([id, e]) => e === 'claim' && +(s.lv[id] || 0) > 0).length]])}
+      <div class="row" style="gap:6px">${byCat.map(([n, c]) => `<span class="chip">${n} · ${c}</span>`).join('')}</div>${egNote('المهارة غير المحددة ليست مهارة مفقودة؛ لا تُحسب ضدك وتظهر كبيانات تحتاج تحققًا. لا يصف النظام أي مهارة بأنها فطرية من استبيان واحد.')}`);
+  }
+  if (s.tab === 'match') return egCard('المطابقة مع المهن — خمسة أبعاد مستقلة', 'SKL-07/13', `${anKpis([['المهنة المستهدفة', T.occ[4]], ['درجة التطابق M', fmtN(T.score, 0) + '/100', T.score >= 70 ? 'good' : ''], ['تغطية البيانات', fmtN(T.cover, 0) + '%', T.cover < 60 ? 'bad' : ''], ['التصنيف', SKL_TIER[T.tier][0]]])}
+      <div class="stack" style="gap:10px">${T.dims.map(([n, v]) => egBar(n, v)).join('')}</div>
+      ${T.gates.length ? `<div class="banner r">${ic('warn', 16)}<span>شروط مستقلة لا تعوّضها درجات المهارات الأخرى: ${T.gates.map(g => (SKLm[g.id] || [, g.id])[1] + ' — ' + g.t).join('، ')}</span></div>` : ''}
+      ${anTbl({ h: 'ترتيب المهن (SKL-02 · القطاع ← المجال ← العائلة ← المهنة)', cols: ['المهنة', 'القطاع › المجال', 'درجة التطابق', 'تغطية البيانات', 'التصنيف'], rows: all.map(x => [x.occ[4], x.occ[1] + ' › ' + x.occ[2], fmtN(x.score, 0), fmtN(x.cover, 0) + '%', SKL_TIER[x.tier][0] + (x.occ[0] !== s.target && x.occ[1] !== T.occ[1] && x.score >= 55 && x.cover >= 50 ? ' · مسار بديل غير متوقع' : '')]) })}
+      ${egNote('M = Σ(أهمية المهارة × مطابقة المستوى × معامل الدليل) ÷ Σ الأهمية، للمهارات المعروفة فقط، والترتيب يُخفَّض كلما قلّت تغطية البيانات. درجة التطابق ليست احتمال نجاح وظيفي؛ ذلك يحتاج بيانات أداء فعلية. القرار الوظيفي بشري.')}`);
+  if (s.tab === 'plan') {
+    const plan = T.gaps.map(g => { const k = SKLm[g.id], cat = k ? k[3] : 'fut'; return [k ? k[1] : g.id, g.lv === null ? 'غير محدد' : SKL_LV[g.lv + 1][1], SKL_LV[g.req + 1][1] + (g.mand ? ' · إلزامي' : ''), g.lv === null ? 'تقييم أولي أولًا' : SKL_TRAIN[cat], g.lv === null ? '—' : ((g.req - g.lv) * 6) + ' أسابيع', 'عينة عمل أو اختبار عملي بمعايير محددة', 'إعادة تقييم بعد ' + (g.lv === null ? 2 : (g.req - g.lv) * 6 + 2) + ' أسابيع']; });
+    const f = SKLm[s.focus] || SKL[0], lv = +(s.lv[f[0]] || 0), e = s.ev[f[0]] || 'claim', occs = SKL_OCC.filter(o => o[6].some(r => r[0] === f[0]));
+    const weakRel = SKL.filter(x => x[3] === f[3] && x[0] !== f[0] && +(s.lv[x[0]] || 0) < 2).slice(0, 3).map(x => x[1]);
+    return egCard('خطة سد الفجوات — ' + T.occ[4], 'SKL-08/09', plan.length ? anTbl({ h: 'الفجوات وخطة التطوير', cols: ['المهارة', 'الحالي', 'المطلوب', 'التدريب المقترح', 'المدة التقديرية', 'إثبات التحسن', 'إعادة التقييم'], rows: plan }) + egNote('البديل إذا لم يتحقق التحسن المتوقع: مهنة من قائمة «ممكنة بعد تدريب» تعتمد على المهارات القابلة للنقل. المدد تقديرية ولا تضمن نتائج.') : '<div class="banner g">لا فجوات في متطلبات هذه المهنة وفق البيانات الحالية.</div>')
+      + egCard('تحليل SWOT لمهارة محددة — ' + f[1], 'SKL-11', `${egSel('skl', 'focus', 'المهارة', SKL.map(x => [x[0], x[0] + ' · ' + x[1]]))}
+        ${anTbl({ h: 'SWOT مرتبط بالسياق المهني', cols: ['العنصر', 'التحليل'], rows: [['القوة', lv ? `المستوى ${SKL_LV[lv + 1][1]} بدليل: ${(SKL_EV.find(x => x[0] === e) || [, ''])[1]}` : 'لا قوة مثبتة بعد'], ['الضعف', (SKL_EVS[e] < 0.6 ? 'الدليل ضعيف ويحتاج إثباتًا عمليًا. ' : '') + (weakRel.length ? 'مهارات مجاورة تحتاج تطويرًا: ' + weakRel.join('، ') : 'لا فجوات مجاورة واضحة')], ['الفرص', occs.length ? `تطلبها ${occs.length} مهن في القاموس عبر ${new Set(occs.map(o => o[1])).size} قطاعات: ${occs.map(o => o[4]).join('، ')}` : 'غير مرتبطة بمهن القاموس الحالي'], ['المخاطر', { h: 'تعرّض مرتفع للأتمتة — يُنصح بربطها بمهارات تحليلية أو قيادية', m: 'تعرّض متوسط للأتمتة أو لاشتراط أدوات جديدة', l: 'تعرّض منخفض للأتمتة' }[f[5]]]] })}
+        ${egNote('فرص سوق العمل هنا مبنية على علاقات القاموس، لا على إعلانات وظائف. بيانات الطلب الفعلي تُضاف من مصدر موثق ومؤرخ (SKL-12).')}`);
+  }
+  return egCard('قاموس المهارات والتسلسل المهني', 'SKL-01/02', `${anTbl({ h: 'التسلسل: القطاع ← المجال الفرعي ← العائلة المهنية ← المهنة ← المهام', cols: ['القطاع', 'المجال الفرعي', 'العائلة', 'المهنة', 'المهام الجوهرية', 'مهارات مطلوبة'], rows: SKL_OCC.map(o => [o[1], o[2], o[3], o[4], o[5], o[6].length]) })}
+    ${anTbl({ h: 'تعريف المهارات (معرّف ثابت · عربي · إنجليزي · تصنيف · ارتباط بالمهن)', cols: ['المعرف', 'المهارة', 'English', 'التصنيف', 'عدد المهن', 'التعرض للأتمتة'], rows: SKL.map(x => [x[0], x[1], x[2], (SKL_CAT.find(c => c[0] === x[3]) || [, ''])[1], SKL_OCC.filter(o => o[6].some(r => r[0] === x[0])).length, { h: 'مرتفع', m: 'متوسط', l: 'منخفض' }[x[5]]]) })}
+    ${egNote('الطبقات الثلاث: التصنيف الوطني (مثل دليل تصنيف المهارات السعودي) ← المطابقة الدولية (ESCO وO*NET) ← قاموس نايوش الخاص. القاموس الحالي نواة أولية تُستكمل بربط الأكواد الرسمية.')}`);
+};
+VIEWS.skills = () => {
+  const s = egS('skl');
+  let inputs = '';
+  if (s.tab === 'profile') inputs = egCard('ملف المهارات — المستوى والدليل لكل مهارة', 'SKL-05/06', `<div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="skl-cv">${ic('reports', 14)}استيراد من ذكاء السيرة الذاتية</button><button type="button" class="btn link sm" data-act="skl-clear">مسح الملف</button></div>
+    ${SKL_CAT.map(([c, n]) => `<details ${c === 'sec' || c === 'dig' ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>${n}</b></summary>${SKL.filter(x => x[3] === c).map(x => `<div class="grid" style="grid-template-columns:minmax(140px,1.4fr) 1fr 1fr;gap:8px;align-items:center;padding:4px 0"><span style="font-size:12.5px">${x[1]} <span class="mono faint" style="font-size:10.5px">${x[0]}</span></span>${egSel('skl', 'lv.' + x[0], '', SKL_LV)}${egSel('skl', 'ev.' + x[0], '', SKL_EV)}</div>`).join('')}</details>`).join('')}
+    <div class="stack" style="gap:6px;padding-top:8px"><span class="lbl">مؤشرات قابلية التعلم (SKL-10) — تُحدَّث من الاختبار القبلي والبعدي عند توفره</span>${egGrid(180, egSel('skl', 'learn.speed', 'سرعة إتقان المهام الجديدة', [['low', 'بطيئة'], ['mid', 'متوسطة'], ['high', 'سريعة']]) + egSel('skl', 'learn.transfer', 'نقل التعلم إلى مهمة مختلفة', [['low', 'محدود'], ['mid', 'متوسط'], ['high', 'مرتفع']]) + egSel('skl', 'learn.persist', 'الاستمرارية في التدريب', [['low', 'منخفضة'], ['mid', 'متوسطة'], ['high', 'مرتفعة']]))}</div>`);
+  if (s.tab === 'match' || s.tab === 'plan') inputs = `<section class="card tight">${egSel('skl', 'target', 'المهنة المستهدفة', SKL_OCC.map(o => [o[0], o[4] + ' — ' + o[1]]))}</section>`;
+  return `${engHead('NAIOSH SKILLS INTELLIGENCE · DIA-SKL', 'ذكاء المهارات والمواهب وسوق العمل', 'لا نكتفي بسؤال الإنسان عمّا يستطيع فعله؛ بل نبحث عمّا يستطيع إثباته، وما يمكنه تعلّمه، وأين يمكن أن يحقق قيمة حقيقية. يتكامل مع «ذكاء السيرة الذاتية» بوصفه وحدة SKL-03.', engExport('SKL'))}
+  ${egTabs('skl', [['profile', 'ملف المهارات'], ['match', 'المطابقة المهنية'], ['plan', 'الفجوات وSWOT'], ['tax', 'القاموس والتسلسل']])}
+  ${inputs}${egOut('skl')}`;
+};
+
+/* =========================================================================================
+   DIA-CPA — Smart Academic & Career Path Advisor
+   ========================================================================================= */
+const CPA_SUBJ = [['math', 'الرياضيات'], ['phys', 'الفيزياء'], ['chem', 'الكيمياء'], ['bio', 'الأحياء'], ['ar', 'اللغة العربية'], ['en', 'اللغة الإنجليزية'], ['cs', 'الحاسوب'], ['soc', 'الاجتماعيات']];
+const CPA_INT = [['i1', 'حل المسائل الرياضية والمنطقية'], ['i2', 'تصميم الأجهزة أو الأنظمة التقنية'], ['i3', 'مساعدة المرضى أو المحتاجين'], ['i4', 'كتابة القصص والمقالات'], ['i5', 'تحليل البيانات واكتشاف الأنماط'], ['i6', 'إدارة المشاريع وقيادة الفرق'], ['i7', 'الرسم والتصميم والإبداع البصري'], ['i8', 'إجراء التجارب العلمية'], ['i9', 'إقناع الآخرين والتفاوض'], ['i10', 'العمل مع الأطفال وتعليمهم'], ['i11', 'فهم القوانين والأنظمة'], ['i12', 'العمل الميداني والتعامل مع الطبيعة']];
+const CPA_AB = [['explain', 'أستطيع شرح فكرة معقدة لشخص آخر'], ['numbers', 'أتعامل بسهولة مع الأرقام والجداول'], ['build', 'صممت أو صنعت أو برمجت شيئًا'], ['write', 'أجيد التعبير الكتابي أو التحدث أمام الآخرين'], ['focus', 'أستمر في مهمة تحتاج تركيزًا طويلًا'], ['selftaught', 'تعلمت مهارة بنفسي دون تكليف'], ['help', 'يطلب مني الآخرون المساعدة في شيء محدد'], ['lead', 'قدت مجموعة أو نظمت نشاطًا']];
+const CPA_VAL = [['income', 'الدخل'], ['stability', 'الاستقرار'], ['impact', 'التأثير المجتمعي'], ['creativity', 'الإبداع'], ['independence', 'الاستقلالية']];
+// majors: [key, name, interests{}, subjects[], abilities[], values[], env, years, admission (illustrative), cost, careers]
+const CPA_MAJ = [
+  ['ds', 'علوم البيانات', { i5: 3, i1: 2, i2: 1 }, ['math', 'cs', 'en'], ['numbers', 'focus', 'selftaught'], ['income', 'creativity'], 'office', 4, 85, 'mid', 'محلل بيانات · مهندس تعلم آلي · محلل أعمال'],
+  ['cs', 'علوم الحاسوب', { i2: 3, i1: 2, i5: 1 }, ['math', 'cs', 'phys'], ['build', 'focus', 'selftaught'], ['income', 'creativity', 'independence'], 'office', 4, 85, 'mid', 'مطوّر برمجيات · مهندس أنظمة · أمن سيبراني'],
+  ['ie', 'الهندسة الصناعية', { i6: 2, i5: 2, i1: 2, i2: 1 }, ['math', 'phys'], ['numbers', 'lead', 'focus'], ['income', 'stability'], 'mixed', 5, 85, 'mid', 'تحسين العمليات · تخطيط الإنتاج · سلاسل الإمداد'],
+  ['ce', 'الهندسة المدنية', { i2: 2, i1: 2, i12: 2 }, ['math', 'phys'], ['numbers', 'build'], ['stability', 'income'], 'field', 5, 85, 'mid', 'مهندس موقع · تصميم إنشائي · إدارة مشاريع'],
+  ['med', 'الطب البشري', { i3: 3, i8: 2 }, ['bio', 'chem'], ['focus', 'help'], ['impact', 'stability'], 'mixed', 7, 95, 'high', 'طبيب · باحث سريري'],
+  ['mlt', 'التقنيات الطبية والمختبرات', { i8: 3, i3: 1, i5: 1 }, ['bio', 'chem'], ['focus', 'numbers'], ['stability', 'impact'], 'lab', 4, 80, 'mid', 'أخصائي مختبر · تقنيات حيوية · بحث علمي'],
+  ['nur', 'التمريض والعلوم الصحية', { i3: 3, i10: 1 }, ['bio'], ['help', 'focus'], ['impact', 'stability'], 'field', 4, 75, 'low', 'ممرض · رعاية صحية · صحة عامة'],
+  ['bus', 'إدارة الأعمال', { i6: 3, i9: 2 }, ['math', 'en'], ['lead', 'write'], ['income', 'independence'], 'office', 4, 70, 'low', 'إدارة · ريادة أعمال · مبيعات وتسويق'],
+  ['law', 'القانون', { i11: 3, i9: 2, i4: 1 }, ['ar', 'soc'], ['write', 'explain', 'focus'], ['impact', 'stability'], 'office', 4, 80, 'mid', 'محامٍ · مستشار قانوني · امتثال'],
+  ['edu', 'التربية والتعليم', { i10: 3, i4: 1 }, ['ar', 'soc'], ['explain', 'help'], ['impact', 'stability'], 'mixed', 4, 70, 'low', 'معلم · مرشد تربوي · تصميم تعليمي'],
+  ['des', 'التصميم الجرافيكي والرقمي', { i7: 3, i2: 1 }, ['cs'], ['build', 'selftaught'], ['creativity', 'independence'], 'office', 4, 70, 'mid', 'مصمم واجهات · هوية بصرية · وسائط رقمية'],
+  ['med2', 'الإعلام والاتصال', { i4: 3, i9: 2 }, ['ar', 'en'], ['write', 'explain'], ['creativity', 'impact'], 'mixed', 4, 70, 'low', 'صحفي · صانع محتوى · علاقات عامة'],
+  ['env', 'العلوم البيئية والزراعية', { i12: 3, i8: 2 }, ['bio', 'chem'], ['focus'], ['impact'], 'field', 4, 70, 'low', 'أخصائي بيئة · زراعة ذكية · استدامة'],
+  ['psy', 'علم النفس والإرشاد', { i3: 2, i10: 1, i4: 1 }, ['bio', 'ar'], ['explain', 'help'], ['impact'], 'office', 4, 75, 'low', 'مرشد · أخصائي موارد بشرية · بحث اجتماعي']
+];
+EG_INIT.cpa = () => ({ tab: 'q', stage: 'g12', track: 'sci', gpa: 91, subj: { math: { g: 96, l: 2 }, phys: { g: 90, l: 3 }, chem: { g: 88, l: 3 }, bio: { g: 84, l: 4 }, ar: { g: 89, l: 3 }, en: { g: 92, l: 4 }, cs: { g: 95, l: 5 }, soc: { g: 86, l: 2 } }, int: { i1: 4, i2: 4, i3: 2, i4: 2, i5: 5, i6: 3, i7: 3, i8: 3, i9: 2, i10: 1, i11: 1, i12: 2 }, ab: { numbers: 'ev', build: 'ev', focus: 'y', selftaught: 'ev', explain: 'y', write: 'n', help: 'y', lead: 'n' }, pers: { team: 'both', env: 'office', struct: 'open', pace: 'long' }, vals: ['income', 'creativity'], longStudy: 'yes', abroad: 'yes', fam: { infl: 'family', alone: 'different', fear: 'yes' }, pref: 'med', alonePref: 'ds', cons: { budget: 'mid', relocate: 'yes', lang: 'both' }, aware: { known: 'few', talked: 'no', course: 'yes' } });
+function cpaModel() {
+  const s = egS('cpa'), ab = { n: 0, y: 0.6, ev: 1 };
+  const res = CPA_MAJ.map(([k, n, ints, subj, abil, vals, env, years, gpaMin, cost, jobs]) => {
+    const wi = Object.entries(ints), I = wi.reduce((a, [i, w]) => a + w * (((+s.int[i] || 3) - 1) / 4), 0) / wi.reduce((a, [, w]) => a + w, 0);
+    const A = st.mean(abil.map(x => s.ab[x] in ab ? ab[s.ab[x]] : 0.4));
+    const g = subj.map(x => egN((s.subj[x] || {}).g)).filter(Boolean), Ac = g.length ? st.mean(g) / 100 : 0.6;
+    const V = Math.min(1, vals.filter(v => s.vals.includes(v)).length / Math.min(2, vals.length));
+    const N = st.mean([env === s.pers.env || env === 'mixed' || s.pers.env === 'mixed' ? 1 : 0.4, years >= 6 && s.longStudy === 'no' ? 0.2 : 1, years >= 5 && s.pers.pace === 'fast' ? 0.5 : 1]);
+    const score = (0.25 * I + 0.25 * A + 0.2 * Ac + 0.15 * V + 0.15 * N) * 100;
+    const gpa = egN(s.gpa), adm = gpa >= gpaMin ? ['ضمن النطاق', 't-s'] : gpa >= gpaMin - 5 ? ['حدّي', 't-m'] : ['أقل — يحتاج مسارًا بديلًا', 't-h'];
+    const afford = { low: 0, mid: 1, high: 2 }[cost] <= { low: 0, mid: 1, high: 2 }[s.cons.budget] ? 'ضمن القدرة' : 'يحتاج منحة أو تمويلًا';
+    return { k, n, I, A, Ac, V, N, score, adm, afford, years, gpaMin, jobs, why: [I >= 0.7 ? 'اهتمامات قوية بمجاله' : '', A >= 0.7 ? 'قدرات مدعومة بأمثلة' : '', Ac >= 0.88 ? 'تحصيل مرتفع في مواده الأساسية' : '', V >= 1 ? 'يتوافق مع قيمك' : ''].filter(Boolean), gap: [I < 0.5 ? 'الاهتمام بمجاله منخفض' : '', A < 0.5 ? 'القدرات المطلوبة تحتاج إثباتًا' : '', Ac < 0.75 ? 'التحصيل في مواده يحتاج دعمًا' : '', N < 0.7 ? 'طبيعة الدراسة أو العمل قد لا تناسب تفضيلاتك' : ''].filter(Boolean) };
+  }).sort((a, b) => b.score - a.score);
+  const conf = [], priv = [];
+  CPA_SUBJ.forEach(([k, n]) => { const x = s.subj[k] || {}; if (egN(x.g) >= 85 && egN(x.l) && egN(x.l) <= 2) conf.push(`تفوق في «${n}» (${x.g}) دون رغبة في دراستها مستقبلًا — التحصيل وحده لا يكفي لاختيار تخصص يعتمد عليها.`); if (egN(x.l) >= 4 && egN(x.g) && egN(x.g) < 75) conf.push(`رغبة قوية في «${n}» مع تحصيل يحتاج دعمًا (${x.g}).`); });
+  const top3 = res.slice(0, 3).map(r => r.k), pm = CPA_MAJ.find(x => x[0] === s.pref), am = CPA_MAJ.find(x => x[0] === s.alonePref);
+  if (pm && !top3.includes(s.pref)) conf.push(`الخيار المعلن «${pm[1]}» لا يتصدر التوافق (المرتبة ${res.findIndex(r => r.k === s.pref) + 1}) — يستحق جلسة استكشاف قبل القرار.`);
+  if (s.aware.known === 'few' || s.aware.talked === 'no') conf.push('فجوة معرفة بالتخصصات وطبيعة العمل بعد التخرج — وهي مختلفة تمامًا عن ضعف القدرة أو غياب الميول.');
+  if (res[0] && res[0].years >= 6 && s.longStudy === 'no') conf.push(`التخصص الأعلى توافقًا «${res[0].n}» يتطلب دراسة طويلة، بينما أشرت إلى عدم الرغبة في ذلك.`);
+  if (s.fam.infl === 'family' && s.alonePref && s.alonePref !== s.pref) priv.push(`مؤشر ضغط أسري محتمل: الخيار المعلن «${pm ? pm[1] : '—'}» يختلف عن الخيار لو كان القرار للطالب وحده «${am ? am[1] : '—'}».`);
+  if (s.fam.fear === 'yes') priv.push('يخشى الطالب خيبة أمل الأسرة من مسار معين — يُناقش في جلسة إرشادية خاصة.');
+  if (s.fam.alone === 'different') priv.push('أشار الطالب إلى أنه سيختار تخصصًا مختلفًا لو كان القرار له وحده.');
+  const answered = Object.values(s.int).filter(Boolean).length + Object.values(s.ab).filter(Boolean).length + CPA_SUBJ.filter(([k]) => (s.subj[k] || {}).g).length;
+  const confPct = Math.min(90, 35 + answered * 1.6 - conf.length * 3);
+  return { s, res, conf, priv, confPct, pm, am };
+}
+EG_OUT.cpa = () => {
+  const m = cpaModel(), s = m.s, top = m.res.slice(0, 5);
+  const majorCard = (r, i) => `<div class="sub" style="gap:6px"><div class="row between nowrap" style="gap:8px"><b style="font-size:14px">${i + 1}. ${r.n}</b><span class="mono" style="color:${egStatus(r.score)[1]};font-size:15px">${fmtN(r.score, 0)}%</span></div>
+    ${r.why.length ? `<span style="font-size:12px;color:var(--greenfg)">لماذا: ${r.why.join(' · ')}</span>` : ''}${r.gap.length ? `<span style="font-size:12px;color:var(--soft)">يحتاج تحققًا: ${r.gap.join(' · ')}</span>` : ''}
+    <span class="faint" style="font-size:11.5px">القبول: <span class="tag ${r.adm[1]}">${r.adm[0]}</span> · التكلفة: ${r.afford} · مدة الدراسة ${r.years} سنوات · مسارات مهنية: ${r.jobs}</span></div>`;
+  if (s.tab === 'q') return egCard('معاينة فورية', 'تتحدث مع كل إجابة', `${anKpis([['أعلى توافق', top[0].n, 'good'], ['ثقة التحليل', fmtN(m.confPct, 0) + '%'], ['تعارضات مكتشفة', m.conf.length, m.conf.length ? 'bad' : '']])}${egNote('الإجابات الخاصة بالأسرة والضغوط تبقى خاصة ولا تظهر في تقرير الأسرة. يمكن تعديل أي إجابة في أي وقت.')}`);
+  if (s.tab === 'student') return egCard('تقرير الطالب — تخصصات مقترحة للاستكشاف', 'التقرير 1', `${top.slice(0, 3).map(majorCard).join('')}
+    ${anTbl({ h: 'أبعاد التوافق للخيارات الخمسة الأولى', cols: ['التخصص', 'الميول 25%', 'القدرات 25%', 'التحصيل 20%', 'القيم 15%', 'طبيعة الدراسة والعمل 15%'], rows: top.map(r => [r.n, ...[r.I, r.A, r.Ac, r.V, r.N].map(x => fmtN(x * 100, 0))]) })}
+    <div class="stack" style="gap:6px"><span class="lbl">خطوات مقترحة قبل القرار</span>${[`تجربة دورة تمهيدية مرتبطة بـ«${top[0].n}»`, 'مقابلة طالبين جامعيين أو خريجين في تخصصين مختلفين', 'مراجعة شروط القبول الفعلية في الجامعات المستهدفة', 'جلسة إرشادية لمناقشة البدائل'].map(t => `<span style="font-size:12.5px">• ${t}</span>`).join('')}</div>
+    ${egNote('النسب توافق تقديري مبني على إجاباتك وليست احتمال نجاح أو توظيف. حدود القبول تقديرية للتوضيح — تحقق منها لدى الجامعة. القرار لك؛ النظام يساعدك على الاكتشاف ولا يختار نيابة عنك.')}`);
+  if (s.tab === 'counsel') return egCard('تقرير المرشد الأكاديمي', 'التقرير 2 · سري', `${anKpis([['ثقة التحليل', fmtN(m.confPct, 0) + '%'], ['تعارضات', m.conf.length], ['مؤشرات خاصة', m.priv.length, m.priv.length ? 'bad' : '']])}
+    <div class="stack" style="gap:6px"><span class="lbl">التعارضات بين الإجابات</span>${m.conf.length ? m.conf.map(c => `<span style="font-size:12.5px">• ${c}</span>`).join('') : '<span class="faint">لا تعارضات جوهرية.</span>'}</div>
+    <div class="stack" style="gap:6px"><span class="lbl">مؤشرات تستدعي مقابلة إرشادية (لا تُشارك مع الأسرة تلقائيًا)</span>${m.priv.length ? m.priv.map(c => `<span style="font-size:12.5px;color:var(--yellow)">• ${c}</span>`).join('') : '<span class="faint">لا شيء.</span>'}</div>
+    ${anTbl({ h: 'الترتيب الكامل', cols: ['#', 'التخصص', 'التوافق', 'القبول', 'التكلفة'], rows: m.res.map((r, i) => [i + 1, r.n, fmtN(r.score, 0) + '%', r.adm[0], r.afford]) })}
+    ${egNote('لا تُقدَّم استنتاجات نفسية غير مثبتة. الأوزان اقتراح تصميمي يحتاج معايرة بمراجعة خبراء الإرشاد وبيانات واقعية.')}`);
+  return egCard('تقرير الأسرة', 'التقرير 3', `<p class="soft" style="font-size:13.5px;line-height:1.9">يُظهر التحليل أن أبرز نقاط القوة لدى ابنكم/ابنتكم مرتبطة بـ: ${top[0].why.join('، ') || 'مجالات متعددة'}. التخصصات المقترحة للاستكشاف معًا: <b>${top.slice(0, 3).map(r => r.n).join('، ')}</b>.</p>
+    <div class="stack" style="gap:6px"><span class="lbl">كيف تدعمون القرار</span>${['التوازن بين الرغبة والقدرة والفرص المتاحة أهم من مكانة التخصص وحدها', 'تشجيع تجربة دورة قصيرة أو زيارة جامعية قبل الاختيار', 'الاستماع لأسباب اختياره دون حكم مسبق', 'مراجعة شروط القبول والتكلفة والمنح معًا'].map(t => `<span style="font-size:12.5px">• ${t}</span>`).join('')}</div>
+    ${egNote('هذا التقرير لا يتضمن الإجابات الشخصية الحساسة للطالب، احترامًا لخصوصيته وحقوقه.')}`);
+};
+VIEWS.career = () => {
+  const s = egS('cpa');
+  const sc = (i) => `<div class="row" style="gap:4px">${[1, 2, 3, 4, 5].map(v => choice('eg-set', 'cpa.int.' + i, String(v), String(s.int[i]) === String(v), String(v))).join('')}</div>`;
+  const q = s.tab !== 'q' ? `<section class="card tight"><div class="row between" style="gap:8px"><span class="faint" style="font-size:12.5px">التقرير المعروض: ${{ student: 'الطالب', counsel: 'المرشد الأكاديمي', family: 'الأسرة' }[s.tab]}</span>${engExport('CPA-' + s.tab)}</div></section>` : egCard('بنك الأسئلة — حوار يتكيف مع الإجابات', '12 محورًا',
+    `<details open style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>1–2 · البيانات والتحصيل الأكاديمي</b></summary>${egGrid(160, egSel('cpa', 'stage', 'المرحلة', [['g10', 'الصف العاشر'], ['g11', 'الحادي عشر'], ['g12', 'الثاني عشر / التوجيهي'], ['grad', 'خريج ثانوية']]) + egSel('cpa', 'track', 'المسار', [['sci', 'علمي'], ['lit', 'أدبي'], ['tech', 'تقني'], ['voc', 'مهني']]) + egNum('cpa', 'gpa', 'المعدل العام %'))}
+      <div class="grid" style="grid-template-columns:minmax(110px,1fr) 1fr 1fr;gap:8px;margin-top:8px"><span class="faint" style="font-size:11.5px">المادة</span><span class="faint" style="font-size:11.5px">العلامة</span><span class="faint" style="font-size:11.5px">الحب 1–5</span>${CPA_SUBJ.map(([k, n]) => `<span style="font-size:12.5px;align-self:center">${n}</span>${egNum('cpa', `subj.${k}.g`, '')}${egNum('cpa', `subj.${k}.l`, '')}`).join('')}</div></details>
+    <details style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>3 · الميول والاهتمامات (1 = لا أحب · 5 = أحب جدًا)</b></summary>${CPA_INT.map(([k, n], i) => egQ(i + 1, n, sc(k))).join('')}</details>
+    <details style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>4 · القدرات والمهارات — مع الشواهد</b></summary>${CPA_AB.map(([k, n], i) => egQ(i + 1, n, egCh('cpa', 'ab.' + k, [['n', 'لا'], ['y', 'أعتقد ذلك'], ['ev', 'لدي مثال أو دليل']]))).join('')}</details>
+    <details style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>5–7 · الشخصية والقيم والطموحات</b></summary>${egQ(1, 'تفضل العمل', egCh('cpa', 'pers.team', [['solo', 'منفردًا'], ['team', 'ضمن فريق'], ['both', 'كلاهما']])) + egQ(2, 'بيئة العمل المفضلة', egCh('cpa', 'pers.env', [['office', 'مكتبية'], ['field', 'ميدانية'], ['lab', 'مختبرية'], ['mixed', 'متنوعة']])) + egQ(3, 'تفضل', egCh('cpa', 'pers.pace', [['fast', 'نتائج سريعة'], ['long', 'مشاريع طويلة المدى']])) + egQ(4, 'الأهم بالنسبة لك (اختر حتى ثلاثة)', egCh('cpa', 'vals', CPA_VAL, true)) + egQ(5, 'هل أنت مستعد للدراسة لسنوات طويلة؟', egCh('cpa', 'longStudy', [['yes', 'نعم'], ['no', 'لا']])) + egQ(6, 'التخصص الذي تفكر فيه حاليًا', egSel('cpa', 'pref', '', CPA_MAJ.map(x => [x[0], x[1]]))) + egQ(7, 'لو كان القرار لك وحدك وتساوت الرواتب، ماذا ستختار؟', egSel('cpa', 'alonePref', '', CPA_MAJ.map(x => [x[0], x[1]])))}</details>
+    <details style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>8 · البيئة الأسرية والاجتماعية 🔒 خاص</b></summary>${egQ(1, 'من صاحب التأثير الأكبر في قرار تخصصك؟', egCh('cpa', 'fam.infl', [['self', 'أنا'], ['family', 'الأسرة'], ['teacher', 'معلم أو مرشد'], ['friends', 'الأصدقاء']])) + egQ(2, 'لو كان القرار لك وحدك، هل ستختار التخصص نفسه؟', egCh('cpa', 'fam.alone', [['same', 'نعم'], ['different', 'لا، سأختار غيره'], ['unsure', 'لست متأكدًا']])) + egQ(3, 'هل تخشى خيبة أمل أهلك إذا اخترت مسارًا معينًا؟', egCh('cpa', 'fam.fear', [['no', 'لا'], ['yes', 'نعم']]))}${egNote('هذه الإجابات لا تظهر في تقرير الأسرة ولا تُرسل إلى سجل التدقيق.')}</details>
+    <details style="padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>9–12 · الظروف والوعي بالتخصصات</b></summary>${egQ(1, 'القدرة المالية على الدراسة', egCh('cpa', 'cons.budget', [['low', 'محدودة'], ['mid', 'متوسطة'], ['high', 'جيدة']])) + egQ(2, 'إمكانية الانتقال إلى مدينة أو دولة أخرى', egCh('cpa', 'cons.relocate', [['yes', 'ممكن'], ['no', 'غير ممكن']])) + egQ(3, 'كم تخصصًا جامعيًا تعرف طبيعة دراسته وعمله؟', egCh('cpa', 'aware.known', [['few', 'أقل من 3'], ['some', '3–5'], ['many', 'أكثر من 5']])) + egQ(4, 'هل تحدثت مع طالب جامعي أو خريج في تخصص تفكر فيه؟', egCh('cpa', 'aware.talked', [['yes', 'نعم'], ['no', 'لا']]))}</details>`);
+  return `${engHead('NAIOSH ACADEMIC & CAREER PATH · DIA-CPA', 'المستشار الذكي للمسار الجامعي والمهني', 'المعدل يحدد بعض فرص القبول لكنه لا يحدد وحده التخصص الأنسب، والميول وحدها لا تكفي. القرار الجيد يجمع بين الرغبة والقدرة ومتطلبات الدراسة والظروف والفرص — والنظام يساعد الطالب على اكتشاف مستقبله، لا أن يختاره نيابة عنه.', '')}
+  ${egTabs('cpa', [['q', 'الأسئلة'], ['student', 'تقرير الطالب'], ['counsel', 'تقرير المرشد'], ['family', 'تقرير الأسرة']])}
+  ${q}${egOut('cpa')}`;
+};
+
+/* ---------- events & exports ---------- */
+function engine2Handle(act, k, el) {
+  if (!act || !/^(eg|scm|skl)-/.test(act)) return false;
+  if (act === 'eg-set' || act === 'eg-tog') {
+    const bar = String(k).lastIndexOf('|'), path = String(k).slice(0, bar), val = String(k).slice(bar + 1), dot = path.indexOf('.'), e = path.slice(0, dot), p = path.slice(dot + 1), st0 = egS(e);
+    if (act === 'eg-set') egSet(st0, p, val === '' && /^ev\./.test(p) ? false : val);
+    else { const arr = [...(egGet(st0, p) || [])], i = arr.indexOf(val); if (i >= 0) arr.splice(i, 1); else { if (p === 'vals' && arr.length >= 3) { toast('اختر حتى ثلاث قيم'); return true; } arr.push(val); } egSet(st0, p, arr); }
+    if (act === 'eg-set' && e === 'eco' && p === 'who' && !st0.edited) { const A = val === 'A'; Object.assign(st0.fin, A ? { rev: 1400, revPrev: 1450, expPrev: 1250, cash: 900, recv: 0, coll: 0, debt: 320, repeat: 0, top: 0 } : { rev: 18000, revPrev: 21000, expPrev: 16900, cash: 9000, recv: 7000, coll: 52, debt: 900, repeat: 35, top: 28 }); st0.capital = A ? 300 : 1500; st0.sideRev = A ? 400 : 900; }
+    const y = window.scrollY; render(); if (!/\.tab$/.test(path)) window.scrollTo(0, y); else window.scrollTo(0, 0);
+    return true;
+  }
+  if (act === 'scm-add') { egS('scm').mats.push({ n: '', d: '', stock: '', lt: '', ltv: '', sup: 1, crit: 'imp', cost: '', stop: '' }); render(); return true; }
+  if (act === 'scm-del') { const a = egS('scm').mats; if (a.length <= 1) { toast('يلزم مادة واحدة على الأقل'); return true; } a.splice(+k, 1); render(); return true; }
+  if (act === 'skl-cv') { const c = typeof CVS === 'function' ? CVS() : { text: '' }, text = c.text && c.text.trim().length > 40 ? c.text : CV_SAMPLE; sklImport(text, c.text && c.text.trim().length > 40 ? 'ذكاء السيرة الذاتية' : 'السيرة التجريبية'); log('د. عدنان', 'استورد ملف مهارات من ذكاء السيرة الذاتية إلى ذكاء المهارات'); toast('استُورد ملف المهارات — راجع المستويات والأدلة'); if (S.route !== 'skills') go('skills'); else { render(); window.scrollTo(0, 0); } return true; }
+  if (act === 'skl-clear') { const s = egS('skl'); s.lv = {}; s.ev = {}; s.src = ''; render(); return true; }
+  return false;
+}
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset || !el.dataset.eg) return;
+  const eng = el.dataset.eg; let v = el.value;
+  if (el.dataset.num) { const n = anNum(v); if (n === null && v.trim() !== '') return; v = n === null ? '' : n; }
+  egSet(egS(eng), el.dataset.p, v); if (eng === 'eco' && /^(fin|exp)\./.test(el.dataset.p)) egS('eco').edited = true;
+  if (el.tagName === 'SELECT' && /^(sector|tab)$/.test(el.dataset.p)) { render(); return; }
+  egRefresh(eng); save();
+});
+const kvx = (rows) => rows.map(([a, b]) => [String(a), String(b)]);
+function engSections2(code) {
+  if (code === 'ECO') {
+    const m = ecoModel(), s = m.s, F = m.fc;
+    return { title: 'تقرير المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية', audience: 'صاحب الحالة وصاحب القرار', ref: 'DIA-ECO', sections: [
+      { h: 'الملخص التنفيذي', text: `${(ECO_WHO.find(x => x[0] === s.who) || [, ''])[1]} — ${s.sector || ''} (${s.country || ''}). المشكلة: ${(ECO_PROB.find(x => x[0] === s.problem) || [, ''])[1]}. الصافي الشهري ${fmtN(m.net, 0)} ${s.cur || ''} بهامش ${fmtN(m.margin, 1)}%. الوفر النظري المحتمل ${fmtN(m.savTotal, 0)} شهريًا قبل القياس. ${F.negB ? 'إنذار: عجز نقدي متوقع في الشهر ' + F.negB + ' بالسيناريو الأساسي.' : F.negS ? 'في سيناريو الضغط يظهر عجز في الشهر ' + F.negS + '.' : 'لا عجز نقدي متوقع خلال 90 يومًا وفق الافتراضات.'}` },
+      { h: 'الوضع المالي', kv: kvx([['الإيراد/الدخل الشهري', fmtN(m.rev, 0)], ['المصروفات', fmtN(m.exp, 0)], ['الأقساط', fmtN(m.debt, 0)], ['الصافي', fmtN(m.net, 0)], ['الهامش', fmtN(m.margin, 1) + '%'], ['نقطة التعادل', fmtN(m.be, 0)], ['النقد المتاح', fmtN(m.cash, 0)], ['تغطية السيولة', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز']]) },
+      { h: 'تشخيص الأسباب الجذرية', cols: ['الفرضية', 'الحالة', 'يؤيدها', 'بيانات للتأكيد', 'الثقة'], rows: m.H.map(h => [h.title, ECO_HST[h.st][0], h.forE.join(' · '), h.need.join('، '), h.conf + '%']) },
+      { h: 'سجل مبادرات خفض التكاليف', cols: ['البند', 'التكلفة الحالية', 'التصنيف', 'الوفر النظري/شهر', 'الحل', 'الحالة'], rows: m.inits.map(i => [i.n, fmtN(i.amt, 0), i.prot ? 'محمي' : (ECO_CLS.find(c => c[0] === i.cls) || [, ''])[1], fmtN(i.sav, 0), i.sol, i.prot ? '—' : i.status]) },
+      { h: 'المشاريع الجانبية المرتبة', cols: ['الفكرة', 'المسار', 'الملاءمة', 'تكلفة البدء', 'أول عميل', 'ملاحظة'], rows: m.ideas.map(I => [I.n, ECO_TRACKS[I.t], fmtN(I.score, 0), fmtN(I.cost, 0), I.wk + ' أسابيع', I.blocked || '']) },
+      { h: 'توقع السيولة 90 يومًا', cols: ['السيناريو', 'الشهر 1', 'الشهر 2', 'الشهر 3'], rows: [['الأساسي', ...F.base.slice(1).map(v => fmtN(v, 0))], ['التحسن', ...F.improve.slice(1).map(v => fmtN(v, 0))], ['الضغط', ...F.stress.slice(1).map(v => fmtN(v, 0))]] },
+      { h: 'حدود التحليل', bullets: ['لا يضمن النظام ربحًا أو دخلًا معينًا ولا يحل محل المحاسب أو المستشار المرخص.', 'الوفر نظري حتى يُقاس، والفكرة الجانبية فرضية حتى تُختبر مع عميل حقيقي.', 'لا خفض للسلامة أو الصيانة الحرجة أو التراخيص أو الرقابة المالية.', 'القرارات عالية الأثر تحتاج موافقة بشرية مخولة.'] }] };
+  }
+  if (code === 'SCM') {
+    const m = scmModel();
+    return { title: 'تقرير ذكاء سلاسل الإمداد واللوجستيات', audience: 'الإدارة والمشتريات والعمليات', ref: 'DIA-SCM', sections: [
+      { h: 'ملخص الحالة', text: `الحالات المحللة: ${(m.s.cases || []).join('، ')}. ${m.mats.filter(x => x.gap > 0).length} مواد معرضة للنفاد قبل وصول التوريد التالي، و${m.mats.filter(x => x.sup <= 1).length} بمصدر واحد. البديل الأفضل في التقييم المتوازن: ${m.best ? m.best.n : '—'}.` },
+      { h: 'تحليل المواد والمخزون', cols: ['المادة', 'التغطية (يوم)', 'المهلة', 'مخزون الأمان', 'نقطة إعادة الطلب', 'الحالة'], rows: m.mats.map(x => [x.n, isFinite(x.cover) ? fmtN(x.cover, 0) : '—', x.lt + ' ± ' + x.ltv, fmtN(x.ss, 0), fmtN(x.rop, 0), x.gap > 0 ? 'خطر نفاد' : x.reorderNow ? 'اطلب الآن' : 'كافٍ']) },
+      { h: 'مقارنة البدائل', cols: ['البديل', 'التكلفة الواصلة', 'الزمن', 'الموثوقية', 'التكلفة المعدّلة', 'التقييم'], rows: m.routes.map(r => [r.n, fmtN(r.landed, 1), r.days + ' يوم', r.rel + '%', fmtN(r.riskAdj, 1), fmtN(r.score, 0)]) },
+      { h: 'سجل المخاطر', cols: ['الرمز', 'الخطر', 'السبب', 'الاحتمال', 'الأثر', 'المستوى', 'التوصية'], rows: m.reg.map(r => [r.code, r.r, r.cause, r.L, r.I, r.lvl[0], r.act]) },
+      { h: 'السيناريوهات', cols: ['السيناريو', 'أطول توقف', 'تكلفة التوقف', 'تكلفة إضافية/شهر'], rows: m.scen },
+      { h: 'ملاحظات', bullets: ['التوصيات لا تُنفذ تلقائيًا؛ تغيير مورد أو مسار أو عقد يحتاج اعتماد صاحب الصلاحية.', 'بيانات المخاطر الجيوسياسية يجب أن تُحدَّث من مصادر رسمية مؤرخة.'] }] };
+  }
+  if (code === 'SUS') {
+    const m = susModel();
+    return { title: 'تقرير تشخيص الديمومة — NAIOSH SUSTAIN 360', audience: 'الإدارة العليا ومسؤول الاستدامة', ref: 'DIA-SUS', sections: [
+      { h: 'الملخص', text: `${m.s.org || ''}: مؤشر الديمومة NSCI = ${fmtN(m.nsci, 0)}/100 (${m.band[0]}). ثقة البيانات ${fmtN(m.dataConf, 0)}%. ${m.flags.length ? 'أخطار حرجة لا يعوّضها أداء المجالات الأخرى: ' + m.flags.map(q => q.id).join('، ') + '.' : ''} ${m.conflicts.length ? 'تعارضات بين التصريحات والقياسات: ' + m.conflicts.length + '.' : ''}` },
+      { h: 'المجالات الثمانية', cols: ['المجال', 'الوزن', 'الدرجة'], rows: m.doms.map(d => [d.n, d.w + '%', d.score === null ? '—' : fmtN(d.score, 0)]) },
+      { h: 'المحاور الستة عشر', cols: ['الرمز', 'المحور', 'الجهة المستجيبة', 'الدرجة'], rows: m.axes.map(x => [x.c, x.n, x.who, x.score === null ? '—' : fmtN(x.score, 0)]) },
+      { h: 'الإنذارات والتعارضات', cols: ['المستوى', 'المرجع', 'البند', 'الدليل', 'الإجراء'], rows: m.warn },
+      { h: 'استراتيجية الديمومة', cols: ['المحور', 'المبادرة', 'المؤشر', 'المسؤول', 'الأفق'], rows: m.weak.slice(0, 6).map(x => [x.c + ' · ' + x.n, ...SUS_INIT[x.c]]) },
+      { h: 'منهجية', bullets: ['الدرجات منهجية أولية قابلة للمعايرة وليست شهادة اعتماد رسمية.', '«نعم» دون دليل تُحتسب 75%، و«لا أعرف» تخفض ثقة البيانات.', 'التوصيات تحتاج اعتمادًا بشريًا قبل التنفيذ.'] }] };
+  }
+  if (code === 'SKL') {
+    const s = egS('skl'), all = SKL_OCC.map(sklMatch).sort((a, b) => b.rank - a.rank), T = all.find(x => x.occ[0] === s.target) || all[0];
+    return { title: 'تقرير ذكاء المهارات والمطابقة المهنية', audience: 'صاحب الملف (وجهة التوظيف بموافقته)', ref: 'DIA-SKL', sections: [
+      { h: 'ملف المهارات', cols: ['المعرف', 'المهارة', 'التصنيف', 'المستوى', 'الدليل'], rows: SKL.filter(x => s.lv[x[0]] !== undefined && s.lv[x[0]] !== '').map(x => [x[0], x[1], (SKL_CAT.find(c => c[0] === x[3]) || [, ''])[1], SKL_LV[+s.lv[x[0]] + 1][1], (SKL_EV.find(e => e[0] === (s.ev[x[0]] || 'claim')) || [, ''])[1]]) },
+      { h: 'المطابقة مع ' + T.occ[4], kv: kvx([['درجة التطابق', fmtN(T.score, 0) + '/100'], ['تغطية البيانات', fmtN(T.cover, 0) + '%'], ...T.dims.map(([n, v]) => [n, fmtN(v, 0) + '%']), ['الشروط المستقلة', T.gates.map(g => (SKLm[g.id] || [, g.id])[1] + ' — ' + g.t).join('، ') || 'لا يوجد']]) },
+      { h: 'ترتيب المهن', cols: ['المهنة', 'القطاع', 'التطابق', 'التصنيف'], rows: all.map(x => [x.occ[4], x.occ[1], fmtN(x.score, 0), SKL_TIER[x.tier][0]]) },
+      { h: 'خطة سد الفجوات', cols: ['المهارة', 'الحالي', 'المطلوب', 'التدريب', 'المدة'], rows: T.gaps.map(g => [(SKLm[g.id] || [, g.id])[1], g.lv === null ? 'غير محدد' : SKL_LV[g.lv + 1][1], SKL_LV[g.req + 1][1], g.lv === null ? 'تقييم أولي' : SKL_TRAIN[(SKLm[g.id] || [, , , 'fut'])[3]], g.lv === null ? '—' : (g.req - g.lv) * 6 + ' أسابيع']) },
+      { h: 'الحوكمة', bullets: ['الفصل بين المهارة المستنتجة والمهارة المثبتة.', 'درجة التطابق ليست احتمال نجاح وظيفي.', 'القرار الوظيفي بشري، ويحق لصاحب الملف تصحيح الاستنتاجات والاعتراض عليها.'] }] };
+  }
+  if (/^CPA-/.test(code)) {
+    const m = cpaModel(), aud = code.slice(4), top = m.res.slice(0, 5);
+    const base = [{ h: 'التخصصات المقترحة للاستكشاف', cols: ['#', 'التخصص', 'التوافق', 'لماذا', 'يحتاج تحققًا', 'القبول', 'التكلفة'], rows: top.map((r, i) => [i + 1, r.n, fmtN(r.score, 0) + '%', r.why.join(' · '), r.gap.join(' · '), r.adm[0], r.afford]) }];
+    if (aud === 'student') return { title: 'تقرير استكشاف المسار الجامعي — الطالب', audience: 'الطالب', ref: 'DIA-CPA-STUDENT', sections: base.concat([{ h: 'أبعاد التوافق', cols: ['التخصص', 'الميول', 'القدرات', 'التحصيل', 'القيم', 'طبيعة الدراسة'], rows: top.map(r => [r.n, ...[r.I, r.A, r.Ac, r.V, r.N].map(x => fmtN(x * 100, 0))]) }, { h: 'خطوات قبل القرار', bullets: [`تجربة دورة تمهيدية مرتبطة بـ«${top[0].n}»`, 'مقابلة طالبين جامعيين في تخصصات مختلفة', 'مراجعة شروط القبول الفعلية', 'جلسة إرشادية لمناقشة البدائل'] }, { h: 'ملاحظة', text: 'النسب توافق تقديري وليست احتمال نجاح أو توظيف. حدود القبول تقديرية — تحقق منها لدى الجامعة.' }]) };
+    if (aud === 'counsel') return { title: 'تقرير المرشد الأكاديمي — سري', audience: 'المرشد الأكاديمي', ref: 'DIA-CPA-COUNSELOR', sections: base.concat([{ h: 'التعارضات', bullets: m.conf.length ? m.conf : ['لا تعارضات جوهرية'] }, { h: 'مؤشرات تستدعي مقابلة خاصة', bullets: m.priv.length ? m.priv : ['لا شيء'] }, { h: 'ثقة التحليل', text: fmtN(m.confPct, 0) + '% — الأوزان اقتراح تصميمي يحتاج معايرة.' }]) };
+    return { title: 'تقرير الأسرة — المسار الجامعي', audience: 'الأسرة', ref: 'DIA-CPA-FAMILY', sections: [{ h: 'التخصصات المقترحة للاستكشاف معًا', bullets: top.slice(0, 3).map(r => r.n + ' — ' + (r.why.join('، ') || 'توافق متعدد الأبعاد')) }, { h: 'كيف تدعمون القرار', bullets: ['التوازن بين الرغبة والقدرة والفرص أهم من مكانة التخصص وحدها', 'تشجيع تجربة دورة قصيرة أو زيارة جامعية', 'الاستماع لأسباب الاختيار دون حكم مسبق', 'مراجعة شروط القبول والتكلفة والمنح معًا'] }, { h: 'الخصوصية', text: 'لا يتضمن هذا التقرير الإجابات الشخصية الحساسة للطالب.' }] };
+  }
+  return null;
+}
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -4325,7 +5004,7 @@ function handle(act, k, el) {
     case 'report-gen': S.reports.unshift({ n: k, t: nowTime() }); log('د. عدنان', 'ولّد ' + k + ' لـ CNS-001'); toast('تم توليد: ' + k); render(); return;
     case 'gov-tab': S.govTab = k; render(); return;
     case 'arch-tab': S.archTab = k; render(); return;
-    default: if (!analyticsHandle(act, k, el) && !engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
+    default: if (!analyticsHandle(act, k, el) && !engine2Handle(act, k, el) && !engineHandle(act, k, el) && !exportHandle(act, k) && !diaHandle(act, k) && !requestHandle(act, k, el)) settingsHandle(act, k, el);
   }
 }
 

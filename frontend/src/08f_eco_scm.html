@@ -1,0 +1,316 @@
+<script data-app="">
+/* ================= Engines wave 2 — shared toolkit =================
+   DIA-ECO (economic resilience & side business) · DIA-SCM (supply chain) · DIA-SUS (Sustain 360)
+   DIA-SKL (skills intelligence) · DIA-CPA (academic & career path) */
+const egGet = (o, p) => String(p).split('.').reduce((a, k) => a == null ? a : a[k], o);
+function egSet(o, p, v) { const ks = String(p).split('.'); let a = o; for (let i = 0; i < ks.length - 1; i++) { if (a[ks[i]] == null) a[ks[i]] = /^\d+$/.test(ks[i + 1]) ? [] : {}; a = a[ks[i]]; } a[ks[ks.length - 1]] = v; }
+const EG_INIT = {}, EG_OUT = {};
+const egS = (e) => S['eg_' + e] || (S['eg_' + e] = EG_INIT[e]());
+const egN = (v) => { const n = typeof v === 'number' ? v : anNum(v); return n === null || !isFinite(n) ? 0 : n; };
+const egNum = (e, p, label, hint = '') => `<label class="stack" style="gap:4px;min-width:0"><span class="faint" style="font-size:11.5px">${label}</span><input type="text" inputmode="decimal" dir="ltr" style="text-align:right" data-eg="${e}" data-p="${p}" data-num="1" value="${esc(egGet(egS(e), p) ?? '')}">${hint ? `<span class="faint" style="font-size:10.5px">${hint}</span>` : ''}</label>`;
+const egTxt = (e, p, label, ph = '') => `<label class="stack" style="gap:4px;min-width:0"><span class="faint" style="font-size:11.5px">${label}</span><input type="text" data-eg="${e}" data-p="${p}" placeholder="${esc(ph)}" value="${esc(egGet(egS(e), p) ?? '')}"></label>`;
+const egSelStyle = 'min-height:40px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:0 8px;width:100%';
+const egSel = (e, p, label, opts) => { const v = egGet(egS(e), p); return `<label class="stack" style="gap:4px;min-width:0">${label ? `<span class="faint" style="font-size:11.5px">${label}</span>` : ''}<select data-eg="${e}" data-p="${p}" style="${egSelStyle}">${opts.map(([k, l]) => `<option value="${esc(k)}" ${String(k) === String(v ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`; };
+const egCh = (e, p, opts, multi) => { const v = egGet(egS(e), p); return `<div class="row" style="gap:6px">${opts.map(([k, l]) => choice(multi ? 'eg-tog' : 'eg-set', e + '.' + p, k, multi ? (v || []).includes(k) : String(v) === String(k), l)).join('')}</div>`; };
+const egQ = (n, t, body) => `<div class="stack" style="gap:6px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">${n ? `<span class="mono faint">${n}.</span> ` : ''}${t}</span>${body}</div>`;
+const egTabs = (e, tabs) => `<section class="card tight" style="padding:10px 12px"><div class="row" style="gap:6px">${tabs.map(([k, l], i) => choice('eg-set', e + '.tab', k, egS(e).tab === k, (i + 1) + ' · ' + l)).join('')}</div></section>`;
+const egGrid = (min, inner) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(${min}px,1fr));gap:10px">${inner}</div>`;
+const egNote = (t) => `<p class="faint" style="font-size:11.5px;line-height:1.7">ⓘ ${t}</p>`;
+const egOut = (e) => `<div id="eg-out-${e}" class="stack" style="gap:16px">${EG_OUT[e]()}</div>`;
+function egRefresh(e) { const o = document.getElementById('eg-out-' + e); if (o) o.innerHTML = brandify(EG_OUT[e]()); }
+const egCard = (title, tag, body) => `<section class="card" style="gap:12px"><div class="row between nowrap" style="gap:10px;align-items:flex-start"><h2 class="h-sec">${title}</h2>${tag ? `<span class="tag t-i" style="flex-shrink:0">${tag}</span>` : ''}</div>${body}</section>`;
+const egStatus = (pct) => pct >= 75 ? ['t-s', 'var(--greenfg)'] : pct >= 50 ? ['t-m', 'var(--yellow)'] : ['t-c', 'var(--redsoft)'];
+const egBar = (label, pct, extra = '') => { const [, c] = egStatus(pct); return `<div class="stack" style="gap:4px"><div class="row between nowrap" style="font-size:12.5px"><span>${label}</span><span class="mono" style="color:${c}">${Math.round(pct)}${extra}</span></div><div style="height:7px;border-radius:4px;background:var(--sunk);overflow:hidden"><div style="height:100%;width:${Math.max(2, Math.min(100, pct))}%;background:${c};border-radius:4px"></div></div></div>`; };
+const REC_ST = ['مسودة', 'تحتاج بيانات', 'قيد المراجعة', 'معتمدة', 'قيد التنفيذ', 'مكتملة', 'معدّلة', 'مرفوضة', 'متوقفة'];
+
+/* =========================================================================================
+   DIA-ECO — Economic Resilience, Cost Optimization & Side Business Intelligence (ECO-01..15)
+   ========================================================================================= */
+const ECO_WHO = [['A', 'فرد أو موظف يريد حماية دخله'], ['B', 'متجر أو مشروع تجاري'], ['C', 'منشأة خدمية أو صناعية أو مقاولات'], ['D', 'شخص يريد مشروعًا جانبيًا جديدًا']];
+const ECO_PROB = [['sales', 'انخفاض المبيعات أو العملاء'], ['cost', 'ارتفاع تكاليف التشغيل'], ['cash', 'ضعف السيولة أو تأخر التحصيل'], ['income', 'الدخل الشخصي لا يغطي الاحتياجات'], ['profit', 'المبيعات مستمرة لكن الأرباح تتراجع'], ['side', 'البحث عن دخل أو مشروع جانبي'], ['mixed', 'مجموعة مشكلات']];
+// [key, name, typical verifiable saving rate, solutions, fixed/variable, protected, months to impact]
+const ECO_CB = [
+  ['purch', 'المشتريات والمواد', 0.06, 'تفاوض، تجميع مشتريات، مقارنة الموردين، تحسين شروط الدفع', 'var', 0, 1],
+  ['inv', 'المخزون والتخزين', 0.10, 'إعادة الطلب حسب الاستهلاك، تقليل التكدس، تصريف مدروس للراكد', 'var', 0, 2],
+  ['ops', 'التشغيل والهدر وإعادة العمل', 0.08, 'تحسين الإجراءات، تقليل الأخطاء، الصيانة الوقائية', 'var', 0, 2],
+  ['energy', 'الطاقة والمرافق', 0.10, 'كشف الهدر والتسرب، تحسين ساعات التشغيل، كفاءة الطاقة', 'var', 0, 2],
+  ['labor', 'الرواتب والعمالة', 0.03, 'إعادة توزيع المهام وتقليل الأعمال المكررة والانتظار — لا تسريح كخيار أول', 'fix', 0, 3],
+  ['mkt', 'التسويق والمبيعات', 0.15, 'إعادة تخصيص الميزانية للقنوات ذات العائد المثبت', 'var', 0, 1],
+  ['rent', 'الإيجار والمساحات', 0.03, 'إعادة التفاوض عند التجديد أو استثمار المساحة غير المستغلة', 'fix', 0, 6],
+  ['tech', 'الاشتراكات والتقنية', 0.20, 'دمج الأدوات وإلغاء غير المستخدم بعد مراجعة الاعتماديات', 'fix', 0, 1],
+  ['svc', 'العقود والخدمات الخارجية', 0.07, 'إعادة تسعير مدروس أو تعديل نطاق العمل وفق العقد', 'var', 0, 3],
+  ['safety', 'السلامة والصيانة الحرجة والتراخيص', 0, 'محمي — لا يُخفض لتحقيق وفر قصير الأجل', 'fix', 1, 0]
+];
+const ECO_CP = [
+  ['housing', 'السكن', 0.03, 'مراجعة البدائل أو التفاوض عند التجديد', 'fix', 0, 6], ['food', 'الغذاء والمستلزمات', 0.08, 'تخطيط المشتريات وتقليل الهدر', 'var', 0, 1],
+  ['transport', 'المواصلات', 0.10, 'مشاركة الرحلات وتجميع المشاوير', 'var', 0, 1], ['utilities', 'الكهرباء والماء والاتصالات', 0.10, 'ترشيد الاستهلاك وباقات أنسب', 'var', 0, 1],
+  ['subs', 'الاشتراكات', 0.30, 'إلغاء غير المستخدم', 'fix', 0, 1], ['leisure', 'الترفيه والكماليات', 0.20, 'سقف شهري متفق عليه', 'var', 0, 1],
+  ['other', 'مصروفات أخرى', 0.10, 'مراجعة البنود وتصنيفها', 'var', 0, 1], ['health', 'الصحة والتعليم والتأمين', 0, 'محمي — لا يُخفض', 'fix', 1, 0]
+];
+const ECO_CLS = [['ess', 'ضرورية'], ['opt', 'قابلة للتحسين'], ['neg', 'قابلة للتفاوض'], ['stop', 'قابلة للإيقاف'], ['inv', 'استثمارية']];
+const ECO_CLSF = { ess: 0.25, opt: 1, neg: 1, stop: 1, inv: 0 };
+const ECO_SK = [['consult', 'الاستشارات والخبرة الإدارية'], ['train', 'التدريب ونقل المعرفة'], ['technical', 'مهارات فنية وصيانة'], ['digital', 'مهارات رقمية'], ['trade', 'بيع وتوريد وعلاقات تجارية'], ['creative', 'تصميم ومحتوى']];
+const ECO_AS = [['clients', 'قاعدة عملاء حاليين'], ['suppliers', 'شبكة موردين'], ['equip', 'معدات أو أدوات'], ['space', 'مساحة أو مستودع'], ['vehicle', 'مركبة'], ['knowhow', 'معرفة تشغيلية موثقة']];
+const ECO_TRACKS = ['', 'تحويل الخبرة إلى خدمة مدفوعة', 'خدمات أو منتجات مكملة للعملاء الحاليين', 'استثمار الأصول والقدرات غير المستغلة', 'تحويل المعرفة إلى منتج رقمي', 'خدمات الربط والتوريد بين المنشآت'];
+const ECO_IDEAS = [
+  { k: 'consult', t: 1, n: 'استشارات متخصصة في مجال خبرتك', sk: ['consult'], as: [], cost: 150, wk: 2, mg: 70, hrs: 5, rel: 1, scale: 2, risk: 1 },
+  { k: 'train', t: 1, n: 'ورش عمل ودورات تدريبية قصيرة', sk: ['train'], as: ['knowhow'], cost: 400, wk: 4, mg: 60, hrs: 6, rel: 1, scale: 3, risk: 1 },
+  { k: 'tech', t: 1, n: 'خدمات فنية أو صيانة عند الطلب', sk: ['technical'], as: ['equip'], cost: 600, wk: 2, mg: 45, hrs: 10, rel: 1, scale: 2, risk: 2 },
+  { k: 'compl', t: 2, n: 'منتج أو خدمة مكملة لعملائك الحاليين', sk: ['trade'], as: ['clients'], cost: 800, wk: 3, mg: 35, hrs: 6, rel: 2, scale: 3, risk: 2 },
+  { k: 'bundle', t: 2, n: 'باقات اشتراك أو صيانة دورية للعملاء الحاليين', sk: [], as: ['clients'], cost: 300, wk: 3, mg: 50, hrs: 5, rel: 2, scale: 3, risk: 1 },
+  { k: 'rent', t: 3, n: 'تأجير معدات أو مساحات غير مستغلة (إن كان مسموحًا)', sk: [], as: ['equip', 'space'], cost: 200, wk: 2, mg: 60, hrs: 2, rel: 2, scale: 1, risk: 2 },
+  { k: 'delivery', t: 3, n: 'خدمات توصيل أو نقل بالمركبة المتاحة', sk: [], as: ['vehicle'], cost: 250, wk: 1, mg: 30, hrs: 10, rel: 1, scale: 1, risk: 3 },
+  { k: 'digital', t: 4, n: 'قوالب وأدلة تشغيل ومواد تدريبية رقمية', sk: ['digital', 'consult'], as: ['knowhow'], cost: 300, wk: 6, mg: 80, hrs: 4, rel: 1, scale: 3, risk: 1 },
+  { k: 'content', t: 4, n: 'محتوى أو اشتراك معرفي متخصص لقطاعك', sk: ['digital', 'creative'], as: ['knowhow'], cost: 200, wk: 8, mg: 75, hrs: 5, rel: 1, scale: 3, risk: 1 },
+  { k: 'broker', t: 5, n: 'توريد حسب الطلب أو ربط موردين بعملاء (بترخيص)', sk: ['trade'], as: ['suppliers', 'clients'], cost: 1000, wk: 4, mg: 15, hrs: 8, rel: 2, scale: 2, risk: 3 }
+];
+const ECO_FQ = {
+  A: ['ما صافي الدخل الشهري بعد الاستقطاعات؟', 'ما المصروفات الضرورية والثابتة والمتغيرة؟', 'هل توجد ديون أو التزامات شهرية أو متأخرات؟', 'ما المهارات التي يمكن تقديم خدمة مدفوعة بها دون تعارض مع الوظيفة؟', 'كم ساعة متاحة؟ وهل توجد قيود تعاقدية أو مهنية؟', 'هل الهدف زيادة الدخل أم تقليل الإنفاق أم كليهما؟'],
+  B: ['كيف تغيرت المبيعات شهريًا خلال آخر 6–12 شهرًا؟', 'ما هامش الربح لكل منتج أو خدمة؟', 'ما المنتجات بطيئة الحركة أو منخفضة الربحية؟', 'ما نسبة العملاء المتكررين؟ ولماذا يخسر المشروع العملاء؟', 'ما تكلفة الإيجار والعمالة والشحن والمخزون والتسويق؟', 'كم يبلغ متوسط فترة التحصيل ومدة بقاء المخزون؟', 'هل توجد منتجات أو خدمات يمكن بيعها لنفس العملاء بتكلفة إضافية محدودة؟'],
+  C: ['ما تكلفة تنفيذ كل مشروع أو أمر عمل؟', 'ما نسبة استغلال العمالة والمعدات؟', 'ما حجم الهدر وإعادة العمل والتأخير؟', 'هل توجد معدات أو مساحات أو قدرات إنتاجية غير مستغلة؟', 'هل تتأخر مستخلصات العملاء أو تتغير أسعار المواد؟', 'ما العقود ذات الهامش الضعيف أو شروط الدفع غير المناسبة؟', 'ما الخدمات المكملة التي يمكن بيعها لعملاء حاليين؟'],
+  D: ['من العميل الذي سيشتري؟ وما المشكلة التي سيدفع لحلها؟', 'ما الدليل على وجود طلب حقيقي؟', 'هل يمكن اختبار الفكرة بخدمة تجريبية أو طلب مسبق؟', 'ما التكاليف الأولية والثابتة والمتغيرة؟', 'هل يحتاج النشاط إلى ترخيص أو موافقات أو تأمين؟', 'هل تستطيع تقديم الخدمة بنفسك؟ وما البديل إذا لم ينجح الاختبار؟']
+};
+EG_INIT.eco = () => ({
+  tab: 'case', cur: 'JOD', who: 'B', country: 'الأردن', sector: 'تجارة تجزئة', problem: 'profit', risk: 'mid', hours: '5-10', goal: 'استعادة هامش ربح 10% وتأمين سيولة تغطي 3 أشهر',
+  fin: { rev: 18000, revPrev: 21000, expPrev: 16900, cash: 9000, recv: 7000, coll: 52, debt: 900, repeat: 35, top: 28, act1: '', act2: '', act3: '' },
+  exp: { purch: 7200, inv: 900, ops: 800, energy: 650, labor: 4200, mkt: 900, rent: 1500, tech: 380, svc: 600, safety: 350, housing: 450, food: 380, transport: 160, utilities: 90, subs: 45, leisure: 120, other: 80, health: 70 },
+  cls: { tech: 'stop' }, st: {}, skills: ['consult', 'train'], assets: ['clients', 'knowhow'], capital: 1500, sideRev: 900, pick: ''
+});
+const ECO_HRS = { '<5': 4, '5-10': 8, '10+': 15, full: 40 };
+function ecoModel() {
+  const s = egS('eco'), f = s.fin, A = s.who === 'A', C = A ? ECO_CP : ECO_CB;
+  const rev = egN(f.rev), revPrev = egN(f.revPrev), debt = egN(f.debt), cash = egN(f.cash), recv = egN(f.recv), coll = egN(f.coll);
+  const items = C.map(c => ({ k: c[0], n: c[1], rate: c[2], sol: c[3], fix: c[4] === 'fix', prot: !!c[5], months: c[6], amt: egN(s.exp[c[0]]) }));
+  const exp = items.reduce((a, x) => a + x.amt, 0), out = exp + debt, net = rev - out, netPrev = revPrev - egN(f.expPrev) - debt;
+  const fixed = items.filter(x => x.fix).reduce((a, x) => a + x.amt, 0) + debt, varExp = exp + debt - fixed;
+  const margin = rev ? net / rev * 100 : NaN, revCh = pctCh(revPrev, rev), expCh = pctCh(egN(f.expPrev), exp);
+  const be = rev && varExp < rev ? fixed / (1 - varExp / rev) : NaN, runway = net < 0 ? cash / -net : Infinity;
+  const H = [];
+  const add = (id, title, cond, known, forE, against, need, decision) => H.push({ id, title, st: !known ? 'need' : cond ? 'sup' : 'no', conf: !known ? 25 : cond ? Math.min(85, 50 + forE.length * 12) : 40, forE, against, need, decision });
+  if (A) {
+    add('H-INC', 'الدخل لا يغطي الإنفاق الشهري', net < 0, rev > 0, [`صافي الشهر ${fmtN(net, 0)}`], net >= 0 ? ['الدخل يغطي المصروفات حاليًا'] : [], ['كشف حساب 3 أشهر لتأكيد المتوسط'], 'هل نبدأ بخفض الإنفاق أم بدخل إضافي؟');
+    add('H-DEBT', 'عبء الديون والأقساط مرتفع', rev && debt / rev > 0.3, rev > 0, [`الأقساط ${fmtN(debt / rev * 100, 0)}% من الدخل`], [], ['جدول الأقساط ومواعيد الاستحقاق وأسعار الفائدة'], 'إعادة جدولة الالتزامات وفق العقود');
+    add('H-FIX', 'الالتزامات الثابتة تقيّد المرونة', out && fixed / out > 0.6, out > 0, [`الثابت ${fmtN(fixed / out * 100, 0)}% من الإنفاق`], [], ['العقود ومدد الاشتراكات'], 'مراجعة البنود الثابتة عند التجديد');
+  } else {
+    add('H-REV', 'تراجع المبيعات أو عدد العملاء', revCh <= -5, revPrev > 0, [`الإيراد ${fmtP(revCh)} خلال 6 أشهر`].concat(egN(f.repeat) < 40 ? [`العملاء العائدون ${fmtN(egN(f.repeat), 0)}% فقط`] : []), egN(f.repeat) >= 40 ? [`نسبة العملاء العائدين ${fmtN(egN(f.repeat), 0)}% جيدة نسبيًا`] : [], ['المبيعات حسب المنتج والقناة شهريًا', 'عدد العملاء الجدد والمفقودين'], 'تحديد هل المشكلة طلب أم تسعير أم قناة');
+    add('H-COST', 'ارتفاع التكاليف أسرع من الإيراد', isFinite(expCh) && expCh - (isFinite(revCh) ? revCh : 0) > 5, egN(f.expPrev) > 0, [`المصروفات ${fmtP(expCh)} مقابل الإيراد ${fmtP(revCh)}`], [], ['تفصيل تكلفة المواد والطاقة والشحن والهدر'], 'أي بنود تُراجع أولًا في محرك خفض التكاليف');
+    add('H-LIQ', 'السيولة تتآكل بسبب بطء التحصيل', coll > 45 || recv > rev * 0.35, coll > 0, [`متوسط التحصيل ${fmtN(coll, 0)} يومًا`, `مستحقات لدى العملاء ${fmtN(recv, 0)}`], coll <= 30 ? ['التحصيل ضمن 30 يومًا'] : [], ['أعمار الذمم المدينة حسب العميل'], 'تسريع التحصيل قبل أي اقتراض');
+    add('H-CONC', 'الاعتماد على عميل رئيسي واحد', egN(f.top) > 25, egN(f.top) > 0, [`أكبر عميل ${fmtN(egN(f.top), 0)}% من الإيراد`], [], ['حصة أكبر 5 عملاء وشروط عقودهم'], 'تنويع قاعدة العملاء');
+    add('H-MRG', 'تآكل الهامش (تسعير أو مزيج منتجات)', isFinite(margin) && margin < 8 && !(revCh <= -5), rev > 0, [`صافي الهامش ${fmtN(margin, 1)}%`, `الصافي قبل 6 أشهر ${fmtN(netPrev, 0)} والآن ${fmtN(net, 0)}`], revCh <= -5 ? ['التراجع يفسره انخفاض الإيراد أكثر من الهامش'] : [], ['هامش كل منتج وخدمة', 'الخصومات الممنوحة'], 'إعادة تسعير مدروسة وتعديل المزيج');
+    add('H-FIX', 'التكاليف الثابتة مرتفعة (رافعة تشغيلية)', out && fixed / out > 0.55, out > 0, [`الثابت ${fmtN(fixed / out * 100, 0)}% من التكاليف`], [], ['العقود الثابتة ومددها'], 'خفض نقطة التعادل');
+  }
+  // cost initiatives (ECO-06 → ECO-18)
+  const inits = items.filter(x => x.amt > 0).map(x => {
+    const cls = x.prot ? 'ess' : (s.cls[x.k] || 'opt'), sav = x.prot ? 0 : cls === 'stop' ? x.amt : x.amt * x.rate * ECO_CLSF[cls];
+    return { ...x, cls, sav, impl: Math.round(sav * 0.5), status: s.st[x.k] || 'مسودة' };
+  }).sort((a, b) => b.sav - a.sav);
+  const live = inits.filter(i => !['مرفوضة', 'متوقفة'].includes(i.status));
+  const savTotal = live.reduce((a, i) => a + i.sav, 0), implTotal = live.reduce((a, i) => a + i.impl, 0);
+  // side business (ECO-08/09/19)
+  const hrsAvail = ECO_HRS[s.hours] || 8, cap = egN(s.capital), tol = { low: 1.5, mid: 1, high: 0.7 }[s.risk] || 1;
+  const ideas = ECO_IDEAS.map(I => {
+    const fit = I.sk.length ? I.sk.filter(k => s.skills.includes(k)).length / I.sk.length : 0.5;
+    const asset = I.as.length ? I.as.filter(k => s.assets.includes(k)).length / I.as.length : 0.5;
+    const crit = [fit, 0.5, cap ? Math.max(0, Math.min(1, 1 - I.cost / (cap * 2))) : 0, I.mg / 100, 1 - Math.min(1, I.wk / 12), asset, I.cost <= 500 && I.wk <= 4 ? 1 : 0.6, Math.max(0, 1 - (I.risk - 1) / 2 * tol), I.hrs > hrsAvail ? 0.3 : (I.rel === 2 && s.who !== 'A' && s.who !== 'D' ? 0.9 : 0.6), I.scale / 3];
+    const W = [15, 15, 10, 10, 10, 10, 10, 10, 5, 5];
+    const score = crit.reduce((a, c, i) => a + c * W[i], 0);
+    const blocked = (I.as.length && asset === 0) ? 'يتطلب أصلًا غير متوفر' : I.cost > cap ? 'تكلفة البدء تتجاوز رأس المال المتاح' : '';
+    return { ...I, fit, asset, crit, score, blocked };
+  }).sort((a, b) => (!!a.blocked - !!b.blocked) || b.score - a.score);
+  const pick = ideas.find(i => i.k === s.pick && !i.blocked) || ideas.find(i => !i.blocked) || null;
+  const sideNet = pick ? egN(s.sideRev) * pick.mg / 100 : 0;
+  // 90-day forecast (ECO-12 / section 20)
+  const sc = (inF, outF) => { let c = cash; const v = [c]; for (let t = 1; t <= 3; t++) { c += inF(t) - outF(t); v.push(c); } return v; };
+  const realize = [0.3, 0.6, 0.9], ramp = [0, 0.5, 1];
+  const base = sc(() => rev, () => out);
+  const improve = sc((t) => rev + sideNet * ramp[t - 1] + (t === 1 && coll > 30 ? recv * 0.25 : 0), (t) => out - savTotal * 0.5 * realize[t - 1] + (t === 1 ? implTotal + (pick ? pick.cost : 0) : 0));
+  const stress = sc((t) => rev * 0.85 - (t === 1 ? recv * 0.2 : 0), () => exp * 1.05 + debt);
+  const firstNeg = (v) => { const i = v.findIndex((x, j) => j > 0 && x < 0); return i > 0 ? i : null; };
+  const acts = [f.act1, f.act2, f.act3].map(v => v === '' || v == null ? null : egN(v));
+  return { s, A, items, exp, out, net, netPrev, fixed, varExp, margin, revCh, expCh, be, runway, rev, cash, recv, coll, debt, H, inits, savTotal, implTotal, ideas, pick, sideNet, hrsAvail, cap, fc: { base, improve, stress, negB: firstNeg(base), negS: firstNeg(stress), negI: firstNeg(improve) }, acts };
+}
+const ECO_HST = { sup: ['مدعومة بالبيانات', 't-h'], no: ['غير مدعومة حاليًا', 't-n'], need: ['تحتاج بيانات', 't-m'] };
+EG_OUT.eco = () => {
+  const m = ecoModel(), s = m.s, cur = s.cur || '';
+  if (s.tab === 'case') {
+    return egCard('أسئلة المتابعة التكيفية — المسار ' + s.who, 'ECO-01 · قسم 17', `<p class="soft" style="font-size:13px;line-height:1.8">كل سؤال مرتبط بفرضية أو قرار، ولا يُطرح سؤال أجيب عنه إلا للتحقق من تناقض.</p>
+      ${ECO_FQ[s.who].map((q, i) => `<div class="row nowrap" style="gap:8px;font-size:13px;align-items:flex-start"><span class="mono faint">${i + 1}</span><span>${q}</span></div>`).join('')}
+      ${m.H.filter(h => h.st !== 'no').length ? `<span class="lbl" style="margin-top:6px">أسئلة مولّدة من الفرضيات الحالية</span>${m.H.filter(h => h.st !== 'no').map(h => `<div class="sub" style="gap:3px"><b style="font-size:12.5px">${h.need[0]}</b><span class="faint" style="font-size:11.5px">لماذا: لاختبار فرضية «${h.title}» · القرار المتأثر: ${h.decision}</span></div>`).join('')}` : ''}
+      ${egNote('هذه المرحلة لا تُصدر حكمًا نهائيًا ولا تضمن ربحًا. الخطوة التالية: إدخال الأرقام في تبويب «المالية والتشخيص».')}`);
+  }
+  if (s.tab === 'fin') {
+    const k = m.A ? [['صافي الشهر', fmtN(m.net, 0), m.net < 0 ? 'bad' : 'good'], ['نسبة الادخار', fmtN(m.margin, 1) + '%', m.margin < 0 ? 'bad' : ''], ['الالتزامات الثابتة', fmtN(m.fixed / m.out * 100, 0) + '%'], ['السيولة تكفي', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز', isFinite(m.runway) && m.runway < 3 ? 'bad' : 'good']]
+      : [['صافي الربح الشهري', fmtN(m.net, 0), m.net < 0 ? 'bad' : 'good'], ['صافي الهامش', fmtN(m.margin, 1) + '%', m.margin < 8 ? 'bad' : 'good'], ['تغير الإيراد', fmtP(m.revCh), m.revCh < 0 ? 'bad' : 'good'], ['نقطة التعادل الشهرية', fmtN(m.be, 0)], ['التكاليف الثابتة', fmtN(m.fixed / m.out * 100, 0) + '%'], ['السيولة تكفي', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز حالي', isFinite(m.runway) && m.runway < 3 ? 'bad' : 'good']];
+    return egCard('الوضع المالي — الربح ليس هو السيولة', 'ECO-04/05 · أقسام 8–9', `${anKpis(k)}
+      <div class="sub" style="gap:4px;font-size:12.5px"><span>الربح المحاسبي الشهري: <b>${fmtN(m.net, 0)}</b> ${cur} · النقد المتاح: <b>${fmtN(m.cash, 0)}</b> · مستحقات لم تُحصّل: <b>${fmtN(m.recv, 0)}</b>${m.coll ? ' (متوسط ' + fmtN(m.coll, 0) + ' يومًا)' : ''}</span><span class="faint">قد تكون المنشأة رابحة على الورق وتعاني عجزًا نقديًا إذا تأخر التحصيل — لذلك يُعرض الاثنان منفصلين.</span></div>`)
+      + egCard('خريطة الأسباب الجذرية — فرضيات مرتبة بالأدلة', 'ECO-03 · قسم 10', m.H.map(h => `<div class="sub" style="gap:6px"><div class="row between nowrap" style="gap:8px"><b style="font-size:13px">${h.id} · ${h.title}</b><span class="tag ${ECO_HST[h.st][1]}" style="flex-shrink:0">${ECO_HST[h.st][0]}</span></div>
+        ${h.st !== 'need' ? `<span style="font-size:12px;color:var(--greenfg)">يؤيدها: ${h.forE.join(' · ')}</span>` : ''}${h.against.length ? `<span style="font-size:12px;color:var(--soft)">قد ينفيها: ${h.against.join(' · ')}</span>` : ''}
+        <span class="faint" style="font-size:11.5px">بيانات للتأكيد: ${h.need.join('، ')} · الثقة ${h.conf}% · القرار المتأثر: ${h.decision}</span></div>`).join('') + egNote('الارتباط وحده لا يثبت السببية؛ يمكن أن تتزامن أسباب مالية وتشغيلية وسوقية.'));
+  }
+  if (s.tab === 'cost') {
+    return egCard('سجل مبادرات خفض التكاليف دون الإضرار بالنشاط', 'ECO-06 · أقسام 12 و18', `${anKpis([['وفر نظري شهري', fmtN(m.savTotal, 0), 'good'], ['وفر نظري سنوي', fmtN(m.savTotal * 12, 0)], ['من إجمالي المصروفات', fmtN(m.exp ? m.savTotal / m.exp * 100 : 0, 1) + '%'], ['تكلفة تنفيذ تقديرية', fmtN(m.implTotal, 0)]])}
+      <div class="tbl-wrap"><table><thead><tr><th>البند</th><th>التكلفة الحالية</th><th>التصنيف</th><th>الوفر المحتمل/شهر</th><th>زمن الأثر</th><th>الحل بعد التحقق</th><th>الحالة</th></tr></thead><tbody>
+      ${m.inits.map(i => `<tr><td style="font-size:12.5px"><b>${i.n}</b></td><td class="mono" style="font-size:12px">${fmtN(i.amt, 0)}</td>
+        <td>${i.prot ? '<span class="tag t-s">محمي</span>' : `<select data-eg="eco" data-p="cls.${i.k}" style="${egSelStyle};min-height:34px;font-size:12px">${ECO_CLS.map(([k, l]) => `<option value="${k}" ${i.cls === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`}</td>
+        <td class="mono" style="font-size:12px;color:${i.sav ? 'var(--greenfg)' : 'var(--faint)'}">${fmtN(i.sav, 0)}</td><td class="faint" style="font-size:12px">${i.months ? i.months + ' شهر' : '—'}</td><td style="font-size:12px">${i.sol}</td>
+        <td>${i.prot ? '—' : `<select data-eg="eco" data-p="st.${i.k}" style="${egSelStyle};min-height:34px;font-size:12px">${REC_ST.map(x => `<option ${i.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>`}</td></tr>`).join('')}</tbody></table></div>
+      ${egNote('الوفر نظري ولا يُسجَّل وفرًا محققًا إلا بعد قياسه. النسب مبنية على نطاقات تحسين محافظة لكل بند ويجب التحقق منها. لا يوصي النظام بخفض السلامة أو الصيانة الحرجة أو التراخيص أو الرقابة المالية. التغييرات الجوهرية تحتاج موافقة المسؤول المخول.')}`);
+  }
+  if (s.tab === 'side') {
+    const P = m.pick;
+    return egCard('المشاريع الجانبية المرتبة حسب الملاءمة', 'ECO-08/09 · أقسام 15 و19', `<div class="tbl-wrap"><table><thead><tr><th>الفكرة</th><th>المسار</th><th>درجة الملاءمة</th><th>تكلفة البدء</th><th>أول عميل</th><th>الهامش</th><th>ملاحظة</th></tr></thead><tbody>
+      ${m.ideas.map(I => `<tr style="${I.blocked ? 'opacity:.55' : ''}"><td style="font-size:12.5px"><button type="button" class="btn link sm" style="padding:0;min-height:0;text-align:right" data-act="eg-set" data-k="${esc('eco.pick|' + I.k)}" ${I.blocked ? 'disabled' : ''}>${P && P.k === I.k ? '● ' : ''}${I.n}</button></td><td class="faint" style="font-size:11.5px">${ECO_TRACKS[I.t]}</td><td class="mono" style="font-size:12px;color:${egStatus(I.score)[1]}">${fmtN(I.score, 0)}</td><td class="mono" style="font-size:12px">${fmtN(I.cost, 0)}</td><td class="faint" style="font-size:12px">${I.wk} أسابيع</td><td class="mono" style="font-size:12px">${I.mg}%</td><td class="faint" style="font-size:11.5px">${I.blocked || (I.hrs > m.hrsAvail ? 'يحتاج وقتًا أكثر من المتاح' : I.rel === 2 ? 'مرتبط بالنشاط الرئيسي' : 'مستقل')}</td></tr>`).join('')}</tbody></table></div>
+      ${P ? `<div class="sub" style="gap:6px"><b style="font-size:13.5px;color:var(--yellow)">خطة تجربة قبل الاستثمار — ${P.n}</b>
+        ${['مقابلة 8–10 عملاء محتملين والتحقق من احتياجهم واستعدادهم للدفع', 'عرض تجريبي واضح بسعر محدد ونطاق محدود', 'الحصول على طلبات أو حجوزات مسبقة نظامية قبل أي توسع', 'تنفيذ عدد محدود من الطلبات وقياس التكلفة والهامش الفعليين', 'مقارنة الهامش الفعلي بالتقدير (' + P.mg + '%) ثم قرار الاستمرار أو التعديل أو الإيقاف'].map((t, i) => `<span style="font-size:12.5px"><span class="mono faint">${i + 1}</span> ${t}</span>`).join('')}
+        <span class="faint" style="font-size:12px">الحد الأقصى للخسارة المقبولة: <b style="color:var(--fg)">${fmtN(Math.min(m.cap, P.cost * 1.5), 0)}</b> ${cur} · معيار الإيقاف: أقل من 3 عملاء يدفعون خلال 6 أسابيع، أو هامش فعلي أقل من نصف المقدَّر.</span></div>` : '<span class="faint">لا توجد فكرة مؤهلة بالمهارات والأصول الحالية.</span>'}
+      ${egNote('الفكرة فرضية حتى تُختبر مع عميل حقيقي. معيار «الطلب» يبقى 50% حتى يثبت بالتجربة، ولا تحصل الفكرة على تقييم مرتفع لمجرد أن تكلفتها منخفضة. تحقق من التراخيص وتعارض المصالح قبل البدء.')}`);
+  }
+  // forecast
+  const F = m.fc, lab = ['الآن', 'الشهر 1', 'الشهر 2', 'الشهر 3'];
+  const varRows = m.acts.map((a, i) => a === null ? null : [lab[i + 1], fmtN(F.base[i + 1], 0), fmtN(a, 0), fmtN(a - F.base[i + 1], 0), Math.abs(a - F.base[i + 1]) / Math.max(1, Math.abs(F.base[i + 1])) > 0.1 ? 'انحراف جوهري — راجع الافتراضات' : 'ضمن الحدود']).filter(Boolean);
+  const alert = F.negB || F.negS;
+  return egCard('توقع السيولة لمدة 90 يومًا — ثلاثة سيناريوهات', 'ECO-12 · قسم 20', `${alert ? `<div class="banner r">${ic('warn', 16)}<span>إنذار سيولة مبكر: ${F.negB ? 'في السيناريو الأساسي يصبح النقد سالبًا في الشهر ' + F.negB : 'في سيناريو الضغط يصبح النقد سالبًا في الشهر ' + F.negS}. الإجراءات المقترحة: تسريع التحصيل، التفاوض على شروط الموردين، تقليل المخزون غير الضروري، أو إعادة جدولة الالتزامات وفق العقود.</span></div>` : '<div class="banner g">لا يظهر عجز نقدي خلال 90 يومًا في السيناريوهات الثلاثة وفق الافتراضات الحالية.</div>'}
+    ${anChart({ lab, series: [{ y: F.improve, c: 'var(--green)', n: 'سيناريو التحسن' }, { y: F.base, c: 'var(--blue)', n: 'الأساسي' }, { y: F.stress, c: 'var(--red)', n: 'الضغط' }] })}
+    ${anTbl({ h: 'رصيد النقد المتوقع نهاية كل شهر', cols: ['السيناريو', 'الشهر 1', 'الشهر 2', 'الشهر 3', 'أول شهر عجز'], rows: [['الأساسي', ...F.base.slice(1).map(v => fmtN(v, 0)), F.negB ? 'الشهر ' + F.negB : '—'], ['التحسن', ...F.improve.slice(1).map(v => fmtN(v, 0)), F.negI ? 'الشهر ' + F.negI : '—'], ['الضغط', ...F.stress.slice(1).map(v => fmtN(v, 0)), F.negS ? 'الشهر ' + F.negS : '—']] })}
+    ${anTbl({ h: 'الافتراضات المعلنة', cols: ['السيناريو', 'الافتراض'], rows: [['الأساسي', 'استمرار الإيراد والمصروفات الحالية'], ['التحسن', `تحقق 50% من الوفر النظري تدريجيًا (30%←60%←90%)، تحصيل 25% من المستحقات مبكرًا إن كان التحصيل > 30 يومًا، دخل جانبي صافٍ يصل إلى ${fmtN(m.sideNet, 0)} في الشهر الثالث، وتكلفة التنفيذ والتجربة في الشهر الأول`], ['الضغط', 'تراجع الإيراد 15%، ارتفاع التكاليف 5%، وتأخر 20% من التحصيل']] })}
+    <div class="stack" style="gap:6px"><span class="lbl">مقارنة المتوقع بالفعلي (أدخل رصيد النقد الفعلي نهاية كل شهر)</span>${egGrid(140, [1, 2, 3].map(i => egNum('eco', 'fin.act' + i, 'الفعلي — الشهر ' + i)).join(''))}</div>
+    ${varRows.length ? anTbl({ h: 'سجل الانحرافات', cols: ['الشهر', 'المتوقع', 'الفعلي', 'الفرق', 'التقييم'], rows: varRows }) : ''}
+    ${egNote('التوقع ليس ضمانًا؛ يُحدَّث شهريًا عند تغير معلومات جوهرية، وتُستخدم الانحرافات لتحسين الافتراضات.')}`);
+};
+VIEWS.eco = () => {
+  const s = egS('eco'), A = s.who === 'A', C = A ? ECO_CP : ECO_CB;
+  let inputs = '';
+  if (s.tab === 'case') inputs = egCard('استبيان التشخيص المبدئي', 'ECO-01 · أقسام 2 و5 و16',
+    egQ(1, 'من هو المستفيد من التحليل؟', egCh('eco', 'who', ECO_WHO)) + egQ(2, 'السوق والقطاع', egGrid(180, egTxt('eco', 'country', 'الدولة أو السوق') + egTxt('eco', 'sector', 'القطاع أو طبيعة النشاط') + egSel('eco', 'cur', 'العملة', [['JOD', 'دينار أردني'], ['SAR', 'ريال سعودي'], ['AED', 'درهم إماراتي'], ['USD', 'دولار'], ['CAD', 'دولار كندي']])))
+    + egQ(3, 'المشكلة الأكثر إلحاحًا', egCh('eco', 'problem', ECO_PROB)) + egQ(4, 'مستوى تقبل المخاطر المالية', egCh('eco', 'risk', [['low', 'منخفض — أحافظ على السيولة'], ['mid', 'متوسط — تجربة صغيرة بضوابط'], ['high', 'مرتفع نسبيًا بعد التحقق']]))
+    + egQ(5, 'الوقت المتاح أسبوعيًا لمشروع جانبي', egCh('eco', 'hours', [['<5', 'أقل من 5 ساعات'], ['5-10', '5–10 ساعات'], ['10+', 'أكثر من 10'], ['full', 'دوام كامل']])) + egQ(6, 'النتيجة المطلوبة خلال 3 أشهر', egTxt('eco', 'goal', '')));
+  if (s.tab === 'fin') inputs = egCard(A ? 'الدخل والإنفاق الشهري' : 'الإيرادات والمصروفات والالتزامات الشهرية', 'ECO-02 · أقسام 7–9',
+    egGrid(150, egNum('eco', 'fin.rev', A ? 'صافي الدخل الشهري الحالي' : 'الإيراد الشهري الحالي') + egNum('eco', 'fin.revPrev', A ? 'الدخل قبل 6 أشهر' : 'الإيراد قبل 6 أشهر') + egNum('eco', 'fin.expPrev', 'إجمالي المصروفات قبل 6 أشهر') + egNum('eco', 'fin.debt', 'أقساط وديون شهرية') + egNum('eco', 'fin.cash', 'النقد المتاح الآن')
+      + (A ? '' : egNum('eco', 'fin.recv', 'مستحقات لدى العملاء') + egNum('eco', 'fin.coll', 'متوسط التحصيل (يوم)') + egNum('eco', 'fin.repeat', 'العملاء العائدون %') + egNum('eco', 'fin.top', 'حصة أكبر عميل %')))
+    + `<span class="lbl" style="margin-top:4px">المصروفات الشهرية حسب البند</span>` + egGrid(150, C.map(c => egNum('eco', 'exp.' + c[0], c[1] + (c[5] ? ' 🔒' : ''))).join(''))
+    + egNote('اترك الحقل فارغًا إذا كانت القيمة غير معروفة؛ لا يصحح النظام أي قيمة مالية بصمت. كل رقم بالعملة المختارة وعن شهر واحد.'));
+  if (s.tab === 'cost') inputs = '';
+  if (s.tab === 'side') inputs = egCard('المهارات والأصول والموارد', 'ECO-08 · قسم 14', egQ(1, 'المهارات والخبرات التي يمكن استثمارها', egCh('eco', 'skills', ECO_SK, true)) + egQ(2, 'الأصول والموارد المتاحة (بصلاحية استخدام مؤكدة)', egCh('eco', 'assets', ECO_AS, true))
+    + egGrid(180, egNum('eco', 'capital', 'رأس مال يمكن تخصيصه دون تعريض الاحتياجات للخطر') + egNum('eco', 'sideRev', 'إيراد شهري متوقع من التجربة (افتراض)')));
+  if (s.tab === 'fcst') inputs = '';
+  return `${engHead('NAIOSH ECONOMIC RESILIENCE · DIA-ECO', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية', 'لا نقترح مشروعًا جانبيًا قبل فهم المشكلة الاقتصادية، ولا خفض تكلفة قبل معرفة أثرها، ولا تنبؤًا قبل توضيح البيانات والافتراضات. اجمع ← تحقق ← اكتشف السبب ← اختبر الحل ← نفّذ ← قِس ← تعلّم.', engExport('ECO'))}
+  ${egTabs('eco', [['case', 'الحالة والأسئلة'], ['fin', 'المالية والتشخيص'], ['cost', 'خفض التكاليف'], ['side', 'المشاريع الجانبية'], ['fcst', 'توقع 90 يومًا']])}
+  ${inputs}${egOut('eco')}`;
+};
+
+/* =========================================================================================
+   DIA-SCM — Global Supply Chain & Logistics Intelligence
+   ========================================================================================= */
+const SCM_CASES = [['SC-01', 'نقص المواد أو توقف التوريد'], ['SC-02', 'ارتفاع تكاليف الشراء'], ['SC-03', 'تعطل النقل أو الممرات'], ['SC-04', 'ارتفاع تكاليف الشحن والتأمين'], ['SC-05', 'ضعف إدارة المخزون والمستودعات'], ['SC-06', 'تأخر التخليص والعبور'], ['SC-07', 'الاعتماد على مورد أو مصدر واحد'], ['SC-08', 'العقود والالتزامات التجارية'], ['SC-09', 'العقوبات والقيود والحظر التجاري'], ['SC-10', 'ضعف التخطيط والتنبؤ بالطلب'], ['SC-11', 'ضعف التنسيق بين الإدارات'], ['SC-12', 'المرونة الشاملة واستمرارية الأعمال']];
+const SCM_Q = {
+  sup: ['ما نسبة الاعتماد على أكبر مورد لكل مادة حرجة؟', 'ما دولة المنشأ ودولة الشحن ودولة العبور؟', 'ما مدة التوريد المعتادة، وما المدة الفعلية خلال آخر ستة أشهر؟', 'هل توجد بدائل معتمدة فنيًا وتجاريًا؟ وكم يستغرق اعتمادها؟'],
+  inv: ['ما الحد الأدنى والحد الأقصى ونقطة إعادة الطلب لكل مادة؟', 'ما نسبة المواد الراكدة أو التالفة أو المنتهية الصلاحية؟', 'هل توجد فروقات بين المخزون الفعلي والنظام؟', 'ما تكلفة نفاد كل مادة من حيث توقف الإنتاج أو الخدمة؟'],
+  route: ['ما نقطة الانطلاق والوجهة النهائية ونقاط العبور؟', 'هل يوجد ميناء أو معبر أو ممر بديل قابل للاستخدام؟', 'هل ارتفعت أقساط التأمين بسبب مخاطر الحرب أو التوترات الأمنية؟', 'ما الأثر المتوقع إذا تعطل المسار الأساسي لمدة أسبوعين أو شهر؟'],
+  cost: ['ما التكلفة الكلية الواصلة للمادة، وليس سعر الشراء فقط؟', 'هل ترتبط شروط الدفع للموردين بمواعيد التحصيل من العملاء؟', 'هل أدى ارتفاع المخزون إلى تجميد السيولة؟', 'ما الحد الأقصى المقبول لزيادة التكلفة قبل أن يصبح العقد غير مجدٍ؟'],
+  legal: ['من يتحمل الرسوم الإضافية والتأخير؟ وما شروط القوة القاهرة وتغيير المسار؟', 'هل توجد قيود مؤكدة أو قرارات رسمية تؤثر في المورد أو السلعة أو المسار؟ (لا يُعتمد على إشاعة)', 'هل يتطلب المسار موافقات خاصة أو تغييرات في المنشأ أو مستندات إضافية؟'],
+  plan: ['ما الطلب المتوقع وخطة الإنتاج أو المشاريع للأشهر الثلاثة القادمة؟', 'أين تنقطع المعلومات بين المشتريات والمستودعات والإنتاج والنقل؟', 'ما أقصى مدة توقف يمكن تحملها لكل خدمة حرجة؟']
+};
+const SCM_QMAP = { 'SC-01': ['inv', 'sup'], 'SC-02': ['cost'], 'SC-03': ['route'], 'SC-04': ['route', 'cost'], 'SC-05': ['inv'], 'SC-06': ['route', 'legal'], 'SC-07': ['sup'], 'SC-08': ['legal'], 'SC-09': ['legal'], 'SC-10': ['plan', 'inv'], 'SC-11': ['plan'], 'SC-12': ['plan', 'sup', 'route'] };
+const SCM_QN = { sup: 'الموردون والمشتريات', inv: 'المستودعات والمخزون', route: 'النقل والممرات', cost: 'التكلفة والسيولة', legal: 'العقود والامتثال والقيود', plan: 'التخطيط والتنسيق والاستمرارية' };
+EG_INIT.scm = () => ({
+  tab: 'case', client: 'contract', sector: 'construction', cases: ['SC-01', 'SC-07', 'SC-04'], modes: ['sea', 'land'], origin: 'mixed', horizon: '90', svc: '95', cur: 'USD',
+  mats: [
+    { n: 'حديد التسليح', d: 40, stock: 900, lt: 35, ltv: 12, sup: 1, crit: 'crit', cost: 520, stop: 18000 },
+    { n: 'كابلات كهربائية', d: 120, stock: 5200, lt: 28, ltv: 6, sup: 3, crit: 'imp', cost: 9, stop: 4000 },
+    { n: 'مضخات ومعدات ميكانيكية', d: 0.6, stock: 9, lt: 60, ltv: 20, sup: 1, crit: 'crit', cost: 4200, stop: 9000 }
+  ],
+  routes: [
+    { n: 'بحري عبر الممر الحالي', price: 520, freight: 38, ins: 9, duty: 26, clr: 6, store: 4, days: 35, rel: 72, geo: 4, flex: 2 },
+    { n: 'بحري عبر ميناء بديل ثم بري', price: 520, freight: 55, ins: 6, duty: 26, clr: 8, store: 5, days: 41, rel: 86, geo: 2, flex: 3 },
+    { n: 'مورد إقليمي بديل (بري)', price: 565, freight: 22, ins: 3, duty: 10, clr: 4, store: 3, days: 14, rel: 90, geo: 1, flex: 4 }
+  ],
+  delayCost: 2.5
+});
+const SCM_CRIT = [['crit', 'حرجة'], ['imp', 'مهمة'], ['low', 'غير حرجة']];
+function scmModel() {
+  const s = egS('scm'), z = { '90': 1.28, '95': 1.65, '98': 2.05, '99': 2.33 }[s.svc] || 1.65;
+  const mats = (s.mats || []).map((x, i) => {
+    const d = egN(x.d), stock = egN(x.stock), lt = egN(x.lt), ltv = egN(x.ltv), sup = egN(x.sup);
+    const cover = d ? stock / d : Infinity, ss = z * d * ltv, rop = d * lt + ss, gap = Math.max(0, lt + ltv - cover);
+    const reorderNow = stock <= rop, exposure = gap * egN(x.stop);
+    const L = Math.max(1, Math.min(5, Math.round(gap > 0 ? 3 + gap / 10 : reorderNow ? 3 : cover < lt * 2 ? 2 : 1) + (sup <= 1 ? 1 : 0)));
+    const I = x.crit === 'crit' ? 5 : x.crit === 'imp' ? 3 : 1;
+    return { i, n: x.n || 'مادة ' + (i + 1), d, stock, lt, ltv, sup, crit: x.crit, cost: egN(x.cost), stopC: egN(x.stop), cover, ss, rop, gap, reorderNow, exposure, L, I, sc: L * I, ttImpact: isFinite(cover) ? Math.max(0, Math.round(cover)) : null };
+  });
+  const dc = egN(s.delayCost);
+  const routes = (s.routes || []).map((r, i) => {
+    const landed = ['price', 'freight', 'ins', 'duty', 'clr', 'store'].reduce((a, k) => a + egN(r[k]), 0);
+    const expDelay = (1 - egN(r.rel) / 100) * egN(r.days) * 0.5, riskAdj = landed * (1 + egN(r.geo) * 0.02) + expDelay * dc;
+    return { i, n: r.n || 'بديل ' + (i + 1), landed, days: egN(r.days), rel: egN(r.rel), geo: egN(r.geo), flex: egN(r.flex), expDelay, riskAdj };
+  });
+  if (routes.length) {
+    const mn = (k) => Math.min(...routes.map(r => r[k])), mx = (k) => Math.max(...routes.map(r => r[k]));
+    const nrm = (v, a, b, inv) => b === a ? 1 : inv ? (b - v) / (b - a) : (v - a) / (b - a);
+    routes.forEach(r => { r.score = 100 * (0.35 * nrm(r.riskAdj, mn('riskAdj'), mx('riskAdj'), 1) + 0.2 * nrm(r.days, mn('days'), mx('days'), 1) + 0.2 * nrm(r.rel, mn('rel'), mx('rel')) + 0.15 * nrm(r.geo, mn('geo'), mx('geo'), 1) + 0.1 * nrm(r.flex, mn('flex'), mx('flex'))); });
+  }
+  const cheapest = [...routes].sort((a, b) => a.landed - b.landed)[0], resilient = [...routes].sort((a, b) => (b.rel - b.geo * 10) - (a.rel - a.geo * 10))[0], best = [...routes].sort((a, b) => b.score - a.score)[0];
+  const primary = routes[0], alt = best && best !== primary ? best : routes[1];
+  // risk register
+  const reg = [];
+  mats.forEach(m => {
+    if (m.gap > 0) reg.push({ code: 'SC-01', r: `نفاد «${m.n}» قبل وصول التوريد التالي`, cause: `التغطية ${fmtN(m.cover, 0)} يومًا مقابل مهلة توريد ${m.lt}±${m.ltv} يومًا`, L: m.L, I: m.I, t: m.ttImpact, impact: `توقف محتمل ${fmtN(m.gap, 0)} يومًا ≈ ${fmtN(m.exposure, 0)}`, act: 'طلب فوري + شحن جزئي أسرع للكمية الحرجة + تفعيل مورد بديل مؤهل' });
+    else if (m.reorderNow) reg.push({ code: 'SC-05', r: `«${m.n}» تحت نقطة إعادة الطلب`, cause: `المخزون ${fmtN(m.stock, 0)} ≤ نقطة إعادة الطلب ${fmtN(m.rop, 0)}`, L: m.L, I: m.I, t: m.ttImpact, impact: 'خطر نفاد إذا تأخر الطلب', act: 'إصدار أمر الشراء الآن وفق نقطة إعادة الطلب' });
+    if (m.sup <= 1 && m.crit !== 'low') reg.push({ code: 'SC-07', r: `مصدر واحد لـ«${m.n}»`, cause: 'لا يوجد مورد بديل مؤهل', L: 3, I: m.I, t: null, impact: 'نقطة فشل منفردة — ليس انقطاعًا مؤكدًا', act: 'تأهيل مورد بديل أو مخزون احتياطي محسوب أو عقد أكثر مرونة' });
+  });
+  routes.forEach(r => { if (r.geo >= 4) reg.push({ code: 'SC-03', r: `اضطراب محتمل في «${r.n}»`, cause: `درجة المخاطر الجيوسياسية ${r.geo}/5 وموثوقية ${r.rel}%`, L: Math.min(5, r.geo), I: 4, t: null, impact: `تأخير متوقع ${fmtN(r.expDelay, 1)} يومًا لكل شحنة`, act: 'توزيع الشحنات على مسار بديل وتحديث بيانات الممر من مصدر رسمي' }); });
+  if (primary && cheapest && primary.landed > cheapest.landed * 1.05) reg.push({ code: 'SC-04', r: 'تكلفة واصلة أعلى من البديل الأرخص', cause: `${fmtN(primary.landed, 1)} مقابل ${fmtN(cheapest.landed, 1)} للوحدة`, L: 3, I: 2, t: null, impact: `${fmtP(pctCh(cheapest.landed, primary.landed))} لكل وحدة`, act: 'إعادة التفاوض أو نقل جزء من الكميات' });
+  reg.forEach(x => { x.sc = x.L * x.I; x.lvl = x.sc >= 15 ? ['حرج', 't-c'] : x.sc >= 10 ? ['مرتفع', 't-h'] : x.sc >= 5 ? ['متوسط', 't-m'] : ['منخفض', 't-s']; });
+  reg.sort((a, b) => b.sc - a.sc);
+  // scenarios on critical materials
+  const scen = [['الأساسي', 1, 1, 0], ['الضغط (مهلة +30% وتكلفة +15%)', 1.3, 1.15, 0], ['التعطل الشديد (توقف المصدر/المسار الأساسي والتحول لبديل يحتاج تأهيلًا 21 يومًا)', 0, 1, 1]].map(([n, ltF, cF, sev]) => {
+    let stopDays = 0, stopCost = 0, extra = 0;
+    mats.filter(m => m.crit !== 'low').forEach(m => {
+      const lt = sev ? Math.max(m.lt * 1.5, (alt ? alt.days : m.lt) + 21) + m.ltv : m.lt * ltF;
+      const g = Math.max(0, lt - m.cover); stopDays = Math.max(stopDays, g); stopCost += g * m.stopC;
+      extra += m.d * 30 * m.cost * (cF - 1) + (sev && alt && primary ? m.d * 30 * Math.max(0, alt.landed - primary.landed) / Math.max(1, primary.landed) * m.cost : 0);
+    });
+    return [n, fmtN(stopDays, 0) + ' يوم', fmtN(stopCost, 0), fmtN(extra, 0)];
+  });
+  return { s, z, mats, routes, best, cheapest, resilient, reg, scen };
+}
+EG_OUT.scm = () => {
+  const m = scmModel(), s = m.s;
+  if (s.tab === 'case') {
+    const groups = [...new Set((s.cases || []).flatMap(c => SCM_QMAP[c] || []))];
+    return egCard('الأسئلة التكيفية حسب المسارات المختارة', 'أقسام 6 و17', groups.length ? groups.map(g => `<div class="stack" style="gap:5px"><span class="lbl">${SCM_QN[g]}</span>${SCM_Q[g].map(q => `<span style="font-size:12.5px">• ${q}</span>`).join('')}</div>`).join('') + egNote('يجب التمييز بين الخبر المؤكد والتوقع والاحتمال والافتراض، ولا يُقرَّر وجود حصار أو عقوبة اعتمادًا على إشاعة.') : '<span class="faint">اختر مسارًا واحدًا على الأقل.</span>');
+  }
+  if (s.tab === 'mat') {
+    const crit = m.mats.filter(x => x.gap > 0);
+    return egCard('تغطية المخزون ونقاط إعادة الطلب', 'أقسام 8–9 و13', `${anKpis([['مواد معرّضة للنفاد', crit.length, crit.length ? 'bad' : 'good'], ['مواد بمصدر واحد', m.mats.filter(x => x.sup <= 1).length, m.mats.some(x => x.sup <= 1) ? 'bad' : ''], ['تكلفة التوقف المعرّضة', fmtN(m.mats.reduce((a, x) => a + x.exposure, 0), 0), crit.length ? 'bad' : ''], ['مستوى الخدمة المستهدف', s.svc + '%']])}
+      ${anTbl({ h: 'تحليل المواد', cols: ['المادة', 'التغطية (يوم)', 'المهلة ± التذبذب', 'مخزون الأمان', 'نقطة إعادة الطلب', 'الحالة'], rows: m.mats.map(x => [x.n, isFinite(x.cover) ? fmtN(x.cover, 0) : '—', x.lt + ' ± ' + x.ltv, fmtN(x.ss, 0), fmtN(x.rop, 0), x.gap > 0 ? 'خطر نفاد خلال ' + fmtN(x.cover, 0) + ' يومًا' : x.reorderNow ? 'اطلب الآن' : 'كافٍ'] ) })}
+      ${egNote(`مخزون الأمان = z (${m.z}) × الاستهلاك اليومي × تذبذب المهلة. نقطة إعادة الطلب = الاستهلاك × المهلة + مخزون الأمان. «خطر النفاد» يعني أن التغطية أقل من المهلة القصوى المتوقعة.`)}`);
+  }
+  if (s.tab === 'route') {
+    return egCard('مقارنة البدائل بالتكلفة الكلية الواصلة والمرونة', 'أقسام 10 و12 و14', `${anKpis([['الأقل تكلفة', m.cheapest ? m.cheapest.n : '—'], ['الأكثر مرونة', m.resilient ? m.resilient.n : '—'], ['الأفضل في التقييم المتوازن', m.best ? m.best.n : '—', 'good']])}
+      ${anTbl({ h: 'المقارنة', cols: ['البديل', 'التكلفة الواصلة/وحدة', 'زمن التوريد', 'الموثوقية', 'تأخير متوقع', 'التكلفة المعدّلة بالمخاطر', 'التقييم'], rows: m.routes.map(r => [r.n, fmtN(r.landed, 1), r.days + ' يوم', r.rel + '%', fmtN(r.expDelay, 1) + ' يوم', fmtN(r.riskAdj, 1), fmtN(r.score, 0)]) })}
+      ${anChart({ bars: [...m.routes].sort((a, b) => b.score - a.score).map(r => [r.n, Math.round(r.score)]) })}
+      ${egNote('التكلفة الواصلة = السعر + الشحن + التأمين + الرسوم + التخليص + التخزين. التكلفة المعدّلة تضيف 2% لكل درجة مخاطر جيوسياسية وتكلفة التأخير المتوقع. الأوزان: تكلفة 35% · زمن 20% · موثوقية 20% · مخاطر 15% · مرونة 10%. قد يكون الحل الأمثل مزيجًا من بديلين لا اختيار بديل واحد.')}`);
+  }
+  return egCard('سجل المخاطر والسيناريوهات والتوصيات', 'أقسام 11 و15 و18–20', `${anKpis([['مخاطر حرجة', m.reg.filter(r => r.sc >= 15).length, m.reg.some(r => r.sc >= 15) ? 'bad' : 'good'], ['مخاطر مرتفعة', m.reg.filter(r => r.sc >= 10 && r.sc < 15).length], ['إجمالي المخاطر', m.reg.length]])}
+    <div class="tbl-wrap"><table><thead><tr><th>الرمز</th><th>الخطر</th><th>السبب والدليل</th><th>الاحتمال</th><th>الأثر</th><th>المستوى</th><th>وقت ظهور الأثر</th><th>التوصية</th></tr></thead><tbody>${m.reg.map(r => `<tr><td class="mono" style="font-size:11.5px">${r.code}</td><td style="font-size:12.5px"><b>${esc(r.r)}</b><br><span class="faint" style="font-size:11px">${esc(r.impact)}</span></td><td class="faint" style="font-size:12px">${esc(r.cause)}</td><td class="mono">${r.L}</td><td class="mono">${r.I}</td><td><span class="tag ${r.lvl[1]}">${r.lvl[0]}</span></td><td class="faint" style="font-size:12px">${r.t === null ? '—' : r.t + ' يوم'}</td><td style="font-size:12px">${r.act}</td></tr>`).join('')}</tbody></table></div>
+    ${anTbl({ h: 'أثر السيناريوهات على المواد الحرجة والمهمة', cols: ['السيناريو', 'أطول توقف محتمل', 'تكلفة التوقف', 'تكلفة شراء إضافية/شهر'], rows: m.scen })}
+    ${egNote('الاعتماد على مورد واحد نقطة ضعف وليس انقطاعًا مؤكدًا. تغيير مورد أو مسار أو عقد لا يُنفذ تلقائيًا؛ التوصية تُرفع لصاحب الصلاحية مع مبرراتها.')}`);
+};
+VIEWS.supply = () => {
+  const s = egS('scm');
+  let inputs = '';
+  if (s.tab === 'case') inputs = egCard('نموذج تحديد حالة سلسلة الإمداد', 'أقسام 2 و5 و16',
+    egQ(1, 'نوع العميل', egCh('scm', 'client', [['gov', 'جهة حكومية'], ['private', 'شركة خاصة'], ['factory', 'مصنع'], ['contract', 'مقاولات ومشاريع'], ['logistics', 'نقل وخدمات لوجستية'], ['health', 'صحي أو دوائي'], ['retail', 'تجارة وتوزيع']]))
+    + egQ(2, 'ما الحالات التي تريد تحليلها؟ اختر كل ما ينطبق', egCh('scm', 'cases', SCM_CASES.map(([k, l]) => [k, k + ' · ' + l]), true))
+    + egQ(3, 'وسائل النقل المستخدمة', egCh('scm', 'modes', [['land', 'بري'], ['sea', 'بحري'], ['air', 'جوي'], ['rail', 'سكك حديدية'], ['multi', 'متعدد الوسائط']], true))
+    + egQ(4, 'مصدر المواد', egCh('scm', 'origin', [['local', 'السوق المحلي'], ['intl', 'موردون دوليون'], ['mixed', 'محلي ودولي']]))
+    + egQ(5, 'أفق التحليل', egCh('scm', 'horizon', [['30', '30 يومًا — معالجة عاجلة'], ['90', '90 يومًا — تخطيط تشغيلي'], ['365', '12 شهرًا — استراتيجي']])));
+  if (s.tab === 'mat') inputs = egCard('المواد الحرجة والمخزون', 'نموذج البيانات · قسم 4', `${(s.mats || []).map((x, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(x.n || 'مادة ' + (i + 1))}</b><button type="button" class="btn link sm" data-act="scm-del" data-k="${i}">حذف</button></div>
+      ${egGrid(130, egTxt('scm', `mats.${i}.n`, 'اسم المادة') + egNum('scm', `mats.${i}.d`, 'الاستهلاك اليومي') + egNum('scm', `mats.${i}.stock`, 'المخزون المتاح') + egNum('scm', `mats.${i}.lt`, 'مهلة التوريد (يوم)') + egNum('scm', `mats.${i}.ltv`, 'تذبذب المهلة ± يوم') + egNum('scm', `mats.${i}.sup`, 'عدد الموردين المؤهلين') + egNum('scm', `mats.${i}.cost`, 'سعر الوحدة') + egNum('scm', `mats.${i}.stop`, 'تكلفة يوم التوقف') + egSel('scm', `mats.${i}.crit`, 'الأهمية', SCM_CRIT))}</div>`).join('')}
+    <div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="scm-add">${ic('plus', 14)}إضافة مادة</button>${egSel('scm', 'svc', '', [['90', 'مستوى خدمة 90%'], ['95', 'مستوى خدمة 95%'], ['98', 'مستوى خدمة 98%'], ['99', 'مستوى خدمة 99%']])}</div>`);
+  if (s.tab === 'route') inputs = egCard('بدائل الموردين والمسارات (للوحدة الواحدة)', 'قسم 14', (s.routes || []).map((r, i) => `<div class="sub" style="gap:8px"><b style="font-size:13px">${i === 0 ? 'الوضع الحالي — ' : 'بديل ' + i + ' — '}${esc(r.n || '')}</b>${egGrid(120, egTxt('scm', `routes.${i}.n`, 'الاسم') + egNum('scm', `routes.${i}.price`, 'سعر الشراء') + egNum('scm', `routes.${i}.freight`, 'الشحن') + egNum('scm', `routes.${i}.ins`, 'التأمين') + egNum('scm', `routes.${i}.duty`, 'الرسوم والجمارك') + egNum('scm', `routes.${i}.clr`, 'التخليص') + egNum('scm', `routes.${i}.store`, 'التخزين') + egNum('scm', `routes.${i}.days`, 'زمن التوريد (يوم)') + egNum('scm', `routes.${i}.rel`, 'الموثوقية %') + egNum('scm', `routes.${i}.geo`, 'مخاطر جيوسياسية 1–5') + egNum('scm', `routes.${i}.flex`, 'المرونة 1–5'))}</div>`).join('') + egGrid(200, egNum('scm', 'delayCost', 'تكلفة يوم التأخير لكل وحدة')));
+  return `${engHead('NAIOSH SUPPLY CHAIN INTELLIGENCE · DIA-SCM', 'ذكاء سلاسل الإمداد واللوجستيات العالمية', 'لا يكتفي النظام بإخبارك أن هناك خطرًا؛ بل يوضح ما الذي قد يتأثر، ومتى، وبأي تكلفة محتملة، وما البدائل المتاحة، وما الأدلة التي تدعم التوصية.', engExport('SCM'))}
+  ${egTabs('scm', [['case', 'تحديد الحالة'], ['mat', 'المواد والمخزون'], ['route', 'البدائل والمسارات'], ['risk', 'المخاطر والسيناريوهات']])}
+  ${inputs}${egOut('scm')}`;
+};
+</script>

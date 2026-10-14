@@ -58,6 +58,11 @@ const P = {
   back:'M14 6l6 6-6 6 M20 12H5',
   bench:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z M12 11.2v1.6 M13 11l7-7 M17 4h3v3',
   safety:'M3 18h18 M5 18v-3a7 7 0 0 1 14 0v3 M10 8V5.5h4V8 M12 8v4',
+  eco:'M3 17l5-5 4 4 8-8 M14 8h6v6',
+  supply:'M2 7h11v9H2z M13 10h4l3 3v3h-7 M6 17.5a1.6 1.6 0 1 0 0 .01 M17 17.5a1.6 1.6 0 1 0 0 .01',
+  sustain:'M5 19c0-8 6-14 15-14 0 9-6 15-14 15 M5 19l8-8',
+  skills:'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6l-4.9 2.6.9-5.5-4-3.9 5.5-.8z',
+  career:'M2 9l10-5 10 5-10 5z M6 11v5c3 2 9 2 12 0v-5 M22 9v6',
   self:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21a7 7 0 0 1 14 0 M19 3l.6 1.4L21 5l-1.4.6L19 7l-.6-1.4L17 5l1.4-.6z',
   cv:'M4 5h16v14H4z M9.5 8.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M6.5 16.5a3 3 0 0 1 6 0 M14.5 9h3 M14.5 12h3 M14.5 15h2',
   marriage:'M9 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M15 9.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10z M10 3.5l2 2 2-2', up:'M12 19V5 M6 11l6-6 6 6', down:'M12 5v14 M6 13l6 6 6-6', copy:'M8 8h12v12H8z M4 16V4h12'
@@ -114,8 +119,8 @@ const NAV = [
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
-  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF']] },
-  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['cv','ذكاء السيرة الذاتية','CV'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF'],['eco','المرونة الاقتصادية والمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS']] },
+  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['career','المسار الجامعي والمهني','CPA'],['cv','ذكاء السيرة الذاتية','CV'],['skills','ذكاء المهارات وسوق العمل','SKL'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -136,7 +141,9 @@ const TITLES = {
   whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
   ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات'],
   bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وذكاء المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'ذكاء السلامة وتحليل المخاطر'],
-  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا']
+  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا'],
+  eco: ['DIA-ECO · Economic Resilience & Side Business', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية'], supply: ['DIA-SCM · Global Supply Chain & Logistics', 'ذكاء سلاسل الإمداد واللوجستيات'],
+  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'ذكاء المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
