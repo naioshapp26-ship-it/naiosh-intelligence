@@ -1,0 +1,281 @@
+<script data-app="">
+/* ================= Engines wave 3 (part B) =================
+   DIA-PMO · PMO 360 (portfolio, earned value, stage gates, early warning, automation levels)
+   DIA-TQG · Total Quality & Governance Intelligence (policy → work files → evidence, standards, risk, CAPA)
+   DIA-CIB · Competitive Intelligence & Benchmarking (rivals, sources, weighted comparison, SWOT, scenarios, plan) */
+
+/* =========================================================================================
+   DIA-PMO — NAIOSH PMO 360
+   ========================================================================================= */
+const PMO_TYPE = { supportive: ['المكتب الداعم — تحكم منخفض', 'قوالب ومنهجيات واستشارات وتقارير إرشادية', 'مدير المشروع'], controlling: ['المكتب المسيطر — تحكم متوسط', 'بوابات اعتماد وضبط تغييرات ومتابعة ميزانية وتدقيق التزام', 'مدير مكتب إدارة المشاريع'], directive: ['المكتب التوجيهي — تحكم مرتفع', 'تعيين مديري المشاريع وتخصيص الموارد والتصعيد ضمن التفويض', 'لجنة المحفظة'] };
+const PMO_A = [['A0', 'يدوي'], ['A1', 'مراقبة'], ['A2', 'تنبيه'], ['A3', 'تحليل'], ['A4', 'توصية'], ['A5', 'إعداد للمراجعة'], ['A6', 'تنفيذ بعد الموافقة'], ['A7', 'أتمتة محدودة ومراقبة'], ['A8', 'تدخل بشري إلزامي']];
+const PMO_PROC = [['reports', 'إعداد التقارير الدورية', 0], ['remind', 'التذكيرات ومتابعة المواعيد', 0], ['assign', 'توزيع المهام وفق القواعد', 0], ['minutes', 'مسودات محاضر الاجتماعات', 0], ['budget', 'اعتماد الميزانيات والصرف', 1], ['scope', 'تغيير النطاق والجدول وخط الأساس', 1], ['riskAccept', 'قبول المخاطر الجوهرية', 1], ['proc', 'أوامر الشراء والعقود', 1]];
+const PMO_GATES = [['G0', 'الفكرة والطلب'], ['G1', 'التقييم الأولي'], ['G2', 'دراسة الجدوى والاعتماد'], ['G3', 'التخطيط'], ['G4', 'التصريح بالتنفيذ'], ['G5', 'التنفيذ والمراقبة'], ['G6', 'التحقق والتسليم'], ['G7', 'الإغلاق الإداري'], ['G8', 'تحقق المنافع']];
+const PMO_CHK = [['docs', 'اكتمال الوثائق المطلوبة'], ['approve', 'اعتماد المسؤول المخول'], ['fund', 'توفر التمويل أو التفويض'], ['notes', 'إغلاق الملاحظات الحرجة أو قبولها رسميًا'], ['risks', 'توثيق المخاطر والقيود والاستثناءات'], ['decision', 'تسجيل القرار وسببه وتاريخه']];
+EG_ROWS['pmo.projects'] = () => ({ n: 'مشروع جديد', obj: '', bac: 100000, dur: 12, pl: 0, act: 0, cost: 0, gate: 'G0', risks: 0, dec: 0, res: '', hrs: '', chk: {} });
+EG_INIT.pmo = () => ({
+  tab: 'portfolio', type: 'controlling', tier: 'pro', cap: 40,
+  auto: { reports: 'A5', remind: 'A2', assign: 'A6', minutes: 'A5', budget: 'A8', scope: 'A6', riskAccept: 'A8', proc: 'A6' },
+  projects: [
+    { n: 'تطوير منصة خدمات العملاء', obj: 'تحسين تجربة العملاء', bac: 800000, dur: 40, pl: 50, act: 41, cost: 470000, gate: 'G5', risks: 2, dec: 1, res: 'سارة، خالد', hrs: '30، 25', chk: { docs: '1', approve: '1', fund: '1' } },
+    { n: 'توسعة مستودع المنطقة الشرقية', obj: 'رفع الطاقة التشغيلية', bac: 2500000, dur: 52, pl: 58, act: 55, cost: 1420000, gate: 'G5', risks: 1, dec: 3, res: 'خالد، محمد', hrs: '20، 40', chk: {} },
+    { n: 'برنامج تأهيل المشرفين', obj: 'تطوير الكفاءات', bac: 150000, dur: 16, pl: 50, act: 56, cost: 74000, gate: 'G5', risks: 0, dec: 0, res: 'سارة', hrs: '15', chk: { docs: '1', approve: '1', fund: '1', notes: '1', risks: '1', decision: '1' } },
+    { n: 'نظام إدارة الوثائق', obj: 'الحوكمة والامتثال', bac: 300000, dur: 20, pl: 0, act: 0, cost: 0, gate: 'G2', risks: 1, dec: 1, res: 'محمد', hrs: '10', chk: { docs: '1' } }
+  ]
+});
+function pmoModel() {
+  const s = egS('pmo'), esc2 = PMO_TYPE[s.type] ? PMO_TYPE[s.type][2] : 'مدير PMO';
+  const P = s.projects.map((p, i) => {
+    const bac = egN(p.bac), pv = bac * egN(p.pl) / 100, ev = bac * egN(p.act) / 100, ac = egN(p.cost);
+    const spi = pv ? ev / pv : NaN, cpi = ac ? ev / ac : NaN, eac = isFinite(cpi) && cpi > 0 ? bac / cpi : bac, vac = bac - eac, fin = isFinite(spi) && spi > 0 ? egN(p.dur) / spi : egN(p.dur);
+    const started = egN(p.pl) > 0 || egN(p.act) > 0;
+    const rag = !started ? ['لم يبدأ التنفيذ', 't-n'] : (spi < 0.9 || cpi < 0.9 || egN(p.risks) >= 3) ? ['أحمر — يحتاج تدخلًا', 't-c'] : (spi < 0.97 || cpi < 0.97 || egN(p.dec) >= 2 || egN(p.risks) >= 2) ? ['أصفر — مراقبة', 't-m'] : ['أخضر — ضمن الخطة', 't-s'];
+    return { i, p, bac, pv, ev, ac, sv: ev - pv, cv: ev - ac, spi, cpi, eac, vac, fin, delay: fin - egN(p.dur), rag, started };
+  });
+  const people = {};
+  s.projects.forEach(p => { const ns = egList(p.res), hs = egList(p.hrs).map(egN); ns.forEach((n, k) => { (people[n] || (people[n] = { h: 0, pr: [] })); people[n].h += hs[k] || 0; people[n].pr.push(p.n); }); });
+  const over = Object.entries(people).filter(([, v]) => v.h > egN(s.cap)).map(([n, v]) => ({ n, ...v }));
+  const alerts = [];
+  P.forEach(x => {
+    if (!x.started) return;
+    if (x.spi < 0.95) alerts.push([x.p.n, 'تأخر جدولي', `SPI ${fmtN(x.spi, 2)} — الإكمال المتوقع بعد ${fmtN(x.fin, 0)} أسبوعًا بدل ${egN(x.p.dur)} (+${fmtN(x.delay, 0)})`, 'فحص الأنشطة المتأخرة والتبعيات والقرارات المعلقة قبل نسب التأخير لأي جهة', 'إعادة تسلسل الأنشطة أو تعزيز الموارد على المسار الحرج', esc2]);
+    if (x.cpi < 0.95) alerts.push([x.p.n, 'تجاوز تكلفة متوقع', `CPI ${fmtN(x.cpi, 2)} — التكلفة المتوقعة عند الإكمال ${fmtN(x.eac, 0)} (انحراف ${fmtN(x.vac, 0)})`, 'مراجعة الالتزامات المفتوحة وتكلفة التغييرات وإعادة العمل', 'خطة ضبط تكلفة أو طلب تعديل ميزانية عبر المسار المالي المخول', esc2]);
+    if (egN(x.p.dec) >= 2) alerts.push([x.p.n, 'قرارات معلقة', `${egN(x.p.dec)} قرارات بانتظار الاعتماد`, 'قرارات معلقة قد تعطل أعمالًا تابعة', 'جدولة القرارات في اجتماع الحوكمة القادم مع خيارات وتوصية', esc2]);
+    if (egN(x.p.risks) >= 2) alerts.push([x.p.n, 'مخاطر حرجة مفتوحة', `${egN(x.p.risks)} مخاطر حرجة`, 'مراجعة فاعلية خطط المعالجة ومؤشرات الإنذار', 'تصعيد للمالك المسؤول وتحديث سجل المخاطر', esc2]);
+  });
+  over.forEach(o => alerts.push([o.pr.join(' + '), 'تحميل زائد للموارد', `«${o.n}» مخصص ${o.h} ساعة أسبوعيًا مقابل طاقة ${egN(s.cap)}`, 'تعارض تخصيص بين مشاريع متعددة', 'إعادة توزيع مع مراعاة المهارات والصلاحيات وعدالة التوزيع', esc2]));
+  const viol = PMO_PROC.filter(([k, , crit]) => crit && s.auto[k] === 'A7');
+  const T = P.filter(x => x.started), tPV = T.reduce((a, x) => a + x.pv, 0), tEV = T.reduce((a, x) => a + x.ev, 0), tAC = T.reduce((a, x) => a + x.ac, 0);
+  return { s, P, over, alerts, viol, people, tot: { bac: P.reduce((a, x) => a + x.bac, 0), spi: tPV ? tEV / tPV : NaN, cpi: tAC ? tEV / tAC : NaN, eac: T.reduce((a, x) => a + x.eac, 0) + P.filter(x => !x.started).reduce((a, x) => a + x.bac, 0) } };
+}
+EG_OUT.pmo = () => {
+  const m = pmoModel(), s = m.s;
+  if (s.tab === 'setup') return egCard('نموذج التحكم والأتمتة', 'PMO-25/30', `${anKpis([['نوع المكتب', PMO_TYPE[s.type][0].split(' — ')[0]], ['مستوى الخدمة', { starter: 'PMO Starter', pro: 'PMO Professional', enterprise: 'PMO Enterprise', advisory: 'Advisory & Managed' }[s.tier]], ['عمليات حرجة مخالفة', m.viol.length, m.viol.length ? 'bad' : 'good']])}
+    ${m.viol.length ? `<div class="banner r">${ic('warn', 16)}<span>لا يجوز تشغيل «${m.viol.map(v => v[1]).join('، ')}» بأتمتة مستقلة (A7). القرارات المالية والتعاقدية وقبول المخاطر تبقى A6 كحد أقصى أو A8.</span></div>` : '<div class="banner g">مستويات الأتمتة متوافقة مع قاعدة: لا تتجاوز أي عملية آلية صلاحيات HUB-AUTH.</div>'}
+    ${anTbl({ h: 'مستويات الأتمتة', cols: ['الرمز', 'المستوى'], rows: PMO_A })}${egNote('A8 ليس أعلى درجات الاستقلالية؛ بل فئة للعمليات التي يجب أن تبقى بيد الشخص المخول. المستويات اختيار تشغيلي وليست درجات جودة.')}`);
+  if (s.tab === 'portfolio') return egCard('لوحة المحفظة والقيمة المكتسبة', 'PMO-01/05/21/22', `${anKpis([['المشاريع', m.P.length], ['تحتاج تدخلًا', m.P.filter(x => x.rag[1] === 't-c').length, m.P.some(x => x.rag[1] === 't-c') ? 'bad' : 'good'], ['SPI المحفظة', fmtN(m.tot.spi, 2), m.tot.spi < 0.95 ? 'bad' : 'good'], ['CPI المحفظة', fmtN(m.tot.cpi, 2), m.tot.cpi < 0.95 ? 'bad' : 'good'], ['الميزانية الكلية', fmtN(m.tot.bac, 0)], ['المتوقع عند الإكمال', fmtN(m.tot.eac, 0), m.tot.eac > m.tot.bac ? 'bad' : '']])}
+    ${anTbl({ h: 'تحليل القيمة المكتسبة لكل مشروع', cols: ['المشروع', 'البوابة', 'PV', 'EV', 'AC', 'SPI', 'CPI', 'EAC', 'الإكمال المتوقع (أسبوع)', 'الحالة'], rows: m.P.map(x => [x.p.n, x.p.gate, fmtN(x.pv, 0), fmtN(x.ev, 0), fmtN(x.ac, 0), x.started ? fmtN(x.spi, 2) : '—', x.started ? fmtN(x.cpi, 2) : '—', fmtN(x.eac, 0), x.started ? fmtN(x.fin, 0) + ' / ' + egN(x.p.dur) : '—', x.rag[0]]) })}
+    ${anChart({ bars: m.P.filter(x => x.started).sort((a, b) => b.cpi - a.cpi).map(x => [x.p.n + ' · CPI', +x.cpi.toFixed(2)]) })}
+    ${egNote('SV = EV − PV · CV = EV − AC · SPI = EV ÷ PV · CPI = EV ÷ AC · EAC = BAC ÷ CPI. تتطلب هذه المؤشرات خط أساس معتمدًا وقواعد احتساب إنجاز موحدة، ولا تغني عن تحليل المسار الحرج وجودة المخرجات. الإنجاز في الموعد والميزانية لا يعني تحقق المنفعة.')}`);
+  if (s.tab === 'gates') return egCard('بوابات دورة حياة المشاريع', 'PMO-07/25', `${anTbl({ h: 'البوابات G0–G8', cols: ['البوابة', 'المرحلة', 'المشاريع الحالية'], rows: PMO_GATES.map(([g, n]) => [g, n, s.projects.filter(p => p.gate === g).map(p => p.n).join('، ') || '—']) })}${egNote('لا ينتقل المشروع إلى المرحلة التالية تلقائيًا لمجرد إكمال الحقول؛ تُفحص شروط البوابة ويُسجل القرار وسببه. قد تختلف البوابات حسب حجم المشروع ونوعه ومخاطره.')}`);
+  return egCard('الإنذار المبكر والموارد والتصعيد', 'PMO-12/15/16', `${anKpis([['تنبيهات نشطة', m.alerts.length, m.alerts.length ? 'bad' : 'good'], ['موارد محمّلة زائدًا', m.over.length, m.over.length ? 'bad' : 'good'], ['قرارات معلقة', s.projects.reduce((a, p) => a + egN(p.dec), 0)]])}
+    <span class="mono faint" style="font-size:11px">DETECT → VALIDATE DATA → IDENTIFY IMPACT → ANALYZE CAUSE → ASSESS RISK → RECOMMEND ACTION → ESCALATE → VERIFY</span>
+    ${anTbl({ h: 'قائمة الأعمال التي تحتاج تدخلًا إداريًا هذا الأسبوع', cols: ['المشروع', 'الإشارة', 'الدليل', 'السبب المحتمل (يحتاج تحققًا)', 'الإجراء المقترح', 'التصعيد إلى'], rows: m.alerts })}
+    ${anTbl({ h: 'تحميل الموارد عبر المشاريع', cols: ['المورد', 'ساعات أسبوعية مخصصة', 'الطاقة', 'المشاريع', 'الحالة'], rows: Object.entries(m.people).map(([n, v]) => [n, v.h, egN(s.cap), v.pr.join('، '), v.h > egN(s.cap) ? 'تحميل زائد' : 'ضمن الطاقة']) })}
+    ${egNote('لا يُنسب سبب التأخير إلى جهة معينة دون أدلة كافية. لا يُسجَّل أي إنفاق أو أمر شراء أو تعديل ميزانية كمعتمد لمجرد توصية الذكاء الاصطناعي.')}`);
+};
+VIEWS.pmo = () => {
+  const s = egS('pmo');
+  let inputs = '';
+  if (s.tab === 'setup') inputs = egCard('نوع مكتب إدارة المشاريع ومستوى الخدمة', 'PMO 360', egQ(1, 'نموذج التشغيل', egCh('pmo', 'type', Object.entries(PMO_TYPE).map(([k, v]) => [k, v[0]])) + `<span class="faint" style="font-size:12px">${PMO_TYPE[s.type][1]}</span>`) + egQ(2, 'مستوى الخدمة', egCh('pmo', 'tier', [['starter', 'Starter — الشركات الصغيرة'], ['pro', 'Professional — الشركات النامية'], ['enterprise', 'Enterprise — المؤسسات الكبيرة'], ['advisory', 'Advisory & Managed Services']])) + `<span class="lbl" style="margin-top:6px">مستوى أتمتة كل عملية</span>` + egGrid(220, PMO_PROC.map(([k, n, c]) => egSel('pmo', 'auto.' + k, n + (c ? ' 🔒' : ''), PMO_A.map(([a, l]) => [a, a + ' · ' + l]))).join('')));
+  if (s.tab === 'portfolio' || s.tab === 'risk') inputs = egCard('المشاريع', 'PMO-07/11/12', s.projects.map((p, i) => `<details ${i === 0 ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>${esc(p.n)}</b> <span class="faint" style="font-size:11.5px">— ${p.gate}</span></summary>${egGrid(140, egTxt('pmo', `projects.${i}.n`, 'اسم المشروع') + egTxt('pmo', `projects.${i}.obj`, 'الهدف الاستراتيجي') + egNum('pmo', `projects.${i}.bac`, 'الميزانية المعتمدة BAC') + egNum('pmo', `projects.${i}.dur`, 'المدة المخططة (أسبوع)') + egNum('pmo', `projects.${i}.pl`, 'الإنجاز المخطط حتى الآن %') + egNum('pmo', `projects.${i}.act`, 'الإنجاز الفعلي %') + egNum('pmo', `projects.${i}.cost`, 'التكلفة الفعلية AC') + egNum('pmo', `projects.${i}.risks`, 'مخاطر حرجة مفتوحة') + egNum('pmo', `projects.${i}.dec`, 'قرارات معلقة') + egTxt('pmo', `projects.${i}.res`, 'الموارد (أسماء)') + egTxt('pmo', `projects.${i}.hrs`, 'الساعات الأسبوعية لكل مورد'))}<div class="row between" style="margin-top:6px">${egSel('pmo', `projects.${i}.gate`, '', PMO_GATES.map(([g, n]) => [g, g + ' · ' + n]))}${egDel('pmo', 'projects', i)}</div></details>`).join('') + `<div class="row" style="gap:8px;margin-top:8px">${egAdd('pmo', 'projects', 'إضافة مشروع')}${egNum('pmo', 'cap', 'طاقة المورد الأسبوعية (ساعة)')}</div>`);
+  if (s.tab === 'gates') inputs = s.projects.map((p, i) => { const gi = PMO_GATES.findIndex(g => g[0] === p.gate), ok = PMO_CHK.every(([k]) => (p.chk || {})[k]); return egCard(`${esc(p.n)} — ${p.gate} · ${(PMO_GATES[gi] || [, ''])[1]}`, ok ? 'جاهز للانتقال' : 'شروط ناقصة', `<div class="row" style="gap:6px">${PMO_CHK.map(([k, l]) => choice('eg-set', `pmo.projects.${i}.chk.${k}`, (p.chk || {})[k] ? '' : '1', !!(p.chk || {})[k], l)).join('')}</div><div class="row" style="gap:8px"><button type="button" class="btn sm ${ok ? 'primary' : ''}" data-act="pmo-gate" data-k="${i}" ${gi >= PMO_GATES.length - 1 ? 'disabled' : ''}>طلب الانتقال إلى ${(PMO_GATES[gi + 1] || ['—'])[0]}</button><span class="faint" style="font-size:12px">${ok ? 'كل الشروط مستوفاة — يُسجل القرار في سجل التدقيق.' : 'الانتقال يتطلب استيفاء الشروط الستة.'}</span></div>`); }).join('');
+  return `${engHead('NAIOSH PMO 360 · DIA-PMO', 'مكتب إدارة المشاريع الذكي والحوكمة والأتمتة', 'مركز قيادة موحد للمحافظ والبرامج والمشاريع: هل تسير المشاريع وفق الجدول والميزانية؟ أين الانحرافات وأسبابها؟ من يملك القرار؟ — مع أتمتة الأعمال المتكررة وإبقاء القرارات الجوهرية بيد صاحب الصلاحية.', engExport('PMO'))}
+  ${egTabs('pmo', [['portfolio', 'المحفظة والقيمة المكتسبة'], ['gates', 'بوابات المراحل'], ['risk', 'الإنذار المبكر والموارد'], ['setup', 'نموذج المكتب والأتمتة']])}
+  ${inputs}${egOut('pmo')}`;
+};
+
+/* =========================================================================================
+   DIA-TQG — Total Quality & Governance Intelligence
+   ========================================================================================= */
+const TQG_CHAIN = [['req', 'متطلبات تشغيلية'], ['proc', 'إجراءات مرتبطة'], ['file', 'ملف عمل ومهام'], ['raci', 'مسؤوليات وصلاحيات'], ['risk', 'مخاطر وضوابط'], ['evid', 'أدلة التنفيذ'], ['kpi', 'مؤشرات أداء'], ['review', 'دورية مراجعة']];
+const TQG_STD = [['ISO 9001', 'نظام إدارة الجودة'], ['ISO 9004', 'تحسين الأداء والنجاح المستدام'], ['ISO 31000', 'إدارة المخاطر'], ['ISO 19011', 'تدقيق أنظمة الإدارة'], ['ISO 14001', 'الإدارة البيئية'], ['ISO 45001', 'السلامة والصحة المهنية'], ['ISO 22301', 'استمرارية الأعمال'], ['ISO/IEC 27001', 'أمن المعلومات'], ['ISO 56002', 'إدارة الابتكار'], ['ISO 10002', 'معالجة الشكاوى ورضا العملاء']];
+const TQG_APP = [['legal', 'ملزم قانونيًا'], ['contract', 'تعاقدي'], ['opt', 'مرجع اختياري'], ['na', 'غير منطبق']];
+const TQG_ST = [['evid', 'مغطى بأدلة'], ['doc', 'موثق دون أدلة'], ['gap', 'فجوة']];
+const TQG_NC = ['اكتشاف الانحراف', 'التحقق من البيانات', 'فتح حالة عدم مطابقة', 'تحليل السبب والمخاطر', 'إسناد إجراء تصحيحي', 'تنفيذ الإجراء والتحقق', 'تحديث الحوكمة والتعلم'];
+const TQG_CAUSE = [['competence', 'نقص الكفاءة', 'تدريب مع تقييم الكفاءة بعده'], ['procedure', 'ضعف الإجراء', 'إعادة تصميم الإجراء وتحديث ملف العمل'], ['tools', 'الأدوات أو المعدات', 'صيانة أو استبدال الأداة'], ['supervision', 'ضعف الإشراف', 'نقاط تحقق إشرافية'], ['workload', 'ضغط العمل', 'إعادة توزيع الأحمال'], ['input', 'جودة المدخلات أو الموردين', 'ضبط مواصفات الاستلام وتقييم المورد'], ['design', 'تصميم النظام أو العملية', 'مراجعة تصميم العملية']];
+const TQG_CTRL = { none: 1, weak: 0.8, moderate: 0.55, strong: 0.3 };
+EG_ROWS['tqg.policies'] = () => ({ code: 'POL-' + String(Date.now()).slice(-3), n: 'سياسة جديدة', owner: '', exec: '', rev: '', appr: '', ch: {} });
+EG_ROWS['tqg.risks'] = () => ({ n: 'خطر جديد', L: 3, I: 3, ctrl: 'weak', treat: 'reduce', ver: 'no' });
+EG_ROWS['tqg.nc'] = () => ({ n: 'حالة عدم مطابقة', step: '0', cause: 'procedure', eff: 'no' });
+EG_INIT.tqg = () => ({
+  tab: 'policy',
+  policies: [
+    { code: 'POL-QM-01', n: 'سياسة الجودة', owner: 'مدير الجودة', exec: 'مديرو الإدارات', rev: 'مدير الجودة', appr: 'الرئيس التنفيذي', ch: { req: '1', proc: '1', file: '1', raci: '1', kpi: '1', review: '1' } },
+    { code: 'POL-HR-03', n: 'سياسة التدريب والكفاءة', owner: 'الموارد البشرية', exec: 'الموارد البشرية', rev: 'الموارد البشرية', appr: 'الموارد البشرية', ch: { req: '1', proc: '1', evid: '' } },
+    { code: 'POL-CS-02', n: 'سياسة معالجة الشكاوى', owner: 'خدمة العملاء', exec: 'خدمة العملاء', rev: 'الجودة', appr: 'مدير العمليات', ch: { req: '1', proc: '1', file: '1', raci: '1', risk: '1', evid: '1', kpi: '1' } },
+    { code: 'POL-PR-04', n: 'سياسة المشتريات وتقييم الموردين', owner: 'المشتريات', exec: 'المشتريات', rev: 'المالية', appr: 'المشتريات', ch: { req: '1' } }
+  ],
+  std: { 'ISO 9001': { app: 'contract', st: 'doc' }, 'ISO 31000': { app: 'opt', st: 'gap' }, 'ISO 19011': { app: 'opt', st: 'evid' }, 'ISO 45001': { app: 'legal', st: 'doc' }, 'ISO 10002': { app: 'opt', st: 'evid' }, 'ISO/IEC 27001': { app: 'contract', st: 'gap' }, 'ISO 14001': { app: 'na', st: 'gap' }, 'ISO 9004': { app: 'opt', st: 'gap' }, 'ISO 22301': { app: 'opt', st: 'gap' }, 'ISO 56002': { app: 'na', st: 'gap' } },
+  risks: [{ n: 'تأخر توريد المواد الحرجة', L: 4, I: 4, ctrl: 'weak', treat: 'reduce', ver: 'no' }, { n: 'أخطاء إدخال بيانات الطلبات', L: 3, I: 3, ctrl: 'moderate', treat: 'eliminate', ver: 'no' }, { n: 'فقدان معرفة الخبراء الرئيسيين', L: 3, I: 4, ctrl: 'none', treat: 'reduce', ver: 'no' }],
+  nc: [{ n: 'ارتفاع مرتجعات المنتج A', step: '4', cause: 'input', eff: 'no' }, { n: 'تكرار أخطاء التعبئة في الخط 2', step: '6', cause: 'procedure', eff: 'yes' }, { n: 'شكاوى تأخر الرد على العملاء', step: '3', cause: 'workload', eff: 'no' }],
+  dash: { csatPrev: 78, csatNow: 81, copqPrev: 42000, copqNow: 36500, compReq: 60, compMet: 41 }
+});
+function tqgModel() {
+  const s = egS('tqg');
+  const pols = s.policies.map(p => { const done = TQG_CHAIN.filter(([k]) => (p.ch || {})[k]).length, sod = []; if (p.exec && p.exec === p.appr) sod.push('المنفذ هو المعتمد'); if (p.rev && p.rev === p.appr && p.exec === p.rev) sod.push('المراجعة والاعتماد والتنفيذ بيد جهة واحدة'); return { p, cov: done / TQG_CHAIN.length * 100, missing: TQG_CHAIN.filter(([k]) => !(p.ch || {})[k]).map(x => x[1]), sod }; });
+  const stds = TQG_STD.map(([k, n]) => ({ k, n, ...(s.std[k] || { app: 'opt', st: 'gap' }) })), applic = stds.filter(x => x.app !== 'na');
+  const risks = s.risks.map(r => { const inh = egN(r.L) * egN(r.I), res = Math.round(inh * (TQG_CTRL[r.ctrl] || 1) * 10) / 10; const flag = r.treat === 'eliminate' && r.ver !== 'yes' ? 'لا يُسجَّل الخطر كمُزال قبل التحقق من فاعلية المعالجة' : ''; return { r, inh, res, lvl: res >= 12 ? ['جوهري', 't-c'] : res >= 6 ? ['متوسط', 't-m'] : ['منخفض', 't-s'], flag }; });
+  const nc = s.nc.map(c => ({ c, cause: TQG_CAUSE.find(x => x[0] === c.cause) || TQG_CAUSE[1], closed: +c.step >= 5 }));
+  const d = s.dash, capaClosed = nc.filter(x => x.closed), capaEff = capaClosed.length ? capaClosed.filter(x => x.c.eff === 'yes').length / capaClosed.length * 100 : NaN;
+  return { s, pols, stds, applic, risks, nc, polCov: st.mean(pols.map(x => x.cov)), stdCov: applic.length ? applic.filter(x => x.st === 'evid').length / applic.length * 100 : NaN, material: risks.filter(x => x.res >= 12).length, capaEff, comp: egN(d.compReq) ? egN(d.compMet) / egN(d.compReq) * 100 : NaN, csat: [egN(d.csatPrev), egN(d.csatNow)], copq: [egN(d.copqPrev), egN(d.copqNow)] };
+}
+EG_OUT.tqg = () => {
+  const m = tqgModel(), s = m.s;
+  if (s.tab === 'policy') return egCard('سلسلة: لا سياسة بلا متطلبات، ولا متطلبات بلا ملفات عمل، ولا تنفيذ بلا أدلة', 'TQG-02/04/05', `${anKpis([['تغطية السياسات', fmtN(m.polCov, 0) + '%', m.polCov < 70 ? 'bad' : 'good'], ['سياسات مكتملة السلسلة', m.pols.filter(x => x.cov === 100).length + ' / ' + m.pols.length], ['تعارضات فصل المهام', m.pols.filter(x => x.sod.length).length, m.pols.some(x => x.sod.length) ? 'bad' : 'good']])}
+    <div class="stack" style="gap:10px">${m.pols.map(x => egBar(`${esc(x.p.code)} · ${esc(x.p.n)}`, x.cov, '%')).join('')}</div>
+    ${anTbl({ h: 'الفجوات في تحويل السياسات إلى عمل', cols: ['السياسة', 'المالك', 'الحلقات الناقصة', 'فصل المهام'], rows: m.pols.map(x => [x.p.code + ' · ' + x.p.n, x.p.owner || '—', x.missing.join('، ') || 'مكتملة', x.sod.join('؛ ') || 'سليم']) })}
+    ${egNote('في العمليات الحساسة لا يجوز أن يتجاوز المسؤول نفسه مراحل التنفيذ والمراجعة والاعتماد دون ضوابط فصل المهام.')}`);
+  if (s.tab === 'std') return egCard('محرك مواءمة المعايير', 'TQG-06', `${anKpis([['معايير منطبقة', m.applic.length], ['مغطاة بأدلة', fmtN(m.stdCov, 0) + '%', m.stdCov < 50 ? 'bad' : 'good'], ['فجوات في متطلبات ملزمة', m.stds.filter(x => x.app === 'legal' && x.st !== 'evid').length, m.stds.some(x => x.app === 'legal' && x.st !== 'evid') ? 'bad' : 'good']])}
+    ${anTbl({ h: 'المتطلبات المرجعية مقابل التغطية', cols: ['المعيار', 'المجال', 'الطبيعة', 'الحالة', 'الإجراء'], rows: m.stds.map(x => [x.k, x.n, (TQG_APP.find(a => a[0] === x.app) || [, ''])[1], x.app === 'na' ? '—' : (TQG_ST.find(a => a[0] === x.st) || [, ''])[1], x.app === 'na' ? '—' : x.st === 'evid' ? 'متابعة دورية' : x.st === 'doc' ? 'جمع أدلة التنفيذ والفاعلية' : x.app === 'legal' ? 'أولوية قصوى: سد الفجوة' : 'خطة معالجة']) })}
+    ${egNote('مراجع استرشادية؛ يجب التحقق من الإصدار الساري ونطاق كل معيار. يُميَّز بين المتطلب القانوني والتعاقدي والمرجع الاختياري، ولا يُدّعى الامتثال دون أدلة.')}`);
+  if (s.tab === 'risk') return egCard('المخاطر وعدم المطابقة والإجراءات التصحيحية', 'TQG-09/11/12', `${anTbl({ h: 'سجل المخاطر — قبل الضوابط وبعدها', cols: ['الخطر', 'قبل الضوابط', 'فاعلية الضوابط', 'المتبقي', 'المستوى', 'المعالجة', 'تنبيه'], rows: m.risks.map(x => [x.r.n, x.inh, { none: 'لا توجد', weak: 'ضعيفة', moderate: 'متوسطة', strong: 'قوية' }[x.r.ctrl], x.res, x.lvl[0], { eliminate: 'إزالة', reduce: 'خفض', transfer: 'نقل', accept: 'قبول' }[x.r.treat], x.flag || '—']) })}
+    ${anTbl({ h: 'حالات عدم المطابقة — سلسلة الحوكمة المؤتمتة', cols: ['الحالة', 'المرحلة الحالية', 'السبب الجذري', 'التدخل المناسب', 'فاعلية مثبتة'], rows: m.nc.map(x => [x.c.n, (+x.c.step + 1) + '. ' + TQG_NC[+x.c.step], x.cause[1], x.cause[2], x.closed ? (x.c.eff === 'yes' ? 'نعم' : 'لم تُثبت بعد') : 'قيد المعالجة']) })}
+    ${egNote('لا يفترض النظام أن التدريب هو الحل الوحيد عند تكرار الأخطاء؛ يقارن الأسباب المحتملة (الكفاءة، الإجراء، الأدوات، الإشراف، الضغط، المدخلات، التصميم). قبول المخاطر الجوهرية وتغيير السياسات يبقى قرارًا بشريًا.')}`);
+  return egCard('لوحة الإدارة العليا', 'TQG-13', `${anKpis([['تغطية السياسات', fmtN(m.polCov, 0) + '%', m.polCov < 70 ? 'bad' : 'good'], ['المخاطر الجوهرية المفتوحة', m.material, m.material ? 'bad' : 'good'], ['فاعلية الإجراءات التصحيحية', isFinite(m.capaEff) ? fmtN(m.capaEff, 0) + '%' : 'غير متوفر'], ['كفاءة الموظفين', fmtN(m.comp, 0) + '%', m.comp < 75 ? 'bad' : 'good'], ['رضا العملاء', fmtN(m.csat[1], 0) + ' (' + fmtP(pctCh(m.csat[0], m.csat[1])) + ')', m.csat[1] >= m.csat[0] ? 'good' : 'bad'], ['أثر التحسين: تكلفة الجودة الرديئة', fmtN(m.copq[1], 0) + ' (' + fmtP(pctCh(m.copq[0], m.copq[1])) + ')', m.copq[1] <= m.copq[0] ? 'good' : 'bad']])}
+    <span class="mono faint" style="font-size:11px">الرؤية → الرسالة → الأهداف → السياسات → النطاق → المسؤوليات → الإجراءات → ملفات العمل → التنفيذ → الأدلة → التقييم → التدقيق → التحسين</span>
+    ${egNote('كل مؤشر قابل للتتبع إلى مصدره وسياسته وإجرائه ومسؤوله وأدلته. الإغلاق الإداري لحالة لا يعني أن المعالجة فعالة؛ الفاعلية تُثبت بالقياس.')}`);
+};
+VIEWS.tqg = () => {
+  const s = egS('tqg');
+  let inputs = '';
+  if (s.tab === 'policy') inputs = egCard('سجل السياسات — بطاقة السياسة الموحدة', 'TQG-02', s.policies.map((p, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(p.code)} · ${esc(p.n)}</b>${egDel('tqg', 'policies', i)}</div>${egGrid(140, egTxt('tqg', `policies.${i}.code`, 'الرمز') + egTxt('tqg', `policies.${i}.n`, 'السياسة') + egTxt('tqg', `policies.${i}.owner`, 'مالك السياسة') + egTxt('tqg', `policies.${i}.exec`, 'المنفذ') + egTxt('tqg', `policies.${i}.rev`, 'المراجع') + egTxt('tqg', `policies.${i}.appr`, 'صاحب الاعتماد'))}<div class="row" style="gap:6px">${TQG_CHAIN.map(([k, l]) => choice('eg-set', `tqg.policies.${i}.ch.${k}`, (p.ch || {})[k] ? '' : '1', !!(p.ch || {})[k], l)).join('')}</div></div>`).join('') + egAdd('tqg', 'policies', 'إضافة سياسة'));
+  if (s.tab === 'std') inputs = egCard('المعايير المنطبقة على المنشأة', 'TQG-03/06', egGrid(260, TQG_STD.map(([k, n]) => `<div class="sub" style="gap:6px"><b style="font-size:12.5px">${k} <span class="faint" style="font-weight:400">· ${n}</span></b>${egSel('tqg', `std.${k}.app`, '', TQG_APP)}${egSel('tqg', `std.${k}.st`, '', TQG_ST)}</div>`).join('')));
+  if (s.tab === 'risk') inputs = egCard('المخاطر وحالات عدم المطابقة', 'TQG-09/11', s.risks.map((r, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(r.n)}</b>${egDel('tqg', 'risks', i)}</div>${egGrid(130, egTxt('tqg', `risks.${i}.n`, 'الخطر') + egSel('tqg', `risks.${i}.L`, 'الاحتمال', [1, 2, 3, 4, 5].map(v => [v, v])) + egSel('tqg', `risks.${i}.I`, 'الأثر', [1, 2, 3, 4, 5].map(v => [v, v])) + egSel('tqg', `risks.${i}.ctrl`, 'فاعلية الضوابط', [['none', 'لا توجد'], ['weak', 'ضعيفة'], ['moderate', 'متوسطة'], ['strong', 'قوية']]) + egSel('tqg', `risks.${i}.treat`, 'المعالجة', [['eliminate', 'إزالة'], ['reduce', 'خفض'], ['transfer', 'نقل'], ['accept', 'قبول']]) + egSel('tqg', `risks.${i}.ver`, 'فاعلية مُتحقق منها', [['no', 'لا'], ['yes', 'نعم']]))}</div>`).join('') + egAdd('tqg', 'risks', 'إضافة خطر')
+    + `<span class="lbl" style="margin-top:8px">حالات عدم المطابقة</span>` + s.nc.map((c, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(c.n)}</b>${egDel('tqg', 'nc', i)}</div>${egGrid(160, egTxt('tqg', `nc.${i}.n`, 'الوصف') + egSel('tqg', `nc.${i}.step`, 'المرحلة', TQG_NC.map((n, k) => [String(k), (k + 1) + '. ' + n])) + egSel('tqg', `nc.${i}.cause`, 'السبب الجذري', TQG_CAUSE.map(x => [x[0], x[1]])) + egSel('tqg', `nc.${i}.eff`, 'فاعلية المعالجة مثبتة', [['no', 'لا'], ['yes', 'نعم']]))}</div>`).join('') + egAdd('tqg', 'nc', 'إضافة حالة'));
+  if (s.tab === 'dash') inputs = egCard('بيانات المؤشرات', 'TQG-13', egGrid(160, egNum('tqg', 'dash.csatPrev', 'رضا العملاء — الفترة السابقة') + egNum('tqg', 'dash.csatNow', 'رضا العملاء — الحالية') + egNum('tqg', 'dash.copqPrev', 'تكلفة الجودة الرديئة — السابقة') + egNum('tqg', 'dash.copqNow', 'تكلفة الجودة الرديئة — الحالية') + egNum('tqg', 'dash.compReq', 'كفاءات مطلوبة (عدد)') + egNum('tqg', 'dash.compMet', 'كفاءات مثبتة (عدد)')));
+  return `${engHead('NAIOSH TOTAL QUALITY & GOVERNANCE · DIA-TQG', 'ذكاء الجودة الشاملة والحوكمة المؤسسية', 'تحويل سياسات الجودة إلى منظومة حوكمة مترابطة: لكل سياسة متطلبات وملفات عمل ومالك وأدلة ومؤشرات ومخاطر ومواعيد مراجعة — ولا امتثال بلا تحقق، ولا تحسين بلا قياس للأثر.', engExport('TQG'))}
+  ${egTabs('tqg', [['policy', 'السياسات وملفات العمل'], ['std', 'مواءمة المعايير'], ['risk', 'المخاطر وعدم المطابقة'], ['dash', 'لوحة الإدارة العليا']])}
+  ${inputs}${egOut('tqg')}`;
+};
+
+/* =========================================================================================
+   DIA-CIB — Competitive Intelligence & Benchmarking
+   ========================================================================================= */
+const CIB_TYPE = [['direct', 'منافس مباشر'], ['indirect', 'منافس غير مباشر'], ['substitute', 'بديل للمنتج أو الخدمة'], ['emerging', 'منافس ناشئ'], ['global', 'مرجع عالمي'], ['potential', 'منافس محتمل مستقبلي']];
+const CIB_OV = [['customers', 'تداخل العملاء'], ['products', 'تداخل المنتجات'], ['markets', 'تداخل الأسواق'], ['needs', 'تلبية الحاجة نفسها']];
+const CIB_SRC = [['A', 'A · مصدر أولي رسمي', 1], ['B', 'B · بحثي ومهني', 0.8], ['C', 'C · غير مباشر', 0.5], ['D', 'D · تقدير واستنتاج', 0.3]];
+const CIB_DIM = [['market', 'السوق والانتشار'], ['products', 'المنتجات والخدمات'], ['value', 'القيمة للعميل'], ['price', 'تنافسية السعر'], ['customers', 'رضا العملاء والاحتفاظ'], ['sales', 'المبيعات والتسويق'], ['ops', 'سرعة التنفيذ والاعتمادية'], ['quality', 'الجودة'], ['digital', 'التقنية والرقمنة'], ['people', 'الموارد البشرية'], ['risk', 'الحوكمة والمخاطر'], ['sustain', 'الاستدامة'], ['trust', 'السمعة والثقة'], ['scale', 'القدرة على التوسع']];
+const CIB_FOCUS = { price: { price: 5, ops: 3, value: 3, sales: 3 }, quality: { quality: 5, value: 4, customers: 4, trust: 3, ops: 3 }, speed: { ops: 5, digital: 4, customers: 3, value: 3 }, innovation: { products: 5, digital: 5, value: 3, scale: 3 } };
+const CIB_ACT = { market: 'دراسة شريحة أو منطقة غير مخدومة واختبار دخول محدود', products: 'تطوير خاصية أو خدمة مكملة بناءً على احتياجات العملاء', value: 'إعادة صياغة القيمة المقدمة وإثباتها بنتائج قابلة للقياس', price: 'مراجعة نموذج التسعير مقابل القيمة المدركة والتكلفة الكلية', customers: 'برنامج احتفاظ وتحليل أسباب التحول إلى البدائل', sales: 'تطوير القنوات والرسائل للشرائح ذات الأولوية', ops: 'تقليص زمن التنفيذ وتحسين الاعتمادية', quality: 'برنامج خفض العيوب وإعادة العمل', digital: 'أتمتة رحلة العميل وتحسين تجربة الاستخدام', people: 'تأهيل الكفاءات الحرجة', risk: 'تعزيز إدارة المخاطر والاستمرارية', sustain: 'تحسين مؤشرات الأثر ذات الصلة بالقطاع', trust: 'إدارة السمعة والاستجابة للشكاوى', scale: 'شراكات أو نموذج تشغيل قابل للتكرار' };
+const CIB_LOST = [['price', 'السعر'], ['quality', 'الجودة'], ['speed', 'سرعة التنفيذ'], ['service', 'الخدمة والاستجابة'], ['features', 'الخصائص أو التخصيص'], ['relation', 'العلاقة أو الثقة']];
+EG_ROWS['cib.rivals'] = () => ({ n: 'منافس جديد', type: 'direct', ov: [], src: 'C', inc: 'yes' });
+EG_INIT.cib = () => ({
+  tab: 'profile',
+  co: { name: 'شركتنا', sector: 'خدمات صيانة وتشغيل المرافق', model: 'B2B', stage: 'growth', horizon: 'mid', q: 'لماذا نخسر فرصًا لصالح منافس محدد؟', focus: 'quality' },
+  rivals: [{ n: 'المنافس أ', type: 'direct', ov: ['customers', 'products'], src: 'B', inc: 'yes' }, { n: 'المنافس ب', type: 'direct', ov: [], src: 'C', inc: 'yes' }, { n: 'منصة رقمية ناشئة', type: 'emerging', ov: ['needs'], src: 'C', inc: 'yes' }, { n: 'مرجع عالمي في إدارة المرافق', type: 'global', ov: ['products'], src: 'A', inc: 'no' }],
+  w: { quality: 5, value: 4, customers: 4, trust: 3, ops: 3, price: 2, digital: 2, products: 2 },
+  sc: { quality: { co: 72, r0: 80, r1: 65, r2: 60 }, value: { co: 70, r0: 74, r1: 62, r2: 68 }, customers: { co: 68, r0: 77, r1: 60, r2: '' }, trust: { co: 78, r0: 75, r1: 58, r2: 50 }, ops: { co: 60, r0: 72, r1: 66, r2: 82 }, price: { co: 55, r0: 60, r1: 75, r2: 80 }, digital: { co: 45, r0: 62, r1: 40, r2: 90 }, products: { co: 70, r0: 70, r1: 55, r2: 58 } },
+  src: { quality: 'B', value: 'C', customers: 'A', trust: 'C', ops: 'B', price: 'A', digital: 'C', products: 'B' },
+  lost: { price: 4, quality: 2, speed: 7, service: 3, features: 1, relation: 1 }, opp: 'منشآت حكومية صغيرة غير مخدومة رقميًا، عقود صيانة وقائية بالاشتراك',
+  recSt: {}
+});
+function cibModel() {
+  const s = egS('cib'), inc = s.rivals.map((r, i) => ({ ...r, i })).filter(r => r.inc === 'yes');
+  const dims = CIB_DIM.map(([k, n]) => ({ k, n, w: egN((s.w || {})[k]), sc: (s.sc || {})[k] || {}, src: (s.src || {})[k] || 'D' })).filter(d => d.w > 0);
+  const val = (d, key) => { const v = d.sc[key]; return v === '' || v == null ? null : egN(v); };
+  const comp = (key) => { let W = 0, T = 0, n = 0, rel = 0; dims.forEach(d => { const v = val(d, key); if (v === null) return; W += d.w; T += d.w * v; n++; rel += (CIB_SRC.find(x => x[0] === d.src) || [, , 0.3])[2]; }); return { S: W ? T / W : NaN, cover: dims.length ? n / dims.length * 100 : 0, conf: n ? rel / n * 100 : 0 }; };
+  const ents = [{ key: 'co', n: s.co.name || 'شركتنا', ...comp('co') }, ...inc.map(r => ({ key: 'r' + r.i, n: r.n, type: r.type, ...comp('r' + r.i) }))];
+  const gaps = dims.map(d => { const co = val(d, 'co'), others = inc.map(r => [r.n, val(d, 'r' + r.i)]).filter(x => x[1] !== null), best = others.sort((a, b) => b[1] - a[1])[0]; return { d, co, best, gap: best && co !== null ? best[1] - co : null }; });
+  const ranked = gaps.filter(g => g.gap !== null && g.gap > 0).map(g => ({ ...g, pr: g.gap * g.d.w })).sort((a, b) => b.pr - a.pr);
+  const strengths = gaps.filter(g => g.gap !== null && g.gap <= -5);
+  const flags = s.rivals.filter(r => r.inc === 'yes' && r.type === 'direct' && !(r.ov || []).length).map(r => `«${r.n}» مصنف منافسًا مباشرًا دون دليل على تداخل العملاء أو المنتجات أو الأسواق.`);
+  const lost = CIB_LOST.map(([k, n]) => [n, egN((s.lost || {})[k])]).sort((a, b) => b[1] - a[1]), lostT = lost.reduce((a, x) => a + x[1], 0);
+  const scen = (adj) => { const cl = JSON.parse(JSON.stringify(dims)); adj(cl); let W = 0, T = 0; const res = {}; ['co', ...inc.map(r => 'r' + r.i)].forEach(key => { W = 0; T = 0; cl.forEach(d => { const v = d.sc[key]; if (v === '' || v == null) return; W += d.w; T += d.w * egN(v); }); res[key] = W ? T / W : NaN; }); const rank = Object.entries(res).sort((a, b) => b[1] - a[1]).findIndex(([k]) => k === 'co') + 1; return [res.co, rank]; };
+  const top = ranked[0];
+  const S4 = [['استمرار الوضع الحالي', 'استمرار اتجاهات السوق الحالية', ...scen(() => {})], ['نمو إيجابي', top ? `سد الفجوة في «${top.d.n}»` : 'تحسن عام', ...scen(cl => { if (top) { const d = cl.find(x => x.k === top.d.k); d.sc.co = top.best[1]; } })], ['ضغط تنافسي', 'المنافسون يخفضون الأسعار ويحسنون الخدمة', ...scen(cl => cl.forEach(d => { if (d.k === 'price' || d.k === 'ops') Object.keys(d.sc).forEach(k => { if (k !== 'co' && d.sc[k] !== '') d.sc[k] = Math.min(100, egN(d.sc[k]) + 10); }); }))], ['تحول هيكلي', 'بديل رقمي يغيّر السوق (وزن الرقمنة يتضاعف)', ...scen(cl => { const d = cl.find(x => x.k === 'digital'); if (d) d.w *= 2; else cl.push({ k: 'digital', w: 4, sc: {} }); })]];
+  return { s, inc, dims, ents, gaps, ranked, strengths, flags, lost, lostT, S4 };
+}
+EG_OUT.cib = () => {
+  const m = cibModel(), s = m.s, co = m.ents[0];
+  if (s.tab === 'profile') return egCard('الأسئلة الخمسة التي يجيب عنها التحليل', 'CIB-01/02', anTbl({ h: 'من الوضع إلى الأثر', cols: ['السؤال', 'الإجابة الحالية'], rows: [['أين نقف؟', isFinite(co.S) ? `درجة مركبة ${fmtN(co.S, 0)}/100 — الترتيب ${m.ents.slice().sort((a, b) => b.S - a.S).findIndex(e => e.key === 'co') + 1} من ${m.ents.length}` : 'أدخل الدرجات في «المقارنة»'], ['مقابل من نقارن؟', m.inc.map(r => r.n).join('، ') || '—'], ['لماذا توجد فجوة؟', m.ranked[0] ? `أكبر فجوة موزونة في «${m.ranked[0].d.n}» — السبب يحتاج تحليلًا بالأدلة` : 'لا فجوات'], ['ما الذي ينبغي فعله؟', m.ranked[0] ? CIB_ACT[m.ranked[0].d.k] : '—'], ['هل تحسن الأداء فعلًا؟', 'يُقاس بعد التنفيذ مقابل خط الأساس']] }) + egNote('المنافسة وسيلة للتطوير لا لمهاجمة المنافسين. تُستخدم البيانات العامة والمصرح بها والمرخصة فقط، دون انتحال أو حصول غير مشروع على أسرار تجارية.'));
+  if (s.tab === 'rivals') return egCard('سجل المنافسين وموثوقية المصادر', 'CIB-04/05/07', `${m.flags.length ? `<div class="banner y">${ic('warn', 16)}<span>${m.flags.map(esc).join(' ')}</span></div>` : ''}
+    ${anTbl({ h: 'المنافسون', cols: ['المنافس', 'الفئة', 'دليل التداخل', 'فئة المصدر', 'مُدرج في المقارنة'], rows: s.rivals.map(r => [r.n, (CIB_TYPE.find(t => t[0] === r.type) || [, ''])[1], (r.ov || []).map(o => (CIB_OV.find(x => x[0] === o) || [, o])[1]).join('، ') || 'لا يوجد', (CIB_SRC.find(x => x[0] === r.src) || [, ''])[1], r.inc === 'yes' ? 'نعم' : 'لا']) })}
+    ${egNote('لا تُعلن شركة منافسًا فعليًا لمجرد تشابه اسم نشاطها؛ يلزم دليل على تداخل العملاء أو الاحتياجات أو المنتجات أو الأسواق. كون المصدر رسميًا لا يضمن صحة كل معلومة فيه.')}`);
+  if (s.tab === 'compare') return egCard('المقارنة التنافسية — الأداء منفصل عن الثقة', 'CIB-10/14/15', `${anTbl({ h: 'الدرجة المركبة S = Σ(الوزن × الدرجة) ÷ Σ الأوزان', cols: ['الجهة', 'الأداء المقدّر', 'تغطية الأدلة', 'الثقة في التقدير'], rows: m.ents.slice().sort((a, b) => (b.S || 0) - (a.S || 0)).map(e => [e.n, isFinite(e.S) ? fmtN(e.S, 0) + '/100' : 'غير متاح', fmtN(e.cover, 0) + '%', e.conf >= 75 ? 'مرتفعة' : e.conf >= 50 ? 'متوسطة' : 'منخفضة']) })}
+    ${anChart({ bars: m.ents.filter(e => isFinite(e.S)).sort((a, b) => b.S - a.S).map(e => [e.n, Math.round(e.S)]) })}
+    ${anTbl({ h: 'الفجوات مرتبة حسب الأهمية (الوزن × الفجوة عن أفضل منافس)', cols: ['البعد', 'الوزن', 'شركتنا', 'الأفضل', 'الفجوة', 'المصدر'], rows: m.ranked.map(g => [g.d.n, g.d.w, fmtN(g.co, 0), g.best[0] + ' ' + fmtN(g.best[1], 0), '−' + fmtN(g.gap, 0), g.d.src]) })}
+    ${egNote('الدرجة المركبة للتلخيص فقط ولا تُستخدم إذا كانت البيانات الجوهرية مفقودة أو الأوزان غير مبررة. القيم غير المعروفة تُترك فارغة («غير متاح») ولا تُختلق.')}`);
+  const recs = m.ranked.slice(0, 4).map((g, i) => ['REC-' + String(i + 1).padStart(2, '0'), `فجوة في «${g.d.n}»`, `شركتنا ${fmtN(g.co, 0)} مقابل ${g.best[0]} ${fmtN(g.best[1], 0)} (مصدر ${g.d.src})`, CIB_ACT[g.d.k], `رفع «${g.d.n}» إلى ${fmtN(Math.min(100, g.co + Math.ceil(g.gap * 0.6)), 0)} خلال 6 أشهر`, fmtN(g.co, 0), (s.recSt || {})[g.d.k] || 'مقترحة']);
+  return egCard('SWOT المرتبط بالأدلة والسيناريوهات وخطة العمل', 'CIB-16/19/20/22', `${anTbl({ h: 'تحليل SWOT', cols: ['العنصر', 'التحليل', 'الدليل'], rows: [['القوة', m.strengths.map(g => g.d.n).join('، ') || 'لا تفوق مثبت بفارق واضح', 'أبعاد تتفوق فيها الشركة بـ5 نقاط فأكثر على أفضل منافس'], ['الضعف', m.ranked.slice(0, 3).map(g => g.d.n).join('، ') || '—', 'أكبر الفجوات الموزونة'], ['الفرص', s.opp || '—', 'مُدخلة من الشركة — تحتاج بيانات طلب للتحقق'], ['التهديدات', [...m.inc.filter(r => ['emerging', 'potential', 'substitute'].includes(r.type)).map(r => r.n), m.lost[0] && m.lost[0][1] ? 'أكثر أسباب خسارة الصفقات: ' + m.lost[0][0] : ''].filter(Boolean).join('، ') || '—', 'منافسون ناشئون/بدائل وأسباب الخسارة المسجلة']] })}
+    ${m.lostT ? anTbl({ h: 'أسباب خسارة الفرص (صوت العميل)', cols: ['السبب', 'الحالات', 'النسبة'], rows: m.lost.filter(x => x[1]).map(x => [x[0], x[1], fmtN(x[1] / m.lostT * 100, 0) + '%']) }) : ''}
+    ${anTbl({ h: 'السيناريوهات', cols: ['السيناريو', 'الافتراض', 'درجة الشركة', 'الترتيب'], rows: m.S4.map(([n, a, v, r]) => [n, a, fmtN(v, 0), r + ' من ' + m.ents.length]) })}
+    ${anTbl({ h: 'التوصيات وخطة العمل', cols: ['المعرف', 'المشكلة', 'الأدلة', 'الإجراء المقترح', 'مؤشر النجاح', 'خط الأساس', 'الحالة'], rows: recs })}
+    ${recs.length ? `<div class="row" style="gap:8px">${m.ranked.slice(0, 4).map(g => egSel('cib', 'recSt.' + g.d.k, 'حالة «' + g.d.n + '»', ['مقترحة', 'معتمدة', 'قيد التنفيذ', 'متحققة', 'ملغاة'].map(x => [x, x]))).join('')}</div>` : ''}
+    ${egNote('لا تُعد التوصية ناجحة لمجرد تنفيذها؛ يُقاس أثرها مقابل خط الأساس. النظام يقدم الأدلة والخيارات، والإدارة المخولة تعتمد القرار.')}`);
+};
+VIEWS.compete = () => {
+  const s = egS('cib');
+  let inputs = '';
+  if (s.tab === 'profile') inputs = egCard('ملف الشركة وهدف الدراسة', 'CIB-02/03', egGrid(170, egTxt('cib', 'co.name', 'اسم الشركة') + egTxt('cib', 'co.sector', 'القطاع') + egSel('cib', 'co.model', 'نموذج الأعمال', [['B2B', 'B2B'], ['B2C', 'B2C'], ['B2G', 'B2G'], ['mixed', 'مختلط']]) + egSel('cib', 'co.stage', 'المرحلة', [['startup', 'ناشئة'], ['growth', 'نمو'], ['mature', 'نضج'], ['decline', 'تراجع']]) + egSel('cib', 'co.horizon', 'أفق الخطة', [['short', 'قصير'], ['mid', 'متوسط'], ['long', 'طويل']]))
+    + egQ(1, 'السؤال التجاري الأساسي للدراسة', egSel('cib', 'co.q', '', ['لماذا نخسر فرصًا لصالح منافس محدد؟', 'هل سعرنا أعلى من القيمة التي يدركها العملاء؟', 'ما الأسواق الجديدة التي تستحق الدراسة؟', 'كيف يمكن تطوير منتج قائم؟', 'ما الذي يفسر تفوق منافس في سرعة الخدمة؟', 'هل نستطيع منافسة الشركات العالمية في قطاعنا؟', 'هل الأفضل دخول سوق جديد أم تطوير السوق الحالي أم التركيز على شريحة متخصصة؟'].map(x => [x, x])))
+    + egQ(2, 'على ماذا تنافس الشركة؟ (يضبط الأوزان المقترحة)', egCh('cib', 'co.focus', [['price', 'السعر'], ['quality', 'الجودة والاعتمادية'], ['speed', 'السرعة'], ['innovation', 'الابتكار']]) + `<button type="button" class="btn link sm" data-act="cib-preset">تطبيق الأوزان المقترحة</button>`));
+  if (s.tab === 'rivals') inputs = egCard('المنافسون المرشحون', 'CIB-04', s.rivals.map((r, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(r.n)}</b>${egDel('cib', 'rivals', i)}</div>${egGrid(150, egTxt('cib', `rivals.${i}.n`, 'الاسم') + egSel('cib', `rivals.${i}.type`, 'الفئة', CIB_TYPE) + egSel('cib', `rivals.${i}.src`, 'فئة المصدر', CIB_SRC.map(x => [x[0], x[1]])) + egSel('cib', `rivals.${i}.inc`, 'إدراج في المقارنة', [['yes', 'نعم'], ['no', 'لا']]))}${egCh('cib', `rivals.${i}.ov`, CIB_OV, true)}</div>`).join('') + egAdd('cib', 'rivals', 'إضافة منافس'));
+  if (s.tab === 'compare') { const inc = s.rivals.map((r, i) => ({ ...r, i })).filter(r => r.inc === 'yes'); inputs = egCard('أبعاد المقارنة والدرجات (0–100، اترك الخانة فارغة إن لم تتوفر)', 'CIB-10/11', `<div class="tbl-wrap"><table><thead><tr><th>البعد</th><th>الوزن 0–5</th><th>المصدر</th><th>شركتنا</th>${inc.map(r => `<th>${esc(r.n)}</th>`).join('')}</tr></thead><tbody>${CIB_DIM.map(([k, n]) => `<tr><td style="font-size:12.5px">${n}</td><td style="min-width:80px">${egSel('cib', 'w.' + k, '', [0, 1, 2, 3, 4, 5].map(v => [v, v]))}</td><td style="min-width:70px">${egSel('cib', 'src.' + k, '', CIB_SRC.map(x => [x[0], x[0]]))}</td><td style="min-width:80px">${egNum('cib', `sc.${k}.co`, '')}</td>${inc.map(r => `<td style="min-width:80px">${egNum('cib', `sc.${k}.r${r.i}`, '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`); }
+  if (s.tab === 'plan') inputs = egCard('صوت العميل والفرص', 'CIB-12', `<span class="lbl">أسباب خسارة الفرص خلال الفترة (عدد الحالات)</span>${egGrid(130, CIB_LOST.map(([k, n]) => egNum('cib', 'lost.' + k, n)).join(''))}${egTxt('cib', 'opp', 'الفرص: شرائح أو احتياجات غير مخدومة')}`);
+  return `${engHead('NAIOSH COMPETITIVE INTELLIGENCE · DIA-CIB', 'ذكاء المنافسين والتحليل التنافسي والقياس المرجعي', 'أين نقف؟ مقابل من نقارن؟ لماذا توجد فجوة؟ ما الذي ينبغي فعله؟ وهل تحسن الأداء فعلًا؟ — مقارنة عادلة موثقة المصادر، مع فصل الأداء عن الثقة في البيانات.', engExport('CIB'))}
+  ${egTabs('cib', [['profile', 'ملف الشركة'], ['rivals', 'المنافسون والمصادر'], ['compare', 'المقارنة والدرجات'], ['plan', 'SWOT والسيناريوهات والخطة']])}
+  ${inputs}${egOut('cib')}`;
+};
+
+/* ---------- wave-3 events & exports ---------- */
+function engine3Handle(act, k, el) {
+  if (!act || !/^(eg-add|eg-del|emp-|pmo-|cib-)/.test(act)) return false;
+  if (act === 'eg-add') { const dot = k.indexOf('.'), e = k.slice(0, dot), p = k.slice(dot + 1), arr = egGet(egS(e), p); if (Array.isArray(arr) && EG_ROWS[k]) { arr.push(EG_ROWS[k]()); render(); } return true; }
+  if (act === 'eg-del') { const bar = k.lastIndexOf('|'), path = k.slice(0, bar), i = +k.slice(bar + 1), dot = path.indexOf('.'), arr = egGet(egS(path.slice(0, dot)), path.slice(dot + 1)); if (Array.isArray(arr)) { if (arr.length <= 1) { toast('يلزم عنصر واحد على الأقل'); return true; } arr.splice(i, 1); render(); } return true; }
+  if (act === 'emp-skl') {
+    const sk = S.eg_skl && S.eg_skl.lv ? Object.entries(S.eg_skl.lv).filter(([, v]) => +v >= 2).map(([id]) => (SKLm[id] || [, id])[1]) : [];
+    if (!sk.length) { toast('لا يوجد ملف مهارات — أنشئه أولًا في «ذكاء المهارات»'); return true; }
+    const e = egS('emp'); e.cands.push({ code: 'C-SKL', edu: 'EDU-06', years: 0, skills: sk.join('، '), projects: Object.values(S.eg_skl.ev || {}).filter(v => v === 'proj' || v === 'test').length, cert: Object.values(S.eg_skl.ev || {}).includes('cert') ? 'yes' : 'no', city: 'yes', mode: 'yes', salary: 'yes', prof: 3 });
+    toast('أُضيف مرشح من ملف ذكاء المهارات (' + sk.length + ' مهارة)'); render(); return true;
+  }
+  if (act === 'pmo-gate') {
+    const p = egS('pmo').projects[+k], gi = PMO_GATES.findIndex(g => g[0] === p.gate), miss = PMO_CHK.filter(([c]) => !(p.chk || {})[c]).map(x => x[1]);
+    if (miss.length) { toast('لا يمكن الانتقال — شروط ناقصة: ' + miss.join('، ')); return true; }
+    if (gi < PMO_GATES.length - 1) { const from = p.gate; p.gate = PMO_GATES[gi + 1][0]; p.chk = {}; log('د. عدنان', `اعتمد انتقال مشروع «${p.n}» من ${from} إلى ${p.gate} بعد استيفاء شروط البوابة`); toast('سُجل قرار الانتقال إلى ' + p.gate); render(); }
+    return true;
+  }
+  if (act === 'cib-preset') { const s = egS('cib'), f = CIB_FOCUS[s.co.focus] || {}; s.w = Object.fromEntries(CIB_DIM.map(([d]) => [d, f[d] || ((s.w || {})[d] ? 1 : 0)])); toast('طُبقت الأوزان المقترحة — يمكن تعديلها في «المقارنة»'); render(); return true; }
+  return false;
+}
+function engSections3(code) {
+  if (code === 'EMP') {
+    const s = egS('emp'), Q = empQuality(s.job), M = s.cands.map(c => empMatch(c, s.job, Q)).sort((a, b) => b.score - a.score);
+    return { title: 'تقرير EMPLOY 360 — الوظيفة والمطابقة والمتابعة', audience: 'الشركة وفريق المتابعة', ref: 'DIA-EMP', sections: [
+      { h: 'الوظيفة', kv: kvx([['المسمى', s.job.title], ['القطاع', (EMP_SEC.find(x => x[0] === s.job.sector) || [, ''])[1]], ['المستوى', Q.lv[0]], ['مؤشر جودة الإعلان', fmtN(Q.score, 0) + '/100'], ['المهارات الضرورية', Q.must.join('، ')], ['قابلة للتدريب', Q.train.join('، ')]]) },
+      { h: 'ملاحظات على الإعلان', bullets: Q.flags.length ? Q.flags : ['لا ملاحظات جوهرية'] },
+      { h: 'ترتيب المرشحين', cols: ['المرشح', 'التوافق', 'استوفى', 'يحتاج تحققًا/تدريبًا', 'شروط إلزامية'], rows: M.map(m => [m.c.code, fmtN(m.score, 0) + '%', m.mustHit.concat(m.trainHit).join('، '), m.missingMust.concat(m.missingTrain).join('، '), m.mand.join('، ') || '—']) },
+      { h: 'خطط التأهيل', cols: ['المرشح', 'المهارة', 'الفجوة', 'التدخل'], rows: M.flatMap(m => m.gaps.map(g => [m.c.code, ...g])) },
+      { h: 'متابعة الطلبات', cols: ['المرشح', 'المرحلة', 'القناة', 'أيام بلا رد', 'الإجراء التالي', 'المسؤول'], rows: s.apps.map(a => [a.c, EMP_STAGES[+a.stage], a.ch, egN(a.wait), a.next, a.owner]) },
+      { h: 'الحوكمة', bullets: ['لا رفض آلي للمرشحين؛ كل قرار تعيين بمراجعة بشرية.', 'الأوزان توضيحية وتحتاج اختبار صلاحية وعدالة.', 'لا تُشارك الملفات إلا بموافقة الباحث.'] }] };
+  }
+  if (code === 'ETI') {
+    const m = etiModel(), s = m.s;
+    return { title: 'تقرير ذكاء التعليم والتدريب — ' + (s.program || ''), audience: 'قيادة الجهة التعليمية', ref: 'DIA-ETI', sections: [
+      { h: 'الملخص التنفيذي', text: `${(ETI_ORG.find(x => x[0] === s.org) || [, ''])[1]} · ${s.program} · ${m.n} متعلمًا. التغير حتى اليوم ${m.d}: ${fmtN(m.mid - m.pre, 1)} نقطة. التوقع الأساسي يوم ${m.H}: ${fmtN(m.base, 1)} ± ${fmtN(m.band, 1)} مقابل هدف ${s.target}. الإتقان المتوقع ${fmtN(m.mBase, 0)}%، والانسحاب المتوقع ${fmtN(m.dropF, 1)}%.${m.did !== null ? ' الأثر الصافي مقارنة بمجموعة المقارنة: ' + fmtN(m.did, 1) + ' نقطة.' : ''}` },
+      { h: 'السيناريوهات', cols: ['السيناريو', 'المتوسط المتوقع', 'الافتراض', 'التكلفة الإضافية'], rows: m.sc.map(([n, v, a, c]) => [n, fmtN(v, 1), a, fmtN(c, 0)]) },
+      { h: 'الأسباب المحتملة', cols: ['السبب', 'الدليل', 'القوة', 'بيانات للتحقق'], rows: m.causes },
+      { h: 'الخيارات', cols: ['الخيار', 'الأثر', 'التكلفة', 'السهولة', 'المخاطر'], rows: m.opts.map(o => [o.nm, '+' + o.eff, fmtN(o.cost, 0), o.ease, o.risk]) },
+      { h: 'التوصية وخطة القياس', bullets: [`البدء بـ«${m.opts[0].nm}» كتجربة محدودة لمدة 4 أسابيع`, `إعادة القياس يوم ${m.H} ومقارنة النتيجة بالتوقع المسجل (${fmtN(m.base, 1)})`, 'لا يُستخدم التوقع وحده لاتخاذ قرار عالي الأثر بحق أي متعلم'] }] };
+  }
+  if (code === 'PMO') {
+    const m = pmoModel();
+    return { title: 'التقرير التنفيذي لمكتب إدارة المشاريع — PMO 360', audience: 'الإدارة العليا ومدير PMO', ref: 'DIA-PMO', sections: [
+      { h: 'ملخص المحفظة', kv: kvx([['نوع المكتب', PMO_TYPE[m.s.type][0]], ['عدد المشاريع', m.P.length], ['الميزانية الكلية', fmtN(m.tot.bac, 0)], ['المتوقع عند الإكمال', fmtN(m.tot.eac, 0)], ['SPI المحفظة', fmtN(m.tot.spi, 2)], ['CPI المحفظة', fmtN(m.tot.cpi, 2)], ['تحتاج تدخلًا', m.P.filter(x => x.rag[1] === 't-c').length]]) },
+      { h: 'القيمة المكتسبة', cols: ['المشروع', 'البوابة', 'PV', 'EV', 'AC', 'SPI', 'CPI', 'EAC', 'الحالة'], rows: m.P.map(x => [x.p.n, x.p.gate, fmtN(x.pv, 0), fmtN(x.ev, 0), fmtN(x.ac, 0), x.started ? fmtN(x.spi, 2) : '—', x.started ? fmtN(x.cpi, 2) : '—', fmtN(x.eac, 0), x.rag[0]]) },
+      { h: 'أعمال تحتاج تدخلًا', cols: ['المشروع', 'الإشارة', 'الدليل', 'الإجراء', 'التصعيد'], rows: m.alerts.map(a => [a[0], a[1], a[2], a[4], a[5]]) },
+      { h: 'مستويات الأتمتة', cols: ['العملية', 'المستوى'], rows: PMO_PROC.map(([k, n]) => [n, m.s.auto[k] + ' · ' + (PMO_A.find(a => a[0] === m.s.auto[k]) || [, ''])[1]]) },
+      { h: 'الحوكمة', bullets: ['لا تتجاوز أي عملية آلية صلاحيات HUB-AUTH.', 'لا يُعتمد إنفاق أو تعديل ميزانية لمجرد توصية الذكاء الاصطناعي.', 'لا يُنسب التأخير لجهة دون أدلة.'] }] };
+  }
+  if (code === 'TQG') {
+    const m = tqgModel();
+    return { title: 'تقرير ذكاء الجودة الشاملة والحوكمة', audience: 'الإدارة العليا والجودة والتدقيق', ref: 'DIA-TQG', sections: [
+      { h: 'لوحة الإدارة العليا', kv: kvx([['تغطية السياسات', fmtN(m.polCov, 0) + '%'], ['تغطية المعايير بأدلة', fmtN(m.stdCov, 0) + '%'], ['المخاطر الجوهرية المفتوحة', m.material], ['فاعلية الإجراءات التصحيحية', isFinite(m.capaEff) ? fmtN(m.capaEff, 0) + '%' : 'غير متوفر'], ['كفاءة الموظفين', fmtN(m.comp, 0) + '%'], ['رضا العملاء', fmtN(m.csat[1], 0) + ' (' + fmtP(pctCh(m.csat[0], m.csat[1])) + ')'], ['تكلفة الجودة الرديئة', fmtN(m.copq[1], 0) + ' (' + fmtP(pctCh(m.copq[0], m.copq[1])) + ')']]) },
+      { h: 'السياسات', cols: ['السياسة', 'التغطية', 'الحلقات الناقصة', 'فصل المهام'], rows: m.pols.map(x => [x.p.code + ' · ' + x.p.n, fmtN(x.cov, 0) + '%', x.missing.join('، ') || 'مكتملة', x.sod.join('؛ ') || 'سليم']) },
+      { h: 'المعايير', cols: ['المعيار', 'الطبيعة', 'الحالة'], rows: m.stds.map(x => [x.k + ' · ' + x.n, (TQG_APP.find(a => a[0] === x.app) || [, ''])[1], x.app === 'na' ? '—' : (TQG_ST.find(a => a[0] === x.st) || [, ''])[1]]) },
+      { h: 'المخاطر', cols: ['الخطر', 'قبل الضوابط', 'المتبقي', 'المستوى', 'تنبيه'], rows: m.risks.map(x => [x.r.n, x.inh, x.res, x.lvl[0], x.flag || '—']) },
+      { h: 'عدم المطابقة', cols: ['الحالة', 'المرحلة', 'السبب', 'التدخل', 'الفاعلية'], rows: m.nc.map(x => [x.c.n, TQG_NC[+x.c.step], x.cause[1], x.cause[2], x.closed ? (x.c.eff === 'yes' ? 'مثبتة' : 'غير مثبتة') : 'قيد المعالجة']) }] };
+  }
+  if (code === 'CIB') {
+    const m = cibModel();
+    return { title: 'التقرير التنافسي — ' + (m.s.co.name || ''), audience: 'الإدارة العليا والاستراتيجية', ref: 'DIA-CIB', sections: [
+      { h: 'هدف الدراسة', kv: kvx([['الشركة', m.s.co.name], ['القطاع', m.s.co.sector], ['السؤال', m.s.co.q], ['المنافسون المدرجون', m.inc.map(r => r.n).join('، ')]]) },
+      { h: 'الدرجات المركبة', cols: ['الجهة', 'الأداء', 'تغطية الأدلة', 'الثقة'], rows: m.ents.map(e => [e.n, isFinite(e.S) ? fmtN(e.S, 0) : 'غير متاح', fmtN(e.cover, 0) + '%', fmtN(e.conf, 0) + '%']) },
+      { h: 'الفجوات', cols: ['البعد', 'الوزن', 'شركتنا', 'الأفضل', 'الفجوة'], rows: m.ranked.map(g => [g.d.n, g.d.w, fmtN(g.co, 0), g.best[0] + ' ' + fmtN(g.best[1], 0), fmtN(g.gap, 0)]) },
+      { h: 'السيناريوهات', cols: ['السيناريو', 'الافتراض', 'درجة الشركة', 'الترتيب'], rows: m.S4.map(([n, a, v, r]) => [n, a, fmtN(v, 0), r]) },
+      { h: 'التوصيات', cols: ['البعد', 'الإجراء', 'الحالة'], rows: m.ranked.slice(0, 4).map(g => [g.d.n, CIB_ACT[g.d.k], (m.s.recSt || {})[g.d.k] || 'مقترحة']) },
+      { h: 'المنهجية', bullets: ['الأداء والثقة يُعرضان منفصلين.', 'مصادر A رسمية · B بحثية · C غير مباشرة · D تقديرات.', 'لا يُعلن منافس مباشر دون دليل تداخل.', 'بيانات عامة ومصرح بها فقط.'] }] };
+  }
+  return null;
+}
+</script>

@@ -59,6 +59,11 @@ const P = {
   bench:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z M12 11.2v1.6 M13 11l7-7 M17 4h3v3',
   safety:'M3 18h18 M5 18v-3a7 7 0 0 1 14 0v3 M10 8V5.5h4V8 M12 8v4',
   eco:'M3 17l5-5 4 4 8-8 M14 8h6v6',
+  compete:'M4 20h4v-7H4z M10 20h4V8h-4z M16 20h4v-11h-4z M6 9l6-5 6 3',
+  pmo:'M3 5h18v4H3z M3 13h11v6H3z M17 13h4v6h-4z',
+  tqg:'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z M8.5 12l2.5 2.5 4.5-5',
+  edu:'M3 6l9-3 9 3-9 3z M5 7.5V13c2 2 12 2 14 0V7.5 M12 9v12',
+  employ:'M4 8h16v12H4z M9 8V5h6v3 M4 13h16',
   supply:'M2 7h11v9H2z M13 10h4l3 3v3h-7 M6 17.5a1.6 1.6 0 1 0 0 .01 M17 17.5a1.6 1.6 0 1 0 0 .01',
   sustain:'M5 19c0-8 6-14 15-14 0 9-6 15-14 15 M5 19l8-8',
   skills:'M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6l-4.9 2.6.9-5.5-4-3.9 5.5-.8z',
@@ -119,8 +124,10 @@ const NAV = [
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
-  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['safety','ذكاء السلامة والمخاطر','SAF'],['eco','المرونة الاقتصادية والمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS']] },
-  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['career','المسار الجامعي والمهني','CPA'],['cv','ذكاء السيرة الذاتية','CV'],['skills','ذكاء المهارات وسوق العمل','SKL'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','ذكاء المنافسين','CIB'],['eco','المرونة الاقتصادية والمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','ذكاء السلامة والمخاطر','SAF']] },
+  { t: 'الإدارة المؤسسية والجودة', items: [['pmo','مكتب إدارة المشاريع PMO 360','PMO'],['tqg','الجودة الشاملة والحوكمة','TQG']] },
+  { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','ذكاء التعليم والتدريب','ETI'],['cv','ذكاء السيرة الذاتية','CV'],['skills','ذكاء المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
+  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -143,7 +150,9 @@ const TITLES = {
   bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وذكاء المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'ذكاء السلامة وتحليل المخاطر'],
   self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا'],
   eco: ['DIA-ECO · Economic Resilience & Side Business', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية'], supply: ['DIA-SCM · Global Supply Chain & Logistics', 'ذكاء سلاسل الإمداد واللوجستيات'],
-  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'ذكاء المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني']
+  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'ذكاء المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني'],
+  employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'ذكاء بيانات التعليم والتدريب'],
+  pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'ذكاء المنافسين والتحليل التنافسي']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };

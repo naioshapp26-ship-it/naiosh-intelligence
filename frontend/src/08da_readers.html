@@ -1,0 +1,297 @@
+<script data-app="">
+/* ================= Universal file readers for the results engine =================
+   Any file can be chosen. Tables are extracted from: CSV/TSV/TXT/DAT/PRN · Excel .xlsx/.xlsm/.xls · OpenDocument .ods
+   JSON · XML · HTML · Word .docx tables · PowerPoint .pptx tables · text-based PDF tables · ZIP archives containing any of these.
+   Files without a data table (images, audio, video, scanned PDFs…) are accepted and explained, never silently rejected. */
+const AN_DATA_RE = /\.(csv|tsv|txt|tab|dat|prn|xlsx|xlsm|xltx|xls|ods|json|geojson|xml|html?|docx|pptx|pdf|zip)$/i;
+const AN_KIND = [[/\.(png|jpe?g|gif|webp|bmp|tiff?|heic|svg)$/i, 'صورة'], [/\.(mp4|mov|webm|avi|mkv|m4v)$/i, 'فيديو'], [/\.(mp3|wav|m4a|aac|ogg|flac)$/i, 'ملف صوتي'], [/\.(doc|ppt|rtf|pages|key)$/i, 'مستند بصيغة قديمة أو مغلقة'], [/\.(numbers)$/i, 'ملف Apple Numbers']];
+const anErr = (msg) => { const e = new Error(msg); e.friendly = true; return e; };
+function anDecodeText(buf) {
+  const u = new Uint8Array(buf);
+  if (u[0] === 0xFF && u[1] === 0xFE) return new TextDecoder('utf-16le').decode(u.subarray(2));
+  if (u[0] === 0xFE && u[1] === 0xFF) return new TextDecoder('utf-16be').decode(u.subarray(2));
+  let t = new TextDecoder('utf-8').decode(u);
+  if (t.includes('\uFFFD')) { try { t = new TextDecoder('windows-1256').decode(u); } catch (e) {} }
+  return t.replace(/^﻿/, '');
+}
+function anParseText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(0, 20);
+  const delims = [',', ';', '\t', '|'];
+  const hasDelim = delims.some(d => lines.length && lines.every(l => l.includes(d)));
+  if (hasDelim) {
+    const d = delims.map(x => [x, st.mean(lines.map(l => l.split(x).length))]).sort((a, b) => b[1] - a[1])[0][0];
+    if (d === '|') return anParseCSV(text.split(/\r?\n/).map(l => l.replace(/^\s*\|/, '').replace(/\|\s*$/, '')).join('\n').replace(/\|/g, '\t'));
+    return anParseCSV(text);
+  }
+  // fixed-width / whitespace separated (reports, .prn, copied tables)
+  const split = lines.some(l => /\S\s{2,}\S/.test(l)) ? /\s{2,}/ : /\s+/;
+  return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => l.split(split));
+}
+function anBestTable(tables) {
+  const good = tables.filter(t => t && t.length >= 2);
+  if (!good.length) return null;
+  const score = (t) => t.reduce((a, r) => a + r.filter(x => anNum(x) !== null).length, 0) * 10 + t.length;
+  const best = good.sort((a, b) => score(b) - score(a))[0].map(r => r.map(x => String(x ?? '').trim()));
+  let h = 0; while (h < best.length - 2 && best[h].filter(Boolean).length < 2) h++;
+  return best.slice(h);
+}
+const anXml = (s, type = 'application/xml') => new DOMParser().parseFromString(s, type);
+const anEls = (node, local) => Array.from(node.getElementsByTagName('*')).filter(e => e.localName === local);
+function anTablesFromHTML(text) {
+  const doc = anXml(text, 'text/html');
+  return Array.from(doc.querySelectorAll('table')).map(t => Array.from(t.querySelectorAll('tr')).map(tr => Array.from(tr.querySelectorAll('th,td')).map(c => c.textContent.replace(/\s+/g, ' ').trim())).filter(r => r.some(Boolean)));
+}
+function anTablesFromXML(text) {
+  const doc = anXml(text); if (doc.getElementsByTagName('parsererror').length) throw anErr('ملف XML غير صالح.');
+  const counts = {};
+  doc.querySelectorAll('*').forEach(e => { if (e.children.length || e.attributes.length) counts[e.tagName] = (counts[e.tagName] || 0) + 1; });
+  const tag = Object.entries(counts).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1])[0];
+  if (!tag) return [];
+  const items = Array.from(doc.getElementsByTagName(tag[0])), cols = [];
+  const recs = items.map(it => { const r = {}; Array.from(it.attributes).forEach(a => { r['@' + a.name] = a.value; }); Array.from(it.children).forEach(c => { if (!c.children.length) r[c.tagName] = c.textContent.trim(); }); Object.keys(r).forEach(k => { if (!cols.includes(k)) cols.push(k); }); return r; });
+  return [[cols.map(c => c.replace(/^@/, '')), ...recs.map(r => cols.map(c => r[c] ?? ''))]];
+}
+function anTablesFromJSON(text) {
+  let j; try { j = JSON.parse(text); } catch (e) { throw anErr('ملف JSON غير صالح.'); }
+  if (j && j.type === 'FeatureCollection' && Array.isArray(j.features)) j = j.features.map(f => f.properties || {});
+  const findArr = (o, d) => { if (Array.isArray(o)) return o; if (o && typeof o === 'object' && d < 3) { for (const v of Object.values(o)) { const a = findArr(v, d + 1); if (a && a.length) return a; } } return null; };
+  const arr = findArr(j, 0); if (!arr || !arr.length) return [];
+  if (arr.every(Array.isArray)) return [arr];
+  const flat = (o, p = '', out = {}) => { Object.entries(o || {}).forEach(([k, v]) => { const key = p ? p + '.' + k : k; if (v && typeof v === 'object' && !Array.isArray(v) && p.split('.').length < 2) flat(v, key, out); else out[key] = Array.isArray(v) ? v.join(' ') : v; }); return out; };
+  const recs = arr.filter(x => x && typeof x === 'object').map(x => flat(x)), cols = [];
+  recs.forEach(r => Object.keys(r).forEach(k => { if (!cols.includes(k)) cols.push(k); }));
+  return [[cols, ...recs.map(r => cols.map(c => r[c] ?? ''))]];
+}
+async function anZipText(z, name) { const k = Object.keys(z).find(x => x.toLowerCase() === name.toLowerCase()); return k ? new TextDecoder().decode(await anInflate(z[k])) : null; }
+async function anTablesFromODS(z) {
+  const t = await anZipText(z, 'content.xml'); if (!t) return [];
+  return anEls(anXml(t), 'table').map(tb => {
+    const rows = [];
+    for (const tr of anEls(tb, 'table-row')) {
+      const row = [];
+      for (const c of Array.from(tr.children).filter(e => e.localName === 'table-cell' || e.localName === 'covered-table-cell')) {
+        const v = c.getAttribute('office:value') ?? c.getAttribute('office:date-value') ?? anEls(c, 'p').map(p => p.textContent).join(' ');
+        let n = +(c.getAttribute('table:number-columns-repeated') || 1); if (!String(v).trim()) n = Math.min(n, 1);
+        for (let i = 0; i < Math.min(n, 200); i++) row.push(v ?? '');
+      }
+      while (row.length && !String(row[row.length - 1]).trim()) row.pop();
+      if (row.some(x => String(x).trim())) rows.push(row);
+    }
+    return rows;
+  });
+}
+async function anTablesFromOOXMLDoc(z, kind) {
+  const files = Object.keys(z).filter(k => kind === 'docx' ? /^word\/document\.xml$/i.test(k) : /^ppt\/slides\/slide\d+\.xml$/i.test(k));
+  const out = [];
+  for (const f of files) {
+    const doc = anXml(new TextDecoder().decode(await anInflate(z[f])));
+    anEls(doc, 'tbl').forEach(tb => out.push(anEls(tb, 'tr').map(tr => anEls(tr, 'tc').map(tc => anEls(tc, 't').map(x => x.textContent).join('')))));
+  }
+  return out;
+}
+/* ---------- legacy Excel 97–2003 (.xls) : Compound File + BIFF8 ---------- */
+function anParseXLS(buf) {
+  const u = new Uint8Array(buf), dv = new DataView(buf);
+  const ss = 1 << dv.getUint16(30, true), mss = 1 << dv.getUint16(32, true), cutoff = dv.getUint32(56, true);
+  const secOff = (s) => 512 + s * ss;
+  const fatSecs = []; for (let i = 0; i < 109; i++) { const s = dv.getUint32(76 + i * 4, true); if (s < 0xFFFFFFFA) fatSecs.push(s); }
+  let dif = dv.getUint32(68, true), nd = dv.getUint32(72, true);
+  while (nd-- > 0 && dif < 0xFFFFFFFA) { for (let i = 0; i < ss / 4 - 1; i++) { const s = dv.getUint32(secOff(dif) + i * 4, true); if (s < 0xFFFFFFFA) fatSecs.push(s); } dif = dv.getUint32(secOff(dif) + ss - 4, true); }
+  const fat = []; fatSecs.forEach(s => { for (let i = 0; i < ss / 4; i++) fat.push(dv.getUint32(secOff(s) + i * 4, true)); });
+  const chain = (start, table) => { const c = []; let s = start, guard = 0; while (s < 0xFFFFFFFA && guard++ < 1e6) { c.push(s); s = table[s]; } return c; };
+  const readChain = (start) => { const c = chain(start, fat), out = new Uint8Array(c.length * ss); c.forEach((s, i) => out.set(u.subarray(secOff(s), secOff(s) + ss), i * ss)); return out; };
+  const dir = readChain(dv.getUint32(48, true)), ddv = new DataView(dir.buffer);
+  const ents = []; for (let o = 0; o + 128 <= dir.length; o += 128) { const nl = ddv.getUint16(o + 64, true); ents.push({ name: new TextDecoder('utf-16le').decode(dir.subarray(o, o + Math.max(0, nl - 2))), type: dir[o + 66], start: ddv.getUint32(o + 116, true), size: ddv.getUint32(o + 120, true) }); }
+  const wb = ents.find(e => /^(Workbook|Book)$/i.test(e.name));
+  if (!wb) throw anErr('هذا ملف Office قديم لكنه ليس جدول Excel (قد يكون Word .doc) — احفظه بصيغة حديثة (.docx أو .xlsx).');
+  let data;
+  if (wb.size < cutoff) {
+    const root = ents.find(e => e.type === 5), ministream = readChain(root.start), mf = readChain(dv.getUint32(60, true)), mfdv = new DataView(mf.buffer), mfat = [];
+    for (let i = 0; i < mf.length / 4; i++) mfat.push(mfdv.getUint32(i * 4, true));
+    const c = chain(wb.start, mfat); data = new Uint8Array(c.length * mss); c.forEach((s, i) => data.set(ministream.subarray(s * mss, s * mss + mss), i * mss));
+  } else data = readChain(wb.start);
+  data = data.subarray(0, wb.size);
+  const bv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  // records
+  const recs = []; for (let p = 0; p + 4 <= data.length;) { const t = bv.getUint16(p, true), l = bv.getUint16(p + 2, true); recs.push({ t, p: p + 4, l }); p += 4 + l; }
+  // shared strings (SST + CONTINUE)
+  const sst = [];
+  const si = recs.findIndex(r => r.t === 0x00FC);
+  if (si >= 0) {
+    const parts = [recs[si]]; for (let k = si + 1; k < recs.length && recs[k].t === 0x003C; k++) parts.push(recs[k]);
+    let pi = 0, off = parts[0].p + 8, end = parts[0].p + parts[0].l; const total = bv.getUint32(parts[0].p + 4, true);
+    const need = (n) => { if (off + n > end && pi < parts.length - 1) { pi++; off = parts[pi].p; end = parts[pi].p + parts[pi].l; } };
+    for (let s = 0; s < total && pi < parts.length; s++) {
+      need(3); let cc = bv.getUint16(off, true), fl = data[off + 2]; off += 3;
+      let rt = 0, ext = 0; if (fl & 8) { rt = bv.getUint16(off, true); off += 2; } if (fl & 4) { ext = bv.getInt32(off, true); off += 4; }
+      let str = '', wide = fl & 1;
+      while (cc > 0) {
+        if (off >= end) { pi++; if (pi >= parts.length) break; off = parts[pi].p; end = parts[pi].p + parts[pi].l; wide = data[off] & 1; off++; }
+        const avail = wide ? Math.floor((end - off) / 2) : end - off, take = Math.min(cc, avail);
+        str += wide ? new TextDecoder('utf-16le').decode(data.subarray(off, off + take * 2)) : new TextDecoder('latin1').decode(data.subarray(off, off + take));
+        off += take * (wide ? 2 : 1); cc -= take;
+      }
+      let skip = rt * 4 + ext; while (skip > 0) { if (off >= end) { pi++; if (pi >= parts.length) break; off = parts[pi].p; end = parts[pi].p + parts[pi].l; } const t = Math.min(skip, end - off); off += t; skip -= t; }
+      sst.push(str);
+    }
+  }
+  const rk = (v) => { let n; if (v & 2) n = v >> 2; else { const b = new DataView(new ArrayBuffer(8)); b.setUint32(4, v & 0xFFFFFFFC, true); b.setUint32(0, 0, true); n = b.getFloat64(0, true); } return v & 1 ? n / 100 : n; };
+  const xstr = (p) => { const n = bv.getUint16(p, true), w = data[p + 2] & 1; return w ? new TextDecoder('utf-16le').decode(data.subarray(p + 3, p + 3 + n * 2)) : new TextDecoder('latin1').decode(data.subarray(p + 3, p + 3 + n)); };
+  const sheets = recs.filter(r => r.t === 0x0085).map(r => ({ off: bv.getUint32(r.p, true), rows: [] }));
+  const tables = [];
+  let cur = null, pendingFormula = null;
+  for (const r of recs) {
+    if (r.t === 0x0809) { const sh = sheets.find(s => s.off === r.p - 4); cur = sh ? sh.rows : null; continue; }
+    if (!cur) continue;
+    const set = (row, col, v) => { (cur[row] || (cur[row] = []))[col] = v; };
+    if (r.t === 0x000A) { cur = null; continue; }
+    if (r.l < 4) continue;
+    const row = bv.getUint16(r.p, true), col = bv.getUint16(r.p + 2, true);
+    switch (r.t) {
+      case 0x00FD: set(row, col, sst[bv.getUint32(r.p + 6, true)] ?? ''); break;
+      case 0x0203: set(row, col, String(bv.getFloat64(r.p + 6, true))); break;
+      case 0x027E: set(row, col, String(rk(bv.getUint32(r.p + 6, true)))); break;
+      case 0x00BD: { const last = bv.getUint16(r.p + r.l - 2, true); for (let c = col, q = r.p + 4; c <= last; c++, q += 6) set(row, c, String(rk(bv.getUint32(q + 2, true)))); break; }
+      case 0x0204: set(row, col, xstr(r.p + 6)); break;
+      case 0x0205: set(row, col, data[r.p + 7] ? '' : String(data[r.p + 6])); break;
+      case 0x0006: if (bv.getUint16(r.p + 12, true) === 0xFFFF) { if (data[r.p + 6] === 0) pendingFormula = [row, col]; else set(row, col, data[r.p + 6] === 1 ? String(data[r.p + 8]) : ''); } else set(row, col, String(bv.getFloat64(r.p + 6, true))); break;
+      case 0x0207: if (pendingFormula) { set(pendingFormula[0], pendingFormula[1], xstr(r.p)); pendingFormula = null; } break;
+      case 0x000A: cur = null; break;
+    }
+  }
+  sheets.forEach(s => tables.push(Array.from(s.rows, r => Array.from(r || [], x => x ?? '')).filter(r => r.some(x => String(x).trim()))));
+  return tables;
+}
+/* ---------- text-based PDF tables (best effort; scanned PDFs have no text layer) ---------- */
+async function anTablesFromPDF(buf) {
+  const u = new Uint8Array(buf), latin = new TextDecoder('latin1').decode(u);
+  const inflate = async (bytes) => { try { const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate')); return new Uint8Array(await new Response(s).arrayBuffer()); } catch (e) { return null; } };
+  const objs = {};
+  const re = /(\d+)\s+0\s+obj\b/g; let m;
+  while ((m = re.exec(latin))) {
+    const start = m.index + m[0].length, endo = latin.indexOf('endobj', start); if (endo < 0) break;
+    const body = latin.slice(start, endo), si = body.indexOf('stream');
+    const o = { dict: si >= 0 ? body.slice(0, si) : body };
+    if (si >= 0) { let a = start + si + 6; if (latin[a] === '\r') a++; if (latin[a] === '\n') a++; const lm = o.dict.match(/\/Length\s+(\d+)(\s+0\s+R)?/); let e2 = latin.indexOf('endstream', a); while (e2 > a && (latin[e2 - 1] === '\n' || latin[e2 - 1] === '\r')) e2--; let len = lm && !lm[2] ? +lm[1] : e2 - a; o.raw = u.subarray(a, a + len); }
+    objs[m[1]] = o; re.lastIndex = endo;
+  }
+  const streamOf = async (o) => !o || !o.raw ? null : /FlateDecode/.test(o.dict) ? await inflate(o.raw) : o.raw;
+  // object streams (PDF 1.5+)
+  for (const o of Object.values(objs).filter(o => /\/Type\s*\/ObjStm/.test(o.dict))) {
+    const b = await streamOf(o); if (!b) continue; const s = new TextDecoder('latin1').decode(b), n = +(o.dict.match(/\/N\s+(\d+)/) || [])[1], first = +(o.dict.match(/\/First\s+(\d+)/) || [])[1];
+    const hdr = s.slice(0, first).trim().split(/\s+/).map(Number);
+    for (let i = 0; i < n; i++) { const num = hdr[i * 2], off = hdr[i * 2 + 1], nx = i + 1 < n ? hdr[i * 2 + 3] : s.length - first; if (!objs[num]) objs[num] = { dict: s.slice(first + off, first + nx) }; }
+  }
+  const ref = (txt, key) => { const r = txt.match(new RegExp('/' + key + '\\s+(\\d+)\\s+0\\s+R')); return r ? objs[r[1]] : null; };
+  const inlineDict = (txt, key) => { const i = txt.indexOf('/' + key); if (i < 0) return null; let j = txt.indexOf('<<', i); if (j < 0) return null; let d = 0, k = j; for (; k < txt.length; k++) { if (txt.startsWith('<<', k)) { d++; k++; } else if (txt.startsWith('>>', k)) { d--; k++; if (!d) break; } } return txt.slice(j, k + 1); };
+  const cmaps = {};
+  const cmapFor = async (fontObj) => {
+    if (!fontObj) return null; const key = fontObj.dict; if (cmaps[key] !== undefined) return cmaps[key];
+    const tu = ref(fontObj.dict, 'ToUnicode'); let map = null;
+    if (tu) {
+      const b = await streamOf(tu), s = b ? new TextDecoder('latin1').decode(b) : ''; map = { bytes: 1, m: {} };
+      const cs = s.match(/<([0-9a-fA-F]+)>\s*<[0-9a-fA-F]+>\s*endcodespacerange/); if (cs) map.bytes = cs[1].length / 2;
+      const hex2s = (h) => { let out = ''; for (let i = 0; i + 4 <= h.length; i += 4) out += String.fromCharCode(parseInt(h.slice(i, i + 4), 16)); return out; };
+      for (const blk of s.match(/beginbfchar([\s\S]*?)endbfchar/g) || []) for (const p of blk.matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]*)>/g)) map.m[parseInt(p[1], 16)] = hex2s(p[2]);
+      for (const blk of s.match(/beginbfrange([\s\S]*?)endbfrange/g) || []) for (const p of blk.matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*(<([0-9a-fA-F]+)>|\[([^\]]*)\])/g)) {
+        const a = parseInt(p[1], 16), z = parseInt(p[2], 16);
+        if (p[4] !== undefined) { const base = parseInt(p[4].slice(-4), 16), pre = hex2s(p[4].slice(0, -4)); for (let c = a; c <= z && c - a < 5000; c++) map.m[c] = pre + String.fromCharCode(base + c - a); }
+        else { const list = [...p[5].matchAll(/<([0-9a-fA-F]*)>/g)].map(x => hex2s(x[1])); for (let c = a; c <= z; c++) map.m[c] = list[c - a] || ''; }
+      }
+    }
+    cmaps[key] = map; return map;
+  };
+  const runs = [];
+  const pages = Object.values(objs).filter(o => /\/Type\s*\/Page\b/.test(o.dict));
+  if (!pages.length) throw anErr('ملف PDF غير قابل للقراءة.');
+  for (const [pi, pg] of pages.entries()) {
+    let res = ref(pg.dict, 'Resources'); res = res ? res.dict : inlineDict(pg.dict, 'Resources') || '';
+    let fd = ref(res, 'Font'); fd = fd ? fd.dict : inlineDict(res, 'Font') || '';
+    const fonts = {}; for (const f of fd.matchAll(/\/([^\s/<>\[\]]+)\s+(\d+)\s+0\s+R/g)) fonts[f[1]] = objs[f[2]];
+    const cr = pg.dict.match(/\/Contents\s*(\[([^\]]*)\]|(\d+)\s+0\s+R)/); if (!cr) continue;
+    const ids = cr[2] ? [...cr[2].matchAll(/(\d+)\s+0\s+R/g)].map(x => x[1]) : [cr[3]];
+    let content = ''; for (const id of ids) { const b = await streamOf(objs[id]); if (b) content += new TextDecoder('latin1').decode(b) + '\n'; }
+    let font = null, size = 10, tms = 1, tx = 0, ty = 0, lx = 0, ly = 0, lead = 0; const ctm = [1, 0, 0, 1, 0, 0];
+    const toks = content.match(/\((?:\\.|[^\\)])*\)|<[0-9a-fA-F\s]*>|\[|\]|\/[^\s/<>\[\]()]+|-?\d*\.?\d+|[A-Za-z'"*]+/g) || [];
+    const stack = [];
+    const decodeStr = async (t) => {
+      const map = await cmapFor(fonts[font]);
+      let codes = [];
+      if (t[0] === '<') { const h = t.slice(1, -1).replace(/\s/g, ''); const bl = map ? map.bytes : 1; for (let i = 0; i < h.length; i += bl * 2) codes.push(parseInt(h.slice(i, i + bl * 2), 16)); }
+      else { const s = t.slice(1, -1).replace(/\\([nrtbf()\\]|[0-7]{1,3})/g, (x, c) => /[0-7]/.test(c) ? String.fromCharCode(parseInt(c, 8)) : ({ n: '\n', r: '\r', t: '\t', b: '\b', f: '\f' }[c] || c)); const bl = map ? map.bytes : 1; for (let i = 0; i < s.length; i += bl) codes.push(bl === 2 ? (s.charCodeAt(i) << 8) | s.charCodeAt(i + 1) : s.charCodeAt(i)); }
+      return codes.map(c => map && map.m[c] !== undefined ? map.m[c] : (map && map.bytes === 2 ? '' : String.fromCharCode(c))).map(x => x.replace(/[\u0000-\u001F]/g, ''));
+    };
+    const fixOrder = (g) => {
+      // PDFs store Arabic glyphs in visual order: restore logical order, keeping digit/Latin sequences left-to-right
+      const ar = g.filter(x => /[\u0600-\u06FF\uFB50-\uFEFF]/.test(x)).length;
+      if (!ar || ar < g.filter(x => /[A-Za-z]/.test(x)).length) return g.join('');
+      const out = []; let buf = [];
+      const flush = () => { if (buf.length) { out.push(...buf.reverse()); buf = []; } };
+      for (const x of [...g].reverse()) { if (/^[0-9A-Za-z.,%:\/+\-]+$/.test(x)) buf.push(x); else { flush(); out.push(x); } }
+      flush(); return out.join('');
+    };
+    for (const t of toks) {
+      if (t === 'Tf') { size = Math.abs(+stack.pop()) || size; font = (stack.pop() || '').slice(1); stack.length = 0; }
+      else if (t === 'Tm') { const v = stack.splice(-6).map(Number); tx = lx = v[4]; ty = ly = v[5]; tms = Math.abs(v[3]) || 1; stack.length = 0; }
+      else if (t === 'Td' || t === 'TD') { const [a, b] = stack.splice(-2).map(Number); lx += a; ly += b; tx = lx; ty = ly; if (t === 'TD') lead = -b; stack.length = 0; }
+      else if (t === 'TL') { lead = +stack.pop(); stack.length = 0; }
+      else if (t === 'T*') { ly -= lead; tx = lx; ty = ly; }
+      else if (t === 'BT') { tx = lx = 0; ty = ly = 0; stack.length = 0; }
+      else if (t === 'cm') { const v = stack.splice(-6).map(Number); ctm.splice(0, 6, ...v); stack.length = 0; }
+      else if (t === 'Tj' || t === "'" || t === '"') { if (t !== 'Tj') { ly -= lead; tx = lx; ty = ly; } const s = stack.pop(); if (s) { const txt = fixOrder(await decodeStr(s)); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; } stack.length = 0; }
+      else if (t === 'TJ') { let i = stack.lastIndexOf('['), arr = stack.splice(i); let gl = []; for (const a of arr.slice(1)) { if (a[0] === '(' || a[0] === '<') gl.push(...await decodeStr(a)); else if (+a < -180) gl.push(' '); } const txt = fixOrder(gl); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; stack.length = 0; }
+      else if (/^[A-Za-z'"*]+$/.test(t) && t !== 'true' && t !== 'false' && t !== 'null') stack.length = 0;
+      else stack.push(t);
+    }
+  }
+  const clean = runs.map(r => ({ ...r, t: r.t.normalize('NFKC').replace(/\s+/g, ' ').trim() })).filter(r => r.t);
+  if (!clean.length) throw anErr('ملف PDF لا يحتوي نصًا قابلًا للاستخراج (غالبًا صورة ممسوحة ضوئيًا أو تقرير مصوّر) — ارفع الجدول الأصلي بصيغة Excel أو CSV.');
+  // group runs into lines, merge runs that belong to the same cell, then order RTL/LTR
+  const lines = [];
+  clean.sort((a, b) => a.pg - b.pg || b.y - a.y || a.x - b.x).forEach(r => { const L = lines.find(l => l.pg === r.pg && Math.abs(l.y - r.y) < r.sz * 0.45); if (L) L.r.push(r); else lines.push({ pg: r.pg, y: r.y, r: [r] }); });
+  const rtl = clean.filter(r => /[\u0600-\u06FF]/.test(r.t)).length > clean.length / 3;
+  const cellRows = lines.map(l => { const rr = l.r.sort((a, b) => a.x - b.x), cells = []; let last = null; for (const r of rr) { const w = r.t.length * r.sz * 0.5; if (last && r.x - (last.x + last.w) < r.sz * 0.9) { last.parts.push(r.t); last.w = r.x + w - last.x; } else { last = { x: r.x, w, parts: [r.t] }; cells.push(last); } } return cells; });
+  const widths = {}; cellRows.forEach(c => { if (c.length >= 2) widths[c.length] = (widths[c.length] || 0) + 1; });
+  const modal = Object.entries(widths).sort((a, b) => b[1] - a[1] || b[0] - a[0])[0];
+  if (!modal) throw anErr('لم يُعثر على جدول في ملف PDF — يبدو نصًا عاديًا وليس جدول بيانات.');
+  const W = +modal[0], refRows = cellRows.filter(c => c.length === W);
+  const centers = Array.from({ length: W }, (_, k) => st.mean(refRows.map(c => c[k].x + c[k].w / 2)));
+  const out = [];
+  for (const cells of cellRows) {
+    if (cells.length < Math.max(2, W - 2) || cells.length > W + 3) continue;
+    const slots = Array.from({ length: W }, () => []);
+    if (cells.length === W) cells.forEach((c, i) => slots[i].push(c)); else cells.forEach(c => { const mid = c.x + c.w / 2; let k = 0; centers.forEach((cx, i) => { if (Math.abs(cx - mid) < Math.abs(centers[k] - mid)) k = i; }); slots[k].push(c); });
+    const row = slots.map(sl => { const parts = sl.flatMap(c => c.parts); const ar = /[\u0600-\u06FF]/.test(parts.join('')); return (ar ? sl.sort((a, b) => b.x - a.x) : sl.sort((a, b) => a.x - b.x)).map(c => (ar ? [...c.parts].reverse() : c.parts).join(' ')).join(' ').replace(/\s*_\s*/g, '_').replace(/^_|_$/g, '').trim(); });
+    out.push(rtl ? row.reverse() : row);
+  }
+  return [out];
+}
+async function anRowsFromBuffer(name, buf, depth = 0) {
+  const u = new Uint8Array(buf), head = new TextDecoder('latin1').decode(u.subarray(0, 8));
+  if (head.startsWith('PK')) {
+    const z = await anUnzip(buf), keys = Object.keys(z);
+    if (keys.some(k => /^xl\/workbook\.xml$/i.test(k))) return anParseXLSX(buf);
+    if (keys.some(k => /^content\.xml$/i.test(k))) return anBestTable(await anTablesFromODS(z));
+    if (keys.some(k => /^word\/document\.xml$/i.test(k))) { const t = anBestTable(await anTablesFromOOXMLDoc(z, 'docx')); if (!t) throw anErr('مستند Word لا يحتوي جدولًا — أضف الأرقام في جدول داخل المستند أو ارفعها بصيغة Excel.'); return t; }
+    if (keys.some(k => /^ppt\/slides\//i.test(k))) { const t = anBestTable(await anTablesFromOOXMLDoc(z, 'pptx')); if (!t) throw anErr('العرض التقديمي لا يحتوي جدولًا.'); return t; }
+    if (depth < 2) { const inner = keys.filter(k => AN_DATA_RE.test(k) && !/__MACOSX/.test(k)).sort((a, b) => (/\.(csv|xlsx?)$/i.test(b) - /\.(csv|xlsx?)$/i.test(a))); for (const k of inner) { try { return await anRowsFromBuffer(k, (await anInflate(z[k])).slice().buffer, depth + 1); } catch (e) {} } }
+    throw anErr('الملف المضغوط لا يحتوي ملف بيانات قابلًا للقراءة.');
+  }
+  if (u[0] === 0xD0 && u[1] === 0xCF && u[2] === 0x11 && u[3] === 0xE0) return anBestTable(anParseXLS(buf));
+  if (head.startsWith('%PDF')) return anBestTable(await anTablesFromPDF(buf));
+  const kind = AN_KIND.find(([r]) => r.test(name));
+  if (kind || /^(\x89PNG|GIF8|\xFF\xD8\xFF|RIFF|ID3|\x00\x00\x00)/.test(head)) throw anErr(`«${name}» ${kind ? kind[1] : 'ملف وسائط'} ولا يحتوي جدول أرقام يمكن تحليله. قُبل الملف، لكن التحليل الفعلي يحتاج جدول بيانات (Excel أو CSV أو جدول داخل Word أو PDF نصي). يمكنك إرفاقه في «طلب تحليل بيانات» ليراجعه المحلل.`);
+  const text = anDecodeText(buf), t = text.trimStart();
+  if (/\.json$|\.geojson$/i.test(name) || /^[\[{]/.test(t)) return anBestTable(anTablesFromJSON(text));
+  if (/\.html?$/i.test(name) || /^<!doctype html|^<html|<table[\s>]/i.test(t)) { const r = anBestTable(anTablesFromHTML(text)); if (r) return r; }
+  if (/\.xml$/i.test(name) || /^<\?xml|^</.test(t)) { if (/<Workbook[\s\S]*urn:schemas-microsoft-com:office:spreadsheet/.test(t.slice(0, 3000))) return anBestTable(anEls(anXml(text), 'Table').map(tb => anEls(tb, 'Row').map(r => anEls(r, 'Data').map(d => d.textContent)))); return anBestTable(anTablesFromXML(text)); }
+  if (text.includes('\u0000')) throw anErr(`لا يمكن قراءة «${name}» كجدول بيانات — صيغة غير معروفة. احفظه بصيغة Excel أو CSV.`);
+  return anParseText(text);
+}
+async function anReadFile(file) {
+  const name = file.name || 'data';
+  const rows = await anRowsFromBuffer(name, await file.arrayBuffer());
+  if (!rows || rows.length < 3) throw anErr(`لم يُعثر على جدول بيانات كافٍ في «${name}» — يلزم صف عناوين وصفّان على الأقل.`);
+  return { name, rows };
+}
+</script>

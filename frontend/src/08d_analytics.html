@@ -92,13 +92,6 @@ async function anParseXLSX(buf) {
   let h = 0; while (h < best.rows.length - 2 && best.rows[h].filter(x => String(x).trim()).length < 2) h++;
   return best.rows.slice(h);
 }
-async function anReadFile(file) {
-  const name = file.name || 'data';
-  if (/\.xlsx$/i.test(name)) return { name, rows: await anParseXLSX(await file.arrayBuffer()) };
-  if (/\.(csv|txt|tsv)$/i.test(name)) { const buf = await file.arrayBuffer(); let t = new TextDecoder('utf-8').decode(buf); if (t.includes('\uFFFD')) { try { t = new TextDecoder('windows-1256').decode(buf); } catch (e) {} } return { name, rows: anParseCSV(t) }; }
-  if (/\.xls$/i.test(name)) throw new Error('صيغة .xls القديمة غير مدعومة — احفظ الملف بصيغة .xlsx أو CSV.');
-  throw new Error('اختر ملف بيانات بصيغة CSV أو Excel (.xlsx).');
-}
 
 /* ---------- table model ---------- */
 function anTable(rows) {

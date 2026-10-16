@@ -17,7 +17,9 @@ const STATUSES = {
   new: 'جديد', collecting: 'جمع البيانات', ready: 'جاهز للتحليل', analyzing: 'قيد التحليل',
   review: 'قيد المراجعة', done: 'مكتمل', rejected: 'مرفوض'
 };
-const FILE_EXT = new Set(['xlsx', 'xls', 'csv', 'pdf', 'png', 'jpg', 'jpeg', 'docx']);
+// Any document or data file is accepted; executables and scripts are refused. Downloads are always
+// served as attachments with nosniff, so no uploaded file can run in the browser.
+const BLOCKED_EXT = new Set(['exe', 'msi', 'bat', 'cmd', 'com', 'scr', 'pif', 'ps1', 'vbs', 'vbe', 'js', 'mjs', 'jse', 'wsf', 'wsh', 'sh', 'bash', 'jar', 'apk', 'app', 'dll', 'sys', 'lnk', 'reg', 'hta', 'cpl', 'msp', 'gadget', 'php', 'asp', 'aspx', 'jsp', 'cgi', 'pl', 'py', 'rb', 'svg', 'html', 'htm', 'xhtml', 'shtml', 'swf']);
 const VIDEO_EXT = new Set(['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv']);
 const INLINE_VIDEO = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 const MIME_BY_EXT = { xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv', pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
@@ -54,14 +56,14 @@ module.exports = (r) => {
     const kind = req.headers['x-upload-kind'] === 'video' ? 'video' : 'file';
     let name; try { name = safeName(decodeURIComponent(String(req.headers['x-file-name'] || ''))); } catch (_) { name = 'file'; }
     const ext = extOf(name);
-    if (kind === 'video' ? !VIDEO_EXT.has(ext) : !FILE_EXT.has(ext)) throw bad('file_type', kind === 'video' ? 'صيغة الفيديو غير مدعومة (MP4, MOV, WEBM, M4V, AVI, MKV).' : 'صيغة الملف غير مدعومة (Excel, CSV, PDF, Word, صور).');
+    if (kind === 'video' ? !VIDEO_EXT.has(ext) : BLOCKED_EXT.has(ext)) throw bad('file_type', kind === 'video' ? 'صيغة الفيديو غير مدعومة (MP4, MOV, WEBM, M4V, AVI, MKV).' : 'لا تُقبل الملفات التنفيذية أو البرمجية لأسباب أمنية. احفظ صفحات HTML بصيغة PDF أو Excel.');
     const max = kind === 'video' ? config.limits.videoBytes : config.limits.fileBytes;
     const declared = parseInt(req.headers['content-length'] || '0', 10);
     if (declared > max) throw new HttpError(413, 'too_large', `الحجم الأقصى ${Math.round(max / 1048576)} MB.`);
 
     fs.mkdirSync(uploadDir(), { recursive: true });
     const id = crypto.randomUUID();
-    const stored = id + '.' + ext;
+    const stored = id + '.' + (ext || 'bin');
     const target = path.join(uploadDir(), stored);
     const hash = crypto.createHash('sha256');
     let size = 0;

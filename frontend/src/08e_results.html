@@ -4,7 +4,7 @@
 let AN = null;          // runtime: { T: table, R: anRun result, err }
 let AN_PENDING = null;  // data file captured from the last submitted request { file, types, capex, currency, ref }
 const AN_SRC = { sample: 'بيانات تجريبية', upload: 'ملف مرفوع', request: 'مرفق طلب تحليل' };
-const AN_DATA_RE = /\.(csv|xlsx|tsv|txt)$/i;
+let AN_MSG = null;     // last file-reading message shown on the page { t: 'warn'|'ok', m }
 
 function anRowsToCSV(rows) { return rows.map(r => r.map(v => { v = String(v ?? ''); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\n'); }
 function anCompute() {
@@ -33,14 +33,15 @@ function anLoad(rows, name, kind, opt = {}) {
 }
 async function anLoadFile(file, opt = {}) {
   if (!file) return;
-  if (file.size > 15 * 1048576) { toast('الملف أكبر من 15MB — قسّمه أو احفظه CSV'); return; }
-  toast('جارٍ قراءة البيانات…');
+  if (file.size > 40 * 1048576) { AN_MSG = { t: 'warn', m: `«${file.name}» أكبر من 40MB — قسّمه أو صدّر الجدول المطلوب فقط.` }; if (S.route !== 'results') go('results'); else render(); return; }
+  toast('جارٍ قراءة «' + (file.name || 'الملف') + '»…');
   try {
     const { name, rows } = await anReadFile(file);
     const T = anLoad(rows, name, opt.ref ? 'request' : 'upload', opt);
+    AN_MSG = { t: 'ok', m: `قُرئ «${name}»: ${T.n} سجل و${T.cols.length} أعمدة.` };
     toast(`قُرئ ${T.n} سجل · ${T.cols.length} عمود`);
     if (S.route !== 'results') go('results'); else { render(); window.scrollTo(0, 0); }
-  } catch (e) { console.error(e); toast(e && e.message ? e.message : 'تعذّرت قراءة الملف'); }
+  } catch (e) { console.error(e); AN_MSG = { t: 'warn', m: e && e.friendly ? e.message : `تعذّرت قراءة «${file.name}» كجدول بيانات${e && e.message ? ' (' + e.message + ')' : ''}. جرّب حفظه بصيغة Excel أو CSV.` }; toast('تعذّر استخراج جدول من الملف'); if (S.route !== 'results') go('results'); else render(); }
 }
 function anCapture(r, ref) {
   const f = (r.files || []).find(x => AN_DATA_RE.test(x.n) && RQ_FILE_OBJ[x.key]);
@@ -111,15 +112,17 @@ VIEWS.results = () => {
   const exp = R ? `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button></div>` : '';
   const head = `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">DIA-ANALYSIS · محسوبة من بياناتك مباشرة</span>${exp}</div>
     <h2 class="title-xl" style="font-size:24px">نتائج التحليل الفعلية</h2>
-    <p class="lead" style="font-size:14px;line-height:1.8">ارفع ملف بيانات (CSV أو Excel) فيحسب النظام أنواع التحليل العشرة من أرقامك: الإحصاءات، والعوامل المرتبطة بالتغير، والتنبؤ، والسيناريوهات، والجدوى، والمخاطر، والفرص، والإجراءات، والمقارنة، وقياس الأثر. الشروحات مولّدة من الأرقام بقواعد ثابتة، وكل رقم قابل للتتبع إلى البيانات.</p></section>`;
+    <p class="lead" style="font-size:14px;line-height:1.8">ارفع أي ملف يحتوي جدول بيانات (Excel أو CSV أو PDF أو Word أو JSON وغيرها) فيحسب النظام أنواع التحليل العشرة من أرقامك: الإحصاءات، والعوامل المرتبطة بالتغير، والتنبؤ، والسيناريوهات، والجدوى، والمخاطر، والفرص، والإجراءات، والمقارنة، وقياس الأثر. الشروحات مولّدة من الأرقام بقواعد ثابتة، وكل رقم قابل للتتبع إلى البيانات.</p></section>`;
   const src = `<section class="card" style="gap:12px">
     <div class="row between"><h2 class="h-sec">مصدر البيانات</h2>${r ? `<span class="chip" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.src.name)}</span>` : ''}</div>
     <div class="row" style="gap:8px">
-      <label class="btn primary" style="cursor:pointer;position:relative">${ic('clip', 16)}${r ? 'رفع ملف آخر' : 'رفع ملف CSV أو Excel'}<input type="file" data-an-upload="1" accept=".csv,.xlsx,.tsv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer"></label>
+      <label class="btn primary" style="cursor:pointer;position:relative">${ic('clip', 16)}${r ? 'رفع ملف آخر' : 'رفع ملف بيانات — أي صيغة'}<input type="file" data-an-upload="1" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer"></label>
       <button type="button" class="btn" data-act="an-sample">${ic('play', 16)}تشغيل على بيانات تجريبية</button>
       <button type="button" class="btn link" data-act="an-sample-dl">تنزيل ملف العينة</button>
       ${r ? '<button type="button" class="btn link" data-act="an-reset">مسح</button>' : ''}
     </div>
+    ${AN_MSG ? `<div class="banner ${AN_MSG.t === 'ok' ? 'g' : 'y'}" style="font-size:13px">${ic(AN_MSG.t === 'ok' ? 'check' : 'warn', 16)}<span style="flex:1">${esc(AN_MSG.m)}</span><button type="button" class="btn link sm" data-act="an-msg-x" aria-label="إغلاق">✕</button></div>` : ''}
+    <span class="faint" style="font-size:11.5px">يقبل أي ملف ويستخرج الجدول تلقائيًا من: Excel (.xlsx و.xls القديم) · CSV/TSV/TXT · OpenDocument (.ods) · JSON · XML · HTML · جداول Word وPowerPoint · PDF النصي · ملفات ZIP. الصور والفيديو والصوت تُقبل وتُوضَّح لكنها لا تحتوي جدول أرقام.</span>
     ${r ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${[['المصدر', AN_SRC[r.src.kind] + (r.src.ref ? ' · ' + r.src.ref : '')], ['السجلات', fmtN(r.src.n, 0)], ['الأعمدة', has ? AN.T.cols.length : '—'], ['وقت التشغيل', r.src.at]].map(([l, v]) => `<div class="sub" style="background:var(--sunk);gap:3px"><span class="lbl">${l}</span><b style="font-size:13.5px">${esc(v)}</b></div>`).join('')}</div>` : ''}
     ${r && !has ? `<div class="banner y" style="font-size:13px">${ic('warn', 16)}<span>${r.big ? 'الملف كبير فلم يُحفظ في المتصفح بعد إغلاق الصفحة' : 'تعذّر استرجاع البيانات'} — أعد رفع الملف لعرض النتائج.</span></div>` : ''}
     ${!r ? `<div class="sub" style="gap:6px"><b style="font-size:13px">شكل الملف المناسب</b>
@@ -187,7 +190,8 @@ function analyticsHandle(act, k, el) {
   switch (act) {
     case 'an-sample': { const T = anLoad(anParseCSV(anSampleCSV()), 'بيانات_تجريبية_الفروع.csv', 'sample'); toast(`شُغّل التحليل على ${T.n} سجل تجريبي`); if (S.route !== 'results') go('results'); else render(); return true; }
     case 'an-sample-dl': saveFile('NAIOSH_sample_data.csv', new Blob(['﻿' + anSampleCSV()], { type: 'text/csv;charset=utf-8' })); return true;
-    case 'an-reset': S.res = null; AN = null; render(); toast('مُسحت بيانات التحليل'); return true;
+    case 'an-msg-x': AN_MSG = null; render(); return true;
+    case 'an-reset': AN_MSG = null; S.res = null; AN = null; render(); toast('مُسحت بيانات التحليل'); return true;
     case 'an-type': { const t = S.res.cfg.types, i = t.indexOf(k); if (i >= 0) { if (t.length === 1) { toast('اختر نوع تحليل واحدًا على الأقل'); return true; } t.splice(i, 1); } else t.push(k); anCompute(); render(); return true; }
     case 'an-all': S.res.cfg.types = S.res.cfg.types.length === AN_TYPES.length ? ['desc'] : AN_TYPES.map(t => t[0]); anCompute(); render(); return true;
     case 'an-focus': S.res.cfg.focus = k || 'all'; anCompute(); render(); window.scrollTo(0, 0); return true;

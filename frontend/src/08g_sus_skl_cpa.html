@@ -350,6 +350,6 @@ function engSections2(code) {
     if (aud === 'counsel') return { title: 'تقرير المرشد الأكاديمي — سري', audience: 'المرشد الأكاديمي', ref: 'DIA-CPA-COUNSELOR', sections: base.concat([{ h: 'التعارضات', bullets: m.conf.length ? m.conf : ['لا تعارضات جوهرية'] }, { h: 'مؤشرات تستدعي مقابلة خاصة', bullets: m.priv.length ? m.priv : ['لا شيء'] }, { h: 'ثقة التحليل', text: fmtN(m.confPct, 0) + '% — الأوزان اقتراح تصميمي يحتاج معايرة.' }]) };
     return { title: 'تقرير الأسرة — المسار الجامعي', audience: 'الأسرة', ref: 'DIA-CPA-FAMILY', sections: [{ h: 'التخصصات المقترحة للاستكشاف معًا', bullets: top.slice(0, 3).map(r => r.n + ' — ' + (r.why.join('، ') || 'توافق متعدد الأبعاد')) }, { h: 'كيف تدعمون القرار', bullets: ['التوازن بين الرغبة والقدرة والفرص أهم من مكانة التخصص وحدها', 'تشجيع تجربة دورة قصيرة أو زيارة جامعية', 'الاستماع لأسباب الاختيار دون حكم مسبق', 'مراجعة شروط القبول والتكلفة والمنح معًا'] }, { h: 'الخصوصية', text: 'لا يتضمن هذا التقرير الإجابات الشخصية الحساسة للطالب.' }] };
   }
-  return null;
+  return typeof engSections3 === 'function' ? engSections3(code) : null;
 }
 </script>
