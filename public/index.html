@@ -3944,6 +3944,14 @@ document.addEventListener('input', (e) => {
 .dz-tab{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-height:38px;padding:0 13px;border-radius:10px;background:var(--raised);border:1px solid var(--line2);color:var(--soft);font-size:12.5px}
 .dz-tab[aria-pressed="true"]{background:color-mix(in srgb,var(--acc) 16%,var(--raised));border-color:var(--acc);color:var(--fg);font-weight:600}
 .dz-tab.add{border-style:dashed;color:var(--muted)}
+.dz-boxes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.dz-box{position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 13px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);text-align:right;color:var(--fg);min-width:0;cursor:pointer;transition:border-color .15s,transform .15s}
+.dz-box:hover{border-color:var(--line3);transform:translateY(-1px)}
+.dz-box[aria-pressed="true"]{border-color:var(--acc);background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 12%,var(--surface)),var(--surface) 75%)}
+.dz-box .bv{font-family:var(--f-display);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
+.dz-box .bt{font-size:11.5px;line-height:1.6;color:var(--soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dz-box .st{position:absolute;inset-inline-end:12px;top:14px;width:8px;height:8px;border-radius:4px}
+.dz-req{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--redbg);color:var(--redsoft);border:1px solid var(--redline)}
 .dz-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .dz-tools select{min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:0 8px;max-width:160px;font-size:12.5px}
 .dz-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
@@ -3991,10 +3999,13 @@ document.addEventListener('input', (e) => {
 details.dz-more>summary{list-style:none;cursor:pointer}
 details.dz-more>summary::-webkit-details-marker{display:none}
 @media (max-width:1250px){
+  .dz-boxes{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
   .dz-p.s3,.dz-p.s4,.dz-p.s5,.dz-p.s8{grid-column:span 6}
   .dz-pick{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dz-pick>.dz-col:last-child{grid-column:1/-1}
 }
 @media (max-width:760px){
+  .dz-boxes{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dz-box .bv{font-size:17px}
   .dz-p.s3,.dz-p.s4,.dz-p.s5,.dz-p.s6,.dz-p.s8{grid-column:span 12}
   .dz-pick{grid-template-columns:minmax(0,1fr)}
   .dz-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -4069,8 +4080,10 @@ anLoad = function (rows, name, kind, opt = {}) {
   const T = _dzLoad(rows, name, kind, o);
   const ids = o.systems && o.systems.length ? dashTopicsOfSystems(o.systems) : (P.sys || []);
   const topic = o.topic || (o.systems && o.systems.length ? (ids.find(i => i !== 'ext') || ids[0]) : P.topic) || null;
-  Object.assign(S.res, { topic, sys: ids, title: o.title || (o.ref ? '' : P.title) || '', tab: S.res.cfg.types[0] });
-  if (o.systems) S.anPick = { topic, sys: ids, types: [...S.res.cfg.types], ref: o.ref || '', title: o.title || '' };
+  const all = AN_TYPES.map(t => t[0]), req = (o.types || []).filter(t => all.includes(t));
+  Object.assign(S.res, { topic, sys: ids, title: o.title || (o.ref ? '' : P.title) || '', req, tab: req[0] || 'desc' });
+  S.res.cfg.types = all;
+  if (o.systems) S.anPick = { topic, sys: ids, types: [...req], ref: o.ref || '', title: o.title || '' };
   dashApplyTopic();
   return T;
 };
@@ -4166,6 +4179,30 @@ function dashParts(id) {
   return { head, rest, tone, big, v1, v2, usesTrend, usesDrivers };
 }
 
+/* ---------- all ten analysis types as boxes, each with its live answer ---------- */
+const DZ_KEY = { desc: 'التغير الأخير', diag: 'التغير', pred: 0, fore: 0, feas: 0, risk: 'احتمال النزول تحت الحد', opp: 'أكبر أثر تقديري', presc: 'الفجوة', cmp: 'الأفضل', imp: 'الأثر' };
+function dzBoxes(R, r) {
+  const req = r.req || [], order = req.concat(AN_TYPES.map(t => t[0]).filter(id => !req.includes(id)));
+  return `<div class="dz-boxes" role="tablist" aria-label="أنواع التحليل">${order.map(id => {
+    const t = dzType(id), o = R.out[id]; let val = '—', vl = '', tone = '', line = o ? dzSplit(o.summary)[0] : 'لا تتوفر بيانات كافية لهذا النوع.';
+    if (o) {
+      const k = o.kpis || [], key = DZ_KEY[id];
+      let kk = typeof key === 'number' ? k[key] : k.find(x => x[0] === key);
+      if (id === 'feas') { const f = anFeasCalc(o.feas); kk = ['صافي القيمة الحالية', fmtN(f.NPV, 0), f.ok ? 'good' : 'bad']; line = (f.ok ? '✓ مجدٍ اقتصاديًا' : '✕ غير مجدٍ') + (isFinite(f.irr) ? ' · العائد ' + fmtN(f.irr, 1) + '%' : '') + (f.pay !== null ? ' · الاسترداد ' + fmtN(f.pay, 1) + ' سنة' : ''); }
+      if (id === 'imp') { const m = Object.fromEntries(k.map(x => [x[0], x[1]])), ch = pctCh(anNum(m['قبل']), anNum(m['بعد'])); kk = ['التغير بعد التدخل', fmtP(ch), ch < 0 ? 'bad' : 'good']; }
+      if (id === 'risk' && kk) kk = [kk[0], kk[1], anNum(kk[1]) > 30 ? 'bad' : 'good'];
+      if (!kk && k.length) kk = k[0];
+      if (kk) { vl = kk[0]; val = kk[1]; tone = kk[2] || ''; }
+    }
+    const dot = tone === 'good' ? 'var(--green)' : tone === 'bad' ? 'var(--red)' : 'var(--line3)';
+    return `<button type="button" class="dz-box" role="tab" data-act="an-dz-tab" data-k="${id}" aria-pressed="${id === r.tab}" style="--acc:${dashTopic(r.topic).acc}">
+      <span class="st" style="background:${dot}" aria-hidden="true"></span>
+      <span class="row nowrap" style="gap:7px;min-width:0;padding-inline-end:16px"><span style="color:var(--yellow);flex-shrink:0">${ic(t.icon, 16)}</span><b style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.label)}</b>${req.includes(id) ? '<span class="dz-req">مطلوب</span>' : ''}</span>
+      <span class="faint" style="font-size:11px;margin-top:-3px">${esc(t.q || '')}</span>
+      <span class="stack" style="gap:0"><span class="bv" dir="auto" style="color:${anTone(tone)}">${esc(String(val))}</span><span class="faint" style="font-size:10.5px">${esc(vl)}</span></span>
+      <span class="bt">${anRich(line)}</span></button>`;
+  }).join('')}</div>`;
+}
 /* ---------- picker: topic → analysis type → data, side by side ---------- */
 function dashPicker(mode) {
   const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] });
@@ -4190,7 +4227,7 @@ function dashPicker(mode) {
       ${P.ref && mode !== 'change' ? `<span class="chip">${ic('request', 13)}من طلب ${esc(P.ref)}${P.title ? ' — ' + esc(P.title) : ''}</span>` : ''}</div>
     <div class="dz-pick">
       <section class="dz-col ${tp ? 'on' : ''}">${step(1, !!tp, 'اختر الموضوع', tp ? esc(tp.name) : 'النظام الذي جاءت منه البيانات')}${topics}</section>
-      <section class="dz-col ${nT ? 'on' : ''}">${step(2, nT > 0, 'اختر نوع التحليل', nT ? nT + ' مختار' : 'واحد أو أكثر — بدون اختيار تُشغَّل العشرة')}${types}</section>
+      <section class="dz-col ${nT ? 'on' : ''}">${step(2, nT > 0, 'ما الذي يهمك أولًا؟', nT ? nT + ' مختار — يظهر أولًا ويُعلَّم «مطلوب»' : 'الأنواع العشرة تُحسب دائمًا — اختر ما تريد إبرازه')}${types}</section>
       <section class="dz-col">${data}</section>
     </div></div>`;
 }
@@ -4214,7 +4251,7 @@ function dashBody(p) {
       <span style="font-size:11.5px;color:var(--acc);font-weight:600">لوحة ${esc(tp.name)}</span>
       <h2 class="dz-title" title="${esc(r.title || tp.q)}">${esc(r.title || tp.q)}</h2>
       <span class="dz-meta" title="${esc(r.src.name)}">${esc(r.src.name)} · ${fmtN(r.src.n, 0)} سجل · ${c.n} فترة${r.src.ref ? ' · ' + esc(r.src.ref) : ''}</span></div></div>
-    <div class="dz-tabs" role="tablist" aria-label="نوع التحليل">${cfg.types.map(id => { const t = dzType(id); return `<button type="button" class="dz-tab" role="tab" data-act="an-dz-tab" data-k="${id}" aria-pressed="${id === r.tab}">${ic(t.icon, 15)}${esc(t.label)}</button>`; }).join('')}<button type="button" class="dz-tab add" data-act="an-dz-open">+ نوع أو موضوع</button></div>
+    <button type="button" class="btn sm" data-act="an-dz-open" style="margin-inline-start:auto">${ic('settings', 14)}تغيير الموضوع</button>
     <div class="dz-tools">
       <span class="row nowrap" style="gap:6px" title="${esc(c.gate[1])}">${dzRing(c.conf, gateCol, 44)}<span class="faint" style="font-size:11px;line-height:1.3">الثقة</span></span>
       ${groups.length ? `<select data-an-cfg="focus" aria-label="نطاق التحليل"><option value="all">${esc('كل ' + (cfg.group || 'الوحدات'))}</option>${groups.map(g => `<option value="${esc(g)}" ${focus === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''}
@@ -4262,7 +4299,7 @@ function dashBody(p) {
   const grid = `<div class="dz-grid">${rowA.join('')}${rowB.map(x => dzPanel(span, x.t, x.n, x.h)).join('')}</div>`;
   const full = S.dzFull ? `<div class="row between" style="gap:10px;margin-top:8px"><h2 class="h-sec" style="font-size:17px">التقرير الكامل</h2><button type="button" class="btn link sm" data-act="an-dz-full">إخفاء ▴</button></div>
     <details class="dz-more card" id="dz-setup" style="gap:0" ${S.dzSetup ? 'open' : ''}><summary class="row between" style="gap:10px"><b style="font-size:14px">${ic('settings', 15)} مصدر البيانات وإعداد التحليل</b><span class="faint" style="font-size:12px">المؤشر المستهدف، الأعمدة، الأنواع ▾</span></summary><div class="stack" style="gap:12px;margin-top:12px">${p.src}${p.conf}</div></details>${p.secs}` : '';
-  return `<div class="dz-wrap">${bar}${kpiNote}<div class="dz-kpis">${tiles}</div>${grid}${full}</div>`;
+  return `<div class="dz-wrap">${bar}${kpiNote}<div class="dz-kpis">${tiles}</div>${dzBoxes(R, r)}<div class="dz-ph" style="margin-top:4px"><b style="font-size:15px">${ic(tl.icon, 16)} تفاصيل: ${esc(tl.label)}</b><span>${esc(tl.q || '')}</span></div>${grid}${full}</div>`;
 }
 VIEWS.results = dashView;
 
@@ -4271,13 +4308,13 @@ function dashHandle(act, k) {
   switch (act) {
     case 'an-dz-topic': { const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] }); P.topic = P.topic === k ? null : k; render(); return true; }
     case 'an-dz-type': { const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] }); const i = P.types.indexOf(k); if (i >= 0) P.types.splice(i, 1); else P.types.push(k); render(); return true; }
-    case 'an-dz-open': { const r = S.res; S.anPick = { ...(S.anPick || {}), topic: r ? r.topic : null, sys: r ? r.sys || [] : [], types: r ? [...r.cfg.types] : [] }; S.anPickOpen = true; render(); window.scrollTo(0, 0); return true; }
+    case 'an-dz-open': { const r = S.res; S.anPick = { ...(S.anPick || {}), topic: r ? r.topic : null, sys: r ? r.sys || [] : [], types: r ? [...(r.req || [])] : [] }; S.anPickOpen = true; render(); window.scrollTo(0, 0); return true; }
     case 'an-dz-close': S.anPickOpen = false; render(); return true;
     case 'an-dz-apply': {
       const r = S.res, P = S.anPick || {}; if (!r) return true;
       const valid = AN_TYPES.map(t => t[0]), ty = (P.types || []).filter(t => valid.includes(t));
-      r.topic = P.topic || null; r.cfg.types = ty.length ? ty : valid; r.tab = r.cfg.types[0]; S.anPickOpen = false;
-      dashApplyTopic(); log('د. عدنان', `عرض لوحة «${dashTopic(r.topic).name}» — ${r.cfg.types.map(t => dzType(t).label).join('، ')}`); render(); window.scrollTo(0, 0); return true;
+      r.topic = P.topic || null; r.req = ty; r.cfg.types = valid; r.tab = ty[0] || r.tab || 'desc'; S.anPickOpen = false;
+      dashApplyTopic(); log('د. عدنان', `عرض لوحة «${dashTopic(r.topic).name}»${ty.length ? ' — المطلوب: ' + ty.map(t => dzType(t).label).join('، ') : ''}`); render(); window.scrollTo(0, 0); return true;
     }
     case 'an-dz-tab': if (S.res) { S.res.tab = k; render(); } return true;
     case 'an-dz-target': if (S.res && k) { S.res.cfg.target = k; anCompute(); render(); toast('محور التحليل: «' + k + '»'); } return true;
@@ -5400,6 +5437,67 @@ function engSections3(code) {
   }
   return null;
 }
+</script>
+<style>
+/* ---- command-center launcher: every section of the side menu as boxes, laid out horizontally ---- */
+.ln-wrap{display:flex;flex-wrap:wrap;gap:18px 16px;align-items:flex-start}
+.ln-group{display:flex;flex-direction:column;gap:8px;min-width:0;max-width:100%;flex:var(--n) 1 calc(var(--n) * 168px + (var(--n) - 1) * 9px)}
+.ln-gh{display:flex;align-items:center;gap:10px}
+.ln-gh b{font-size:14px}
+.ln-gh .ln-line{flex:1;height:1px;background:var(--line)}
+.ln-gh .ln-n{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.ln-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:9px}
+.ln-box{position:relative;display:flex;flex-direction:column;gap:8px;padding:13px 13px 12px;min-height:112px;border-radius:14px;background:var(--surface);border:1px solid var(--line);
+  text-align:right;color:var(--fg);min-width:0;cursor:pointer;transition:border-color .15s,transform .15s,background .15s}
+.ln-box:hover{border-color:color-mix(in srgb,var(--acc) 60%,var(--line));transform:translateY(-2px);background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 9%,var(--surface)),var(--surface) 80%)}
+.ln-box[aria-current="page"]{border-color:var(--acc)}
+.ln-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);border:1px solid color-mix(in srgb,var(--acc) 30%,transparent)}
+.ln-box b{font-size:13.5px;line-height:1.45}
+.ln-box .ln-sub{font-size:11px;color:var(--faint);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ln-tagrow{position:absolute;top:12px;inset-inline-end:12px;display:flex;gap:5px;align-items:center}
+.ln-code{font-family:var(--f-mono);font-size:10px;color:var(--faint);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;direction:ltr}
+.ln-cnt{font-family:var(--f-mono);font-size:10.5px;font-weight:700;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.ln-box.soon{opacity:.6}
+@media (max-width:760px){.ln-group{flex-basis:100%}.ln-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ln-box{min-height:104px;padding:11px}.ln-box .ln-sub{display:none}}
+</style>
+<script data-app="">
+/* Every item of the side menu (NAV) shown on مركز القيادة as boxes, grouped like the menu. Same filters as the menu:
+   modules switched off in settings are hidden, settings stays in the header. */
+const LN_ACC = ['#FF2E4D', '#4DA3FF', '#FFCD11', '#2FD27A', '#C79BFF', '#FF8A1F', '#7ABBFF', '#F472B6', '#2DD4BF', '#A6A6B0'];
+function homeLauncher() {
+  if (S.lnHide) return `<section class="card row between" style="gap:10px;padding:12px 16px"><span class="row nowrap" style="gap:8px">${ic('architecture', 16, 'style="color:var(--yellow)"')}<b style="font-size:13.5px">أقسام المنظومة</b><span class="faint" style="font-size:12px">مخفية</span></span><button type="button" class="btn sm" data-act="ln-toggle">عرض كل الأقسام</button></section>`;
+  const c = typeof counts === 'function' ? counts() : {};
+  const groups = NAV.map((g, gi) => {
+    const items = g.items.filter(([id]) => id !== 'home' && id !== 'settings' && (typeof modOn !== 'function' || modOn(id)));
+    if (!items.length) return '';
+    const acc = LN_ACC[gi % LN_ACC.length];
+    return `<div class="ln-group" style="--acc:${acc};--n:${items.length}">
+      <div class="ln-gh"><span style="width:8px;height:8px;border-radius:4px;background:${acc}"></span><b>${esc(g.t || '')}</b><span class="ln-n">${items.length}</span><span class="ln-line"></span></div>
+      <div class="ln-grid">${items.map(([id, label, code, flag]) => {
+        const sub = (TITLES[id] && TITLES[id][1] && TITLES[id][1] !== label ? TITLES[id][1] : (TITLES[id] ? TITLES[id][0] : '')) || '';
+        return `<button type="button" class="ln-box ${flag === 'soon' ? 'soon' : ''}" data-go="${id}" title="${esc(label)}">
+          <span class="ln-tagrow">${c[id] ? `<span class="ln-cnt">${c[id]}</span>` : ''}${flag === 'soon' ? '<span class="soon-tag">قريبًا</span>' : code ? `<span class="ln-code">${esc(code)}</span>` : ''}</span>
+          <span class="ln-ico">${ic(id, 20)}</span>
+          <b>${esc(label)}</b>
+          ${sub ? `<span class="ln-sub">${esc(sub)}</span>` : ''}
+        </button>`;
+      }).join('')}</div></div>`;
+  }).join('');
+  const total = NAV.reduce((n, g) => n + g.items.filter(([id]) => id !== 'home' && id !== 'settings' && (typeof modOn !== 'function' || modOn(id))).length, 0);
+  return `<section class="card" style="gap:16px">
+    <div class="row between" style="gap:10px"><div class="stack" style="gap:2px"><h2 class="h-sec" style="font-size:17px">أقسام المنظومة</h2><span class="faint" style="font-size:12px">${total} قسمًا — اختر القسم الذي تريد العمل عليه</span></div>
+      <button type="button" class="btn link sm" data-act="ln-toggle">إخفاء</button></div>
+    <div class="ln-wrap">${groups}</div></section>`;
+}
+const _lnHome = VIEWS.home;
+VIEWS.home = () => {
+  const h = _lnHome(), cut = h.indexOf('</section>');
+  return cut < 0 ? homeLauncher() + h : h.slice(0, cut + 10) + homeLauncher() + h.slice(cut + 10);
+};
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-act="ln-toggle"]'); if (!b) return;
+  S.lnHide = !S.lnHide; if (typeof save === 'function') save(); render();
+});
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
