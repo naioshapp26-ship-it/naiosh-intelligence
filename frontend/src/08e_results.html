@@ -45,7 +45,8 @@ async function anLoadFile(file, opt = {}) {
 }
 function anCapture(r, ref) {
   const f = (r.files || []).find(x => AN_DATA_RE.test(x.n) && RQ_FILE_OBJ[x.key]);
-  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref } : null;
+  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref, systems: [...(r.systems || [])], title: r.title || '' } : null;
+  if (typeof dashPickFromReq === 'function') dashPickFromReq({ types: r.types || [], systems: r.systems || [], ref, title: r.title || '' });
 }
 
 /* ---------- rendering helpers ---------- */
@@ -107,7 +108,7 @@ function anSecHTML(id, o) {
     ${id === 'feas' ? anFeasInputs(o.feas) : ''}<div id="an-body-${id}" class="stack" style="gap:12px">${anBody(id, o)}</div></section>`;
 }
 
-VIEWS.results = () => {
+function anViewParts() {
   const r = S.res, has = !!r && anEnsure(), R = has && AN.R;
   const exp = R ? `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button></div>` : '';
   const head = `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">DIA-ANALYSIS · محسوبة من بياناتك مباشرة</span>${exp}</div>
@@ -129,7 +130,7 @@ VIEWS.results = () => {
       ${['الصف الأول عناوين الأعمدة، وكل صف بعده سجل واحد (شهر، أو شهر × فرع…).', 'عمود تاريخ أو فترة (مثل 2026-01) لتفعيل التنبؤ وقياس الأثر.', 'عمود تصنيف اختياري (فرع، قسم، منتج) لتفعيل المقارنة.', 'أعمدة رقمية: المؤشر المستهدف والعوامل التي قد تؤثر فيه (تدريب، تكلفة، شكاوى…).'].map(t => `<span class="soft" style="font-size:12.5px">• ${t}</span>`).join('')}
       <span class="faint" style="font-size:11.5px">يُقرأ الملف داخل متصفحك فقط ولا يُرسل إلى أي خدمة خارجية.</span></div>` : ''}
   </section>`;
-  if (!has) return head + src;
+  if (!has) return { head, src, has: false };
   const T = AN.T, cfg = r.cfg;
   const nums = T.cols.filter(c => c.type === 'num'), dates = T.cols.filter(c => c.type === 'date'), cats = T.cols.filter(c => c.type === 'cat' && c.uniq >= 2 && c.uniq <= 40);
   const gi = T.head.indexOf(cfg.group), groups = gi >= 0 ? [...new Set(T.body.map(x => x[gi]).filter(Boolean))] : [];
@@ -148,15 +149,16 @@ VIEWS.results = () => {
     <details><summary class="faint" style="cursor:pointer;font-size:12.5px">الأعمدة المكتشفة (${T.cols.length})</summary>
       <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>العمود</th><th>النوع</th><th>قيم مختلفة</th><th>الناقص</th></tr></thead><tbody>${T.cols.map(c => `<tr><td style="font-size:12.5px">${esc(c.name)}</td><td><span class="tag ${c.type === 'num' ? 't-i' : c.type === 'date' ? 't-m' : 't-n'}">${TYPEN[c.type]}</span></td><td class="mono" style="font-size:12px">${c.uniq}</td><td class="mono" style="font-size:12px">${c.missing}</td></tr>`).join('')}</tbody></table></div></details>
   </section>`;
-  if (!R) return head + src + conf + `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>`;
+  if (!R) return { head, src, conf, has: true, err: `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>` };
   const c = R.ctx, gate = { good: ['t-s', 'var(--greenfg)'], warn: ['t-m', 'var(--yellow)'], low: ['t-c', 'var(--redsoft)'] }[c.gate[0]];
   const worst = cfg.focus === 'all' ? [...c.groupStats].filter(s => isFinite(s.ch)).sort((a, b) => a.ch - b.ch)[0] : null;
   const status = `<section class="card" style="gap:10px"><div class="row between" style="gap:10px"><div class="row nowrap" style="gap:10px"><span class="tag ${gate[0]}">${c.gate[0] === 'good' ? 'بوابة الجودة: مقبولة' : c.gate[0] === 'warn' ? 'بوابة الجودة: تحذير' : 'بوابة الجودة: بيانات غير كافية'}</span><span style="font-size:13px;color:${gate[1]}">${esc(c.gate[1])}</span></div><span class="mono faint" style="font-size:12px">الثقة ${c.conf}% · ${c.n} فترة · النطاق: ${esc(c.focusName)}</span></div>
     ${worst && worst.ch < -3 ? `<div class="row between sub" style="gap:10px"><span style="font-size:13px">${ic('warn', 15, 'style="color:var(--orange)"')} أكبر تراجع في آخر الفترات: <b>«${esc(worst.g)}»</b> (<bdi dir="ltr">${fmtP(worst.ch)}</bdi>). التحليل المركّز عليه يكشف أسبابه.</span><button type="button" class="btn sm" data-act="an-focus" data-k="${esc(worst.g)}">حلّل «${esc(worst.g)}»</button></div>` : ''}
     ${cfg.focus !== 'all' ? `<div class="row" style="gap:8px"><span class="faint" style="font-size:12.5px">تعرض النتائج «${esc(cfg.focus)}» فقط.</span><button type="button" class="btn link sm" data-act="an-focus" data-k="all">عرض الكل</button></div>` : ''}</section>`;
   const secs = AN_TYPES.filter(([id]) => cfg.types.includes(id) && R.out[id]).map(([id]) => anSecHTML(id, R.out[id])).join('');
-  return head + src + conf + status + secs;
-};
+  return { head, src, conf, status, secs, has: true, R };
+}
+VIEWS.results = () => { const p = anViewParts(); return [p.head, p.src, p.conf, p.err, p.status, p.secs].filter(Boolean).join(''); };
 
 /* ---------- export ---------- */
 function anReport(fmt) {
@@ -202,7 +204,7 @@ function analyticsHandle(act, k, el) {
       const d = el.dataset; toast('جارٍ جلب الملف…');
       fetch('/api/files/' + encodeURIComponent(k), { credentials: 'same-origin' })
         .then(res => { if (!res.ok) throw new Error('تعذّر جلب الملف (' + res.status + ')'); return res.blob(); })
-        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref }))
+        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref, systems: (d.sys || '').split('|').filter(Boolean), title: d.ti || '' }))
         .catch(e => toast(e.message));
       return true;
     }

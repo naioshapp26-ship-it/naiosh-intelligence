@@ -3738,7 +3738,8 @@ async function anLoadFile(file, opt = {}) {
 }
 function anCapture(r, ref) {
   const f = (r.files || []).find(x => AN_DATA_RE.test(x.n) && RQ_FILE_OBJ[x.key]);
-  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref } : null;
+  AN_PENDING = f ? { file: RQ_FILE_OBJ[f.key], types: [...(r.types || [])], capex: r.capex, currency: r.currency, ref, systems: [...(r.systems || [])], title: r.title || '' } : null;
+  if (typeof dashPickFromReq === 'function') dashPickFromReq({ types: r.types || [], systems: r.systems || [], ref, title: r.title || '' });
 }
 
 /* ---------- rendering helpers ---------- */
@@ -3800,7 +3801,7 @@ function anSecHTML(id, o) {
     ${id === 'feas' ? anFeasInputs(o.feas) : ''}<div id="an-body-${id}" class="stack" style="gap:12px">${anBody(id, o)}</div></section>`;
 }
 
-VIEWS.results = () => {
+function anViewParts() {
   const r = S.res, has = !!r && anEnsure(), R = has && AN.R;
   const exp = R ? `<div class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button></div>` : '';
   const head = `<section class="card" style="gap:8px"><div class="row between" style="gap:10px"><span class="eyebrow">DIA-ANALYSIS · محسوبة من بياناتك مباشرة</span>${exp}</div>
@@ -3822,7 +3823,7 @@ VIEWS.results = () => {
       ${['الصف الأول عناوين الأعمدة، وكل صف بعده سجل واحد (شهر، أو شهر × فرع…).', 'عمود تاريخ أو فترة (مثل 2026-01) لتفعيل التنبؤ وقياس الأثر.', 'عمود تصنيف اختياري (فرع، قسم، منتج) لتفعيل المقارنة.', 'أعمدة رقمية: المؤشر المستهدف والعوامل التي قد تؤثر فيه (تدريب، تكلفة، شكاوى…).'].map(t => `<span class="soft" style="font-size:12.5px">• ${t}</span>`).join('')}
       <span class="faint" style="font-size:11.5px">يُقرأ الملف داخل متصفحك فقط ولا يُرسل إلى أي خدمة خارجية.</span></div>` : ''}
   </section>`;
-  if (!has) return head + src;
+  if (!has) return { head, src, has: false };
   const T = AN.T, cfg = r.cfg;
   const nums = T.cols.filter(c => c.type === 'num'), dates = T.cols.filter(c => c.type === 'date'), cats = T.cols.filter(c => c.type === 'cat' && c.uniq >= 2 && c.uniq <= 40);
   const gi = T.head.indexOf(cfg.group), groups = gi >= 0 ? [...new Set(T.body.map(x => x[gi]).filter(Boolean))] : [];
@@ -3841,15 +3842,16 @@ VIEWS.results = () => {
     <details><summary class="faint" style="cursor:pointer;font-size:12.5px">الأعمدة المكتشفة (${T.cols.length})</summary>
       <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>العمود</th><th>النوع</th><th>قيم مختلفة</th><th>الناقص</th></tr></thead><tbody>${T.cols.map(c => `<tr><td style="font-size:12.5px">${esc(c.name)}</td><td><span class="tag ${c.type === 'num' ? 't-i' : c.type === 'date' ? 't-m' : 't-n'}">${TYPEN[c.type]}</span></td><td class="mono" style="font-size:12px">${c.uniq}</td><td class="mono" style="font-size:12px">${c.missing}</td></tr>`).join('')}</tbody></table></div></details>
   </section>`;
-  if (!R) return head + src + conf + `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>`;
+  if (!R) return { head, src, conf, has: true, err: `<section class="card"><div class="banner r">${ic('warn', 16)}<span>${esc(AN.err || 'تعذّر الحساب')}</span></div></section>` };
   const c = R.ctx, gate = { good: ['t-s', 'var(--greenfg)'], warn: ['t-m', 'var(--yellow)'], low: ['t-c', 'var(--redsoft)'] }[c.gate[0]];
   const worst = cfg.focus === 'all' ? [...c.groupStats].filter(s => isFinite(s.ch)).sort((a, b) => a.ch - b.ch)[0] : null;
   const status = `<section class="card" style="gap:10px"><div class="row between" style="gap:10px"><div class="row nowrap" style="gap:10px"><span class="tag ${gate[0]}">${c.gate[0] === 'good' ? 'بوابة الجودة: مقبولة' : c.gate[0] === 'warn' ? 'بوابة الجودة: تحذير' : 'بوابة الجودة: بيانات غير كافية'}</span><span style="font-size:13px;color:${gate[1]}">${esc(c.gate[1])}</span></div><span class="mono faint" style="font-size:12px">الثقة ${c.conf}% · ${c.n} فترة · النطاق: ${esc(c.focusName)}</span></div>
     ${worst && worst.ch < -3 ? `<div class="row between sub" style="gap:10px"><span style="font-size:13px">${ic('warn', 15, 'style="color:var(--orange)"')} أكبر تراجع في آخر الفترات: <b>«${esc(worst.g)}»</b> (<bdi dir="ltr">${fmtP(worst.ch)}</bdi>). التحليل المركّز عليه يكشف أسبابه.</span><button type="button" class="btn sm" data-act="an-focus" data-k="${esc(worst.g)}">حلّل «${esc(worst.g)}»</button></div>` : ''}
     ${cfg.focus !== 'all' ? `<div class="row" style="gap:8px"><span class="faint" style="font-size:12.5px">تعرض النتائج «${esc(cfg.focus)}» فقط.</span><button type="button" class="btn link sm" data-act="an-focus" data-k="all">عرض الكل</button></div>` : ''}</section>`;
   const secs = AN_TYPES.filter(([id]) => cfg.types.includes(id) && R.out[id]).map(([id]) => anSecHTML(id, R.out[id])).join('');
-  return head + src + conf + status + secs;
-};
+  return { head, src, conf, status, secs, has: true, R };
+}
+VIEWS.results = () => { const p = anViewParts(); return [p.head, p.src, p.conf, p.err, p.status, p.secs].filter(Boolean).join(''); };
 
 /* ---------- export ---------- */
 function anReport(fmt) {
@@ -3895,7 +3897,7 @@ function analyticsHandle(act, k, el) {
       const d = el.dataset; toast('جارٍ جلب الملف…');
       fetch('/api/files/' + encodeURIComponent(k), { credentials: 'same-origin' })
         .then(res => { if (!res.ok) throw new Error('تعذّر جلب الملف (' + res.status + ')'); return res.blob(); })
-        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref }))
+        .then(b => anLoadFile(new File([b], d.n || 'data.csv'), { types: (d.t || '').split(',').filter(Boolean), capex: d.c, currency: d.cur, ref: d.ref, systems: (d.sys || '').split('|').filter(Boolean), title: d.ti || '' }))
         .catch(e => toast(e.message));
       return true;
     }
@@ -3927,6 +3929,366 @@ document.addEventListener('input', (e) => {
   if (k === 'rate') v = Math.max(0, Math.min(100, v));
   S.res.feas[k] = v; anFeasRefresh();
 });
+</script>
+<style>
+/* ---- topic dashboard: wide, side-by-side layout (stacks only on small screens) ---- */
+.dz-wrap{display:flex;flex-direction:column;gap:12px}
+.dz-bar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;padding:12px 16px;border-radius:var(--r-l);border:1px solid var(--line);
+  background:radial-gradient(80% 260% at 100% 0%,color-mix(in srgb,var(--acc) 18%,transparent),transparent 62%),var(--surface)}
+.dz-id{display:flex;align-items:center;gap:12px;min-width:0;flex:0 1 360px}
+.dz-ico{width:46px;height:46px;flex-shrink:0;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--acc);
+  background:color-mix(in srgb,var(--acc) 15%,transparent);border:1px solid color-mix(in srgb,var(--acc) 42%,transparent)}
+.dz-title{font-family:var(--f-display);font-size:17px;font-weight:600;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-meta{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-tabs{display:flex;gap:6px;overflow-x:auto;flex:1 1 280px;min-width:0;scrollbar-width:thin;padding:2px 0}
+.dz-tab{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-height:38px;padding:0 13px;border-radius:10px;background:var(--raised);border:1px solid var(--line2);color:var(--soft);font-size:12.5px}
+.dz-tab[aria-pressed="true"]{background:color-mix(in srgb,var(--acc) 16%,var(--raised));border-color:var(--acc);color:var(--fg);font-weight:600}
+.dz-tab.add{border-style:dashed;color:var(--muted)}
+.dz-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dz-tools select{min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:0 8px;max-width:160px;font-size:12.5px}
+.dz-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
+.dz-kpi{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:right;color:var(--fg);min-width:0;cursor:pointer;transition:border-color .15s}
+.dz-kpi:hover{border-color:var(--line3)}
+.dz-kpi.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.dz-kpi .v{font-family:var(--f-display);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.dz-pill{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;font-family:var(--f-mono);direction:ltr;white-space:nowrap}
+.dz-pill.g{background:var(--greenbg);color:var(--greenfg);border:1px solid var(--greenline)}
+.dz-pill.b{background:var(--redbg);color:var(--redsoft);border:1px solid var(--redline)}
+.dz-pill.n{background:var(--raised);color:var(--muted);border:1px solid var(--line2)}
+.dz-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.dz-p{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dz-p.s3{grid-column:span 3}.dz-p.s4{grid-column:span 4}.dz-p.s5{grid-column:span 5}.dz-p.s6{grid-column:span 6}.dz-p.s8{grid-column:span 8}.dz-p.s12{grid-column:span 12}
+.dz-p.hl{border-color:color-mix(in srgb,var(--acc) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 7%,var(--surface)),var(--surface) 60%)}
+.dz-ph{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.dz-ph>b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-ph>span{font-size:11px;color:var(--faint);white-space:nowrap}
+.dz-p svg.chart{max-height:230px}
+.dz-verdict{font-family:var(--f-display);font-size:18px;font-weight:600;line-height:1.55}
+.dz-big{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dz-big>div{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.dz-big b{font-family:var(--f-display);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.dz-heat{display:grid;grid-template-columns:20px repeat(5,minmax(0,1fr));gap:3px;direction:ltr}
+.dz-heat span{height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--f-mono)}
+.dz-hbar{display:flex;align-items:center;gap:10px}
+.dz-hbar .tr{flex:1;height:9px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.dz-hbar .tr>i{display:block;height:100%;border-radius:5px}
+.dz-num{width:26px;height:26px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:12.5px;font-weight:700;background:var(--redbg);color:var(--red);border:1px solid var(--redline)}
+.dz-num.ok{background:var(--greenbg);color:var(--greenfg);border-color:var(--greenline)}
+/* picker: the three steps side by side */
+.dz-pick{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,.85fr);gap:12px;align-items:stretch}
+.dz-col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dz-col.on{border-color:var(--line3)}
+.dz-step{display:flex;align-items:center;gap:10px}
+.dz-topics,.dz-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.dz-topic{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:11px;background:var(--raised);border:1.5px solid var(--line2);text-align:right;color:var(--fg);min-width:0}
+.dz-topic .ti{width:32px;height:32px;flex-shrink:0;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.dz-topic[aria-pressed="true"]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--raised))}
+.dz-type{display:flex;flex-direction:column;gap:2px;padding:9px 11px;border-radius:11px;background:var(--raised);border:1.5px solid var(--line2);text-align:right;color:var(--fg);min-width:0}
+.dz-type[aria-pressed="true"]{background:var(--redbg);border-color:var(--red)}
+.dz-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:22px 14px;border-radius:12px;border:1.5px dashed var(--line3);background:var(--sunk);cursor:pointer;color:var(--fg)}
+.dz-drop:hover{border-color:var(--red)}
+.dz-drop input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+details.dz-more>summary{list-style:none;cursor:pointer}
+details.dz-more>summary::-webkit-details-marker{display:none}
+@media (max-width:1250px){
+  .dz-p.s3,.dz-p.s4,.dz-p.s5,.dz-p.s8{grid-column:span 6}
+  .dz-pick{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dz-pick>.dz-col:last-child{grid-column:1/-1}
+}
+@media (max-width:760px){
+  .dz-p.s3,.dz-p.s4,.dz-p.s5,.dz-p.s6,.dz-p.s8{grid-column:span 12}
+  .dz-pick{grid-template-columns:minmax(0,1fr)}
+  .dz-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dz-kpi .v{font-size:18px}.dz-kpi .col{display:none}
+  .dz-kpi .row.nowrap{flex-wrap:wrap;gap:4px}
+  .dz-id{flex-basis:100%}
+  .dz-bar{padding:12px}
+}
+</style>
+<script data-app="">
+/* ================= TOPIC DASHBOARD — the results page as a dashboard for the chosen subject + analysis type =================
+   Topic = the source system the manager ticks in the request (CRM, HR, Finance…). Each topic knows the indicators that
+   matter to it; they are matched against the file's own columns (nothing is invented when a column is missing). */
+const DZ_LOWER = /تكلف|cost|مصروف|expense|شكاو|complaint|دوران|turnover|تسرب|churn|dropout|زمن|time|delay|days|أيام|حوادث|حادث|incident|إصاب|injur|غياب|absen|عيوب|defect|إضافي|overtime|مرتجع|return|ديون|debt|مخالف|violation|غرام|fine|تصعيد|escalat|متأخر|overdue|ذمم|receivable/i;
+const DASH_TOPICS = [
+  { id: 'erp', sys: 'ERP', name: 'تخطيط الموارد ERP', icon: 'architecture', acc: '#4DA3FF', q: 'هل تعمل الموارد والعمليات بكفاءة؟',
+    kpi: [[/مبيعات|sales|إيراد|revenue/i, 'الإيرادات', 1], [/هامش|margin|ربح|profit/i, 'الهامش', 1], [/طلب|order/i, 'الطلبات', 1], [/إنتاج|production|output/i, 'الإنتاج', 1], [/تكلف|cost|مصروف/i, 'التكاليف', -1], [/مخزون|inventory|stock/i, 'المخزون', -1], [/تسليم|delivery|زمن|lead/i, 'زمن التسليم', -1]] },
+  { id: 'hr', sys: 'الموارد البشرية HR', name: 'الموارد البشرية', icon: 'agents', acc: '#C79BFF', q: 'هل فريقنا مستقر ومنتج؟',
+    kpi: [[/أداء|performance|إنتاجية|productiv/i, 'الأداء', 1], [/رضا.?الموظف|engagement|ارتباط/i, 'ارتباط الموظفين', 1], [/تدريب|training/i, 'التدريب', 1], [/عدد.?الموظف|headcount|staff.?count|^الموظفين$|^employees$/i, 'عدد الموظفين', 0], [/دوران|turnover|attrition|مغادر/i, 'دوران الموظفين', -1], [/غياب|absen/i, 'الغياب', -1], [/إضافي|overtime/i, 'العمل الإضافي', -1], [/رواتب|salary|payroll|أجور/i, 'الرواتب', -1]] },
+  { id: 'crm', sys: 'إدارة العملاء CRM', name: 'إدارة العملاء CRM', icon: 'consult', acc: '#4DA3FF', q: 'هل نكسب العملاء ونحتفظ بهم؟',
+    kpi: [[/رضا|satisf|csat/i, 'رضا العملاء', 1], [/nps|الترويج/i, 'صافي نقاط الترويج', 1], [/احتفاظ|retention|ولاء|loyal/i, 'الاحتفاظ', 1], [/تحويل|conversion/i, 'معدل التحويل', 1], [/مبيعات|sales|إيراد|revenue/i, 'الإيرادات', 1], [/عملاء|customer|client/i, 'العملاء', 1], [/تسرب|churn|فقد/i, 'تسرب العملاء', -1], [/شكاو|complaint/i, 'الشكاوى', -1], [/استجاب|response|تسليم|delivery|زمن/i, 'زمن الخدمة', -1]] },
+  { id: 'talent', sys: 'المواهب', name: 'المواهب', icon: 'skills', acc: '#FF8A1F', q: 'هل نطوّر المواهب ونحتفظ بها؟',
+    kpi: [[/أداء|performance/i, 'الأداء', 1], [/كفاء|competenc|مهار|skill/i, 'الكفاءات', 1], [/ترقي|promot/i, 'الترقيات', 1], [/تعاقب|succession|جاهزي|ready/i, 'جاهزية التعاقب', 1], [/احتفاظ|retention/i, 'الاحتفاظ', 1], [/دوران|turnover|مغادر/i, 'الدوران', -1]] },
+  { id: 'lms', sys: 'التدريب LMS', name: 'التدريب LMS', icon: 'learning', acc: '#FFCD11', q: 'هل التدريب يرفع الأداء؟',
+    kpi: [[/إكمال|completion|إنجاز/i, 'نسبة الإكمال', 1], [/اختبار|test|درج|score|نتيج/i, 'نتائج التقييم', 1], [/تدريب|training|ساعات/i, 'ساعات التدريب', 1], [/حضور|attend/i, 'الحضور', 1], [/رضا|satisf/i, 'رضا المتدربين', 1], [/أداء|performance/i, 'الأداء بعد التدريب', 1], [/تكلف|cost/i, 'التكلفة', -1]] },
+  { id: 'edu', sys: 'التعليم', name: 'التعليم', icon: 'edu', acc: '#7ABBFF', q: 'هل يتعلم الطلاب ويتقدّمون؟',
+    kpi: [[/نجاح|pass/i, 'نسبة النجاح', 1], [/درج|grade|score|معدل|gpa/i, 'التحصيل', 1], [/تخرج|graduat/i, 'التخرج', 1], [/حضور|attend/i, 'الحضور', 1], [/تسرب|dropout/i, 'التسرب', -1], [/غياب|absen/i, 'الغياب', -1]] },
+  { id: 'safety', sys: 'السلامة', name: 'السلامة', icon: 'safety', acc: '#FF8A1F', q: 'هل بيئة العمل آمنة؟',
+    kpi: [[/امتثال|complian|تفتيش|inspect/i, 'الامتثال والتفتيش', 1], [/تدريب|training/i, 'تدريب السلامة', 1], [/ملاحظ|near.?miss|بلاغ/i, 'البلاغات الوقائية', 1], [/حوادث|حادث|incident/i, 'الحوادث', -1], [/إصاب|injur/i, 'الإصابات', -1], [/ضائع|lost/i, 'الأيام الضائعة', -1]] },
+  { id: 'fin', sys: 'المالية', name: 'المالية', icon: 'coin', acc: '#2FD27A', q: 'هل وضعنا المالي سليم؟',
+    kpi: [[/إيراد|revenue|مبيعات|sales/i, 'الإيرادات', 1], [/ربح|profit|صافي/i, 'الربح', 1], [/هامش|margin/i, 'الهامش', 1], [/سيول|cash|نقد/i, 'السيولة', 1], [/تكلف|cost|مصروف|expense/i, 'التكاليف', -1], [/ذمم|receivable|مستحق/i, 'الذمم المدينة', -1], [/دين|ديون|debt/i, 'الديون', -1]] },
+  { id: 'mkt', sys: 'التسويق', name: 'التسويق', icon: 'bulb', acc: '#F472B6', q: 'هل تجلب حملاتنا عملاء بتكلفة معقولة؟',
+    kpi: [[/عائد|roi|roas/i, 'العائد على الإنفاق', 1], [/محتمل|lead/i, 'العملاء المحتملون', 1], [/تحويل|conversion/i, 'معدل التحويل', 1], [/نقر|click/i, 'النقرات', 1], [/ظهور|impression|وصول|reach/i, 'الوصول', 1], [/متابع|follower/i, 'المتابعون', 1], [/اكتساب|cac|cpa|تكلف|cost|إنفاق|spend/i, 'تكلفة الاكتساب', -1]] },
+  { id: 'sales', sys: 'المبيعات', name: 'المبيعات', icon: 'chart', acc: '#2FD27A', q: 'هل نحقق أهداف المبيعات؟',
+    kpi: [[/مبيعات|sales|إيراد|revenue/i, 'المبيعات', 1], [/صفق|deal/i, 'الصفقات', 1], [/متوسط|aov|قيمة.?الطلب|basket/i, 'متوسط قيمة البيع', 1], [/تحويل|conversion|إغلاق|win/i, 'معدل الإغلاق', 1], [/هدف|target|quota/i, 'تحقيق الهدف', 1], [/خصم|discount/i, 'الخصومات', -1], [/مرتجع|return/i, 'المرتجعات', -1]] },
+  { id: 'legal', sys: 'الشؤون القانونية', name: 'الشؤون القانونية', icon: 'governance', acc: '#C79BFF', q: 'هل نحن ملتزمون ومحميّون قانونيًا؟',
+    kpi: [[/امتثال|complian/i, 'الامتثال', 1], [/عقود|contract/i, 'العقود', 1], [/قضاي|case|نزاع|dispute/i, 'القضايا', -1], [/مخالف|violation/i, 'المخالفات', -1], [/غرام|fine|penalt/i, 'الغرامات', -1], [/مدة|duration|أيام|days/i, 'مدة الإنجاز', -1]] },
+  { id: 'ops', sys: 'العمليات', name: 'العمليات', icon: 'execution', acc: '#FFCD11', q: 'هل عملياتنا سريعة وبجودة؟',
+    kpi: [[/أداء|performance|إنتاجي|productiv/i, 'الإنتاجية', 1], [/جودة|quality/i, 'الجودة', 1], [/في.?الموعد|on.?time|التزام/i, 'الالتزام بالموعد', 1], [/طاقة|capacity|utiliz|استغلال/i, 'استغلال الطاقة', 1], [/عيوب|defect|هدر|waste/i, 'العيوب والهدر', -1], [/تسليم|delivery|زمن|cycle|lead/i, 'زمن الدورة', -1], [/تكلف|cost/i, 'التكلفة', -1]] },
+  { id: 'cs', sys: 'خدمة العملاء', name: 'خدمة العملاء', icon: 'ask', acc: '#4DA3FF', q: 'هل نخدم عملاءنا بسرعة وجودة؟',
+    kpi: [[/رضا|satisf|csat/i, 'رضا العملاء', 1], [/أول.?مرة|fcr|first/i, 'الحل من أول تواصل', 1], [/nps|الترويج/i, 'صافي نقاط الترويج', 1], [/شكاو|complaint/i, 'الشكاوى', -1], [/تذاكر|ticket/i, 'التذاكر', -1], [/تصعيد|escalat/i, 'التصعيد', -1], [/استجاب|response|انتظار|wait|زمن|تسليم/i, 'زمن الاستجابة', -1]] },
+  { id: 'ext', sys: 'ملفات خارجية', name: 'ملفات خارجية', icon: 'data', acc: '#FF2E4D', q: 'تحليل عام لأي جدول بيانات', kpi: [] }
+];
+const DZ_GENERIC = { id: '', name: 'بياناتك', icon: 'data', acc: '#FF2E4D', q: 'لوحة تحليل عامة', kpi: [] };
+const dashTopic = (id) => DASH_TOPICS.find(t => t.id === id) || DZ_GENERIC;
+const dashTopicsOfSystems = (sys) => (sys || []).map(s => DASH_TOPICS.find(t => t.sys === s)).filter(Boolean).map(t => t.id);
+function dashPickFromReq(o) {
+  const ids = dashTopicsOfSystems(o.systems), main = ids.find(i => i !== 'ext') || ids[0] || null;
+  S.anPick = { topic: main, sys: ids, types: [...(o.types || [])], ref: o.ref || '', title: o.title || '' };
+}
+const dzType = (id) => (typeof RQ_TYPES !== 'undefined' ? RQ_TYPES.find(t => t.id === id) : null) || { id, label: (AN_TYPES.find(t => t[0] === id) || [, id])[1], icon: 'chart', q: '' };
+
+/* ---------- indicators of the topic, matched to the file's columns ---------- */
+function dashKpiCols(T, tp) {
+  const nums = T.cols.filter(c => c.type === 'num'), used = new Set(), out = [];
+  tp.kpi.forEach(([re, label, dir]) => { const c = nums.find(x => !used.has(x.name) && re.test(x.name)); if (c) { used.add(c.name); out.push({ col: c.name, label, dir, matched: true }); } });
+  const missing = tp.kpi.filter(([re]) => !nums.some(x => re.test(x.name))).map(k => k[1]);
+  nums.filter(c => !used.has(c.name)).forEach(c => out.push({ col: c.name, label: '', dir: DZ_LOWER.test(c.name) ? -1 : 1, matched: false }));
+  return { list: out, matched: out.filter(k => k.matched).length, missing };
+}
+function dashApplyTopic() {
+  if (!S.res || !AN || !AN.T) return;
+  const k = dashKpiCols(AN.T, dashTopic(S.res.topic));
+  const tg = k.list.find(x => x.matched && x.dir > 0);
+  if (tg) S.res.cfg.target = tg.col;
+  anCompute();
+}
+const _dzLoad = anLoad;
+anLoad = function (rows, name, kind, opt = {}) {
+  const P = S.anPick || {}, o = { ...opt };
+  if (!(o.types && o.types.length) && P.types && P.types.length) o.types = P.types;
+  const T = _dzLoad(rows, name, kind, o);
+  const ids = o.systems && o.systems.length ? dashTopicsOfSystems(o.systems) : (P.sys || []);
+  const topic = o.topic || (o.systems && o.systems.length ? (ids.find(i => i !== 'ext') || ids[0]) : P.topic) || null;
+  Object.assign(S.res, { topic, sys: ids, title: o.title || (o.ref ? '' : P.title) || '', tab: S.res.cfg.types[0] });
+  if (o.systems) S.anPick = { topic, sys: ids, types: [...S.res.cfg.types], ref: o.ref || '', title: o.title || '' };
+  dashApplyTopic();
+  return T;
+};
+
+/* ---------- small visual pieces ---------- */
+function dzSpark(ys, color) {
+  const v = ys.filter(x => x !== null && isFinite(x)); if (v.length < 2) return '';
+  const lo = Math.min(...v), hi = Math.max(...v), W = 120, H = 30, X = (i) => i * W / (v.length - 1), Y = (x) => H - 3 - (hi === lo ? .5 : (x - lo) / (hi - lo)) * (H - 6);
+  const pts = v.map((x, i) => X(i).toFixed(1) + ',' + Y(x).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="30" preserveAspectRatio="none" dir="ltr" aria-hidden="true"><polygon points="0,${H} ${pts} ${W},${H}" style="fill:${color};opacity:.12"/><polyline points="${pts}" style="fill:none;stroke:${color};stroke-width:1.8;stroke-linejoin:round;vector-effect:non-scaling-stroke"/></svg>`;
+}
+function dzRing(pct, color, size = 62) {
+  const r = 24, c = 2 * Math.PI * r;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="${r}" style="fill:none;stroke:var(--line2);stroke-width:6"/><circle cx="31" cy="31" r="${r}" transform="rotate(-90 31 31)" style="fill:none;stroke:${color};stroke-width:6;stroke-linecap:round;stroke-dasharray:${(c * pct / 100).toFixed(1)} ${c.toFixed(1)}"/><text x="31" y="35" text-anchor="middle" style="fill:var(--fg);font:600 13px var(--f-mono)">${pct}%</text></svg>`;
+}
+const dzPill = (ch, dir) => { if (!isFinite(ch)) return '<span class="dz-pill n">—</span>'; const good = dir === 0 ? null : ch * dir > 0, cls = Math.abs(ch) < 0.05 || good === null ? 'n' : good ? 'g' : 'b'; return `<span class="dz-pill ${cls}">${ch > 0 ? '▲' : ch < 0 ? '▼' : '■'} ${fmtN(Math.abs(ch), 1)}%</span>`; };
+// columns around zero (cash flow, scenarios)
+function dzCols(items, opt = {}) {
+  if (!items.length) return '';
+  const W = 640, H = 200, pt = 18, pb = 28, vals = items.map(i => i[1]), hi = Math.max(0, ...vals), lo = Math.min(0, ...vals), span = (hi - lo) || 1;
+  const Y = (v) => pt + (hi - v) / span * (H - pt - pb), bw = Math.min(64, (W - 20) / items.length * 0.62), step = (W - 20) / items.length;
+  let g = `<line x1="10" x2="${W - 10}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" style="stroke:var(--line3);stroke-width:1"/>`;
+  items.forEach(([lab, v, col], i) => {
+    const x = 10 + step * i + (step - bw) / 2, y0 = Y(0), y1 = Y(v), top = Math.min(y0, y1), h = Math.max(2, Math.abs(y1 - y0));
+    g += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" style="fill:${col || (v >= 0 ? 'var(--green)' : 'var(--red)')};opacity:.9"/>`;
+    g += `<text x="${(x + bw / 2).toFixed(1)}" y="${(v >= 0 ? top - 5 : top + h + 12).toFixed(1)}" text-anchor="middle" direction="ltr" style="fill:var(--soft);font:11px var(--f-mono);direction:ltr;unicode-bidi:bidi-override">${esc(opt.fmt ? opt.fmt(v) : fmtN(v, 0))}</text>`;
+    g += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" style="fill:var(--faint);font:11.5px var(--f-body)">${esc(lab)}</text>`;
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="${esc(opt.label || 'رسم بياني')}" style="width:100%;height:auto">${g}</svg>`;
+}
+const dzHbars = (rows) => `<div class="stack" style="gap:9px">${rows.map(([lab, frac, col, right]) => `<div class="dz-hbar"><span style="min-width:0;flex:0 0 42%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(lab)}">${esc(lab)}</span><div class="tr"><i style="width:${Math.max(3, Math.min(100, frac * 100)).toFixed(1)}%;background:${col}"></i></div><span class="mono" style="min-width:64px;text-align:left;font-size:12px">${esc(right)}</span></div>`).join('')}</div>`;
+const dzSplit = (t) => { const s = String(t || ''), m = s.match(/^(.+?[.؟!])(\s|$)/); return m && m[1].length < s.length ? [m[1], s.slice(m[1].length).trim()] : [s, '']; };
+
+// compact trend + 6-period forecast, drawn for a narrow panel
+function dzTrend(c, acc) {
+  const y = c.y.filter(v => isFinite(v)); if (y.length < 2) return '<span class="faint" style="font-size:12px">لا توجد فترات كافية.</span>';
+  const fc = y.length >= 4 ? st.holt(y, 6) : null, n = y.length, N = n + (fc ? 6 : 0);
+  const lo0 = fc ? fc.f.map((f, i) => f - 1.96 * fc.rmse * Math.sqrt(i + 1)) : [], hi0 = fc ? fc.f.map((f, i) => f + 1.96 * fc.rmse * Math.sqrt(i + 1)) : [];
+  const all = y.concat(lo0, hi0); let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo || 1) * .08; lo -= pad; hi += pad;
+  const W = 380, H = 250, pl = 40, pr = 8, pt = 10, pb = 22, X = (i) => pl + i * (W - pl - pr) / (N - 1), Y = (v) => pt + (hi - v) / (hi - lo) * (H - pt - pb);
+  let g = '';
+  for (let k = 0; k <= 3; k++) { const v = lo + (hi - lo) * k / 3, yy = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 5}" y="${(+yy + 3.5).toFixed(1)}" text-anchor="end" style="fill:var(--faint);font:10px var(--f-mono)">${fmtN(v)}</text>`; }
+  if (fc) {
+    const up = [[X(n - 1), Y(y[n - 1])], ...hi0.map((v, i) => [X(n + i), Y(v)])], dn = lo0.map((v, i) => [X(n + i), Y(v)]).reverse();
+    g += `<polygon points="${up.concat(dn).map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" style="fill:rgba(255,205,17,.13)"/>`;
+    g += `<line x1="${X(n - 1).toFixed(1)}" x2="${X(n - 1).toFixed(1)}" y1="${pt}" y2="${H - pb}" style="stroke:var(--line3);stroke-dasharray:3 4"/>`;
+    g += `<polyline points="${[y[n - 1], ...fc.f].map((v, i) => X(n - 1 + i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" style="fill:none;stroke:var(--yellow);stroke-width:2;stroke-dasharray:5 4"/>`;
+  }
+  g += `<polyline points="${y.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" style="fill:none;stroke:${acc};stroke-width:2.2;stroke-linejoin:round"/><circle cx="${X(n - 1).toFixed(1)}" cy="${Y(y[n - 1]).toFixed(1)}" r="3.5" style="fill:${acc}"/>`;
+  [0, n - 1].forEach(i => { g += `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="${i ? 'end' : 'start'}" style="fill:var(--faint);font:10px var(--f-mono)">${esc(c.lab[i] || '')}</text>`; });
+  if (fc) g += `<text x="${(W - pr).toFixed(1)}" y="${H - 6}" text-anchor="end" style="fill:var(--yellow);font:10px var(--f-mono)">+6</text>`;
+  const last = y[n - 1], end = fc ? fc.f[5] : null;
+  return `<svg viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="اتجاه المؤشر" style="width:100%;height:auto;flex:1">${g}</svg>
+    <div class="row between" style="gap:8px;font-size:11.5px"><span class="faint">الآن <b class="mono" style="color:var(--fg)">${fmtN(last)}</b></span>${end !== null ? `<span class="faint">بعد 6 فترات <b class="mono" style="color:var(--yellow)">${fmtN(end)}</b> ${dzPill(pctCh(last, end), DZ_LOWER.test(c.tgt) ? -1 : 1)}</span>` : ''}</div>`;
+}
+/* ---------- what each analysis type puts on the dashboard ---------- */
+const dzPanel = (cls, title, note, body, extra = '') => `<section class="dz-p ${cls}" ${extra}><div class="dz-ph"><b title="${esc(title)}">${esc(title)}</b>${note ? `<span>${note}</span>` : ''}</div>${body}</section>`;
+function dzDrivers(ctx) {
+  const ds = ctx.drivers.slice(0, 6), mx = Math.max(...ds.map(d => d.strength), 0.0001);
+  return ds.length ? { t: 'أقوى العوامل المرتبطة بـ «' + ctx.tgt + '»', n: 'أزرق مع · برتقالي عكس', h: dzHbars(ds.map(d => [d.name, d.strength / mx, d.r > 0 ? 'var(--blue)' : 'var(--orange)', 'r=' + fmtN(d.r, 2)])) } : null;
+}
+function dashParts(id) {
+  const o = AN.R.out[id], ctx = AN.R.ctx;
+  if (!o) return null;
+  let [head, rest] = dzSplit(o.summary), tone = 'var(--fg)', big = (o.kpis || []).slice(0, 4), v1 = null, v2 = null, usesTrend = false, usesDrivers = false;
+  const num = (v) => anNum(String(v).replace(/^\+/, ''));
+  if (id === 'feas') {
+    const r = anFeasCalc(o.feas), cur = S.res.currency ? ' ' + S.res.currency : '';
+    tone = r.ok ? 'var(--greenfg)' : 'var(--redsoft)';
+    head = r.ok ? '✓ المشروع مجدٍ اقتصاديًا' : '✕ المشروع غير مجدٍ اقتصاديًا';
+    rest = `وفق الافتراضات الحالية. نقطة التعادل: إيرادات سنوية ${fmtN(r.be, 0)}${cur}${r.pay !== null ? '، ويُسترد رأس المال خلال ' + fmtN(r.pay, 1) + ' سنة' : '، ولا يُسترد رأس المال خلال عمر المشروع'}.`;
+    let cum = 0; const items = r.cf.map((c, i) => { cum += c; return ['س' + i, cum]; });
+    v1 = { t: 'التدفق النقدي التراكمي — متى يُسترد الاستثمار؟', n: 'سنوات المشروع', h: dzCols(items, { label: 'التدفق النقدي التراكمي' }) };
+    v2 = { t: 'الحساسية — صافي القيمة الحالية', n: 'إذا تغيّر افتراض واحد', h: dzCols(r.sens.map(([a, b]) => [a.replace('معدل الخصم', 'الخصم'), b]), { label: 'الحساسية' }) };
+  } else if (id === 'risk') {
+    const rows = o.tables && o.tables[0] ? o.tables[0].rows : [], cell = {};
+    rows.forEach(r => { const k = r[1] + '-' + r[2]; cell[k] = (cell[k] || 0) + 1; });
+    const col = (l, i) => { const s = l * i; return s >= 15 ? 'rgba(255,46,77,.55)' : s >= 10 ? 'rgba(255,138,31,.45)' : s >= 5 ? 'rgba(255,205,17,.28)' : 'rgba(47,210,122,.18)'; };
+    let g = ''; for (let l = 5; l >= 1; l--) { g += `<span style="color:var(--faint);aspect-ratio:auto">${l}</span>`; for (let i = 1; i <= 5; i++) g += `<span style="background:${col(l, i)};color:var(--fg)">${cell[l + '-' + i] || ''}</span>`; }
+    g += '<span></span>' + [1, 2, 3, 4, 5].map(i => `<span style="color:var(--faint);aspect-ratio:auto">${i}</span>`).join('');
+    v1 = { t: 'مصفوفة المخاطر', n: 'الاحتمال ↑ · الأثر →', h: `<div class="dz-heat">${g}</div>` };
+    v2 = { t: 'أعلى المخاطر', n: rows.length + ' خطر', h: rows.length ? `<div class="stack" style="gap:7px">${rows.slice(0, 4).map(r => `<div class="sub row between nowrap" style="gap:8px;padding:8px 11px;flex-direction:row;align-items:center"><b style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r[0])}</b><span class="tag ${r[4] === 'حرج' ? 't-c' : r[4] === 'مرتفع' ? 't-m' : 't-n'}">${esc(r[4])} · ${esc(r[3])}</span></div>`).join('')}</div>` : '<span class="faint" style="font-size:12.5px">لم تُرصد مخاطر متصاعدة من العوامل الحالية.</span>' };
+    tone = rows.some(r => +r[3] >= 15) ? 'var(--redsoft)' : 'var(--fg)';
+  } else if (id === 'diag') { v1 = dzDrivers(ctx); usesDrivers = true; }
+  else if (id === 'opp') { const rows = o.tables && o.tables[0] ? o.tables[0].rows.slice(0, 6) : [], vals = rows.map(r => num(r[2]) || 0), mx = Math.max(...vals, 0.0001); v1 = rows.length ? { t: 'الفرص مرتبة حسب الأثر', n: 'على «' + ctx.tgt + '»', h: dzHbars(rows.map((r, i) => [r[0], vals[i] / mx, 'var(--green)', r[2]])) } : null; }
+  else if (id === 'presc') { const rows = o.tables && o.tables[0] ? o.tables[0].rows.slice(0, 4) : []; v1 = rows.length ? { t: 'الإجراءات مرتبة من الأسهل', n: '', h: `<div class="stack" style="gap:7px">${rows.map((r, i) => `<div class="sub row between nowrap" style="gap:10px;padding:8px 11px;flex-direction:row;align-items:center"><span class="row nowrap" style="gap:9px;min-width:0"><span class="dz-num ${i === 0 ? 'ok' : ''}">${i + 1}</span><span class="stack" style="gap:0;min-width:0"><b style="font-size:12.5px">${esc(r[0])}</b><span class="faint" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">«${esc(r[1])}» ${esc(r[2])} ← ${esc(r[3])}</span></span></span><span class="tag ${r[5] === 'سهل' ? 't-s' : r[5] === 'صعب' ? 't-c' : 't-m'}">${esc(r[5])}</span></div>`).join('')}</div>` } : null; }
+  else if (id === 'fore') { const rows = o.tables && o.tables[0] && o.tables[0].cols[0] === 'السيناريو' ? o.tables[0].rows : [], cmap = { 'متفائل': 'var(--green)', 'أساسي': 'var(--blue)', 'متشائم': 'var(--orange)', 'صدمة': 'var(--red)' }; v1 = rows.length ? { t: 'السيناريوهات بعد 6 فترات', n: 'القيمة المتوقعة', h: dzCols(rows.map(r => [r[0] + ' ' + r[3], num(r[1]), cmap[r[0]]]), { fmt: (v) => fmtN(v), label: 'السيناريوهات' }) } : null; }
+  else if (id === 'imp') {
+    const k = Object.fromEntries((o.kpis || []).map(x => [x[0], x[1]])), ch = pctCh(num(k['قبل']), num(k['بعد']));
+    v1 = { t: 'قبل وبعد التدخل', n: '', h: `<div class="row nowrap" style="gap:14px;justify-content:center;align-items:center;padding:18px 0"><div class="stack" style="align-items:center;gap:2px"><span class="lbl">قبل</span><b style="font:600 30px var(--f-display)">${esc(k['قبل'] || '—')}</b></div><span style="font-size:22px;color:var(--faint)">←</span><div class="stack" style="align-items:center;gap:2px"><span class="lbl">بعد</span><b style="font:600 30px var(--f-display);color:${ch >= 0 ? 'var(--greenfg)' : 'var(--redsoft)'}">${esc(k['بعد'] || '—')}</b></div>${dzPill(ch, 1)}</div>` };
+    big = (o.kpis || []).filter(x => x[0] !== 'قبل' && x[0] !== 'بعد').slice(0, 4);
+  } else if (o.chart) { v1 = { t: o.chart.bars ? 'الترتيب' : (id === 'pred' ? 'التوقع مع نطاق الثقة 95%' : 'اتجاه «' + ctx.tgt + '»'), n: ctx.focusName, h: anChart(o.chart) }; usesTrend = !o.chart.bars; }
+  return { head, rest, tone, big, v1, v2, usesTrend, usesDrivers };
+}
+
+/* ---------- picker: topic → analysis type → data, side by side ---------- */
+function dashPicker(mode) {
+  const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] });
+  const tp = P.topic ? dashTopic(P.topic) : null, nT = P.types.length;
+  const step = (n, done, title, note) => `<div class="dz-step"><span class="dz-num ${done ? 'ok' : ''}">${done ? '✓' : n}</span><span class="stack" style="gap:0;min-width:0"><b style="font-size:14px">${title}</b><span class="faint" style="font-size:11.5px">${note}</span></span></div>`;
+  const topics = `<div class="dz-topics">${DASH_TOPICS.map(t => `<button type="button" class="dz-topic" style="--acc:${t.acc}" data-act="an-dz-topic" data-k="${t.id}" aria-pressed="${P.topic === t.id}" title="${esc(t.q)}"><span class="ti">${ic(t.icon, 17)}</span><span class="stack" style="gap:0;min-width:0"><b style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</b><span class="faint" style="font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.q)}</span></span></button>`).join('')}</div>`;
+  const list = typeof RQ_TYPES !== 'undefined' ? RQ_TYPES : AN_TYPES.map(([id, label]) => ({ id, label, icon: 'chart', q: '' }));
+  const types = `<div class="dz-types">${list.map(t => { const on = P.types.includes(t.id); return `<button type="button" class="dz-type" data-act="an-dz-type" data-k="${t.id}" aria-pressed="${on}"><span class="row between nowrap" style="gap:6px"><span class="row nowrap" style="gap:7px;min-width:0"><span style="color:${on ? 'var(--red)' : 'var(--yellow)'};flex-shrink:0">${ic(t.icon, 16)}</span><b style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.label)}</b></span>${on ? ic('check', 14, 'style="color:var(--red);stroke-width:2.6;flex-shrink:0"') : ''}</span><span class="faint" style="font-size:11px">${esc(t.q)}</span></button>`; }).join('')}</div>`;
+  const data = mode === 'change'
+    ? `${step(3, true, 'البيانات الحالية', esc(S.res.src.name))}
+       <div class="sub" style="gap:4px"><span class="faint" style="font-size:12px">${fmtN(S.res.src.n, 0)} سجل · ${esc(AN_SRC[S.res.src.kind] || '')}</span></div>
+       <button type="button" class="btn primary" data-act="an-dz-apply">${ic('check', 16)}تطبيق وعرض اللوحة</button>
+       <button type="button" class="btn" data-act="an-dz-close">إلغاء</button>`
+    : `${step(3, false, 'أضف البيانات', 'أي صيغة ملف')}
+       <label class="dz-drop">${ic('clip', 26)}<b style="font-size:14px">ارفع ملف البيانات</b><span class="faint" style="font-size:11.5px;line-height:1.6">Excel · CSV · PDF · Word · JSON · ZIP…</span><input type="file" data-an-upload="1" aria-label="رفع ملف البيانات"></label>
+       ${AN_PENDING ? `<button type="button" class="btn primary" data-act="an-req">${ic('chart', 16)}حلّل مرفق الطلب</button>` : ''}
+       <button type="button" class="btn" data-act="an-sample">${ic('play', 16)}جرّب على بيانات تجريبية</button>
+       ${AN_MSG ? `<div class="banner ${AN_MSG.t === 'ok' ? 'g' : 'y'}" style="font-size:12.5px">${ic(AN_MSG.t === 'ok' ? 'check' : 'warn', 15)}<span style="flex:1">${esc(AN_MSG.m)}</span><button type="button" class="btn link sm" data-act="an-msg-x" aria-label="إغلاق">✕</button></div>` : ''}
+       <details class="dz-more"><summary class="faint" style="font-size:12px">شكل الملف المناسب ▾</summary><div class="stack" style="gap:4px;margin-top:6px">${['الصف الأول عناوين الأعمدة.', 'عمود تاريخ (مثل 2026-01) للتنبؤ وقياس الأثر.', 'عمود تصنيف (فرع، قسم) للمقارنة.', 'أعمدة رقمية بأسماء واضحة' + (tp && tp.kpi.length ? ' مثل: ' + tp.kpi.slice(0, 3).map(k => k[1]).join('، ') : '') + '.'].map(x => `<span class="soft" style="font-size:12px">• ${x}</span>`).join('')}<span class="faint" style="font-size:11px">يُقرأ الملف داخل متصفحك فقط.</span><button type="button" class="btn link sm" style="align-self:flex-start" data-act="an-sample-dl">تنزيل ملف العينة</button></div></details>`;
+  return `<div class="dz-wrap">
+    <div class="row between" style="gap:10px"><div class="stack" style="gap:2px"><span class="eyebrow">DIA-ANALYSIS · لوحة التحليل</span><h2 class="title-xl" style="font-size:22px">${mode === 'change' ? 'غيّر الموضوع أو نوع التحليل' : 'حلّل بياناتك في ثلاث خطوات'}</h2></div>
+      ${P.ref && mode !== 'change' ? `<span class="chip">${ic('request', 13)}من طلب ${esc(P.ref)}${P.title ? ' — ' + esc(P.title) : ''}</span>` : ''}</div>
+    <div class="dz-pick">
+      <section class="dz-col ${tp ? 'on' : ''}">${step(1, !!tp, 'اختر الموضوع', tp ? esc(tp.name) : 'النظام الذي جاءت منه البيانات')}${topics}</section>
+      <section class="dz-col ${nT ? 'on' : ''}">${step(2, nT > 0, 'اختر نوع التحليل', nT ? nT + ' مختار' : 'واحد أو أكثر — بدون اختيار تُشغَّل العشرة')}${types}</section>
+      <section class="dz-col">${data}</section>
+    </div></div>`;
+}
+
+/* ---------- the dashboard: one wide screen ---------- */
+function dashView() {
+  const p = anViewParts();
+  if (!p.has) return dashPicker('start');
+  if (S.anPickOpen) return dashPicker('change');
+  return dashBody(p);
+}
+function dashBody(p) {
+  const r = S.res, tp = dashTopic(r.topic), R = p.R;
+  if (!R) return p.src + (p.conf || '') + (p.err || '');
+  const T = AN.T, cfg = r.cfg, c = R.ctx, focus = cfg.focus || 'all';
+  if (!cfg.types.includes(r.tab)) r.tab = cfg.types[0];
+  const K = dashKpiCols(T, tp), gateCol = { good: 'var(--green)', warn: 'var(--yellow)', low: 'var(--red)' }[c.gate[0]], tl = dzType(r.tab), groups = c.groups;
+  // 1. header bar
+  const bar = `<section class="dz-bar" style="--acc:${tp.acc}">
+    <div class="dz-id"><span class="dz-ico">${ic(tp.icon, 24)}</span><div class="stack" style="gap:1px;min-width:0">
+      <span style="font-size:11.5px;color:var(--acc);font-weight:600">لوحة ${esc(tp.name)}</span>
+      <h2 class="dz-title" title="${esc(r.title || tp.q)}">${esc(r.title || tp.q)}</h2>
+      <span class="dz-meta" title="${esc(r.src.name)}">${esc(r.src.name)} · ${fmtN(r.src.n, 0)} سجل · ${c.n} فترة${r.src.ref ? ' · ' + esc(r.src.ref) : ''}</span></div></div>
+    <div class="dz-tabs" role="tablist" aria-label="نوع التحليل">${cfg.types.map(id => { const t = dzType(id); return `<button type="button" class="dz-tab" role="tab" data-act="an-dz-tab" data-k="${id}" aria-pressed="${id === r.tab}">${ic(t.icon, 15)}${esc(t.label)}</button>`; }).join('')}<button type="button" class="dz-tab add" data-act="an-dz-open">+ نوع أو موضوع</button></div>
+    <div class="dz-tools">
+      <span class="row nowrap" style="gap:6px" title="${esc(c.gate[1])}">${dzRing(c.conf, gateCol, 44)}<span class="faint" style="font-size:11px;line-height:1.3">الثقة</span></span>
+      ${groups.length ? `<select data-an-cfg="focus" aria-label="نطاق التحليل"><option value="all">${esc('كل ' + (cfg.group || 'الوحدات'))}</option>${groups.map(g => `<option value="${esc(g)}" ${focus === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>` : ''}
+      <label class="btn sm" style="cursor:pointer;position:relative">${ic('clip', 14)}ملف آخر<input type="file" data-an-upload="1" style="position:absolute;inset:0;opacity:0;width:100%;cursor:pointer"></label>
+      <button type="button" class="btn sm" data-act="an-pdf">${ic('reports', 14)}PDF</button><button type="button" class="btn sm" data-act="an-xlsx">${ic('chart', 14)}Excel</button>
+    </div>
+  </section>`;
+  // 2. one row of indicators
+  const tiles = K.list.slice(0, 6).map(k => {
+    const s = anSeries(T, cfg, k.col, focus).y.filter(v => v !== null && isFinite(v)), w = c.w;
+    const ch = pctCh(st.mean(s.slice(-2 * w, -w)), st.mean(s.slice(-w))), last = s[s.length - 1], on = k.col === cfg.target;
+    const good = k.dir === 0 || !isFinite(ch) ? null : ch * k.dir > 0;
+    return `<button type="button" class="dz-kpi ${on ? 'on' : ''}" style="--acc:${tp.acc}" data-act="an-dz-target" data-k="${esc(k.col)}" title="العمود: ${esc(k.col)} — اضغط لجعله محور التحليل">
+      <span class="row between nowrap" style="gap:6px"><span class="lbl" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.label || k.col)}</span>${on ? `<span class="tag t-i" style="font-size:10px">المحور</span>` : ''}</span>
+      <span class="row between nowrap" style="gap:6px;align-items:baseline"><span class="v">${fmtN(last)}</span>${dzPill(ch, k.dir)}</span>
+      ${dzSpark(s, good === false ? 'var(--red)' : good ? 'var(--green)' : tp.acc)}</button>`;
+  }).join('');
+  const kpiNote = tp.kpi.length && K.matched < 2 ? `<div class="banner y" style="font-size:12.5px">${ic('warn', 15)}<span>الملف لا يحتوي معظم مؤشرات «${esc(tp.name)}» المعتادة${K.missing.length ? ' (مثل: ' + esc(K.missing.slice(0, 4).join('، ')) + ')' : ''}، فعُرضت أعمدته الرقمية كما هي.</span></div>` : '';
+  // 3. panels
+  const P = dashParts(r.tab) || { head: 'لا توجد نتيجة لهذا النوع من البيانات الحالية.', rest: '', tone: 'var(--fg)', big: [], v1: null, v2: null };
+  const tdir = DZ_LOWER.test(c.tgt) ? -1 : 1;
+  const trend = dzTrend(c, tp.acc);
+  const drv = !P.usesDrivers ? dzDrivers(c) : null;
+  const verdict = dzPanel('s4 hl', tl.label + (tl.q ? ' — ' + tl.q : ''), `<button type="button" class="btn link sm" data-act="an-dz-jump" data-k="${r.tab}" style="min-height:0;padding:0">التفاصيل</button>`,
+    `<div class="dz-verdict" style="color:${P.tone}">${anRich(P.head)}</div>${P.rest ? `<p style="font-size:12.5px;line-height:1.8;color:var(--fg2)">${anRich(P.rest)}</p>` : ''}
+     ${P.big.length ? `<div class="dz-big">${P.big.map(([l, v, tn]) => `<div><span class="lbl" style="font-size:11px">${esc(l)}</span><b dir="auto" style="color:${anTone(tn)}">${esc(v)}</b></div>`).join('')}</div>` : ''}
+     ${r.tab === 'feas' ? `<button type="button" class="btn sm" style="align-self:flex-start;margin-top:auto" data-act="an-dz-jump" data-k="feas">${ic('settings', 14)}عدّل الافتراضات</button>` : ''}`, `style="--acc:${tp.acc}"`);
+  const rowA = [verdict];
+  const main = P.v1 || drv;
+  if (main) rowA.push(dzPanel('s5', main.t, main.n, main.h));
+  const third = P.usesTrend ? (drv && main !== drv ? drv : null) : { t: 'اتجاه «' + c.tgt + '»', n: 'مع توقع 6 فترات', h: trend };
+  if (third) rowA.push(dzPanel(main ? 's3' : 's8', third.t, third.n, third.h));
+  const rowB = [];
+  if (P.v2) rowB.push(P.v2);
+  else if (drv && main !== drv && third !== drv) rowB.push(drv);
+  const gs = [...c.groupStats].sort((a, b) => (b.mean - a.mean) * tdir);
+  if (gs.length > 1 && focus === 'all') {
+    const worst = [...c.groupStats].filter(s => isFinite(s.ch)).sort((a, b) => (a.ch - b.ch) * tdir)[0];
+    rowB.push({ t: 'ترتيب ' + cfg.group, n: tdir < 0 ? 'الأقل أفضل' : 'متوسط «' + c.tgt + '»', h: anChart({ bars: gs.map(s => [s.g, s.mean]) }) + (worst && worst.ch * tdir < -3 ? `<button type="button" class="btn sm" style="align-self:flex-start" data-act="an-focus" data-k="${esc(worst.g)}">${ic('warn', 14, 'style="color:var(--orange)"')}حلّل «${esc(worst.g)}» (${fmtP(worst.ch)})</button>` : '') });
+  } else if (focus !== 'all') rowB.push({ t: 'النطاق', n: '', h: `<span style="font-size:13px">تعرض اللوحة «${esc(focus)}» فقط.</span><button type="button" class="btn sm" style="align-self:flex-start" data-act="an-focus" data-k="all">عرض كل ${esc(cfg.group || 'الوحدات')}</button>` });
+  rowB.push({ t: 'جودة البيانات والتقرير', n: '', h: `<div class="row nowrap" style="gap:10px;align-items:center">${dzRing(c.conf, gateCol, 54)}<span class="stack" style="gap:2px"><b style="font-size:12.5px">${c.gate[0] === 'good' ? 'البيانات كافية' : c.gate[0] === 'warn' ? 'كافية بحذر' : 'بيانات غير كافية'}</b><span class="faint" style="font-size:11.5px;line-height:1.5">${esc(c.gate[1])}</span></span></div>
+      <span class="faint" style="font-size:11.5px">المحور: «${esc(c.tgt)}» · ${c.n} فترة · ${esc(c.focusName)}</span>
+      <div class="row" style="gap:6px;margin-top:auto"><button type="button" class="btn sm primary" data-act="an-dz-full">${ic('reports', 14)}${S.dzFull ? 'إخفاء التقرير الكامل' : 'التقرير الكامل'}</button><button type="button" class="btn sm" data-act="an-dz-setup">${ic('settings', 14)}إعداد التحليل</button></div>` });
+  const span = rowB.length === 1 ? 's12' : rowB.length === 2 ? 's6' : 's4';
+  const grid = `<div class="dz-grid">${rowA.join('')}${rowB.map(x => dzPanel(span, x.t, x.n, x.h)).join('')}</div>`;
+  const full = S.dzFull ? `<div class="row between" style="gap:10px;margin-top:8px"><h2 class="h-sec" style="font-size:17px">التقرير الكامل</h2><button type="button" class="btn link sm" data-act="an-dz-full">إخفاء ▴</button></div>
+    <details class="dz-more card" id="dz-setup" style="gap:0" ${S.dzSetup ? 'open' : ''}><summary class="row between" style="gap:10px"><b style="font-size:14px">${ic('settings', 15)} مصدر البيانات وإعداد التحليل</b><span class="faint" style="font-size:12px">المؤشر المستهدف، الأعمدة، الأنواع ▾</span></summary><div class="stack" style="gap:12px;margin-top:12px">${p.src}${p.conf}</div></details>${p.secs}` : '';
+  return `<div class="dz-wrap">${bar}${kpiNote}<div class="dz-kpis">${tiles}</div>${grid}${full}</div>`;
+}
+VIEWS.results = dashView;
+
+/* ---------- events ---------- */
+function dashHandle(act, k) {
+  switch (act) {
+    case 'an-dz-topic': { const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] }); P.topic = P.topic === k ? null : k; render(); return true; }
+    case 'an-dz-type': { const P = S.anPick || (S.anPick = { topic: null, sys: [], types: [] }); const i = P.types.indexOf(k); if (i >= 0) P.types.splice(i, 1); else P.types.push(k); render(); return true; }
+    case 'an-dz-open': { const r = S.res; S.anPick = { ...(S.anPick || {}), topic: r ? r.topic : null, sys: r ? r.sys || [] : [], types: r ? [...r.cfg.types] : [] }; S.anPickOpen = true; render(); window.scrollTo(0, 0); return true; }
+    case 'an-dz-close': S.anPickOpen = false; render(); return true;
+    case 'an-dz-apply': {
+      const r = S.res, P = S.anPick || {}; if (!r) return true;
+      const valid = AN_TYPES.map(t => t[0]), ty = (P.types || []).filter(t => valid.includes(t));
+      r.topic = P.topic || null; r.cfg.types = ty.length ? ty : valid; r.tab = r.cfg.types[0]; S.anPickOpen = false;
+      dashApplyTopic(); log('د. عدنان', `عرض لوحة «${dashTopic(r.topic).name}» — ${r.cfg.types.map(t => dzType(t).label).join('، ')}`); render(); window.scrollTo(0, 0); return true;
+    }
+    case 'an-dz-tab': if (S.res) { S.res.tab = k; render(); } return true;
+    case 'an-dz-target': if (S.res && k) { S.res.cfg.target = k; anCompute(); render(); toast('محور التحليل: «' + k + '»'); } return true;
+    case 'an-dz-jump': { S.dzFull = true; render(); const el = document.getElementById('an-sec-' + k); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+    case 'an-dz-full': { S.dzFull = !S.dzFull; S.dzSetup = false; render(); if (S.dzFull) { const el = document.querySelector('.dz-grid'); if (el) el.nextElementSibling && el.nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return true; }
+    case 'an-dz-setup': { S.dzFull = true; S.dzSetup = true; render(); const el = document.getElementById('dz-setup'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+  }
+  return false;
+}
+const _dzHandle = analyticsHandle;
+analyticsHandle = function (act, k, el) { if (act && act.startsWith('an-dz-')) return dashHandle(act, k, el); return _dzHandle(act, k, el); };
 </script>
 <script data-app="">
 /* ================= Engines wave 2 — shared toolkit =================
@@ -5173,7 +5535,7 @@ function svDetail(q) {
   <div class="card" style="gap:10px"><h3 class="h-sec">المرفقات (${q.files.length})</h3>
     ${q.files.length ? q.files.map(f => f.kind === 'video' && /^video\/(mp4|webm|quicktime)$/.test(f.mime)
       ? `<div class="stack" style="gap:6px"><video controls preload="metadata" src="/api/files/${f.id}?inline=1" style="width:100%;border-radius:10px;background:#000;max-height:280px"></video><a class="btn sm" href="/api/files/${f.id}" download>${ic('play', 14)}${esc(f.name)} · ${fmtSize(f.size)}</a></div>`
-      : `<div class="row nowrap" style="gap:6px"><a class="list-btn" href="/api/files/${f.id}" download style="align-items:center;flex:1;min-width:0">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>${AN_DATA_RE.test(f.name) ? `<button type="button" class="btn sm primary" style="flex-shrink:0" data-act="an-srv" data-k="${esc(f.id)}" data-n="${esc(f.name)}" data-t="${esc((p.types || []).join(','))}" data-c="${esc(p.capex || '')}" data-cur="${esc(p.currency || '')}" data-ref="${esc(q.ref)}">${ic('chart', 14)}تحليل هذا الملف</button>` : ''}</div>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
+      : `<div class="row nowrap" style="gap:6px"><a class="list-btn" href="/api/files/${f.id}" download style="align-items:center;flex:1;min-width:0">${ic(f.kind === 'video' ? 'play' : 'clip', 16)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span><span class="mono faint" style="font-size:11px">${fmtSize(f.size)}</span></a>${AN_DATA_RE.test(f.name) ? `<button type="button" class="btn sm primary" style="flex-shrink:0" data-act="an-srv" data-k="${esc(f.id)}" data-n="${esc(f.name)}" data-t="${esc((p.types || []).join(','))}" data-c="${esc(p.capex || '')}" data-cur="${esc(p.currency || '')}" data-ref="${esc(q.ref)}" data-sys="${esc((p.systems || []).join('|'))}" data-ti="${esc(p.title || '')}">${ic('chart', 14)}تحليل هذا الملف</button>` : ''}</div>`).join('') : '<p class="muted" style="font-size:13px">لا توجد مرفقات.</p>'}
   </div>
   ${SV.canManage ? `<form class="card" id="sv-status-form" style="gap:10px"><h3 class="h-sec">تحديث الحالة</h3>
     <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
