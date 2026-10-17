@@ -1,0 +1,290 @@
+<script data-app="">
+/* ================= Engines wave 4 =================
+   DIA-LEGAL · NAIOSH LEGAL INTELLIGENCE 360 — legal command center, case analysis lab (facts / sources / evidence),
+              dispute paths, governance & acceptance tests. Never invents a legal source: unverified = shown as unverified.
+   DIA-EBI   · NAIOSH E-LEGAL & BUSINESS INTELLIGENCE 360 — 16-axis institutional diagnosis with evidence weighting,
+              financial indicators, recommendations routed to the specialised engines, public company verification. */
+const lgDays = (a, b) => { const x = Date.parse(a), y = Date.parse(b); return isFinite(x) && isFinite(y) ? Math.round((x - y) / 864e5) : NaN; };
+const lgToday = () => new Date().toISOString().slice(0, 10);
+
+/* =========================================================================================
+   DIA-LEGAL — NAIOSH LEGAL INTELLIGENCE 360
+   ========================================================================================= */
+const LG_STAGE = ['استلام وفرز', 'فحص التضارب', 'التحليل', 'البحث القانوني', 'بناء الاستراتيجية', 'تفاوض / وساطة', 'تقاضٍ / تحكيم', 'التنفيذ', 'مغلقة'];
+const LG_TYPE = ['تجاري', 'عقود', 'عمالي', 'إداري', 'جزائي', 'جرائم معلوماتية', 'ملكية فكرية', 'عقاري', 'أحوال شخصية'];
+const LG_CONF = [['done', 'تم الفحص — لا تضارب'], ['pending', 'لم يُفحص بعد'], ['flag', 'تضارب محتمل — للمراجعة']];
+const LG_FACT = [['proven', 'واقعة مثبتة بدليل'], ['claim', 'ادعاء طرف'], ['ai', 'استنتاج آلي']];
+const LG_SRC_ST = [['in', 'نافذ'], ['amend', 'معدّل'], ['repealed', 'ملغى'], ['draft', 'مشروع غير نافذ'], ['unk', 'غير مؤكد الحالة']];
+const LG_SRC_T = ['دستور', 'نظام / قانون', 'لائحة', 'حكم قضائي', 'معاهدة', 'معيار / إرشاد'];
+const LG_STEPS = [['استلام الملف', 'الوثائق، طلب الموكل، الأطراف، الدولة والتواريخ'], ['التحقق من البيانات', 'المصدر، الاكتمال، التناقضات'], ['تحديد الاختصاص', 'الدولة، الجهة، نوع القضية'], ['استخراج الوقائع والأدلة', 'فصل الوقائع المثبتة عن الادعاءات'], ['البحث القانوني', 'النصوص النافذة والأحكام والمصادر الرسمية'], ['التحليل والمقارنة', 'الحجج والأدلة المؤيدة والمعارضة والثغرات'], ['تقييم البدائل والمخاطر', 'الخيارات والآثار وعدم اليقين'], ['مراجعة واعتماد بشري', 'اعتماد المحامي المخول قبل المخرجات'], ['التنفيذ والمتابعة', 'المهام والمواعيد والنتائج الفعلية'], ['التعلم والتحسين', 'قياس جودة التحليل وتوثيق التصحيحات']];
+const LG_CENTERS = [['01', 'المركز السيادي والقيادة', 'المؤشرات، القضايا الحرجة، المواعيد، التنبيهات، القرارات المعلقة'], ['02', 'إدارة القضايا والملفات', 'القضايا، الأطراف، الموكلون، الخصوم، المهام، المستندات'], ['03', 'محرك الذكاء والتحليل القانوني', 'الوقائع، المسائل، التشريعات والأحكام، الحجج والبدائل'], ['04', 'الأدلة والتحقيقات الرقمية', 'المصدر، السلامة، سلسلة الحيازة، الاحتيال والاختراق'], ['05', 'المكتبة والتشريعات العالمية', 'الدساتير، القوانين، الأحكام، المعاهدات، تاريخ النفاذ'], ['06', 'العقود وتسوية النزاعات', 'الصياغة، التفاوض، الوساطة، التحكيم، التسويات'], ['07', 'المالية والربحية', 'الأتعاب، الفواتير، الوقت، الميزانية مقابل الفعلي'], ['08', 'الحوكمة والامتثال والتوقيع', 'الصلاحيات، تضارب المصالح، السرية، التدقيق، التوقيع'], ['09', 'التحليلات والتنبؤ والاستشارات', 'الأداء، أسباب التأخير، الأنماط، توقع العبء والتكلفة'], ['10', 'إدارة المنظومة والتكاملات', 'المستخدمون والفروع، الربط، المراقبة، النسخ الاحتياطي']];
+const LG_CTRL = [['idp', 'هوية وصلاحيات مطبقة على الخادم لكل قضية'], ['conf', 'فحص السرية وتضارب المصالح قبل فتح الملف'], ['src', 'مصدر موثق لكل استنتاج قانوني (النص، النسخة، تاريخ التحقق)'], ['human', 'مراجعة بشرية إلزامية قبل اعتماد أي رأي أو إيداع'], ['audit', 'سجل تدقيق غير صامت لكل فتح وتعديل واعتماد'], ['upd', 'تحقق من التشريع الجديد ونفاذه قبل اعتماده في الإنتاج'], ['test', 'اختبارات دورية للمراجع والنصوص الملغاة والتعليمات الخبيثة']];
+const LG_TESTS = ['تحليل قضية مع إظهار المصدر الداعم لكل استنتاج', 'اكتشاف مرجع قانوني قديم أو غير مؤكد الحالة', 'التمييز بين ادعاء الطرف والواقعة المدعومة والاستنتاج الآلي', 'رفض الوصول إلى قضية دون صلاحية', 'تسجيل إصدار التحليل والمراجع والموافقات', 'إظهار نقص الأدلة أو تعارض المصادر بدل نتيجة جازمة', 'منع الإرسال أو الإيداع دون صلاحية وموافقة', 'عدم ظهور بيانات موكل لموكل آخر'];
+const LG_PHASE = [['P1', 'فحص النظام الحالي وخريطة الفجوات'], ['P2', 'تأسيس البيانات والحوكمة'], ['P3', 'النسخة الأولى من التحليل القانوني'], ['P4', 'إدارة الأدلة والنزاعات'], ['P5', 'التوسع والتحليلات المتقدمة']];
+const LG_PATHS = [['neg', 'التفاوض المباشر'], ['med', 'الوساطة'], ['arb', 'التحكيم'], ['lit', 'التقاضي']];
+EG_INIT.legal = () => {
+  const t = lgToday(), d = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+  return {
+    tab: 'command', today: t, cur: 'SAR', sel: 0, phase: 'P2',
+    cases: [
+      { ref: 'LEG-C001', t: 'مطالبة بمستحقات عقد توريد', client: 'شركة النخبة للتجارة', party: 'مؤسسة الأفق', country: 'السعودية', type: 'تجاري', stage: 'تفاوض / وساطة', due: d(3), next: 'جلسة وساطة', owner: 'أ. سارة', budget: 60000, spent: 41000, pend: 1, conflict: 'done',
+        facts: [{ x: 'تسليم البضاعة بتاريخ متفق عليه', k: 'proven', s: 'محضر استلام موقع' }, { x: 'الخصم يدعي وجود عيوب في الدفعة الثانية', k: 'claim', s: 'خطاب الخصم' }, { x: 'التأخير في السداد يتجاوز 90 يومًا', k: 'proven', s: 'كشف الحساب' }, { x: 'احتمال قبول الخصم تسوية جزئية', k: 'ai', s: '' }],
+        srcs: [{ n: 'نظام المعاملات المدنية', t: 'نظام / قانون', c: 'السعودية', st: 'in', v: d(-40), link: 'yes' }, { n: 'حكم استئناف تجاري سابق مشابه', t: 'حكم قضائي', c: 'السعودية', st: 'unk', v: d(-400), link: 'no' }],
+        evid: [{ n: 'العقد الموقع', s: 'أرشيف الموكل', hash: 'yes', chain: 'yes' }, { n: 'مراسلات البريد الإلكتروني', s: 'خادم البريد', hash: 'no', chain: 'no' }],
+        paths: { neg: { cost: 5000, m: 1, p: 45 }, med: { cost: 15000, m: 3, p: 60 }, arb: { cost: 80000, m: 9, p: 70 }, lit: { cost: 60000, m: 18, p: 65 } }, stake: 450000, rec: 85, review: { by: '', ok: 'no' } },
+      { ref: 'LEG-C002', t: 'نزاع عمالي — إنهاء خدمة', client: 'شركة البناء الحديث', party: 'موظف سابق', country: 'السعودية', type: 'عمالي', stage: 'تقاضٍ / تحكيم', due: d(-2), next: 'تقديم مذكرة رد', owner: 'أ. خالد', budget: 30000, spent: 36500, pend: 2, conflict: 'done', facts: [], srcs: [], evid: [], paths: {}, stake: 120000, rec: 100, review: { by: '', ok: 'no' } },
+      { ref: 'LEG-C003', t: 'مراجعة عقد شراكة استراتيجية', client: 'مجموعة الريادة', party: '—', country: 'الإمارات', type: 'عقود', stage: 'التحليل', due: d(12), next: 'تسليم الملاحظات', owner: 'أ. ليلى', budget: 25000, spent: 9000, pend: 0, conflict: 'flag', facts: [], srcs: [], evid: [], paths: {}, stake: 0, rec: 100, review: { by: '', ok: 'no' } },
+      { ref: 'LEG-C004', t: 'بلاغ اختراق وابتزاز إلكتروني', client: 'متجر إلكتروني', party: 'مجهول', country: 'الأردن', type: 'جرائم معلوماتية', stage: 'استلام وفرز', due: d(6), next: 'حفظ الأدلة الرقمية', owner: 'أ. محمد', budget: 15000, spent: 2000, pend: 3, conflict: 'pending', facts: [], srcs: [], evid: [], paths: {}, stake: 0, rec: 100, review: { by: '', ok: 'no' } }
+    ],
+    ctrl: { idp: '1', audit: '1', human: '1' }, tests: { 2: '1', 4: '1' }
+  };
+};
+EG_ROWS['legal.cases'] = () => ({ ref: '', t: 'قضية جديدة', client: '', party: '', country: 'السعودية', type: 'تجاري', stage: 'استلام وفرز', due: '', next: '', owner: '', budget: 0, spent: 0, pend: 0, conflict: 'pending', facts: [], srcs: [], evid: [], paths: {}, stake: 0, rec: 100, review: { by: '', ok: 'no' } });
+function lgEnsure(s) {
+  let mx = 0; s.cases.forEach(c => { const m = /^LEG-C(\d+)$/.exec(c.ref || ''); if (m) mx = Math.max(mx, +m[1]); });
+  s.cases.forEach(c => { if (!c.ref) c.ref = 'LEG-C' + String(++mx).padStart(3, '0'); ['facts', 'srcs', 'evid'].forEach(k => { if (!Array.isArray(c[k])) c[k] = []; }); c.paths = c.paths || {}; c.review = c.review || { by: '', ok: 'no' }; });
+  if (!(s.sel >= 0 && s.sel < s.cases.length)) s.sel = 0;
+}
+function lgCase(s, c) {
+  const days = lgDays(c.due, s.today), active = c.stage !== 'مغلقة', use = egN(c.budget) ? egN(c.spent) / egN(c.budget) * 100 : NaN;
+  const oldSrc = c.srcs.filter(x => x.st !== 'in' || !(lgDays(s.today, x.v) <= 180)), aiNoSrc = c.facts.filter(f => f.k === 'ai' && !String(f.s || '').trim()), weakEv = c.evid.filter(e => e.hash !== 'yes' || e.chain !== 'yes');
+  const sig = [];
+  if (active && isFinite(days) && days < 0) sig.push(['c', 'موعد فائت', `${c.next || 'إجراء'} — متأخر ${-days} يوم`, 'معالجة فورية وتوثيق السبب']);
+  else if (active && isFinite(days) && days <= 7) sig.push(['h', 'استحقاق قريب', `${c.next || 'إجراء'} خلال ${days} يوم`, 'تأكيد الجاهزية والمستندات']);
+  if (c.conflict === 'flag') sig.push(['c', 'تضارب مصالح محتمل', 'نتيجة فحص التضارب تحتاج مراجعة', 'إيقاف العمل على الملف حتى قرار لجنة التضارب']);
+  if (c.conflict === 'pending' && active) sig.push(['h', 'لم يُفحص التضارب', 'الملف مفتوح دون فحص تضارب', 'إجراء الفحص قبل أي عمل']);
+  if (isFinite(use) && use > 100) sig.push(['h', 'تجاوز الميزانية', `المصروف ${fmtN(use, 0)}% من الميزانية`, 'مراجعة الأتعاب وإشعار الموكل']);
+  if (egN(c.pend) > 0) sig.push(['m', 'ينتظر إجراءً', `${egN(c.pend)} موافقة أو مستند معلق`, 'متابعة المسؤول']);
+  if (oldSrc.length) sig.push(['h', 'مصدر قانوني غير مؤكد', `${oldSrc.length} مرجع ملغى/معدّل/غير مؤكد أو لم يُتحقق منه منذ أكثر من 180 يومًا`, 'إعادة التحقق من النفاذ والنسخة']);
+  if (aiNoSrc.length) sig.push(['m', 'استنتاج آلي بلا مصدر', `${aiNoSrc.length} استنتاج غير متحقق`, 'لا يُعتمد قبل ربطه بدليل']);
+  return { c, days, active, use, oldSrc, aiNoSrc, weakEv, sig };
+}
+function lgModel() {
+  const s = egS('legal'); lgEnsure(s);
+  const C = s.cases.map(c => lgCase(s, c)), act = C.filter(x => x.active);
+  const alerts = C.flatMap(x => x.sig.map(g => ({ x, lvl: g[0], what: g[1], ev: g[2], todo: g[3] }))).sort((a, b) => 'chm'.indexOf(a.lvl) - 'chm'.indexOf(b.lvl));
+  const k = { active: act.length, soon: act.filter(x => isFinite(x.days) && x.days >= 0 && x.days <= 7).length, late: act.filter(x => isFinite(x.days) && x.days < 0).length, wait: act.filter(x => egN(x.c.pend) > 0).length, crit: alerts.filter(a => a.lvl === 'c').length, budget: C.reduce((a, x) => a + egN(x.c.budget), 0), spent: C.reduce((a, x) => a + egN(x.c.spent), 0) };
+  // selected case analysis
+  const cur = C[s.sel] || C[0], c = cur.c;
+  const nF = c.facts.length, nP = c.facts.filter(f => f.k === 'proven').length, nC = c.facts.filter(f => f.k === 'claim').length, nA = c.facts.filter(f => f.k === 'ai').length;
+  const srcOk = c.srcs.filter(x => x.st === 'in' && lgDays(s.today, x.v) <= 180).length, evOk = c.evid.filter(e => e.hash === 'yes' && e.chain === 'yes').length;
+  const pathsOn = LG_PATHS.filter(([p]) => c.paths[p] && egN(c.paths[p].p) > 0).length, reviewed = c.review.ok === 'yes' && String(c.review.by || '').trim();
+  const steps = [!!(c.client && c.type), nF > 0 && c.facts.every(f => f.k === 'ai' || String(f.s || '').trim()), !!(c.country && c.type), nP > 0, c.srcs.length > 0, c.srcs.length > 0 && srcOk === c.srcs.length && nF > 0, pathsOn > 0, !!reviewed, !!c.due && !!c.owner, c.stage === 'مغلقة'];
+  const conf = Math.round(Math.max(0, Math.min(100, (nF ? nP / nF * 35 : 0) + (c.srcs.length ? srcOk / c.srcs.length * 35 : 0) + (c.evid.length ? evOk / c.evid.length * 20 : 0) + (reviewed ? 10 : 0))));
+  const paths = LG_PATHS.map(([p, n]) => { const q = c.paths[p] || {}, pr = egN(q.p) / 100, cost = egN(q.cost), m = egN(q.m), ev = pr * egN(c.stake) * egN(c.rec) / 100 - cost; return { p, n, pr, cost, m, ev, per: m ? ev / m : ev, on: pr > 0 }; }).filter(x => x.on).sort((a, b) => b.ev - a.ev);
+  const report = [['ملخص القضية وطلب الموكل', !!(c.t && c.client)], ['الاختصاص والتشريعات المحتمل انطباقها', !!c.country && c.srcs.length > 0], ['جدول الوقائع والأدلة ودرجة التحقق', nF > 0], ['المسائل القانونية المطلوب حسمها', nF > 0 && c.srcs.length > 0], ['النصوص والأحكام مع بيانات مرجعية', c.srcs.length > 0 && srcOk === c.srcs.length], ['الحجج المؤيدة والمعارضة', nP > 0 && nC > 0], ['المعلومات الناقصة والأسئلة', true], ['البدائل ومخاطر كل بديل', pathsOn > 0], ['التوصيات وأسبابها وشروطها', pathsOn > 0 && !!reviewed], ['المواعيد والإجراءات المطلوبة', !!c.due], ['مستوى الثقة والافتراضات', true], ['سجل المراجعة والاعتماد', !!reviewed]];
+  const ctrlOk = LG_CTRL.filter(([q]) => (s.ctrl || {})[q]).length, testOk = LG_TESTS.filter((_, i) => (s.tests || {})[i]).length;
+  return { s, C, alerts, k, cur, c, nF, nP, nC, nA, srcOk, evOk, steps, conf, paths, reviewed, report, ctrlOk, testOk };
+}
+const lgLvl = { c: ['t-c', 'حرج'], h: ['t-h', 'مرتفع'], m: ['t-m', 'متوسط'] };
+EG_OUT.legal = () => {
+  const m = lgModel(), s = m.s, cur = s.cur || '';
+  if (s.tab === 'command') return egCard('مركز القيادة القانوني — NAIOSH LEGAL COMMAND CENTER', 'LEGAL-01', `${anKpis([['القضايا النشطة', m.k.active], ['استحقاقات خلال 7 أيام', m.k.soon, m.k.soon ? 'bad' : 'good'], ['مواعيد فائتة', m.k.late, m.k.late ? 'bad' : 'good'], ['ملفات تنتظر إجراءً', m.k.wait], ['تنبيهات حرجة', m.k.crit, m.k.crit ? 'bad' : 'good'], ['المصروف من الميزانية', m.k.budget ? fmtN(m.k.spent / m.k.budget * 100, 0) + '%' : '—']])}
+    ${anTbl({ h: 'قائمة الإجراءات ذات الأولوية — كل تنبيه يقود إلى سجل وإجراء ومسؤول وموعد', cols: ['المستوى', 'القضية', 'الإشارة', 'الدليل', 'الإجراء المطلوب', 'المسؤول', 'الموعد'], rows: m.alerts.map(a => [lgLvl[a.lvl][1], a.x.c.ref + ' · ' + a.x.c.t, a.what, a.ev, a.todo, a.x.c.owner || '—', a.x.c.due || '—']) })}
+    ${anTbl({ h: 'جلسات ومواعيد قريبة', cols: ['الموعد', 'المتبقي', 'القضية', 'الإجراء', 'المسؤول'], rows: m.C.filter(x => x.active && x.c.due).sort((a, b) => a.days - b.days).map(x => [x.c.due, isFinite(x.days) ? (x.days < 0 ? 'متأخر ' + -x.days + ' يوم' : x.days + ' يوم') : '—', x.c.ref + ' · ' + x.c.t, x.c.next || '—', x.c.owner || '—']) })}
+    ${anTbl({ h: 'استثناءات مالية — الميزانية مقابل الفعلي', cols: ['القضية', 'الميزانية', 'المصروف', 'النسبة', 'الحالة'], rows: m.C.map(x => [x.c.ref + ' · ' + x.c.t, fmtN(egN(x.c.budget), 0) + ' ' + cur, fmtN(egN(x.c.spent), 0), isFinite(x.use) ? fmtN(x.use, 0) + '%' : '—', !isFinite(x.use) ? '—' : x.use > 100 ? 'تجاوز' : x.use > 85 ? 'قريب من الحد' : 'ضمن الميزانية']) })}
+    ${anChart({ bars: m.C.filter(x => isFinite(x.use)).map(x => [x.c.ref, +x.use.toFixed(0)]).sort((a, b) => a[1] - b[1]) })}
+    ${egNote('الترتيب أعلاه من الأقل استهلاكًا للميزانية (أخضر) إلى الأعلى (أحمر). لوحة المدير تختلف عن لوحة المحامي والموكل بحسب الصلاحيات، ولا يظهر لأي موكل ملف موكل آخر.')}`);
+  if (s.tab === 'lab') {
+    const c = m.c;
+    return egCard(`مختبر تحليل القضية — ${esc(c.ref)} · ${esc(c.t)}`, 'DIA-LEGAL-CORE', `${anKpis([['مستوى الثقة', m.conf + '%', m.conf >= 70 ? 'good' : 'bad'], ['وقائع مثبتة', m.nP + ' من ' + m.nF], ['ادعاءات أطراف', m.nC], ['استنتاجات آلية', m.nA], ['مصادر نافذة ومتحقق منها', m.srcOk + ' من ' + c.srcs.length, m.srcOk < c.srcs.length ? 'bad' : 'good'], ['أدلة سليمة السلسلة', m.evOk + ' من ' + c.evid.length, m.evOk < c.evid.length ? 'bad' : 'good']])}
+      <div class="banner ${m.reviewed ? 'g' : 'y'}" style="font-size:13px">${ic(m.reviewed ? 'check' : 'warn', 16)}<span>${m.reviewed ? `اعتمد التحليل: ${esc(c.review.by)}. يمكن إصداره وفق الصلاحيات.` : 'حالة المخرج: مسودة — لا يُعتمد رأي قانوني ولا يُودع مستند قبل مراجعة المحامي المخول واعتماده.'}</span></div>
+      <div class="stack" style="gap:6px"><span class="lbl">دورة التحليل — 10 مراحل</span>${egGrid(150, LG_STEPS.map(([n, d], i) => `<div class="sub" style="gap:2px;padding:9px 11px;border-color:${m.steps[i] ? 'var(--greenline)' : 'var(--line)'}"><span class="row nowrap" style="gap:6px"><span class="mono" style="font-size:11px;color:${m.steps[i] ? 'var(--greenfg)' : 'var(--faint)'}">${m.steps[i] ? '✓' : String(i + 1).padStart(2, '0')}</span><b style="font-size:12px">${n}</b></span><span class="faint" style="font-size:10.5px">${d}</span></div>`).join(''))}</div>
+      ${anTbl({ h: 'الوقائع — فصل الثابت عن الادعاء والاستنتاج', cols: ['البيان', 'التصنيف', 'المصدر', 'الحالة'], rows: c.facts.map(f => [f.x, (LG_FACT.find(q => q[0] === f.k) || [, ''])[1], f.s || '—', f.k === 'proven' ? 'مدعوم بدليل' : f.k === 'claim' ? 'يحتاج إثباتًا' : (String(f.s || '').trim() ? 'استنتاج مرتبط بمصدر' : 'غير متحقق — لا يُعتمد')]) })}
+      ${anTbl({ h: 'المصادر القانونية — النفاذ وتاريخ آخر تحقق', cols: ['المصدر', 'النوع', 'الدولة', 'الحالة', 'آخر تحقق', 'رابط رسمي', 'التقييم'], rows: c.srcs.map(x => { const age = lgDays(s.today, x.v); return [x.n, x.t, x.c, (LG_SRC_ST.find(q => q[0] === x.st) || [, ''])[1], x.v || '—', x.link === 'yes' ? 'نعم' : 'لا', x.st !== 'in' ? 'لا يُستند إليه قبل التحقق' : !(age <= 180) ? 'يحتاج إعادة تحقق' : 'صالح للاستناد']; }) })}
+      ${anTbl({ h: 'الأدلة الرقمية — السلامة وسلسلة الحيازة', cols: ['الدليل', 'المصدر', 'بصمة السلامة', 'سلسلة الحيازة', 'الحالة'], rows: c.evid.map(e => [e.n, e.s || '—', e.hash === 'yes' ? 'موثقة' : 'غير موثقة', e.chain === 'yes' ? 'مكتملة' : 'ناقصة', e.hash === 'yes' && e.chain === 'yes' ? 'قابل للتقديم' : 'يحتاج استكمالًا قبل الاعتماد عليه']) })}
+      <div class="stack" style="gap:6px"><span class="lbl">المخرج الموحد للقضية — 12 عنصرًا</span>${egGrid(230, m.report.map(([n, ok], i) => `<span class="row nowrap" style="gap:7px;font-size:12.5px"><span style="color:${ok ? 'var(--greenfg)' : 'var(--orange)'}">${ok ? '✓' : '○'}</span>${i + 1}. ${n}</span>`).join(''))}</div>
+      ${egNote('ضابط لا تنازل عنه: لا يختلق المحرك مادة قانونية أو حكمًا أو رقم قضية أو اقتباسًا. إذا لم يُعثر على مصدر موثوق يُصرَّح بأن المعلومة لم تُتحقق. مستوى الثقة = نسبة الوقائع المثبتة 35% + المصادر النافذة المتحقق منها 35% + سلامة الأدلة 20% + الاعتماد البشري 10%.')}`);
+  }
+  if (s.tab === 'paths') {
+    const c = m.c, best = m.paths[0];
+    return egCard(`البدائل وتسوية النزاع — ${esc(c.ref)}`, 'LEGAL-06', `${anKpis([['قيمة النزاع', fmtN(egN(c.stake), 0) + ' ' + cur], ['نسبة الاسترداد عند النجاح', fmtN(egN(c.rec), 0) + '%'], ['أعلى قيمة صافية متوقعة', best ? best.n : '—', best && best.ev > 0 ? 'good' : 'bad'], ['المسارات المقيّمة', m.paths.length]])}
+      ${m.paths.length ? anTbl({ h: 'مقارنة المسارات — القيمة المتوقعة = الاحتمال × قيمة النزاع × نسبة الاسترداد − التكلفة', cols: ['المسار', 'احتمال النجاح (تقدير المحامي)', 'التكلفة', 'المدة (شهر)', 'القيمة الصافية المتوقعة', 'القيمة لكل شهر'], rows: m.paths.map(x => [x.n, fmtN(x.pr * 100, 0) + '%', fmtN(x.cost, 0), fmtN(x.m, 0), fmtN(x.ev, 0), fmtN(x.per, 0)]) }) + anChart({ bars: m.paths.map(x => [x.n, Math.round(x.ev)]) }) : '<div class="banner y">أدخل تقديرات المسارات لهذه القضية.</div>'}
+      ${best ? `<div class="sub" style="gap:4px"><b style="font-size:13.5px">البديل الأعلى قيمة: ${best.n}</b><span class="soft" style="font-size:12.5px">صافي متوقع ${fmtN(best.ev, 0)} ${cur} خلال ${fmtN(best.m, 0)} شهر. يبقى صالحًا فقط إذا صحّت تقديرات الاحتمال والتكلفة، وكانت المصادر القانونية المستند إليها نافذة ومتحققًا منها (${m.srcOk} من ${c.srcs.length}).</span></div>` : ''}
+      ${egNote('الاحتمالات تقديرات بشرية من المحامي المختص وليست تنبؤًا آليًا. يُعرض كل بديل بأدلته ومخاطره وافتراضاته، ولا يُعتمد أي مسار دون قرار صاحب الصلاحية.')}`);
+  }
+  return egCard('الحوكمة والسيادة القانونية وجاهزية الإطلاق', 'LEGAL-08', `${anKpis([['الضوابط المطبقة', m.ctrlOk + ' من ' + LG_CTRL.length, m.ctrlOk === LG_CTRL.length ? 'good' : 'bad'], ['اختبارات القبول الناجحة', m.testOk + ' من ' + LG_TESTS.length, m.testOk === LG_TESTS.length ? 'good' : 'bad'], ['المرحلة الحالية', s.phase], ['جاهزية النسخة الأولى', m.testOk === LG_TESTS.length && m.ctrlOk === LG_CTRL.length ? 'جاهزة' : 'غير جاهزة', m.testOk === LG_TESTS.length && m.ctrlOk === LG_CTRL.length ? 'good' : 'bad']])}
+    ${egBar('الضوابط', m.ctrlOk / LG_CTRL.length * 100, '%')}${egBar('اختبارات القبول', m.testOk / LG_TESTS.length * 100, '%')}
+    ${anTbl({ h: 'ما ينقص قبل الإطلاق', cols: ['البند', 'النوع'], rows: LG_CTRL.filter(([q]) => !(s.ctrl || {})[q]).map(([, n]) => [n, 'ضابط حوكمة']).concat(LG_TESTS.filter((_, i) => !(s.tests || {})[i]).map(n => [n, 'اختبار قبول'])) })}
+    <div class="sub" style="gap:3px"><b style="font-size:13px">البطاقة الهندسية — DIA-LEGAL</b><span class="faint" style="font-size:12px">رمز الإعداد CFG-DIA-LEGAL-01 · الإصدار 1.0 — مقترح هندسي · النظام الأب NAIOSH HUB 360 + Data Intelligence & Analysis</span><span class="mono" style="font-size:10.5px;color:var(--muted)">LEGAL DATA → VERIFIED SOURCES → CASE CONTEXT → ANALYSIS → OPTIONS → HUMAN REVIEW → AUTHORIZED ACTION → AUDIT → LEARNING</span></div>
+    ${egNote('لا تُعد النسخة جاهزة لمجرد ظهور الصفحات؛ يجب اجتياز اختبارات القبول الثمانية. أطر مثل NIST AI RMF تنظم إدارة المخاطر لكنها ليست بديلًا عن قانون الدولة أو رأي المحامي المختص.')}`);
+};
+VIEWS.legal = () => {
+  const s = egS('legal'); lgEnsure(s);
+  let inputs = '';
+  if (s.tab === 'command') inputs = egCard('القضايا والملفات', 'LEGAL-02', `<div style="max-width:260px;margin-bottom:6px">${egTxt('legal', 'today', 'تاريخ اليوم للمواعيد (YYYY-MM-DD)')}</div>` + s.cases.map((c, i) => `<details data-lg-case="${i}" ${i === (s.open ?? 0) ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><span class="pmo-code">${esc(c.ref)}</span> <b>${esc(c.t)}</b> <span class="faint" style="font-size:11.5px">— ${esc(c.stage)} · ${esc(c.country)} · ${esc(c.due || 'بلا موعد')}</span></summary>
+      ${egGrid(160, egTxt('legal', `cases.${i}.t`, 'موضوع القضية') + egTxt('legal', `cases.${i}.client`, 'الموكل') + egTxt('legal', `cases.${i}.party`, 'الطرف الآخر') + egTxt('legal', `cases.${i}.country`, 'الدولة / الاختصاص') + egSel('legal', `cases.${i}.type`, 'نوع القضية', LG_TYPE.map(t => [t, t])) + egSel('legal', `cases.${i}.stage`, 'المرحلة', LG_STAGE.map(t => [t, t])) + egTxt('legal', `cases.${i}.due`, 'الموعد القادم (YYYY-MM-DD)') + egTxt('legal', `cases.${i}.next`, 'الإجراء المطلوب') + egTxt('legal', `cases.${i}.owner`, 'المسؤول') + egNum('legal', `cases.${i}.budget`, 'الميزانية') + egNum('legal', `cases.${i}.spent`, 'المصروف الفعلي') + egNum('legal', `cases.${i}.pend`, 'موافقات/مستندات معلقة') + egSel('legal', `cases.${i}.conflict`, 'فحص تضارب المصالح', LG_CONF))}
+      <div class="row between" style="margin-top:6px"><button type="button" class="btn sm" data-act="lg-open" data-k="${i}">${ic('analysis', 14)}افتح في مختبر التحليل</button>${egDel('legal', 'cases', i)}</div></details>`).join('') + `<div class="row" style="gap:8px;margin-top:8px">${egAdd('legal', 'cases', 'إضافة قضية')}${egSel('legal', 'cur', 'العملة', [['SAR', 'ريال سعودي'], ['JOD', 'دينار أردني'], ['AED', 'درهم إماراتي'], ['USD', 'دولار أمريكي'], ['CAD', 'دولار كندي']])}</div>`);
+  if (s.tab === 'lab' || s.tab === 'paths') {
+    const c = s.cases[s.sel], i = s.sel, pick = egSel('legal', 'sel', 'القضية', s.cases.map((x, j) => [j, x.ref + ' · ' + x.t]));
+    if (s.tab === 'lab') inputs = egCard('مدخلات التحليل', esc(c.ref), `<div style="max-width:420px">${pick}</div>
+      ${egQ(1, 'الوقائع والادعاءات', c.facts.map((f, j) => `<div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:end">${egTxt('legal', `cases.${i}.facts.${j}.x`, 'البيان')}${egSel('legal', `cases.${i}.facts.${j}.k`, 'التصنيف', LG_FACT)}${egTxt('legal', `cases.${i}.facts.${j}.s`, 'المصدر / الدليل')}<button type="button" class="btn link sm" data-act="lg-del" data-k="facts|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="facts">${ic('plus', 14)}إضافة واقعة</button>`)}
+      ${egQ(2, 'المصادر القانونية', c.srcs.map((x, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.srcs.${j}.n`, 'المصدر')}${egSel('legal', `cases.${i}.srcs.${j}.t`, 'النوع', LG_SRC_T.map(t => [t, t]))}${egTxt('legal', `cases.${i}.srcs.${j}.c`, 'الدولة')}${egSel('legal', `cases.${i}.srcs.${j}.st`, 'حالة النفاذ', LG_SRC_ST)}${egTxt('legal', `cases.${i}.srcs.${j}.v`, 'آخر تحقق (تاريخ)')}${egSel('legal', `cases.${i}.srcs.${j}.link`, 'رابط رسمي', [['yes', 'نعم'], ['no', 'لا']])}<button type="button" class="btn link sm" data-act="lg-del" data-k="srcs|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="srcs">${ic('plus', 14)}إضافة مصدر</button>`)}
+      ${egQ(3, 'الأدلة الرقمية', c.evid.map((e, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.evid.${j}.n`, 'الدليل')}${egTxt('legal', `cases.${i}.evid.${j}.s`, 'المصدر')}${egSel('legal', `cases.${i}.evid.${j}.hash`, 'بصمة السلامة', [['yes', 'موثقة'], ['no', 'غير موثقة']])}${egSel('legal', `cases.${i}.evid.${j}.chain`, 'سلسلة الحيازة', [['yes', 'مكتملة'], ['no', 'ناقصة']])}<button type="button" class="btn link sm" data-act="lg-del" data-k="evid|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="evid">${ic('plus', 14)}إضافة دليل</button>`)}
+      ${egQ(4, 'المراجعة والاعتماد البشري', egGrid(200, egTxt('legal', `cases.${i}.review.by`, 'المحامي المراجع المخول') + egSel('legal', `cases.${i}.review.ok`, 'قرار المراجعة', [['no', 'لم يُعتمد بعد'], ['yes', 'اعتُمد بعد المراجعة']])))}`);
+    else inputs = egCard('تقديرات المسارات', esc(c.ref), `<div style="max-width:420px">${pick}</div>${egGrid(180, egNum('legal', `cases.${i}.stake`, 'قيمة النزاع') + egNum('legal', `cases.${i}.rec`, 'نسبة الاسترداد المتوقعة عند النجاح %'))}
+      ${LG_PATHS.map(([p, n]) => egQ(0, n, egGrid(160, egNum('legal', `cases.${i}.paths.${p}.p`, 'احتمال النجاح %') + egNum('legal', `cases.${i}.paths.${p}.cost`, 'التكلفة') + egNum('legal', `cases.${i}.paths.${p}.m`, 'المدة بالأشهر')))).join('')}${egNote('اترك احتمال النجاح فارغًا إذا كان المسار غير متاح أو غير مناسب قانونيًا لهذه القضية.')}`);
+  }
+  if (s.tab === 'gov') inputs = egCard('مراكز العمل العشرة', 'LEGAL-NAV', egGrid(200, LG_CENTERS.map(([n, t, d]) => `<div class="sub" style="gap:3px"><span class="row nowrap" style="gap:7px"><span class="mono" style="color:var(--yellow);font-size:11px">${n}</span><b style="font-size:12.5px">${t}</b></span><span class="faint" style="font-size:11px">${d}</span></div>`).join(''))) + egCard('الضوابط واختبارات القبول', 'LEGAL-08', egQ(1, 'ضوابط الحوكمة المطبقة', `<div class="row" style="gap:6px">${LG_CTRL.map(([q, n]) => choice('eg-set', `legal.ctrl.${q}`, (s.ctrl || {})[q] ? '' : '1', !!(s.ctrl || {})[q], n)).join('')}</div>`) + egQ(2, 'اختبارات قبول النسخة الأولى (اجتازت)', `<div class="row" style="gap:6px">${LG_TESTS.map((n, j) => choice('eg-set', `legal.tests.${j}`, (s.tests || {})[j] ? '' : '1', !!(s.tests || {})[j], n)).join('')}</div>`) + egQ(3, 'مرحلة التنفيذ الحالية', egCh('legal', 'phase', LG_PHASE.map(([k, n]) => [k, k + ' · ' + n]))));
+  return `${engHead('NAIOSH LEGAL INTELLIGENCE 360 · DIA-LEGAL', 'الذكاء القانوني — مركز التحليل والحوكمة وإدارة القضايا', 'من استلام القضية إلى تحليلها وبناء الاستراتيجية ومتابعة المواعيد وإدارة الأدلة ومراقبة النتائج — من مكان واحد. كل استنتاج مرتبط بمصدر موثق، ولا يُعتمد أي رأي دون مراجعة المحامي المخول.', engExport('LEGAL'))}
+  ${egTabs('legal', [['command', 'مركز القيادة والقضايا'], ['lab', 'مختبر تحليل القضية'], ['paths', 'البدائل وتسوية النزاع'], ['gov', 'الحوكمة والجاهزية']])}
+  ${inputs}${egOut('legal')}`;
+};
+
+/* =========================================================================================
+   DIA-EBI — NAIOSH E-LEGAL & BUSINESS INTELLIGENCE 360
+   ========================================================================================= */
+const EB_AX = [['A01', 'الهوية النظامية', 'التسجيل، الملكية المعلنة، التراخيص، النشاط'], ['A02', 'الحوكمة', 'مجلس الإدارة، الصلاحيات، تضارب المصالح'], ['A03', 'الامتثال القانوني', 'الالتزامات، العقود، القضايا، المواعيد'], ['A04', 'الإدارة والهيكل', 'المسؤوليات، الإجراءات، الكفاءة'], ['A05', 'الوضع المالي', 'الإيرادات، المصروفات، الأرباح، التدفقات'], ['A06', 'المديونية والسيولة', 'الالتزامات، التحصيل، القدرة على السداد'], ['A07', 'التشغيل والإنتاج', 'الإنتاجية، الطاقة التشغيلية، الأعطال'], ['A08', 'الموارد البشرية', 'التوظيف، الدوران، المهارات، التدريب'], ['A09', 'سوق العمل', 'ندرة المهارات، الرواتب، الطلب القطاعي'], ['A10', 'السوق والعملاء', 'الحصة السوقية، الطلب، رضا العملاء'], ['A11', 'المشتريات والموردون', 'الاعتماد على الموردين والمخاطر'], ['A12', 'التقنية والأمن السيبراني', 'الأنظمة، البيانات، الحوادث، الاستمرارية'], ['A13', 'الجودة', 'العيوب، الشكاوى، التحسين'], ['A14', 'البيئة والاستدامة', 'الموارد، الانبعاثات، المسؤولية البيئية'], ['A15', 'المخاطر والأزمات', 'الجاهزية، التعافي، السيناريوهات'], ['A16', 'الاستراتيجية والنمو', 'الجدوى، التوسع، الاستثمار، الابتكار']];
+// [id, axis, question, critical, recommended action, referral route]
+const EB_Q = [
+  ['q01', 'A01', 'هل السجل التجاري أو الترخيص ساري المفعول؟', 1, 'تجديد السجل/الترخيص فورًا وتوثيق تاريخ الانتهاء', 'legal'], ['q02', 'A01', 'هل الأنشطة الفعلية مطابقة للأنشطة المرخصة؟', 1, 'تعديل الترخيص أو إيقاف النشاط غير المرخص', 'legal'],
+  ['q03', 'A02', 'هل توجد مصفوفة صلاحيات معتمدة؟', 0, 'إعداد واعتماد مصفوفة تفويض', 'tqg'], ['q04', 'A02', 'هل تُراجع حالات تضارب المصالح دوريًا؟', 0, 'إقرار دوري لتضارب المصالح ومراجعته', 'tqg'],
+  ['q05', 'A03', 'هل الشركة خالية من قضايا أو مطالبات قد تؤثر جوهريًا في الأعمال؟', 1, 'تقييم القضايا الجوهرية وخطة معالجتها', 'legal'], ['q06', 'A03', 'هل يوجد سجل للعقود ومواعيد تجديدها؟', 0, 'إنشاء سجل للعقود والتنبيهات', 'legal'],
+  ['q07', 'A04', 'هل يوجد وصف وظيفي معتمد لكل وظيفة؟', 0, 'استكمال الأوصاف الوظيفية واعتمادها', 'employ'], ['q08', 'A04', 'هل الإجراءات الرئيسية موثقة ومعتمدة؟', 0, 'توثيق الإجراءات الحرجة واعتمادها', 'tqg'],
+  ['q09', 'A05', 'هل غطّت الإيرادات المصروفات خلال آخر 12 شهرًا؟', 1, 'خطة ضبط التكاليف وتعزيز الإيرادات', 'eco'], ['q10', 'A05', 'هل توجد قوائم مالية مدققة لآخر سنة؟', 0, 'تدقيق القوائم المالية من جهة مستقلة', 'eco'],
+  ['q11', 'A06', 'هل يغطي النقد المتاح والتسهيلات المؤكدة التزامات 90 يومًا؟', 1, 'توقع نقدي أسبوعي ومراجعة التحصيل', 'eco'], ['q12', 'A06', 'هل متوسط مدة التحصيل ضمن السياسة المعتمدة؟', 0, 'مراجعة سياسة الائتمان والتحصيل', 'eco'],
+  ['q13', 'A07', 'هل تُقاس نسبة استغلال الطاقة التشغيلية وهي ضمن المستهدف؟', 0, 'قياس الطاقة ووضع مستهدفات تشغيلية', 'pmo'], ['q14', 'A07', 'هل الأعطال المتكررة موثقة ولها صيانة وقائية؟', 0, 'برنامج صيانة وقائية', 'sustain'],
+  ['q15', 'A08', 'هل معدل دوران الموظفين ضمن المستوى المقبول للقطاع؟', 0, 'تحليل أسباب المغادرة وخطة احتفاظ', 'employ'], ['q16', 'A08', 'هل توجد خطة تدريب سنوية مرتبطة بالفجوات؟', 0, 'خطة تدريب مبنية على فجوات المهارات', 'edu'],
+  ['q17', 'A09', 'هل تُشغل الوظائف الحرجة خلال مدة مقبولة؟', 0, 'تحليل الرواتب وبرنامج تأهيل', 'employ'], ['q18', 'A09', 'هل تُقارن الرواتب دوريًا بسوق العمل؟', 0, 'دراسة رواتب سوقية', 'skills'],
+  ['q19', 'A10', 'هل زادت المبيعات خلال آخر سنة؟', 0, 'تشخيص أسباب تراجع المبيعات', 'results'], ['q20', 'A10', 'هل يُقاس رضا العملاء دوريًا؟', 0, 'برنامج دوري لقياس رضا العملاء', 'results'],
+  ['q21', 'A11', 'هل تقل المشتريات من أكبر مورد عن 40%؟', 0, 'تنويع الموردين وخطة بديلة', 'supply'], ['q22', 'A11', 'هل تُقيَّم مخاطر الموردين سنويًا؟', 0, 'تقييم سنوي لمخاطر الموردين', 'supply'],
+  ['q23', 'A12', 'هل تُختبر النسخ الاحتياطية وخطط الاستعادة؟', 1, 'اختبار الاستعادة وتوثيقه', 'sustain'], ['q24', 'A12', 'هل يوجد سجل للحوادث الرقمية ومعالجتها؟', 0, 'إنشاء سجل حوادث سيبرانية', 'tqg'],
+  ['q25', 'A13', 'هل تُغلق الشكاوى ضمن المدة المستهدفة؟', 0, 'تحسين مسار معالجة الشكاوى', 'tqg'], ['q26', 'A13', 'هل يوجد نظام جودة مطبق؟', 0, 'تطبيق نظام إدارة جودة', 'tqg'],
+  ['q27', 'A14', 'هل توجد أهداف قابلة للقياس لاستهلاك الطاقة والمياه؟', 0, 'وضع مؤشرات استدامة قابلة للقياس', 'sustain'], ['q28', 'A14', 'هل تُدار النفايات والانبعاثات وفق متطلبات الجهة المختصة؟', 0, 'خطة امتثال بيئي', 'sustain'],
+  ['q29', 'A15', 'هل لدى الشركة سجل مخاطر وخطط معالجة؟', 1, 'إعداد سجل مخاطر وخطط معالجة', 'risks'], ['q30', 'A15', 'هل توجد خطة استمرارية أعمال مجربة؟', 0, 'خطة استمرارية واختبارها', 'sustain'],
+  ['q31', 'A16', 'هل توجد خطة أعمال معتمدة لثلاث سنوات؟', 0, 'إعداد خطة استراتيجية معتمدة', 'compete'], ['q32', 'A16', 'هل تُقيَّم جدوى مشاريع التوسع قبل اعتمادها؟', 0, 'دراسة جدوى لكل توسع', 'results']
+];
+const EB_ANS = [['yes', 'نعم'], ['part', 'جزئيًا'], ['no', 'لا']];
+const EB_EV = [['off', 'بيان موثق رسميًا'], ['doc', 'مستند مرفق'], ['self', 'إجابة ذاتية'], ['none', 'بلا دليل']];
+const EB_EVW = { off: 1, doc: 0.8, self: 0.5, none: 0.25 };
+const EB_REF = { legal: 'الذكاء القانوني LEGAL 360', employ: 'التوظيف EMPLOY 360', sustain: 'الاستدامة SUSTAIN 360', tqg: 'الجودة الشاملة والحوكمة', eco: 'المرونة الاقتصادية', pmo: 'PMO 360', edu: 'ذكاء التعليم والتدريب', skills: 'ذكاء المهارات', results: 'نتائج التحليل الفعلية', supply: 'سلاسل الإمداد', risks: 'المخاطر والفرص', compete: 'ذكاء المنافسين' };
+const EB_FU = { q11: ['ما مدة الفجوة النقدية المتوقعة؟', 'ما متوسط فترة التحصيل بالأيام؟', 'ما قيمة المخزون الراكد؟', 'ما أقساط الديون الشهرية؟', 'ما خيارات التمويل المتاحة؟'], q15: ['ما أبرز أسباب المغادرة؟', 'هل الرواتب أقل من السوق؟', 'كم ساعة تدريب سنوية للموظف؟', 'هل هناك ملاحظات على الإدارة المباشرة؟'], q09: ['ما أكبر ثلاثة بنود مصروفات؟', 'هل انخفضت الإيرادات أم ارتفعت التكاليف؟'], q05: ['ما عدد القضايا وقيمتها الإجمالية؟', 'ما مرحلة كل قضية جوهرية؟'] };
+const EB_USER = [['gov', 'جهة حكومية', 'مؤشرات مجمعة ومقارنات قطاعية ضمن الاختصاص — دون كشف بيانات شركة بعينها إلا بأساس قانوني'], ['co', 'الشركة نفسها', 'تقييم شامل وسري لبياناتها ومستنداتها'], ['ind', 'فرد', 'المعلومات الرسمية المنشورة فقط: التسجيل، حالة الترخيص، النشاط المعلن، مصدر وتاريخ التحقق']];
+EG_INIT.ebiz = () => ({
+  tab: 'assess', sector: 'التجارة والخدمات', country: 'السعودية', size: 'متوسطة', role: 'المدير المالي', viewer: 'co',
+  ans: { q01: 'yes', q02: 'part', q03: 'no', q04: 'part', q05: 'yes', q06: 'part', q07: 'part', q08: 'yes', q09: 'yes', q10: 'yes', q11: 'no', q12: 'part', q13: 'part', q14: 'yes', q15: 'part', q16: 'no', q17: 'no', q18: 'part', q19: 'yes', q20: 'yes', q21: 'part', q22: 'no', q23: 'part', q24: 'no', q25: 'yes', q26: 'part', q27: 'no', q28: 'yes', q29: 'part', q30: 'no', q31: 'yes', q32: 'part' },
+  ev: { q01: 'off', q02: 'self', q05: 'doc', q08: 'doc', q09: 'doc', q10: 'off', q14: 'self', q19: 'doc', q20: 'self', q25: 'doc', q28: 'self', q31: 'doc' },
+  fu: {}, recs: {}, open: 'A01',
+  fin: { cur: 'ر.س', rev: 12000000, exp: 10800000, assets: 6500000, liab: 4000000, cash: 1200000, liab90: 2000000, emp: 85, leave: 12 },
+  ver: { name: '', reg: '', country: 'السعودية', src: 'السجل التجاري الرسمي', regSt: 'unk', licSt: 'unk', activity: '', date: '' }
+});
+function ebModel() {
+  const s = egS('ebiz'), A = s.ans || {}, E = s.ev || {};
+  const sc = { yes: 1, part: 0.5, no: 0 };
+  const ax = EB_AX.map(([code, name, what]) => {
+    const qs = EB_Q.filter(q => q[1] === code), done = qs.filter(q => A[q[0]]);
+    const mat = done.length ? done.reduce((a, q) => a + sc[A[q[0]]], 0) / done.length * 100 : NaN;
+    const evc = done.length ? done.reduce((a, q) => a + EB_EVW[E[q[0]] || 'none'], 0) / done.length * 100 : NaN;
+    const gaps = qs.filter(q => A[q[0]] === 'no' || A[q[0]] === 'part'), crit = qs.filter(q => q[3] && A[q[0]] === 'no');
+    const st = !done.length ? ['لم يُقيَّم', 't-n'] : crit.length ? ['خطر حرج', 't-c'] : mat >= 75 && evc >= 60 ? ['سليم', 't-s'] : mat >= 75 ? ['سليم بأدلة ضعيفة', 't-m'] : mat >= 50 ? ['يحتاج تحسينًا', 't-m'] : ['ضعيف', 't-h'];
+    return { code, name, what, qs, done, mat, evc, gaps, crit, st };
+  });
+  const F = s.fin, f = (k) => egN(F[k]);
+  const fin = { profit: f('rev') - f('exp'), margin: f('rev') ? (f('rev') - f('exp')) / f('rev') * 100 : NaN, la: f('assets') ? f('liab') / f('assets') * 100 : NaN, cov: f('liab90') ? f('cash') / f('liab90') * 100 : NaN, turn: f('emp') ? f('leave') / f('emp') * 100 : NaN, net: f('assets') - f('liab') };
+  const notes = [];
+  if (fin.profit > 0) notes.push('الإيرادات تتجاوز المصروفات المدخلة، لكن يلزم التحقق من تصنيفها واكتمالها؛ الفرق ليس بالضرورة ربحًا تشغيليًا معتمدًا.'); else if (f('rev')) notes.push('المصروفات تتجاوز الإيرادات المدخلة — يلزم تحليل البنود الكبرى وخطة ضبط.');
+  if (isFinite(fin.cov) && fin.cov < 100) notes.push(`النقد المتاح يغطي ${fmtN(fin.cov, 0)}% فقط من التزامات 90 يومًا؛ ينبغي مراجعة التدفقات المتوقعة والتحصيل والتمويل المتاح.`);
+  if (isFinite(fin.la) && fin.la > 60) notes.push(`نسبة الالتزامات إلى الأصول ${fmtN(fin.la, 1)}% — مستوى رافعة مرتفع يحتاج مراجعة هيكل التمويل.`);
+  if (isFinite(fin.turn) && fin.turn > 12) notes.push(`معدل المغادرة التقريبي ${fmtN(fin.turn, 1)}% — يُحال إلى EMPLOY 360 لتحليل الأسباب.`);
+  const finRecs = [];
+  if (isFinite(fin.cov) && fin.cov < 100) finRecs.push(['fin_cov', 'السيولة', 'فجوة بين النقد والالتزامات القريبة', 'توقع نقدي أسبوعي ومراجعة التحصيل', 'eco', 1]);
+  if (isFinite(fin.turn) && fin.turn > 12) finRecs.push(['fin_turn', 'الموارد البشرية', 'معدل مغادرة مرتفع', 'تحليل الأسباب وخطة احتفاظ', 'employ', 0]);
+  if (isFinite(fin.margin) && fin.margin < 5) finRecs.push(['fin_mar', 'الوضع المالي', 'هامش ربح منخفض', 'خطة ضبط التكاليف وتحسين التسعير', 'eco', 0]);
+  const recs = EB_Q.filter(q => A[q[0]] === 'no' || A[q[0]] === 'part').map(q => [q[0], (EB_AX.find(a => a[0] === q[1]) || [, ''])[1], q[2].replace('هل ', '').replace('؟', '') + (A[q[0]] === 'part' ? ' — جزئيًا' : ' — لا'), q[4], q[5], q[3] && A[q[0]] === 'no' ? 1 : 0]).concat(finRecs).sort((a, b) => b[5] - a[5]);
+  const fu = Object.entries(EB_FU).filter(([q]) => A[q] === 'no' || A[q] === 'part');
+  const answered = EB_Q.filter(q => A[q[0]]).length, evid = EB_Q.filter(q => A[q[0]] && (E[q[0]] === 'off' || E[q[0]] === 'doc')).length;
+  const refs = {}; recs.forEach(r => { refs[r[4]] = (refs[r[4]] || 0) + 1; });
+  return { s, ax, fin, notes, recs, fu, answered, evid, refs, crit: ax.reduce((a, x) => a + x.crit.length, 0) };
+}
+EG_OUT.ebiz = () => {
+  const m = ebModel(), s = m.s, cur = s.fin.cur || '';
+  if (s.tab === 'assess') return egCard('نتيجة التشخيص المؤسسي — 16 محورًا', 'EBI-02', `${anKpis([['أسئلة مُجابة', m.answered + ' من ' + EB_Q.length], ['إجابات مدعومة بمستند أو مصدر رسمي', m.evid + ' من ' + m.answered, m.evid / Math.max(1, m.answered) < 0.5 ? 'bad' : 'good'], ['مخاطر حرجة', m.crit, m.crit ? 'bad' : 'good'], ['محاور سليمة', m.ax.filter(a => a.st[0] === 'سليم').length + ' من 16'], ['فجوات تحتاج خطة', m.recs.length]])}
+    ${m.crit ? `<div class="banner r" style="font-size:13px">${ic('warn', 16)}<span>مخاطر حرجة لا يجوز إخفاؤها في درجة عامة: ${m.ax.flatMap(a => a.crit.map(q => '«' + q[2].replace('؟', '') + '»')).join('، ')}</span></div>` : ''}
+    ${anTbl({ h: 'خمس نتائج منفصلة لكل محور — دون دمجها في درجة واحدة', cols: ['المحور', 'الحالة', 'النضج', 'اكتمال الأدلة', 'الفجوات', 'المخاطر الحرجة', 'خطة التحسين'], rows: m.ax.map(a => [a.code + ' · ' + a.name, a.st[0], isFinite(a.mat) ? fmtN(a.mat, 0) + '%' : '—', isFinite(a.evc) ? fmtN(a.evc, 0) + '%' : '—', a.gaps.length, a.crit.length, a.gaps.map(q => q[4]).join('؛ ') || '—']) })}
+    ${anChart({ bars: m.ax.filter(a => isFinite(a.mat)).map(a => [a.code + ' ' + a.name, Math.round(a.mat)]).sort((a, b) => b[1] - a[1]) })}
+    ${m.fu.length ? `<div class="stack" style="gap:8px"><span class="lbl">أسئلة متابعة تلقائية — مقابلة تحليلية حسب إجاباتك</span>${m.fu.map(([q, list]) => `<div class="sub" style="gap:6px"><b style="font-size:12.5px">${esc((EB_Q.find(x => x[0] === q) || [, , ''])[2])}</b>${egGrid(220, list.map((t, j) => egTxt('ebiz', `fu.${q}_${j}`, t)).join(''))}</div>`).join('')}</div>` : ''}
+    ${egNote('النضج = نعم 100%، جزئيًا 50%، لا 0%. اكتمال الأدلة يزن مصدر كل إجابة: بيان رسمي 100%، مستند 80%، إجابة ذاتية 50%، بلا دليل 25%. المنصة لا تعرف الوضع الحقيقي للمؤسسة من استبيان ذاتي وحده؛ لذلك يُعرض اكتمال الأدلة منفصلًا عن النضج.')}`);
+  if (s.tab === 'fin') {
+    const fi = m.fin;
+    return egCard('المؤشرات المالية والإدارية الأولية', 'EBI-04', `${anKpis([['الربح التشغيلي التقريبي', fmtN(fi.profit, 0) + ' ' + cur, fi.profit >= 0 ? 'good' : 'bad'], ['هامش الربح التقريبي', fmtN(fi.margin, 1) + '%', fi.margin >= 10 ? 'good' : 'bad'], ['الالتزامات إلى الأصول', fmtN(fi.la, 1) + '%', fi.la > 60 ? 'bad' : 'good'], ['تغطية النقد لالتزامات 90 يومًا', fmtN(fi.cov, 0) + '%', fi.cov < 100 ? 'bad' : 'good'], ['معدل المغادرة التقريبي', fmtN(fi.turn, 1) + '%', fi.turn > 12 ? 'bad' : 'good'], ['صافي الأصول الدفترية', fmtN(fi.net, 0) + ' ' + cur, fi.net >= 0 ? 'good' : 'bad']])}
+      ${egBar('تغطية النقد للالتزامات القريبة', Math.min(100, fi.cov), '%')}${egBar('الأصول غير الممولة بالالتزامات', Math.max(0, 100 - fi.la), '%')}
+      <div class="sub" style="gap:6px"><b style="font-size:13px">ملاحظات تحليلية آلية</b>${m.notes.map(n => `<span class="soft" style="font-size:12.5px">• ${esc(n)}</span>`).join('') || '<span class="faint">لا ملاحظات.</span>'}</div>
+      ${egNote('هذه المؤشرات تعتمد على تبسيطات محاسبية: الإيرادات ناقص المصروفات ليست بالضرورة ربحًا تشغيليًا معتمدًا، والنقد لا يعكس كامل السيولة، ومعدل المغادرة يفترض أن المدخل متوسط عدد العاملين. لا تكفي لإصدار تقييم ائتماني أو قانوني.')}`);
+  }
+  if (s.tab === 'recs') return egCard('التوصيات والإحالة إلى المحركات المتخصصة', 'EBI-05', `${anKpis([['توصيات', m.recs.length], ['حرجة', m.recs.filter(r => r[5]).length, m.recs.some(r => r[5]) ? 'bad' : 'good'], ['لها مسؤول وموعد', m.recs.filter(r => (s.recs[r[0]] || {}).owner && (s.recs[r[0]] || {}).due).length + ' من ' + m.recs.length], ['مغلقة بدليل', m.recs.filter(r => (s.recs[r[0]] || {}).st === 'done' && (s.recs[r[0]] || {}).ev).length]])}
+    <div class="stack" style="gap:6px"><span class="lbl">الإحالات — تُدخل الشركة بياناتها مرة واحدة وتستفيد من المحركات المتخصصة</span><div class="row" style="gap:6px">${Object.entries(m.refs).sort((a, b) => b[1] - a[1]).map(([r, n]) => `<button type="button" class="chip" data-go="${r}">${ic(r, 13)}${esc(EB_REF[r] || r)} · ${n}</button>`).join('')}</div></div>
+    ${anTbl({ h: 'خطة التحسين — كل توصية تحتاج مسؤولًا وموعدًا ومؤشر نجاح ودليل إغلاق', cols: ['المجال', 'الملاحظة', 'الإجراء المقترح', 'المسؤول', 'الموعد', 'مؤشر النجاح', 'الحالة', 'الإحالة'], rows: m.recs.map(r => { const x = s.recs[r[0]] || {}; return [r[1] + (r[5] ? ' · حرج' : ''), r[2], r[3], x.owner || '—', x.due || '—', x.kpi || '—', x.st === 'done' ? (x.ev ? 'مغلقة بدليل' : 'مغلقة دون دليل — لا تُحتسب') : x.st === 'doing' ? 'قيد التنفيذ' : 'مفتوحة', EB_REF[r[4]] || r[4]]; }) })}`);
+  const v = s.ver, ok = (x) => x === 'ok' ? 'موثق' : x === 'bad' ? 'غير ساري / غير موجود' : 'لم يُتحقق';
+  return egCard('NAIOSH COMPANY VERIFY — التحقق من البيانات المنشورة رسميًا', 'EBI-06', `${anKpis([['اسم الشركة', v.name || '—'], ['التسجيل', ok(v.regSt), v.regSt === 'ok' ? 'good' : v.regSt === 'bad' ? 'bad' : ''], ['الترخيص', ok(v.licSt), v.licSt === 'ok' ? 'good' : v.licSt === 'bad' ? 'bad' : ''], ['تاريخ التحقق', v.date || '—']])}
+    ${anTbl({ h: 'نتيجة التحقق — بيانات عامة فقط مع مصدرها وتاريخها', cols: ['البند', 'النتيجة', 'المصدر'], rows: [['رقم السجل', v.reg || '—', v.src], ['حالة التسجيل', ok(v.regSt), v.src], ['حالة الترخيص', ok(v.licSt), v.src], ['النشاط المعلن', v.activity || '—', v.src], ['الدولة', v.country || '—', v.src]] })}
+    ${anTbl({ h: 'من يرى ماذا؟', cols: ['المستخدم', 'نطاق الاطلاع'], rows: EB_USER.map(([, n, d]) => [n, d]) })}
+    <div class="banner y" style="font-size:12.5px">${ic('warn', 15)}<span>لا تقدم الخدمة أحكامًا غير مثبتة عن نزاهة الشركة أو أصحابها، ولا تُظهر بيانات مالية أو قانونية أو شخصية غير عامة دون أساس قانوني وصلاحية.</span></div>
+    ${egGrid(220, [['NAIOSH COMPANY VERIFY', 'التحقق من بيانات الشركات المنشورة رسميًا مع تاريخ التحقق ومصدره'], ['NAIOSH BUSINESS DIAGNOSTICS', 'تقييم شامل وسري تجريه المؤسسة لنفسها بالأسئلة والمستندات'], ['NAIOSH INSTITUTIONAL INTELLIGENCE', 'لوحات للجهات المصرح لها بمؤشرات مجمعة دون كشف بيانات سرية']].map(([a, b]) => `<div class="sub" style="gap:3px"><b class="mono" style="font-size:11.5px;color:var(--yellow)">${a}</b><span class="faint" style="font-size:12px">${b}</span></div>`).join(''))}`);
+};
+VIEWS.ebiz = () => {
+  const s = egS('ebiz'); s.recs = s.recs || {}; s.fu = s.fu || {};
+  let inputs = '';
+  if (s.tab === 'assess') inputs = egCard('بيانات المؤسسة وبنك الأسئلة', 'EBI-01', egGrid(170, egTxt('ebiz', 'sector', 'القطاع') + egTxt('ebiz', 'country', 'الدولة') + egSel('ebiz', 'size', 'حجم المؤسسة', [['صغيرة', 'صغيرة'], ['متوسطة', 'متوسطة'], ['كبيرة', 'كبيرة']]) + egTxt('ebiz', 'role', 'صفة المجيب المخول')) +
+    `<div class="row between" style="gap:8px"><span class="faint" style="font-size:12px">لكل إجابة: القيمة ونوع الدليل. يُميَّز بين «إجابة مقدمة من الشركة» و«بيان موثق رسميًا» و«استنتاج آلي».</span><button type="button" class="btn link sm" data-act="eb-clear">مسح الإجابات</button></div>` +
+    EB_AX.map(([code, name, what]) => { const qs = EB_Q.filter(q => q[1] === code), n = qs.filter(q => (s.ans || {})[q[0]]).length; return `<details data-eb-ax="${code}" ${s.open === code ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:4px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><span class="pmo-code">${code}</span> <b>${name}</b> <span class="faint" style="font-size:11.5px">— ${what} · ${n}/${qs.length}</span></summary>${qs.map(q => egQ(0, (q[3] ? '<span class="tag t-c" style="font-size:10px">حرج</span> ' : '') + esc(q[2]), egCh('ebiz', 'ans.' + q[0], EB_ANS) + `<div class="row nowrap" style="gap:6px;align-items:center"><span class="faint" style="font-size:11px;flex-shrink:0">الدليل:</span>${egCh('ebiz', 'ev.' + q[0], EB_EV)}</div>`)).join('')}</details>`; }).join(''));
+  if (s.tab === 'fin') inputs = egCard('مدخلات المؤشرات', 'EBI-03', egGrid(180, egTxt('ebiz', 'fin.cur', 'العملة') + egNum('ebiz', 'fin.rev', 'الإيرادات السنوية') + egNum('ebiz', 'fin.exp', 'المصروفات السنوية') + egNum('ebiz', 'fin.assets', 'إجمالي الأصول') + egNum('ebiz', 'fin.liab', 'إجمالي الالتزامات') + egNum('ebiz', 'fin.cash', 'النقد المتاح') + egNum('ebiz', 'fin.liab90', 'الالتزامات خلال 90 يومًا') + egNum('ebiz', 'fin.emp', 'متوسط عدد الموظفين') + egNum('ebiz', 'fin.leave', 'عدد المغادرين خلال السنة')));
+  if (s.tab === 'recs') { const m = ebModel(); inputs = egCard('متابعة التوصيات', 'EBI-05', m.recs.length ? m.recs.map(r => `<div class="sub" style="gap:8px"><div class="row between nowrap" style="gap:8px"><b style="font-size:13px">${r[5] ? '<span class="tag t-c" style="font-size:10px">حرج</span> ' : ''}${esc(r[3])}</b><button type="button" class="btn sm" data-go="${r[4]}">${ic(r[4], 13)}${esc(EB_REF[r[4]] || r[4])}</button></div><span class="faint" style="font-size:11.5px">${esc(r[1])} — ${esc(r[2])}</span>${egGrid(150, egTxt('ebiz', `recs.${r[0]}.owner`, 'المسؤول') + egTxt('ebiz', `recs.${r[0]}.due`, 'الموعد') + egTxt('ebiz', `recs.${r[0]}.kpi`, 'مؤشر النجاح') + egTxt('ebiz', `recs.${r[0]}.ev`, 'دليل الإغلاق') + egSel('ebiz', `recs.${r[0]}.st`, 'الحالة', [['open', 'مفتوحة'], ['doing', 'قيد التنفيذ'], ['done', 'مغلقة']]))}</div>`).join('') : '<span class="faint">لا توجد فجوات — أجب عن بنك الأسئلة أولًا.</span>'); }
+  if (s.tab === 'verify') inputs = egCard('بيانات التحقق', 'EBI-06', egGrid(180, egTxt('ebiz', 'ver.name', 'اسم الشركة') + egTxt('ebiz', 'ver.reg', 'رقم السجل') + egTxt('ebiz', 'ver.country', 'الدولة') + egTxt('ebiz', 'ver.src', 'المصدر الرسمي') + egSel('ebiz', 'ver.regSt', 'حالة التسجيل', [['unk', 'لم يُتحقق'], ['ok', 'موجود وساري'], ['bad', 'غير موجود / مشطوب']]) + egSel('ebiz', 'ver.licSt', 'حالة الترخيص', [['unk', 'لم يُتحقق'], ['ok', 'ساري'], ['bad', 'منتهٍ']]) + egTxt('ebiz', 'ver.activity', 'النشاط المعلن') + egTxt('ebiz', 'ver.date', 'تاريخ التحقق')) + egNote('أدخل ما ظهر في المصدر الرسمي فقط. لا تُستنتج حالة الشركة من مصادر غير رسمية.'));
+  return `${engHead('NAIOSH E-LEGAL & BUSINESS INTELLIGENCE 360 · DIA-EBI', 'التشخيص المؤسسي والقانوني والمالي وسوق العمل', 'يساعد صاحب الشركة على فهم الوضع الحقيقي للمؤسسة: قانونيًا وإداريًا وماليًا وتشغيليًا وبشريًا وسوقيًا، ثم يحدد المخاطر والفجوات ويقترح خطة معالجة قابلة للتنفيذ — ويحيل كل مشكلة إلى المحرك المتخصص دون تكرار إدخال البيانات.', engExport('EBI'))}
+  ${egTabs('ebiz', [['assess', 'التقييم الشامل — 16 محورًا'], ['fin', 'المؤشرات المالية'], ['recs', 'التوصيات والإحالة'], ['verify', 'التحقق من الشركات']])}
+  ${inputs}${egOut('ebiz')}`;
+};
+
+/* ---------- events ---------- */
+function engine4Handle(act, k, el) {
+  if (!act || !/^(lg-|eb-)/.test(act)) return false;
+  if (act === 'lg-open') { const s = egS('legal'); s.sel = +k; s.tab = 'lab'; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'lg-add' || act === 'lg-del') {
+    const s = egS('legal'); lgEnsure(s); const c = s.cases[s.sel], [key, j] = String(k).split('|');
+    if (act === 'lg-add') c[key].push(key === 'facts' ? { x: '', k: 'claim', s: '' } : key === 'srcs' ? { n: '', t: 'نظام / قانون', c: c.country || '', st: 'unk', v: '', link: 'no' } : { n: '', s: '', hash: 'no', chain: 'no' });
+    else c[key].splice(+j, 1);
+    save(); render(); return true;
+  }
+  if (act === 'eb-clear') { const s = egS('ebiz'); s.ans = {}; s.ev = {}; s.fu = {}; save(); render(); toast('مُسحت الإجابات'); return true; }
+  return false;
+}
+document.addEventListener('toggle', (e) => {
+  const d = e.target; if (!d || !d.dataset) return;
+  if (d.dataset.ebAx && d.open) { egS('ebiz').open = d.dataset.ebAx; save(); }
+  if (d.dataset.lgCase && d.open) { egS('legal').open = +d.dataset.lgCase; save(); }
+}, true);
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset || el.dataset.eg !== 'legal') return;
+  if (el.dataset.p === 'sel' || /\.(stage|type)$/.test(el.dataset.p)) { if (el.dataset.p === 'sel') egS('legal').sel = +el.value; render(); }
+});
+const _eg4 = engine3Handle;
+engine3Handle = function (act, k, el) { return engine4Handle(act, k, el) || _eg4(act, k, el); };
+
+/* ---------- exports ---------- */
+const _es4 = engSections3;
+engSections3 = function (code) {
+  if (code === 'LEGAL') {
+    const m = lgModel(), c = m.c;
+    return { title: 'تقرير الذكاء القانوني — LEGAL INTELLIGENCE 360', audience: 'الإدارة القانونية والمحامي المسؤول', ref: 'DIA-LEGAL', sections: [
+      { h: 'مركز القيادة', kv: kvx([['القضايا النشطة', m.k.active], ['استحقاقات خلال 7 أيام', m.k.soon], ['مواعيد فائتة', m.k.late], ['ملفات تنتظر إجراءً', m.k.wait], ['تنبيهات حرجة', m.k.crit], ['الميزانية / المصروف', fmtN(m.k.budget, 0) + ' / ' + fmtN(m.k.spent, 0)]]) },
+      { h: 'القضايا', cols: ['الرمز', 'القضية', 'الموكل', 'الدولة', 'النوع', 'المرحلة', 'الموعد', 'المسؤول', 'تضارب المصالح'], rows: m.C.map(x => [x.c.ref, x.c.t, x.c.client, x.c.country, x.c.type, x.c.stage, x.c.due || '—', x.c.owner || '—', (LG_CONF.find(q => q[0] === x.c.conflict) || [, ''])[1]]) },
+      { h: 'الإجراءات ذات الأولوية', cols: ['المستوى', 'القضية', 'الإشارة', 'الدليل', 'الإجراء', 'المسؤول', 'الموعد'], rows: m.alerts.map(a => [lgLvl[a.lvl][1], a.x.c.ref, a.what, a.ev, a.todo, a.x.c.owner || '—', a.x.c.due || '—']) },
+      { h: 'تحليل القضية ' + c.ref, kv: kvx([['مستوى الثقة', m.conf + '%'], ['وقائع مثبتة', m.nP + ' من ' + m.nF], ['مصادر نافذة متحقق منها', m.srcOk + ' من ' + c.srcs.length], ['أدلة سليمة السلسلة', m.evOk + ' من ' + c.evid.length], ['حالة المخرج', m.reviewed ? 'معتمد من ' + c.review.by : 'مسودة تحتاج اعتماد محامٍ']]) },
+      { h: 'الوقائع', cols: ['البيان', 'التصنيف', 'المصدر'], rows: c.facts.map(f => [f.x, (LG_FACT.find(q => q[0] === f.k) || [, ''])[1], f.s || 'غير متحقق']) },
+      { h: 'المصادر القانونية', cols: ['المصدر', 'النوع', 'الدولة', 'الحالة', 'آخر تحقق'], rows: c.srcs.map(x => [x.n, x.t, x.c, (LG_SRC_ST.find(q => q[0] === x.st) || [, ''])[1], x.v || '—']) },
+      { h: 'البدائل', cols: ['المسار', 'الاحتمال', 'التكلفة', 'المدة', 'القيمة الصافية المتوقعة'], rows: m.paths.map(x => [x.n, fmtN(x.pr * 100, 0) + '%', fmtN(x.cost, 0), fmtN(x.m, 0), fmtN(x.ev, 0)]) },
+      { h: 'الحوكمة', bullets: ['لا يختلق المحرك مادة قانونية أو حكمًا أو اقتباسًا؛ غير المتحقق يُصرَّح به.', 'لا يُعتمد رأي قانوني ولا يُودع مستند دون مراجعة المحامي المخول.', `الضوابط المطبقة ${m.ctrlOk}/${LG_CTRL.length} · اختبارات القبول ${m.testOk}/${LG_TESTS.length}.`] }] };
+  }
+  if (code === 'EBI') {
+    const m = ebModel(), s = m.s, fi = m.fin;
+    return { title: 'تقرير التشخيص المؤسسي — E-LEGAL & BUSINESS INTELLIGENCE 360', audience: 'صاحب الشركة والإدارة العليا', ref: 'DIA-EBI', sections: [
+      { h: 'المؤسسة', kv: kvx([['القطاع', s.sector], ['الدولة', s.country], ['الحجم', s.size], ['المجيب', s.role], ['أسئلة مجابة', m.answered + ' من ' + EB_Q.length], ['مدعومة بأدلة', m.evid], ['مخاطر حرجة', m.crit]]) },
+      { h: 'المحاور الستة عشر', cols: ['المحور', 'الحالة', 'النضج', 'اكتمال الأدلة', 'الفجوات', 'حرجة'], rows: m.ax.map(a => [a.code + ' ' + a.name, a.st[0], isFinite(a.mat) ? fmtN(a.mat, 0) + '%' : '—', isFinite(a.evc) ? fmtN(a.evc, 0) + '%' : '—', a.gaps.length, a.crit.length]) },
+      { h: 'المؤشرات المالية', kv: kvx([['الربح التشغيلي التقريبي', fmtN(fi.profit, 0)], ['الهامش', fmtN(fi.margin, 1) + '%'], ['الالتزامات إلى الأصول', fmtN(fi.la, 1) + '%'], ['تغطية النقد 90 يومًا', fmtN(fi.cov, 0) + '%'], ['معدل المغادرة', fmtN(fi.turn, 1) + '%'], ['صافي الأصول', fmtN(fi.net, 0)]]) },
+      { h: 'ملاحظات تحليلية', bullets: m.notes.length ? m.notes : ['لا ملاحظات.'] },
+      { h: 'خطة التحسين والإحالات', cols: ['المجال', 'الملاحظة', 'الإجراء', 'المسؤول', 'الموعد', 'الإحالة'], rows: m.recs.map(r => { const x = s.recs[r[0]] || {}; return [r[1], r[2], r[3], x.owner || '—', x.due || '—', EB_REF[r[4]] || r[4]]; }) },
+      { h: 'حدود التحليل', bullets: ['المؤشرات تبسيطات محاسبية ولا تكفي لتقييم ائتماني أو قانوني.', 'يُميَّز بين إجابة الشركة والبيان الموثق رسميًا والاستنتاج الآلي.', 'لا تُكشف بيانات غير عامة دون أساس قانوني وصلاحية.'] }] };
+  }
+  return _es4(code);
+};
+</script>
