@@ -25,7 +25,7 @@
    modules switched off in settings are hidden, settings stays in the header. */
 const LN_ACC = ['#FF2E4D', '#4DA3FF', '#FFCD11', '#2FD27A', '#C79BFF', '#FF8A1F', '#7ABBFF', '#F472B6', '#2DD4BF', '#A6A6B0'];
 function homeLauncher() {
-  if (S.lnHide) return `<section class="card row between" style="gap:10px;padding:12px 16px"><span class="row nowrap" style="gap:8px">${ic('architecture', 16, 'style="color:var(--yellow)"')}<b style="font-size:13.5px">أقسام المنظومة</b><span class="faint" style="font-size:12px">مخفية</span></span><button type="button" class="btn sm" data-act="ln-toggle">عرض كل الأقسام</button></section>`;
+  if (S.lnHide) return `<section class="card row between" style="gap:10px;padding:12px 16px"><span class="row nowrap" style="gap:8px">${ic('architecture', 16, 'style="color:var(--yellow)"')}<b style="font-size:13.5px">محاور المنظومة</b><span class="faint" style="font-size:12px">مخفية</span></span><button type="button" class="btn sm" data-act="ln-toggle">عرض كل المحاور</button></section>`;
   const c = typeof counts === 'function' ? counts() : {};
   const groups = NAV.map((g, gi) => {
     const items = g.items.filter(([id]) => id !== 'home' && id !== 'settings' && (typeof modOn !== 'function' || modOn(id)));
@@ -45,7 +45,7 @@ function homeLauncher() {
   }).join('');
   const total = NAV.reduce((n, g) => n + g.items.filter(([id]) => id !== 'home' && id !== 'settings' && (typeof modOn !== 'function' || modOn(id))).length, 0);
   return `<section class="card" style="gap:16px">
-    <div class="row between" style="gap:10px"><div class="stack" style="gap:2px"><h2 class="h-sec" style="font-size:17px">أقسام المنظومة</h2><span class="faint" style="font-size:12px">${total} قسمًا — اختر القسم الذي تريد العمل عليه</span></div>
+    <div class="row between" style="gap:10px"><div class="stack" style="gap:2px"><h2 class="h-sec" style="font-size:17px">محاور المنظومة</h2><span class="faint" style="font-size:12px">${total} محورًا — اختر المحور الذي تريد العمل عليه</span></div>
       <button type="button" class="btn link sm" data-act="ln-toggle">إخفاء</button></div>
     <div class="ln-wrap">${groups}</div></section>`;
 }

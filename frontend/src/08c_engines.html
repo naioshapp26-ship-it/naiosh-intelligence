@@ -27,7 +27,7 @@ const BENCH_LEVELS = [
   { k: 'gov', n: 'الحوكمة والإدارة', items: 'المسؤوليات · الصلاحيات · السياسات · المخاطر · الرقابة', ex: [49, 64, 82], nw: [40, 55, 78],
     kpi: { ex: [['قرارات موثقة بصاحب صلاحية', '58%', 'محلي 75%', 'سجل القرارات DIA-19', 'L3']], nw: [['مصفوفة صلاحيات معتمدة', 'لا', 'نعم قبل التأسيس', 'ISO 31000 — إرشادي', 'L2']] } },
   { k: 'tech', n: 'التقنية والبيانات', items: 'التحول الرقمي · أمن المعلومات · جودة البيانات · الأتمتة', ex: [57, 62, 81], nw: [64, 60, 79],
-    kpi: { ex: [['حداثة بيانات الموارد البشرية', 'قبل 9 أيام', 'يومي', 'مركز ذكاء البيانات DIA-03', 'L3']], nw: [['خطة أمن معلومات أساسية', 'جزئية', 'ضوابط ISO/IEC 27001 الأساسية', 'ISO/IEC 27001 — مرجع', 'L2']] } },
+    kpi: { ex: [['حداثة بيانات الموارد البشرية', 'قبل 9 أيام', 'يومي', 'مركز تحليل البيانات DIA-03', 'L3']], nw: [['خطة أمن معلومات أساسية', 'جزئية', 'ضوابط ISO/IEC 27001 الأساسية', 'ISO/IEC 27001 — مرجع', 'L2']] } },
   { k: 'people', n: 'الإنسان والاستدامة', items: 'الكفاءات · القيادة · بيئة العمل · السلامة · الأثر', ex: [46, 63, 79], nw: [58, 60, 74],
     kpi: { ex: [['ساعات التدريب الشهرية للموظف', '3', 'محلي 6 · دولي 8', 'LMS · DS-TRN-12', 'L3'], ['دوران الموظفين السنوي', '24%', 'محلي 15%', 'HR · DS-HR-OT', 'L3']], nw: [['اكتمال الفريق الأساسي', 'حسب المدخلات', '≥ 70%', 'تقييم داخلي', 'L1']] } }
 ];
@@ -102,7 +102,7 @@ VIEWS.bench = () => {
   const dec = benchDecision(), i = b.inp;
   const slider = (k, label, min, max, unit) => `<label class="stack" style="gap:4px"><span class="row between"><span style="font-size:13px">${label}</span><b class="mono" id="bench-v-${k}" style="color:var(--yellow)">${i[k]}${unit}</b></span><input type="range" min="${min}" max="${max}" value="${i[k]}" data-bench="${k}" aria-label="${label}"></label>`;
   return `
-  ${engHead('NAIOSH GLOBAL BENCHMARKING · DIA-BENCH', 'المقارنة المعيارية الدولية وذكاء المشروعات', 'لا نقارن لمجرد معرفة من الأفضل؛ نقارن لفهم الفجوة، ومعرفة أسبابها، وتحديد ما يجب تغييره، ثم إثبات أن التغيير حقق أثرًا حقيقيًا.', engExport('BENCH'))}
+  ${engHead('NAIOSH GLOBAL BENCHMARKING · DIA-BENCH', 'المقارنة المعيارية الدولية وتحليل المشروعات', 'لا نقارن لمجرد معرفة من الأفضل؛ نقارن لفهم الفجوة، ومعرفة أسبابها، وتحديد ما يجب تغييره، ثم إثبات أن التغيير حقق أثرًا حقيقيًا.', engExport('BENCH'))}
   <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="${ex}" data-act="bench-track" data-k="existing">المسار الثاني · مشروع قائم (الفرع الشمالي)</button><button type="button" role="tab" aria-selected="${!ex}" data-act="bench-track" data-k="new">المسار الأول · مشروع جديد قبل التأسيس</button></div>
   ${!ex ? `<section class="split">
     <div class="card" style="gap:12px"><div class="row between"><h2 class="h-sec">فحص الفكرة قبل التأسيس</h2><span class="eyebrow">BEN-02 · BEN-04</span></div>
@@ -219,7 +219,7 @@ VIEWS.safety = () => {
   let matrix = ''; for (let L = 5; L >= 1; L--) for (let Sv = 1; Sv <= 5; Sv++) matrix += cell(L, Sv);
   const counts = [1, 2, 3, 4].map(p => m.rows.filter(r => r.pr === p).length);
   return `
-  ${engHead('NAIOSH SAFETY INTELLIGENCE · DIA-SAF', 'ذكاء السلامة وتحليل المخاطر والامتثال المعياري', 'اكتشف الخطر، تحقق من الأدلة، اختر وسيلة السيطرة الأكثر فاعلية، نفّذ، تحقق من الفاعلية، وتعلّم قبل تكرار الخطأ. هذا تشخيص أولي ولا يُصدر حكمًا نهائيًا على سلامة المشروع.', engExport('SAF'))}
+  ${engHead('NAIOSH SAFETY INTELLIGENCE · DIA-SAF', 'تحليل المخاطر والامتثال المعياري', 'اكتشف الخطر، تحقق من الأدلة، اختر وسيلة السيطرة الأكثر فاعلية، نفّذ، تحقق من الفاعلية، وتعلّم قبل تكرار الخطأ. هذا تشخيص أولي ولا يُصدر حكمًا نهائيًا على سلامة المشروع.', engExport('SAF'))}
   <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${[1, 2, 3, 4].map((p, i) => `<div class="card tight"><span class="tag ${PR[p][1]}">${PR[p][0]}</span><b class="num" style="font-size:26px">${counts[i]}</b><span class="faint" style="font-size:11.5px">${PR[p][3]}</span></div>`).join('')}</section>
   <section class="split">
     <div class="card" style="gap:4px"><div class="row between"><h2 class="h-sec">الاستبيان الذكي — SAF-02</h2><span class="tag ${m.maturity[1]}">نضج الإدارة: ${m.maturity[0]}</span></div>${qs}
@@ -287,7 +287,7 @@ function selfModel() {
 VIEWS.self = () => {
   const s = SL();
   if (!s.consent) return `
-  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'ذكاء الذات والتحليل الشخصي المتكامل', 'فهم الإنسان، واكتشاف قدراته، واستيعاب تحدياته، ومساعدته على بناء مستقبل يختاره بنفسه. التحليل متوازن: لا يدرس المشكلات وحدها، بل الفرح والنجاح والعلاقات الداعمة أيضًا.')}
+  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'تحليل الذات الشخصي المتكامل', 'فهم الإنسان، واكتشاف قدراته، واستيعاب تحدياته، ومساعدته على بناء مستقبل يختاره بنفسه. التحليل متوازن: لا يدرس المشكلات وحدها، بل الفرح والنجاح والعلاقات الداعمة أيضًا.')}
   <section class="split">
     <div class="card" style="gap:12px"><h2 class="h-sec">قبل أن نبدأ — موافقتك</h2>
       <span class="lbl">ما هدفك من التحليل؟</span>
@@ -309,7 +309,7 @@ VIEWS.self = () => {
   }).join('');
   const sl = (key, label, val) => `<label class="stack" style="gap:4px"><span class="row between"><span style="font-size:12.5px">${label}</span><b class="mono" id="self-v-${key}-${D.k}" style="color:var(--yellow)">${val ?? '—'}</b></span><input type="range" min="0" max="10" value="${val ?? 5}" data-self-sl="${key}" aria-label="${label}"></label>`;
   return `
-  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'ذكاء الذات والتحليل الشخصي المتكامل', 'الذكاء الاصطناعي يحلل ويساعد على الفهم؛ أنت تراجع النتائج وتحتفظ بحق الاختيار.', `<span class="row nowrap" style="gap:6px"><span class="tag t-s">${ic('governance', 12)} بياناتك خاصة</span>${engExport('SELF')}</span>`)}
+  ${engHead('NAIOSH SELF INTELLIGENCE · DIA-SELF', 'تحليل الذات الشخصي المتكامل', 'الذكاء الاصطناعي يحلل ويساعد على الفهم؛ أنت تراجع النتائج وتحتفظ بحق الاختيار.', `<span class="row nowrap" style="gap:6px"><span class="tag t-s">${ic('governance', 12)} بياناتك خاصة</span>${engExport('SELF')}</span>`)}
   <section class="grid" style="grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,320px);align-items:start" id="self-grid">
     <div class="card" style="gap:6px;padding:12px"><span class="lbl" style="padding:0 4px">المحاور — ${M.complete}/6 مكتملة</span>
       ${M.doms.map(d => `<button type="button" class="list-btn" data-act="self-dom" data-k="${d.k}" style="align-items:center;${d.k === D.k ? 'background:rgba(255,46,77,.1);border-color:var(--redline)' : ''}"><span style="width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:${d.done ? 'var(--green)' : 'var(--sunk)'};flex-shrink:0">${d.done ? ic('check', 11, 'style="color:#0B0B0D;stroke-width:3"') : ''}</span><span style="flex:1;font-size:13px">${d.n}</span><span class="mono faint" style="font-size:11px">${d.answered}/3</span></button>`).join('')}
@@ -428,7 +428,7 @@ VIEWS.cv = () => {
   const values = A ? CV_VALUE.filter(v => v[1].test(c.text)) : [];
   const gaps = M ? M.filter(r => r.st === 'gap' || r.st === 'na' || r.st === 'check') : [];
   return `
-  ${engHead('NAIOSH CV INTELLIGENCE · DIA-CV', 'ذكاء السيرة الذاتية والقيمة المهنية', 'لا نكتفي بقراءة السيرة الذاتية؛ بل نكتشف القدرات، ونوثق الإنجازات، ونربط المهارات باحتياجات العمل، ونحوّل الطموح المهني إلى خطة تطوير ومساهمة قابلة للقياس.', A ? engExport('CV') : '')}
+  ${engHead('NAIOSH CV INTELLIGENCE · DIA-CV', 'تحليل السيرة الذاتية والقيمة المهنية', 'لا نكتفي بقراءة السيرة الذاتية؛ بل نكتشف القدرات، ونوثق الإنجازات، ونربط المهارات باحتياجات العمل، ونحوّل الطموح المهني إلى خطة تطوير ومساهمة قابلة للقياس.', A ? engExport('CV') : '')}
   <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="${c.mode === 'job'}" data-act="cv-mode" data-k="job">تحليل السيرة مقابل وظيفة</button><button type="button" role="tab" aria-selected="${c.mode === 'general'}" data-act="cv-mode" data-k="general">تحليل عام للقدرات</button></div>
   <section class="split">
     <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">السيرة الذاتية — DIA-CV-01</h2><button type="button" class="btn sm" data-act="cv-sample">استخدم سيرة تجريبية</button></div>
@@ -468,7 +468,7 @@ VIEWS.cv = () => {
       <tr><td class="mono">31–60</td><td style="font-size:12.5px">تحليل مشكلة ذات أولوية في ${values[0] ? values[0][0] : 'مجال الاختصاص'} مع الفريق</td><td class="faint" style="font-size:12px">مقترح تحسين مدعوم بالبيانات</td></tr>
       <tr><td class="mono">61–90</td><td style="font-size:12.5px">تجربة التحسين المعتمد وقياس نتائجه</td><td class="faint" style="font-size:12px">تقرير نتائج ومؤشرات أثر</td></tr></tbody></table></div>
       <p class="faint" style="font-size:11.5px;padding:8px 18px 14px">خطة استرشادية؛ لا تفترض تغيير إجراءات أو الوصول إلى بيانات دون صلاحية وموافقة.</p></div>
-    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="skl-cv">${ic('skills', 14)}مطابقة في ذكاء المهارات</button><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div></div>
+    <div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">خطة التطوير — DIA-CV-12</h2><div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="skl-cv">${ic('skills', 14)}مطابقة في تحليل المهارات</button><button type="button" class="btn sm" data-act="cv-log">${ic('decision', 14)}إحالة للقرار البشري</button></div></div>
       ${gaps.length ? gaps.map(g => `<div class="row nowrap" style="gap:8px;font-size:12.5px;align-items:flex-start"><span class="tag ${CVST[g.st][1]}" style="flex-shrink:0">${CVST[g.st][0]}</span><span>${g.st === 'check' ? 'تقديم دليل أو اختبار عملي لـ ' : 'برنامج تعلم موجّه لـ '}${g.n}</span></div>`).join('') : '<span class="faint" style="font-size:12.5px">لا فجوات جوهرية مقابل متطلبات الوظيفة.</span>'}
       <div class="sub" style="gap:4px;margin-top:6px"><b style="font-size:12.5px">قواعد الحوكمة</b>${['لا يُختزل المرشح في درجة آلية واحدة', 'المعلومات المؤكدة مفصولة عن الادعاءات الذاتية والاستنتاجات', 'لا تُستخدم صفات شخصية حساسة أو غير مرتبطة بالوظيفة', 'القرار الوظيفي تحت إشراف بشري مسؤول'].map(t => `<span class="faint" style="font-size:11.5px">• ${t}</span>`).join('')}</div></div>
   </section>` : ''}`;
@@ -478,7 +478,7 @@ VIEWS.cv = () => {
    DIA-MAR — Pre-Marital Intelligence (coming soon)
    ========================================================================================= */
 VIEWS.marriage = () => `
-  ${engHead('NAIOSH PRE-MARITAL INTELLIGENCE · DIA-MAR', 'زواج أكثر وعيًا — ذكاء التوافق والاستعداد للزواج', 'أداة لبناء زواج أكثر وعيًا، لا لمنح شهادة بأن شخصًا مناسب أو غير مناسب. القرار النهائي يبقى للعريس والعروس.', '<span class="tag t-m" style="font-size:12.5px">قريبًا</span>')}
+  ${engHead('NAIOSH PRE-MARITAL INTELLIGENCE · DIA-MAR', 'زواج أكثر وعيًا — تحليل التوافق والاستعداد للزواج', 'أداة لبناء زواج أكثر وعيًا، لا لمنح شهادة بأن شخصًا مناسب أو غير مناسب. القرار النهائي يبقى للعريس والعروس.', '<span class="tag t-m" style="font-size:12.5px">قريبًا</span>')}
   <section class="card" style="gap:10px;border-color:rgba(255,205,17,.35)"><div class="row nowrap" style="gap:12px;align-items:flex-start">${ic('clock', 22, 'style="color:var(--yellow);flex-shrink:0"')}<div class="stack" style="gap:4px"><b>لماذا هذه الوحدة لاحقًا؟</b><span class="soft" style="font-size:13px;line-height:1.8">تتعامل مع أكثر البيانات حساسية، وتحتاج قبل إطلاقها إلى: موافقة منفصلة من كل طرف، فصل التقرير الخاص عن التقرير المشترك، مسار خاص وآمن إذا أشار أحد الطرفين إلى ضغط أو إكراه، ومراجعة بنك الأسئلة مع مختصين أسريين للتحقق من وضوحه وعدم تحيزه.</span></div></div></section>
   <section class="grid g3">${[['الملف الأول', 'تحليل العريس', 'الشخصية كما يصفها بنفسه، القيم، الطموح، الاستعداد، والتوقعات.'], ['الملف الثاني', 'تحليل العروس', 'المحاور نفسها بصورة مستقلة، مع حرية التعبير عن الرغبات والمخاوف والحدود دون ضغط.'], ['الملف الثالث', 'تحليل التوافق المشترك', 'يعتمد فقط على الإجابات التي وافق الطرفان على مشاركتها.']].map(([e, t, d]) => `<div class="card tight"><span class="eyebrow">${e}</span><b>${t}</b><span class="muted" style="font-size:12.5px;line-height:1.7">${d}</span></div>`).join('')}</section>
   <section class="split">
@@ -489,7 +489,7 @@ VIEWS.marriage = () => `
   </section>
   <section class="card" style="gap:10px"><h2 class="h-sec">الوحدات المخطط لها MAR-01 → MAR-14</h2>
     ${engMap([['MAR-01', 'ملفات العريس والعروس', 'p2'], ['MAR-02', 'بنك الأسئلة والتقييم الذاتي', 'p2'], ['MAR-03', 'المقابلة التكيفية', 'link'], ['MAR-04', 'الشخصية والاستعداد', 'link'], ['MAR-05', 'محرك دوافع الزواج', 'p2'], ['MAR-06', 'الأسرة والبيئة الاجتماعية', 'p2'], ['MAR-07', 'القيم والطموحات', 'p2'], ['MAR-08', 'المسؤوليات المالية واليومية', 'p2'], ['MAR-09', 'محرك التوافق والمقارنة', 'p2'], ['MAR-10', 'الموضوعات الجوهرية والمخاطر', 'p2'], ['MAR-11', 'التقرير الفردي والمشترك', 'p2'], ['MAR-12', 'خطة الحوار والتطوير', 'p2'], ['MAR-13', 'أكاديمية الاستعداد للزواج', 'p2'], ['MAR-14', 'الخصوصية والموافقة والتدقيق', 'link']])}
-    <p class="faint" style="font-size:11.5px">«مرتبط بالمنظومة» = يعيد استخدام محرك المقابلة الذكية في ذكاء الذات وطبقة الحوكمة الحالية.</p></section>`;
+    <p class="faint" style="font-size:11.5px">«مرتبط بالمنظومة» = يعيد استخدام محرك المقابلة الذكية في تحليل الذات وطبقة الحوكمة الحالية.</p></section>`;
 
 /* =========================================================================================
    Handlers, live inputs, exports
@@ -508,16 +508,16 @@ function engineHandle(act, k, el) {
     case 'saf-view': SF().view = k; render(); return true;
     case 'saf-review': { const s = SF(); if (!s.reviewed) { s.reviewed = true; const m = safModel(); log('د. عدنان', `رفع تقييم السلامة للمراجعة البشرية — ${(n => n === 1 ? 'خطر حرج واحد' : n === 2 ? 'خطران حرجان' : n + ' أخطار حرجة')(m.rows.filter(r => r.pr === 1).length)}`); toast('أُرسل التقييم لمراجعة مختص السلامة'); } render(); return true; }
     case 'self-purpose': SL().purpose = val; render(); return true;
-    case 'self-start': { const c = document.getElementById('self-agree'); if (!c || !c.checked) { toast('ضع علامة الموافقة أولًا'); return true; } SL().consent = true; log('د. عدنان', 'بدأ جلسة ذكاء الذات (بموافقة صريحة)'); render(); window.scrollTo(0, 0); return true; }
+    case 'self-start': { const c = document.getElementById('self-agree'); if (!c || !c.checked) { toast('ضع علامة الموافقة أولًا'); return true; } SL().consent = true; log('د. عدنان', 'بدأ جلسة تحليل الذات (بموافقة صريحة)'); render(); window.scrollTo(0, 0); return true; }
     case 'self-dom': SL().dom = k; render(); return true;
     case 'self-skip': { const s = SL(); s.skip[k] = !s.skip[k]; render(); return true; }
     case 'self-next': { const s = SL(), i = SELF_DOMAINS.findIndex(d => d.k === s.dom); if (i < SELF_DOMAINS.length - 1) { s.dom = SELF_DOMAINS[i + 1].k; render(); window.scrollTo(0, 0); } else { render(); const r = document.getElementById('self-report'); if (r) r.scrollIntoView({ block: 'start' }); } return true; }
     case 'self-approve': { const s = SL(); const n = Object.values(s.goals).filter(Boolean).length; if (!n) { toast('اختر هدفًا واحدًا على الأقل'); return true; } s.approved = true; log('د. عدنان', `اعتمد خطة تطوير شخصية (${n === 1 ? 'هدف واحد' : n === 2 ? 'هدفان' : n + ' أهداف'})${s.link ? ' وربطها بمركز التنفيذ' : ''}`); toast('اعتُمدت خطتك — المراجعة بعد 30 يومًا'); render(); return true; }
-    case 'self-delete': { const s = SL(); if (!s.del) { s.del = true; render(); return true; } S.self = undefined; delete S.self; log('د. عدنان', 'حذف بيانات ذكاء الذات بالكامل'); toast('حُذفت بياناتك'); render(); return true; }
+    case 'self-delete': { const s = SL(); if (!s.del) { s.del = true; render(); return true; } S.self = undefined; delete S.self; log('د. عدنان', 'حذف بيانات تحليل الذات بالكامل'); toast('حُذفت بياناتك'); render(); return true; }
     case 'cv-mode': CVS().mode = k; render(); return true;
     case 'cv-job': CVS().job = val; render(); return true;
     case 'cv-sample': { const c = CVS(); c.text = CV_SAMPLE; c.done = true; render(); return true; }
-    case 'cv-run': { const c = CVS(), t = document.getElementById('cv-text'); if (t) c.text = t.value; if (c.text.trim().length < 40) { toast('الصق نص السيرة الذاتية أولًا'); return true; } c.done = true; log('د. عدنان', 'حلّل سيرة ذاتية في ذكاء السيرة الذاتية'); render(); return true; }
+    case 'cv-run': { const c = CVS(), t = document.getElementById('cv-text'); if (t) c.text = t.value; if (c.text.trim().length < 40) { toast('الصق نص السيرة الذاتية أولًا'); return true; } c.done = true; log('د. عدنان', 'حلّل سيرة ذاتية في تحليل السيرة الذاتية'); render(); return true; }
     case 'cv-log': log('د. عدنان', 'أحال تقرير ملاءمة مرشح للقرار البشري'); toast('أُحيل التقرير لصاحب القرار — القرار الوظيفي بشري'); return true;
     case 'eng-pdf': case 'eng-xlsx': engExportRun(k, act === 'eng-pdf' ? 'pdf' : 'xlsx'); return true;
   }
@@ -563,11 +563,11 @@ function engSections(code) {
       if (dec.conds.length) sec.push({ h: 'الشروط قبل الانتقال', bullets: dec.conds });
       sec.push({ h: 'سيناريوهات نقطة التعادل', cols: ['السيناريو', 'شهر التعادل', 'الافتراضات'], rows: dec.sc });
     }
-    return { title: 'تقرير المقارنة المعيارية وذكاء المشروعات', audience: 'صاحب المشروع والإدارة', ref: 'DIA-BENCH', sections: sec };
+    return { title: 'تقرير المقارنة المعيارية وتحليل المشروعات', audience: 'صاحب المشروع والإدارة', ref: 'DIA-BENCH', sections: sec };
   }
   if (code === 'SAF') {
     const m = safModel(), a = SF().a, lab = (k, v) => ((SAF_Q.find(q => q[0] === k) || [])[2] || []).find(o => o[0] === v);
-    return { title: 'تقرير ذكاء السلامة وتقييم المخاطر', audience: 'الإدارة ومسؤول السلامة', ref: 'DIA-SAF', sections: [
+    return { title: 'تقرير تحليل المخاطر', audience: 'الإدارة ومسؤول السلامة', ref: 'DIA-SAF', sections: [
       { h: 'الملف التعريفي للمشروع', kv: [['نوع المشروع', (lab('type', a.type) || [, '—'])[1]], ['المرحلة', (lab('phase', a.phase) || [, '—'])[1]], ['الدولة', (lab('country', a.country) || [, '—'])[1]], ['الحجم', (lab('size', a.size) || [, '—'])[1]], ['نضج إدارة السلامة', m.maturity[0]], ['تنبيه', 'تشخيص أولي لا يُصدر حكمًا نهائيًا؛ النتائج الحرجة تتطلب مراجعة مختص']] },
       { h: 'سجل الأخطار الموحد', cols: ['الخطر', 'PEEM', 'الحدث', 'العاقبة', 'قبل الضوابط', 'المتبقي', 'الأولوية', 'إيقاف/تصعيد'], rows: m.rows.map(r => [r.n, r.cat, r.ev, r.cons, r.inh, r.res, PR[r.pr][0], r.stop ? 'نعم' : '']) },
       { h: 'مصفوفة الامتثال للمعايير والمتطلبات', cols: ['الخطر', 'المرجع', 'حالة الضوابط', 'الأدلة المطلوبة'], rows: m.rows.map(r => [r.n, r.ref, SAF_ST[r.st][0], r.evid]) },
@@ -578,7 +578,7 @@ function engSections(code) {
   if (code === 'SELF') {
     const s = SL(), M = selfModel();
     const ans = SELF_DOMAINS.flatMap(d => d.q.map((q, i) => [d.n, q, s.skip[d.k + i] ? '— تم التخطي' : (s.ans[d.k + i] || '—')]));
-    return { title: 'تقريري الشخصي — ذكاء الذات', audience: 'خاص بصاحب التقرير', ref: 'DIA-SELF', sections: [
+    return { title: 'تقريري الشخصي — تحليل الذات', audience: 'خاص بصاحب التقرير', ref: 'DIA-SELF', sections: [
       { h: 'ملخص', text: `اكتمل ${M.complete} من 6 محاور. ${M.pri.length ? 'أولويات التطوير المقترحة: ' + M.pri.map(d => d.n).join('، ') + '.' : 'حدّد الرضا والأهمية لكل محور لاستخراج الأولويات.'} هذا التقرير يميّز بين التصريح الشخصي والاستنتاج الاحتمالي، ولا يتضمن أي تشخيص.` },
       { h: 'عجلة التوازن', cols: ['المحور', 'الرضا (0–10)', 'الأهمية (0–10)', 'الفجوة'], rows: M.doms.map(d => [d.n, d.sat ?? '—', d.imp ?? '—', d.gap ?? '—']) },
       { h: 'إجاباتي (تصريح شخصي)', cols: ['المحور', 'السؤال', 'الإجابة'], rows: ans },
@@ -593,7 +593,7 @@ function engSections(code) {
     if (M) sec.push({ h: 'الملاءمة مع ' + CV_JOBS[c.job].n, cols: ['المتطلب', 'الحالة', 'النوع'], rows: M.map(r => [r.n, CVST[r.st][0], r.core ? 'أساسي' : 'قابل للتطوير']) });
     sec.push({ h: 'القيمة المضافة المحتملة', cols: ['المجال', 'المساهمة المحتملة', 'طريقة القياس بعد التوظيف'], rows: CV_VALUE.filter(v => v[1].test(c.text)).map(v => [v[0], v[2], v[3]]) });
     sec.push({ h: 'ملاحظة حوكمة', text: 'لا يُختزل المرشح في درجة واحدة. غياب الدليل لا يعني غياب المهارة. القرار الوظيفي تحت إشراف بشري مسؤول، ولا تُشارك البيانات دون أساس مشروع وصلاحية.' });
-    return { title: 'تقرير ذكاء السيرة الذاتية والقيمة المهنية', audience: c.mode === 'job' ? 'جهة التوظيف (بموافقة المرشح)' : 'المرشح', ref: 'DIA-CV', sections: sec };
+    return { title: 'تقرير تحليل السيرة الذاتية والقيمة المهنية', audience: c.mode === 'job' ? 'جهة التوظيف (بموافقة المرشح)' : 'المرشح', ref: 'DIA-CV', sections: sec };
   }
   return typeof engSections2 === 'function' ? engSections2(code) : null;
 }

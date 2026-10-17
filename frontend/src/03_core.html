@@ -122,20 +122,20 @@ const diagConf = () => S.qDone ? 81 : 58;
 /* ================= navigation ================= */
 const NAV = [
   { t: 'القيادة', items: [['home','مركز القيادة','01'],['ask','اسأل نايوش','02'],['request','طلب تحليل بيانات',''],['results','نتائج التحليل الفعلية',''],['consult','مركز الاستشارات','']] },
-  { t: 'البيانات والسياق', items: [['data','مركز ذكاء البيانات','03'],['quality','جودة البيانات','04'],['context','محرك السياق','05'],['questionnaire','الاستبيان الذكي','06']] },
+  { t: 'البيانات والسياق', items: [['data','مركز تحليل البيانات','03'],['quality','جودة البيانات','04'],['context','محرك السياق','05'],['questionnaire','الاستبيان الذكي','06']] },
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
-  { t: 'ذكاء المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','ذكاء المنافسين','CIB'],['eco','المرونة الاقتصادية والمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','ذكاء السلامة والمخاطر','SAF']] },
+  { t: 'تحليل المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','تحليل المنافسين','CIB'],['eco','التحليل الاقتصادي للمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','تحليل المخاطر','SAF']] },
   { t: 'الإدارة المؤسسية والجودة', items: [['pmo','مكتب إدارة المشاريع PMO 360','PMO'],['tqg','الجودة الشاملة والحوكمة','TQG']] },
-  { t: 'الذكاء القانوني والمؤسسي', items: [['legal','الذكاء القانوني LEGAL 360','LEGAL'],['ebiz','التشخيص المؤسسي والقانوني 360','EBI']] },
-  { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','ذكاء التعليم والتدريب','ETI'],['cv','ذكاء السيرة الذاتية','CV'],['skills','ذكاء المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
-  { t: 'ذكاء الإنسان', items: [['self','ذكاء الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'التحليل القانوني والمؤسسي', items: [['legal','التحليل القانوني LEGAL 360','LEGAL'],['ebiz','التشخيص المؤسسي والقانوني 360','EBI']] },
+  { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','تحليل التعليم والتدريب','ETI'],['cv','تحليل السيرة الذاتية','CV'],['skills','تحليل المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
+  { t: 'التحليل المجتمعي', items: [['self','تحليل الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
   home: ['مركز القيادة التنفيذي', 'لوحة القيادة'], ask: ['بوابة الدخول الذكية', 'اسأل نايوش Intelligence'],
-  consult: ['الاستشارات', 'مركز الاستشارات'], data: ['البيانات · الحوكمة والجودة والتتبع', 'مركز ذكاء البيانات'],
+  consult: ['الاستشارات', 'مركز الاستشارات'], data: ['البيانات · الحوكمة والجودة والتتبع', 'مركز تحليل البيانات'],
   questionnaire: ['CNS-001 · استكمال البيانات', 'الاستبيان الذكي'], diagnosis: ['CNS-001 · لماذا حدث؟', 'التحليل والتشخيص'],
   foresight: ['CNS-001 · ماذا قد يحدث؟', 'التنبؤ والاستشراف'], risks: ['CNS-001 · المخاطر والفرص والمرونة', 'المخاطر والفرص'],
   solutions: ['CNS-001 · NAIOSH SOLUTION STUDIO', 'استوديو الحلول'], decision: ['CNS-001 · التوصية ← القرار البشري', 'مركز القرار'],
@@ -150,13 +150,13 @@ const TITLES = {
   analysis: ['DIA-07 · الأنماط والمقارنات والعلاقات', 'التحليل والأنماط'], rootcause: ['DIA-09 · لماذا حدث فعلًا؟', 'السبب الجذري'],
   whatif: ['DIA-11 · محاكاة السيناريوهات', 'محاكاة ماذا لو'], memory: ['DIA-18 · ما تعلّمته المنظمة', 'الذاكرة المؤسسية'],
   ledger: ['DIA-19 · Decision Ledger', 'سجل القرارات'],
-  bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وذكاء المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'ذكاء السلامة وتحليل المخاطر'],
-  self: ['DIA-SELF · Self Intelligence', 'ذكاء الذات'], cv: ['DIA-CV · CV Intelligence', 'ذكاء السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا'],
-  eco: ['DIA-ECO · Economic Resilience & Side Business', 'المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية'], supply: ['DIA-SCM · Global Supply Chain & Logistics', 'ذكاء سلاسل الإمداد واللوجستيات'],
-  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'ذكاء المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني'],
-  employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'ذكاء بيانات التعليم والتدريب'],
-  pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'ذكاء المنافسين والتحليل التنافسي'],
-  legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'الذكاء القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التشخيص المؤسسي والقانوني والمالي وسوق العمل']
+  bench: ['DIA-BENCH · Global Benchmarking & Project Intelligence', 'المقارنة المعيارية وتحليل المشروعات'], safety: ['DIA-SAF · Safety Intelligence & Risk Analysis', 'تحليل المخاطر'],
+  self: ['DIA-SELF · Self Intelligence', 'تحليل الذات'], cv: ['DIA-CV · CV Intelligence', 'تحليل السيرة الذاتية والقيمة المهنية'], marriage: ['DIA-MAR · قريبًا', 'زواج أكثر وعيًا'],
+  eco: ['DIA-ECO · Economic Resilience & Side Business', 'التحليل الاقتصادي للمشاريع الجانبية وخفض التكاليف'], supply: ['DIA-SCM · Global Supply Chain & Logistics', 'تحليل سلاسل الإمداد واللوجستيات'],
+  sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'تحليل المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني'],
+  employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'تحليل بيانات التعليم والتدريب'],
+  pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'تحليل المنافسين والموقع التنافسي'],
+  legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التشخيص المؤسسي والقانوني والمالي وسوق العمل']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };

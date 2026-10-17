@@ -18,7 +18,7 @@ function expSections() {
   const qs = QS();
   return {
     summary: { h: 'الملخص التنفيذي', text: `رُصد انخفاض غير طبيعي في مؤشر أداء الفرع الشمالي بنسبة 17% خلال 6 أسابيع، وفُتحت الاستشارة الاستباقية CNS-001. المرحلة الحالية: ${st.name}. السبب الأرجح: ${causes[0].name} (احتمال ${causes[0].p}%). الحل الموصى به: ${rec.name} — Score ${rec.score} وثقة ${rec.conf}%. ${S.decided ? 'القرار المسجّل: ' + choiceLabel() + '.' : 'القرار بانتظار صاحب الصلاحية.'} ${S.measured ? 'بعد التنفيذ ارتفع المؤشر إلى ' + s.act + ' (' + impactOf().ratio + '% من المتوقع).' : ''} مؤشر صحة المنظمة: ${h.avg}/100 — ${h.st[0]}.` },
-    card: { h: 'بطاقة ذكاء القرار — CNS-001', kv: decisionCard() },
+    card: { h: 'بطاقة تحليل القرار — CNS-001', kv: decisionCard() },
     kpis: { h: 'المؤشرات الرئيسية', cols: ['المؤشر', 'القيمة', 'ملاحظة'], rows: CFG.kpis.map(k => [k.label, k.value, k.sub || '']) },
     health: { h: 'مؤشر صحة المنظمة', note: `المؤشر العام: ${h.avg}/100 — ${h.st[0]}`, cols: ['البُعد', 'الدرجة', 'الحالة'], rows: h.dims.map(d => [d.label, d.v, d.v >= 80 ? 'مستقر' : d.v >= 65 ? 'يحتاج انتباه' : 'حرج']) },
     sources: { h: 'مصادر البيانات وجودتها', cols: ['النظام', 'الحالة', 'السجلات', 'آخر مزامنة', 'متوسط الجودة', 'بوابة الجودة', 'ملاحظة'], rows: CFG.sources.map(x => { const d = (x.d || []).map(Number).filter(n => !isNaN(n)); return [x.name, { ok: 'متصل', warn: 'تنبيه', off: 'منقطع' }[x.st] || x.st, x.rec, x.sync, d.length ? Math.round(d.reduce((a, b) => a + b, 0) / d.length) + '%' : '—', (GATE[x.g] || [x.g])[0], x.note || '']; }) },

@@ -189,7 +189,7 @@ VIEWS.tqg = () => {
   if (s.tab === 'risk') inputs = egCard('المخاطر وحالات عدم المطابقة', 'TQG-09/11', s.risks.map((r, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(r.n)}</b>${egDel('tqg', 'risks', i)}</div>${egGrid(130, egTxt('tqg', `risks.${i}.n`, 'الخطر') + egSel('tqg', `risks.${i}.L`, 'الاحتمال', [1, 2, 3, 4, 5].map(v => [v, v])) + egSel('tqg', `risks.${i}.I`, 'الأثر', [1, 2, 3, 4, 5].map(v => [v, v])) + egSel('tqg', `risks.${i}.ctrl`, 'فاعلية الضوابط', [['none', 'لا توجد'], ['weak', 'ضعيفة'], ['moderate', 'متوسطة'], ['strong', 'قوية']]) + egSel('tqg', `risks.${i}.treat`, 'المعالجة', [['eliminate', 'إزالة'], ['reduce', 'خفض'], ['transfer', 'نقل'], ['accept', 'قبول']]) + egSel('tqg', `risks.${i}.ver`, 'فاعلية مُتحقق منها', [['no', 'لا'], ['yes', 'نعم']]))}</div>`).join('') + egAdd('tqg', 'risks', 'إضافة خطر')
     + `<span class="lbl" style="margin-top:8px">حالات عدم المطابقة</span>` + s.nc.map((c, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(c.n)}</b>${egDel('tqg', 'nc', i)}</div>${egGrid(160, egTxt('tqg', `nc.${i}.n`, 'الوصف') + egSel('tqg', `nc.${i}.step`, 'المرحلة', TQG_NC.map((n, k) => [String(k), (k + 1) + '. ' + n])) + egSel('tqg', `nc.${i}.cause`, 'السبب الجذري', TQG_CAUSE.map(x => [x[0], x[1]])) + egSel('tqg', `nc.${i}.eff`, 'فاعلية المعالجة مثبتة', [['no', 'لا'], ['yes', 'نعم']]))}</div>`).join('') + egAdd('tqg', 'nc', 'إضافة حالة'));
   if (s.tab === 'dash') inputs = egCard('بيانات المؤشرات', 'TQG-13', egGrid(160, egNum('tqg', 'dash.csatPrev', 'رضا العملاء — الفترة السابقة') + egNum('tqg', 'dash.csatNow', 'رضا العملاء — الحالية') + egNum('tqg', 'dash.copqPrev', 'تكلفة الجودة الرديئة — السابقة') + egNum('tqg', 'dash.copqNow', 'تكلفة الجودة الرديئة — الحالية') + egNum('tqg', 'dash.compReq', 'كفاءات مطلوبة (عدد)') + egNum('tqg', 'dash.compMet', 'كفاءات مثبتة (عدد)')));
-  return `${engHead('NAIOSH TOTAL QUALITY & GOVERNANCE · DIA-TQG', 'ذكاء الجودة الشاملة والحوكمة المؤسسية', 'تحويل سياسات الجودة إلى منظومة حوكمة مترابطة: لكل سياسة متطلبات وملفات عمل ومالك وأدلة ومؤشرات ومخاطر ومواعيد مراجعة — ولا امتثال بلا تحقق، ولا تحسين بلا قياس للأثر.', engExport('TQG'))}
+  return `${engHead('NAIOSH TOTAL QUALITY & GOVERNANCE · DIA-TQG', 'تحليل الجودة الشاملة والحوكمة المؤسسية', 'تحويل سياسات الجودة إلى منظومة حوكمة مترابطة: لكل سياسة متطلبات وملفات عمل ومالك وأدلة ومؤشرات ومخاطر ومواعيد مراجعة — ولا امتثال بلا تحقق، ولا تحسين بلا قياس للأثر.', engExport('TQG'))}
   ${egTabs('tqg', [['policy', 'السياسات وملفات العمل'], ['std', 'مواءمة المعايير'], ['risk', 'المخاطر وعدم المطابقة'], ['dash', 'لوحة الإدارة العليا']])}
   ${inputs}${egOut('tqg')}`;
 };
@@ -258,7 +258,7 @@ VIEWS.compete = () => {
   if (s.tab === 'rivals') inputs = egCard('المنافسون المرشحون', 'CIB-04', s.rivals.map((r, i) => `<div class="sub" style="gap:8px"><div class="row between nowrap"><b style="font-size:13px">${esc(r.n)}</b>${egDel('cib', 'rivals', i)}</div>${egGrid(150, egTxt('cib', `rivals.${i}.n`, 'الاسم') + egSel('cib', `rivals.${i}.type`, 'الفئة', CIB_TYPE) + egSel('cib', `rivals.${i}.src`, 'فئة المصدر', CIB_SRC.map(x => [x[0], x[1]])) + egSel('cib', `rivals.${i}.inc`, 'إدراج في المقارنة', [['yes', 'نعم'], ['no', 'لا']]))}${egCh('cib', `rivals.${i}.ov`, CIB_OV, true)}</div>`).join('') + egAdd('cib', 'rivals', 'إضافة منافس'));
   if (s.tab === 'compare') { const inc = s.rivals.map((r, i) => ({ ...r, i })).filter(r => r.inc === 'yes'); inputs = egCard('أبعاد المقارنة والدرجات (0–100، اترك الخانة فارغة إن لم تتوفر)', 'CIB-10/11', `<div class="tbl-wrap"><table><thead><tr><th>البعد</th><th>الوزن 0–5</th><th>المصدر</th><th>شركتنا</th>${inc.map(r => `<th>${esc(r.n)}</th>`).join('')}</tr></thead><tbody>${CIB_DIM.map(([k, n]) => `<tr><td style="font-size:12.5px">${n}</td><td style="min-width:80px">${egSel('cib', 'w.' + k, '', [0, 1, 2, 3, 4, 5].map(v => [v, v]))}</td><td style="min-width:70px">${egSel('cib', 'src.' + k, '', CIB_SRC.map(x => [x[0], x[0]]))}</td><td style="min-width:80px">${egNum('cib', `sc.${k}.co`, '')}</td>${inc.map(r => `<td style="min-width:80px">${egNum('cib', `sc.${k}.r${r.i}`, '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`); }
   if (s.tab === 'plan') inputs = egCard('صوت العميل والفرص', 'CIB-12', `<span class="lbl">أسباب خسارة الفرص خلال الفترة (عدد الحالات)</span>${egGrid(130, CIB_LOST.map(([k, n]) => egNum('cib', 'lost.' + k, n)).join(''))}${egTxt('cib', 'opp', 'الفرص: شرائح أو احتياجات غير مخدومة')}`);
-  return `${engHead('NAIOSH COMPETITIVE INTELLIGENCE · DIA-CIB', 'ذكاء المنافسين والتحليل التنافسي والقياس المرجعي', 'أين نقف؟ مقابل من نقارن؟ لماذا توجد فجوة؟ ما الذي ينبغي فعله؟ وهل تحسن الأداء فعلًا؟ — مقارنة عادلة موثقة المصادر، مع فصل الأداء عن الثقة في البيانات.', engExport('CIB'))}
+  return `${engHead('NAIOSH COMPETITIVE INTELLIGENCE · DIA-CIB', 'تحليل المنافسين والموقع التنافسي والقياس المرجعي', 'أين نقف؟ مقابل من نقارن؟ لماذا توجد فجوة؟ ما الذي ينبغي فعله؟ وهل تحسن الأداء فعلًا؟ — مقارنة عادلة موثقة المصادر، مع فصل الأداء عن الثقة في البيانات.', engExport('CIB'))}
   ${egTabs('cib', [['profile', 'ملف الشركة'], ['rivals', 'المنافسون والمصادر'], ['compare', 'المقارنة والدرجات'], ['plan', 'SWOT والسيناريوهات والخطة']])}
   ${inputs}${egOut('cib')}`;
 };
@@ -270,9 +270,9 @@ function engine3Handle(act, k, el) {
   if (act === 'eg-del') { const bar = k.lastIndexOf('|'), path = k.slice(0, bar), i = +k.slice(bar + 1), dot = path.indexOf('.'), arr = egGet(egS(path.slice(0, dot)), path.slice(dot + 1)); if (Array.isArray(arr)) { if (arr.length <= 1) { toast('يلزم عنصر واحد على الأقل'); return true; } arr.splice(i, 1); render(); } return true; }
   if (act === 'emp-skl') {
     const sk = S.eg_skl && S.eg_skl.lv ? Object.entries(S.eg_skl.lv).filter(([, v]) => +v >= 2).map(([id]) => (SKLm[id] || [, id])[1]) : [];
-    if (!sk.length) { toast('لا يوجد ملف مهارات — أنشئه أولًا في «ذكاء المهارات»'); return true; }
+    if (!sk.length) { toast('لا يوجد ملف مهارات — أنشئه أولًا في «تحليل المهارات»'); return true; }
     const e = egS('emp'); e.cands.push({ code: 'C-SKL', edu: 'EDU-06', years: 0, skills: sk.join('، '), projects: Object.values(S.eg_skl.ev || {}).filter(v => v === 'proj' || v === 'test').length, cert: Object.values(S.eg_skl.ev || {}).includes('cert') ? 'yes' : 'no', city: 'yes', mode: 'yes', salary: 'yes', prof: 3 });
-    toast('أُضيف مرشح من ملف ذكاء المهارات (' + sk.length + ' مهارة)'); render(); return true;
+    toast('أُضيف مرشح من ملف تحليل المهارات (' + sk.length + ' مهارة)'); render(); return true;
   }
   if (/^pmo-(pp|pick|add|ladd|ldel)$/.test(act)) return pmoUiHandle(act, k, el);
   if (act === 'pmo-gate') {
@@ -297,7 +297,7 @@ function engSections3(code) {
   }
   if (code === 'ETI') {
     const m = etiModel(), s = m.s;
-    return { title: 'تقرير ذكاء التعليم والتدريب — ' + (s.program || ''), audience: 'قيادة الجهة التعليمية', ref: 'DIA-ETI', sections: [
+    return { title: 'تقرير تحليل التعليم والتدريب — ' + (s.program || ''), audience: 'قيادة الجهة التعليمية', ref: 'DIA-ETI', sections: [
       { h: 'الملخص التنفيذي', text: `${(ETI_ORG.find(x => x[0] === s.org) || [, ''])[1]} · ${s.program} · ${m.n} متعلمًا. التغير حتى اليوم ${m.d}: ${fmtN(m.mid - m.pre, 1)} نقطة. التوقع الأساسي يوم ${m.H}: ${fmtN(m.base, 1)} ± ${fmtN(m.band, 1)} مقابل هدف ${s.target}. الإتقان المتوقع ${fmtN(m.mBase, 0)}%، والانسحاب المتوقع ${fmtN(m.dropF, 1)}%.${m.did !== null ? ' الأثر الصافي مقارنة بمجموعة المقارنة: ' + fmtN(m.did, 1) + ' نقطة.' : ''}` },
       { h: 'السيناريوهات', cols: ['السيناريو', 'المتوسط المتوقع', 'الافتراض', 'التكلفة الإضافية'], rows: m.sc.map(([n, v, a, c]) => [n, fmtN(v, 1), a, fmtN(c, 0)]) },
       { h: 'الأسباب المحتملة', cols: ['السبب', 'الدليل', 'القوة', 'بيانات للتحقق'], rows: m.causes },
@@ -316,7 +316,7 @@ function engSections3(code) {
   }
   if (code === 'TQG') {
     const m = tqgModel();
-    return { title: 'تقرير ذكاء الجودة الشاملة والحوكمة', audience: 'الإدارة العليا والجودة والتدقيق', ref: 'DIA-TQG', sections: [
+    return { title: 'تقرير تحليل الجودة الشاملة والحوكمة', audience: 'الإدارة العليا والجودة والتدقيق', ref: 'DIA-TQG', sections: [
       { h: 'لوحة الإدارة العليا', kv: kvx([['تغطية السياسات', fmtN(m.polCov, 0) + '%'], ['تغطية المعايير بأدلة', fmtN(m.stdCov, 0) + '%'], ['المخاطر الجوهرية المفتوحة', m.material], ['فاعلية الإجراءات التصحيحية', isFinite(m.capaEff) ? fmtN(m.capaEff, 0) + '%' : 'غير متوفر'], ['كفاءة الموظفين', fmtN(m.comp, 0) + '%'], ['رضا العملاء', fmtN(m.csat[1], 0) + ' (' + fmtP(pctCh(m.csat[0], m.csat[1])) + ')'], ['تكلفة الجودة الرديئة', fmtN(m.copq[1], 0) + ' (' + fmtP(pctCh(m.copq[0], m.copq[1])) + ')']]) },
       { h: 'السياسات', cols: ['السياسة', 'التغطية', 'الحلقات الناقصة', 'فصل المهام'], rows: m.pols.map(x => [x.p.code + ' · ' + x.p.n, fmtN(x.cov, 0) + '%', x.missing.join('، ') || 'مكتملة', x.sod.join('؛ ') || 'سليم']) },
       { h: 'المعايير', cols: ['المعيار', 'الطبيعة', 'الحالة'], rows: m.stds.map(x => [x.k + ' · ' + x.n, (TQG_APP.find(a => a[0] === x.app) || [, ''])[1], x.app === 'na' ? '—' : (TQG_ST.find(a => a[0] === x.st) || [, ''])[1]]) },

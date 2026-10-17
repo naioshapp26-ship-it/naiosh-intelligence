@@ -153,7 +153,7 @@ function sklMatch(occ) {
 const SKL_TIER = { now: ['مناسبة حاليًا', 't-s'], reach: ['ممكنة بعد تدريب محدد', 't-m'], far: ['بعيدة حاليًا', 't-n'] };
 EG_OUT.skl = () => {
   const s = egS('skl'), filled = Object.values(s.lv).filter(v => v !== '' && v != null).length;
-  if (!filled && s.tab !== 'tax') return egCard('لا يوجد ملف مهارات بعد', '', `<p class="soft" style="font-size:13px;line-height:1.8">استورد المهارات من «ذكاء السيرة الذاتية» (SKL-03)، أو حدد مستوى كل مهارة يدويًا في تبويب «ملف المهارات».</p><div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="skl-cv">${ic('reports', 15)}استيراد من ذكاء السيرة الذاتية</button></div>`);
+  if (!filled && s.tab !== 'tax') return egCard('لا يوجد ملف مهارات بعد', '', `<p class="soft" style="font-size:13px;line-height:1.8">استورد المهارات من «تحليل السيرة الذاتية» (SKL-03)، أو حدد مستوى كل مهارة يدويًا في تبويب «ملف المهارات».</p><div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="skl-cv">${ic('reports', 15)}استيراد من تحليل السيرة الذاتية</button></div>`);
   const all = SKL_OCC.map(sklMatch).sort((a, b) => b.rank - a.rank), T = all.find(x => x.occ[0] === s.target) || all[0];
   if (s.tab === 'profile') {
     const byCat = SKL_CAT.map(([c, n]) => [n, SKL.filter(x => x[3] === c && s.lv[x[0]] !== undefined && s.lv[x[0]] !== '').length]).filter(x => x[1]);
@@ -181,11 +181,11 @@ EG_OUT.skl = () => {
 VIEWS.skills = () => {
   const s = egS('skl');
   let inputs = '';
-  if (s.tab === 'profile') inputs = egCard('ملف المهارات — المستوى والدليل لكل مهارة', 'SKL-05/06', `<div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="skl-cv">${ic('reports', 14)}استيراد من ذكاء السيرة الذاتية</button><button type="button" class="btn link sm" data-act="skl-clear">مسح الملف</button></div>
+  if (s.tab === 'profile') inputs = egCard('ملف المهارات — المستوى والدليل لكل مهارة', 'SKL-05/06', `<div class="row" style="gap:8px"><button type="button" class="btn sm" data-act="skl-cv">${ic('reports', 14)}استيراد من تحليل السيرة الذاتية</button><button type="button" class="btn link sm" data-act="skl-clear">مسح الملف</button></div>
     ${SKL_CAT.map(([c, n]) => `<details ${c === 'sec' || c === 'dig' ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>${n}</b></summary>${SKL.filter(x => x[3] === c).map(x => `<div class="grid" style="grid-template-columns:minmax(140px,1.4fr) 1fr 1fr;gap:8px;align-items:center;padding:4px 0"><span style="font-size:12.5px">${x[1]} <span class="mono faint" style="font-size:10.5px">${x[0]}</span></span>${egSel('skl', 'lv.' + x[0], '', SKL_LV)}${egSel('skl', 'ev.' + x[0], '', SKL_EV)}</div>`).join('')}</details>`).join('')}
     <div class="stack" style="gap:6px;padding-top:8px"><span class="lbl">مؤشرات قابلية التعلم (SKL-10) — تُحدَّث من الاختبار القبلي والبعدي عند توفره</span>${egGrid(180, egSel('skl', 'learn.speed', 'سرعة إتقان المهام الجديدة', [['low', 'بطيئة'], ['mid', 'متوسطة'], ['high', 'سريعة']]) + egSel('skl', 'learn.transfer', 'نقل التعلم إلى مهمة مختلفة', [['low', 'محدود'], ['mid', 'متوسط'], ['high', 'مرتفع']]) + egSel('skl', 'learn.persist', 'الاستمرارية في التدريب', [['low', 'منخفضة'], ['mid', 'متوسطة'], ['high', 'مرتفعة']]))}</div>`);
   if (s.tab === 'match' || s.tab === 'plan') inputs = `<section class="card tight">${egSel('skl', 'target', 'المهنة المستهدفة', SKL_OCC.map(o => [o[0], o[4] + ' — ' + o[1]]))}</section>`;
-  return `${engHead('NAIOSH SKILLS INTELLIGENCE · DIA-SKL', 'ذكاء المهارات والمواهب وسوق العمل', 'لا نكتفي بسؤال الإنسان عمّا يستطيع فعله؛ بل نبحث عمّا يستطيع إثباته، وما يمكنه تعلّمه، وأين يمكن أن يحقق قيمة حقيقية. يتكامل مع «ذكاء السيرة الذاتية» بوصفه وحدة SKL-03.', engExport('SKL'))}
+  return `${engHead('NAIOSH SKILLS INTELLIGENCE · DIA-SKL', 'تحليل المهارات والمواهب وسوق العمل', 'لا نكتفي بسؤال الإنسان عمّا يستطيع فعله؛ بل نبحث عمّا يستطيع إثباته، وما يمكنه تعلّمه، وأين يمكن أن يحقق قيمة حقيقية. يتكامل مع «تحليل السيرة الذاتية» بوصفه وحدة SKL-03.', engExport('SKL'))}
   ${egTabs('skl', [['profile', 'ملف المهارات'], ['match', 'المطابقة المهنية'], ['plan', 'الفجوات وSWOT'], ['tax', 'القاموس والتسلسل']])}
   ${inputs}${egOut('skl')}`;
 };
@@ -289,7 +289,7 @@ function engine2Handle(act, k, el) {
   }
   if (act === 'scm-add') { egS('scm').mats.push({ n: '', d: '', stock: '', lt: '', ltv: '', sup: 1, crit: 'imp', cost: '', stop: '' }); render(); return true; }
   if (act === 'scm-del') { const a = egS('scm').mats; if (a.length <= 1) { toast('يلزم مادة واحدة على الأقل'); return true; } a.splice(+k, 1); render(); return true; }
-  if (act === 'skl-cv') { const c = typeof CVS === 'function' ? CVS() : { text: '' }, text = c.text && c.text.trim().length > 40 ? c.text : CV_SAMPLE; sklImport(text, c.text && c.text.trim().length > 40 ? 'ذكاء السيرة الذاتية' : 'السيرة التجريبية'); log('د. عدنان', 'استورد ملف مهارات من ذكاء السيرة الذاتية إلى ذكاء المهارات'); toast('استُورد ملف المهارات — راجع المستويات والأدلة'); if (S.route !== 'skills') go('skills'); else { render(); window.scrollTo(0, 0); } return true; }
+  if (act === 'skl-cv') { const c = typeof CVS === 'function' ? CVS() : { text: '' }, text = c.text && c.text.trim().length > 40 ? c.text : CV_SAMPLE; sklImport(text, c.text && c.text.trim().length > 40 ? 'تحليل السيرة الذاتية' : 'السيرة التجريبية'); log('د. عدنان', 'استورد ملف مهارات من تحليل السيرة الذاتية إلى تحليل المهارات'); toast('استُورد ملف المهارات — راجع المستويات والأدلة'); if (S.route !== 'skills') go('skills'); else { render(); window.scrollTo(0, 0); } return true; }
   if (act === 'skl-clear') { const s = egS('skl'); s.lv = {}; s.ev = {}; s.src = ''; render(); return true; }
   return false;
 }
@@ -305,7 +305,7 @@ const kvx = (rows) => rows.map(([a, b]) => [String(a), String(b)]);
 function engSections2(code) {
   if (code === 'ECO') {
     const m = ecoModel(), s = m.s, F = m.fc;
-    return { title: 'تقرير المرونة الاقتصادية وخفض التكاليف والمشاريع الجانبية', audience: 'صاحب الحالة وصاحب القرار', ref: 'DIA-ECO', sections: [
+    return { title: 'تقرير التحليل الاقتصادي للمشاريع الجانبية وخفض التكاليف', audience: 'صاحب الحالة وصاحب القرار', ref: 'DIA-ECO', sections: [
       { h: 'الملخص التنفيذي', text: `${(ECO_WHO.find(x => x[0] === s.who) || [, ''])[1]} — ${s.sector || ''} (${s.country || ''}). المشكلة: ${(ECO_PROB.find(x => x[0] === s.problem) || [, ''])[1]}. الصافي الشهري ${fmtN(m.net, 0)} ${s.cur || ''} بهامش ${fmtN(m.margin, 1)}%. الوفر النظري المحتمل ${fmtN(m.savTotal, 0)} شهريًا قبل القياس. ${F.negB ? 'إنذار: عجز نقدي متوقع في الشهر ' + F.negB + ' بالسيناريو الأساسي.' : F.negS ? 'في سيناريو الضغط يظهر عجز في الشهر ' + F.negS + '.' : 'لا عجز نقدي متوقع خلال 90 يومًا وفق الافتراضات.'}` },
       { h: 'الوضع المالي', kv: kvx([['الإيراد/الدخل الشهري', fmtN(m.rev, 0)], ['المصروفات', fmtN(m.exp, 0)], ['الأقساط', fmtN(m.debt, 0)], ['الصافي', fmtN(m.net, 0)], ['الهامش', fmtN(m.margin, 1) + '%'], ['نقطة التعادل', fmtN(m.be, 0)], ['النقد المتاح', fmtN(m.cash, 0)], ['تغطية السيولة', isFinite(m.runway) ? fmtN(m.runway, 1) + ' شهر' : 'لا عجز']]) },
       { h: 'تشخيص الأسباب الجذرية', cols: ['الفرضية', 'الحالة', 'يؤيدها', 'بيانات للتأكيد', 'الثقة'], rows: m.H.map(h => [h.title, ECO_HST[h.st][0], h.forE.join(' · '), h.need.join('، '), h.conf + '%']) },
@@ -316,7 +316,7 @@ function engSections2(code) {
   }
   if (code === 'SCM') {
     const m = scmModel();
-    return { title: 'تقرير ذكاء سلاسل الإمداد واللوجستيات', audience: 'الإدارة والمشتريات والعمليات', ref: 'DIA-SCM', sections: [
+    return { title: 'تقرير تحليل سلاسل الإمداد واللوجستيات', audience: 'الإدارة والمشتريات والعمليات', ref: 'DIA-SCM', sections: [
       { h: 'ملخص الحالة', text: `الحالات المحللة: ${(m.s.cases || []).join('، ')}. ${m.mats.filter(x => x.gap > 0).length} مواد معرضة للنفاد قبل وصول التوريد التالي، و${m.mats.filter(x => x.sup <= 1).length} بمصدر واحد. البديل الأفضل في التقييم المتوازن: ${m.best ? m.best.n : '—'}.` },
       { h: 'تحليل المواد والمخزون', cols: ['المادة', 'التغطية (يوم)', 'المهلة', 'مخزون الأمان', 'نقطة إعادة الطلب', 'الحالة'], rows: m.mats.map(x => [x.n, isFinite(x.cover) ? fmtN(x.cover, 0) : '—', x.lt + ' ± ' + x.ltv, fmtN(x.ss, 0), fmtN(x.rop, 0), x.gap > 0 ? 'خطر نفاد' : x.reorderNow ? 'اطلب الآن' : 'كافٍ']) },
       { h: 'مقارنة البدائل', cols: ['البديل', 'التكلفة الواصلة', 'الزمن', 'الموثوقية', 'التكلفة المعدّلة', 'التقييم'], rows: m.routes.map(r => [r.n, fmtN(r.landed, 1), r.days + ' يوم', r.rel + '%', fmtN(r.riskAdj, 1), fmtN(r.score, 0)]) },
@@ -336,7 +336,7 @@ function engSections2(code) {
   }
   if (code === 'SKL') {
     const s = egS('skl'), all = SKL_OCC.map(sklMatch).sort((a, b) => b.rank - a.rank), T = all.find(x => x.occ[0] === s.target) || all[0];
-    return { title: 'تقرير ذكاء المهارات والمطابقة المهنية', audience: 'صاحب الملف (وجهة التوظيف بموافقته)', ref: 'DIA-SKL', sections: [
+    return { title: 'تقرير تحليل المهارات والمطابقة المهنية', audience: 'صاحب الملف (وجهة التوظيف بموافقته)', ref: 'DIA-SKL', sections: [
       { h: 'ملف المهارات', cols: ['المعرف', 'المهارة', 'التصنيف', 'المستوى', 'الدليل'], rows: SKL.filter(x => s.lv[x[0]] !== undefined && s.lv[x[0]] !== '').map(x => [x[0], x[1], (SKL_CAT.find(c => c[0] === x[3]) || [, ''])[1], SKL_LV[+s.lv[x[0]] + 1][1], (SKL_EV.find(e => e[0] === (s.ev[x[0]] || 'claim')) || [, ''])[1]]) },
       { h: 'المطابقة مع ' + T.occ[4], kv: kvx([['درجة التطابق', fmtN(T.score, 0) + '/100'], ['تغطية البيانات', fmtN(T.cover, 0) + '%'], ...T.dims.map(([n, v]) => [n, fmtN(v, 0) + '%']), ['الشروط المستقلة', T.gates.map(g => (SKLm[g.id] || [, g.id])[1] + ' — ' + g.t).join('، ') || 'لا يوجد']]) },
       { h: 'ترتيب المهن', cols: ['المهنة', 'القطاع', 'التطابق', 'التصنيف'], rows: all.map(x => [x.occ[4], x.occ[1], fmtN(x.score, 0), SKL_TIER[x.tier][0]]) },
