@@ -5157,6 +5157,23 @@ VIEWS.edu = () => {
   ${inputs}${egOut('eti')}`;
 };
 </script>
+<style>
+/* PMO pickers: an icon button that opens a searchable dropdown with "add new" */
+.pp{position:relative;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pp-btn{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);color:var(--fg);text-align:right;width:100%;min-width:0}
+.pp-btn>.ic{color:var(--yellow);flex-shrink:0}
+.pp-btn:hover,.pp.open .pp-btn{border-color:var(--yellow)}
+.pp-v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.pp-ch{color:var(--faint);font-size:11px}
+.pp-menu{position:absolute;top:100%;inset-inline:0;margin-top:4px;z-index:30;min-width:220px;background:var(--raised);border:1px solid var(--line3);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.pp-q{min-height:36px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 10px;font-size:13px;width:100%}
+.pp-list{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow:auto}
+.pp-o{display:block;text-align:right;padding:8px 10px;border-radius:8px;background:none;border:0;color:var(--fg);font-size:13px}
+.pp-o:hover{background:var(--surface)}
+.pp-o.on{background:color-mix(in srgb,var(--yellow) 14%,transparent);color:var(--yellow);font-weight:600}
+.pp-add{min-height:36px;border-radius:8px;border:1px dashed var(--yellowline);background:var(--yellowbg);color:var(--yellow);font-size:12.5px;font-weight:600}
+.pmo-code{font-family:var(--f-mono);font-size:11px;font-weight:700;color:var(--yellow);background:var(--yellowbg);border:1px solid var(--yellowline);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate}
+</style>
 <script data-app="">
 /* ================= Engines wave 3 (part B) =================
    DIA-PMO · PMO 360 (portfolio, earned value, stage gates, early warning, automation levels)
@@ -5183,7 +5200,7 @@ EG_INIT.pmo = () => ({
   ]
 });
 function pmoModel() {
-  const s = egS('pmo'), esc2 = PMO_TYPE[s.type] ? PMO_TYPE[s.type][2] : 'مدير PMO';
+  const s0 = egS('pmo'); pmoEnsure(s0); const s = { ...s0, projects: s0.projects.map(p => ({ ...p, n: pmoName(p) })) }, esc2 = PMO_TYPE[s.type] ? PMO_TYPE[s.type][2] : 'مدير PMO';
   const P = s.projects.map((p, i) => {
     const bac = egN(p.bac), pv = bac * egN(p.pl) / 100, ev = bac * egN(p.act) / 100, ac = egN(p.cost);
     const spi = pv ? ev / pv : NaN, cpi = ac ? ev / ac : NaN, eac = isFinite(cpi) && cpi > 0 ? bac / cpi : bac, vac = bac - eac, fin = isFinite(spi) && spi > 0 ? egN(p.dur) / spi : egN(p.dur);
@@ -5223,14 +5240,52 @@ EG_OUT.pmo = () => {
     ${anTbl({ h: 'تحميل الموارد عبر المشاريع', cols: ['المورد', 'ساعات أسبوعية مخصصة', 'الطاقة', 'المشاريع', 'الحالة'], rows: Object.entries(m.people).map(([n, v]) => [n, v.h, egN(s.cap), v.pr.join('، '), v.h > egN(s.cap) ? 'تحميل زائد' : 'ضمن الطاقة']) })}
     ${egNote('لا يُنسب سبب التأخير إلى جهة معينة دون أدلة كافية. لا يُسجَّل أي إنفاق أو أمر شراء أو تعديل ميزانية كمعتمد لمجرد توصية الذكاء الاصطناعي.')}`);
 };
+
+/* ---- PMO reference lists (departments, job titles, activity types and names) + PMO project codes ---- */
+const PMO_LISTS = {
+  dept: ['الإدارة العامة', 'مكتب إدارة المشاريع PMO', 'الإدارة المالية', 'الموارد البشرية', 'تقنية المعلومات', 'العمليات', 'المشتريات والعقود', 'التسويق والمبيعات', 'خدمة العملاء', 'الشؤون القانونية', 'الجودة والتميز المؤسسي', 'سلاسل الإمداد والمستودعات', 'الاستراتيجية والتخطيط'],
+  job: ['مدير مكتب إدارة المشاريع', 'مدير محفظة', 'مدير برنامج', 'مدير مشروع', 'منسق مشروع', 'مخطط مشاريع', 'محلل أعمال', 'محلل بيانات المشاريع', 'مسؤول الجودة', 'مسؤول المخاطر', 'مسؤول الحوكمة والامتثال', 'راعي المشروع', 'مدير إدارة'],
+  atype: ['تخطيط', 'متابعة ورقابة', 'حوكمة واعتماد', 'تقارير ولوحات', 'إدارة الموارد', 'إدارة المخاطر', 'الجودة', 'التواصل وأصحاب المصلحة', 'إدارة التغيير', 'الإغلاق وتحقق المنافع'],
+  act: [['إعداد ميثاق المشروع', 'تخطيط'], ['إعداد خطة المشروع وخط الأساس', 'تخطيط'], ['تقدير الميزانية والجدول', 'تخطيط'], ['متابعة الجدول والإنجاز', 'متابعة ورقابة'], ['تحليل القيمة المكتسبة', 'متابعة ورقابة'], ['اعتماد بوابة مرحلة', 'حوكمة واعتماد'], ['مراجعة الالتزام بالمنهجية', 'حوكمة واعتماد'], ['إعداد التقرير الدوري', 'تقارير ولوحات'], ['تحديث لوحة المحفظة', 'تقارير ولوحات'], ['توزيع الموارد وموازنة الأحمال', 'إدارة الموارد'], ['تحديث سجل المخاطر', 'إدارة المخاطر'], ['تصعيد خطر حرج', 'إدارة المخاطر'], ['ضمان الجودة ومراجعة المخرجات', 'الجودة'], ['اجتماع أصحاب المصلحة', 'التواصل وأصحاب المصلحة'], ['دراسة طلب تغيير', 'إدارة التغيير'], ['الإغلاق الإداري والدروس المستفادة', 'الإغلاق وتحقق المنافع'], ['قياس تحقق المنافع', 'الإغلاق وتحقق المنافع']]
+};
+const PMO_PK = { dept: ['الإدارة / القسم', 'architecture'], job: ['المسمى الوظيفي للمسؤول', 'agents'], atype: ['نوع نشاط PMO', 'pmo'], act: ['اسم نشاط PMO', 'execution'] };
+const PMO_UI = { open: null };
+function pmoEnsure(s) {
+  s.lists = s.lists || {};
+  Object.keys(PMO_LISTS).forEach(k => { if (!Array.isArray(s.lists[k])) s.lists[k] = JSON.parse(JSON.stringify(PMO_LISTS[k])); });
+  let mx = 0; s.projects.forEach(p => { const m = /^PMO-P(\d+)$/.exec(p.code || ''); if (m) mx = Math.max(mx, +m[1]); });
+  const DEF = [['تقنية المعلومات', 'مدير مشروع', 'متابعة ورقابة', 'متابعة الجدول والإنجاز'], ['سلاسل الإمداد والمستودعات', 'مدير برنامج', 'متابعة ورقابة', 'تحليل القيمة المكتسبة'], ['الموارد البشرية', 'منسق مشروع', 'الجودة', 'ضمان الجودة ومراجعة المخرجات'], ['الجودة والتميز المؤسسي', 'مدير مشروع', 'حوكمة واعتماد', 'اعتماد بوابة مرحلة']];
+  s.projects.forEach((p, i) => {
+    if (!p.code) { p.code = 'PMO-P' + String(++mx).padStart(3, '0'); if (!s.seeded && DEF[i]) [p.dept, p.job, p.atype, p.act] = DEF[i]; }
+  });
+  s.seeded = true;
+}
+const pmoName = (p) => (p.code ? p.code + ' · ' : '') + p.n;
+function pmoOpts(s, p, key) { return key === 'act' ? s.lists.act.filter(a => !p.atype || a[1] === p.atype).map(a => a[0]) : s.lists[key]; }
+function pmoPick(i, key) {
+  const s = egS('pmo'), p = s.projects[i], [label, icon] = PMO_PK[key], v = p[key] || '', id = i + '|' + key, open = PMO_UI.open === id, opts = pmoOpts(s, p, key);
+  return `<div class="pp ${open ? 'open' : ''}"><span class="faint" style="font-size:11.5px">${label}</span>
+    <button type="button" class="pp-btn" data-act="pmo-pp" data-k="${id}" aria-expanded="${open}" aria-haspopup="listbox">${ic(icon, 16)}<span class="pp-v ${v ? '' : 'faint'}">${esc(v || 'اختر…')}</span><span class="pp-ch">▾</span></button>
+    ${open ? `<div class="pp-menu"><input type="text" class="pp-q" data-pmo-q="${id}" placeholder="ابحث أو اكتب اسمًا جديدًا…" autocomplete="off" aria-label="بحث">
+      <div class="pp-list" role="listbox">${opts.map(o => `<button type="button" role="option" class="pp-o ${o === v ? 'on' : ''}" data-act="pmo-pick" data-k="${id}" data-v="${esc(o)}">${esc(o)}</button>`).join('') || '<span class="faint" style="font-size:12px;padding:6px">لا توجد عناصر بعد</span>'}</div>
+      <button type="button" class="pp-add" data-act="pmo-add" data-k="${id}">+ إضافة ${key === 'job' ? 'مسمى وظيفي' : key === 'dept' ? 'إدارة أو قسم' : key === 'atype' ? 'نوع نشاط' : 'نشاط'} جديد</button></div>` : ''}</div>`;
+}
+function pmoListsCard(s) {
+  const L = [['dept', 'الإدارات والأقسام'], ['job', 'المسميات الوظيفية'], ['atype', 'أنواع أنشطة PMO'], ['act', 'أنشطة PMO (الاسم · النوع)']];
+  return egCard('القوائم المرجعية لمكتب PMO', 'PMO-LISTS', `<span class="faint" style="font-size:12px">هذه القوائم تظهر في القوائم المنسدلة لكل مشروع PMO. أضف أو احذف ما يناسب منظمتك.</span>
+    ${egGrid(300, L.map(([k, l]) => `<div class="sub" style="gap:8px"><b style="font-size:13px">${l} <span class="faint" style="font-weight:400">(${s.lists[k].length})</span></b>
+      <div class="row" style="gap:5px;max-height:150px;overflow:auto">${s.lists[k].map((x, j) => `<span class="chip" style="gap:4px">${esc(Array.isArray(x) ? x[0] + ' · ' + x[1] : x)}<button type="button" data-act="pmo-ldel" data-k="${k}|${j}" aria-label="حذف" style="background:none;border:0;color:var(--faint);padding:0 2px;min-height:0">✕</button></span>`).join('')}</div>
+      <div class="row nowrap" style="gap:6px"><input type="text" data-pmo-new="${k}" placeholder="أضف ${l.split(' ')[0].replace('أنشطة', 'نشاطًا')}…" style="flex:1;min-width:0;min-height:38px">${k === 'act' ? `<select data-pmo-newt="1" style="min-height:38px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;max-width:130px">${s.lists.atype.map(t => `<option>${esc(t)}</option>`).join('')}</select>` : ''}<button type="button" class="btn sm" data-act="pmo-ladd" data-k="${k}">إضافة</button></div></div>`).join(''))}`);
+}
 VIEWS.pmo = () => {
-  const s = egS('pmo');
+  const s = egS('pmo'); pmoEnsure(s);
   let inputs = '';
   if (s.tab === 'setup') inputs = egCard('نوع مكتب إدارة المشاريع ومستوى الخدمة', 'PMO 360', egQ(1, 'نموذج التشغيل', egCh('pmo', 'type', Object.entries(PMO_TYPE).map(([k, v]) => [k, v[0]])) + `<span class="faint" style="font-size:12px">${PMO_TYPE[s.type][1]}</span>`) + egQ(2, 'مستوى الخدمة', egCh('pmo', 'tier', [['starter', 'Starter — الشركات الصغيرة'], ['pro', 'Professional — الشركات النامية'], ['enterprise', 'Enterprise — المؤسسات الكبيرة'], ['advisory', 'Advisory & Managed Services']])) + `<span class="lbl" style="margin-top:6px">مستوى أتمتة كل عملية</span>` + egGrid(220, PMO_PROC.map(([k, n, c]) => egSel('pmo', 'auto.' + k, n + (c ? ' 🔒' : ''), PMO_A.map(([a, l]) => [a, a + ' · ' + l]))).join('')));
-  if (s.tab === 'portfolio' || s.tab === 'risk') inputs = egCard('المشاريع', 'PMO-07/11/12', s.projects.map((p, i) => `<details ${i === 0 ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><b>${esc(p.n)}</b> <span class="faint" style="font-size:11.5px">— ${p.gate}</span></summary>${egGrid(140, egTxt('pmo', `projects.${i}.n`, 'اسم المشروع') + egTxt('pmo', `projects.${i}.obj`, 'الهدف الاستراتيجي') + egNum('pmo', `projects.${i}.bac`, 'الميزانية المعتمدة BAC') + egNum('pmo', `projects.${i}.dur`, 'المدة المخططة (أسبوع)') + egNum('pmo', `projects.${i}.pl`, 'الإنجاز المخطط حتى الآن %') + egNum('pmo', `projects.${i}.act`, 'الإنجاز الفعلي %') + egNum('pmo', `projects.${i}.cost`, 'التكلفة الفعلية AC') + egNum('pmo', `projects.${i}.risks`, 'مخاطر حرجة مفتوحة') + egNum('pmo', `projects.${i}.dec`, 'قرارات معلقة') + egTxt('pmo', `projects.${i}.res`, 'الموارد (أسماء)') + egTxt('pmo', `projects.${i}.hrs`, 'الساعات الأسبوعية لكل مورد'))}<div class="row between" style="margin-top:6px">${egSel('pmo', `projects.${i}.gate`, '', PMO_GATES.map(([g, n]) => [g, g + ' · ' + n]))}${egDel('pmo', 'projects', i)}</div></details>`).join('') + `<div class="row" style="gap:8px;margin-top:8px">${egAdd('pmo', 'projects', 'إضافة مشروع')}${egNum('pmo', 'cap', 'طاقة المورد الأسبوعية (ساعة)')}</div>`);
-  if (s.tab === 'gates') inputs = s.projects.map((p, i) => { const gi = PMO_GATES.findIndex(g => g[0] === p.gate), ok = PMO_CHK.every(([k]) => (p.chk || {})[k]); return egCard(`${esc(p.n)} — ${p.gate} · ${(PMO_GATES[gi] || [, ''])[1]}`, ok ? 'جاهز للانتقال' : 'شروط ناقصة', `<div class="row" style="gap:6px">${PMO_CHK.map(([k, l]) => choice('eg-set', `pmo.projects.${i}.chk.${k}`, (p.chk || {})[k] ? '' : '1', !!(p.chk || {})[k], l)).join('')}</div><div class="row" style="gap:8px"><button type="button" class="btn sm ${ok ? 'primary' : ''}" data-act="pmo-gate" data-k="${i}" ${gi >= PMO_GATES.length - 1 ? 'disabled' : ''}>طلب الانتقال إلى ${(PMO_GATES[gi + 1] || ['—'])[0]}</button><span class="faint" style="font-size:12px">${ok ? 'كل الشروط مستوفاة — يُسجل القرار في سجل التدقيق.' : 'الانتقال يتطلب استيفاء الشروط الستة.'}</span></div>`); }).join('');
+  if (s.tab === 'setup') inputs += pmoListsCard(s);
+  if (s.tab === 'portfolio' || s.tab === 'risk') inputs = egCard('مشاريع PMO', 'PMO-07/11/12', s.projects.map((p, i) => `<details ${i === (PMO_UI.last ?? 0) || PMO_UI.open && PMO_UI.open.startsWith(i + '|') ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><span class="pmo-code">${esc(p.code || '')}</span> <b>${esc(p.n)}</b> <span class="faint" style="font-size:11.5px">— ${p.gate}${p.dept ? ' · ' + esc(p.dept) : ''}${p.act ? ' · ' + esc(p.act) : ''}</span></summary>${egGrid(200, pmoPick(i, 'dept') + pmoPick(i, 'job') + pmoPick(i, 'atype') + pmoPick(i, 'act'))}<div style="height:8px"></div>${egGrid(140, egTxt('pmo', `projects.${i}.n`, 'اسم المشروع') + egTxt('pmo', `projects.${i}.obj`, 'الهدف الاستراتيجي') + egNum('pmo', `projects.${i}.bac`, 'الميزانية المعتمدة BAC') + egNum('pmo', `projects.${i}.dur`, 'المدة المخططة (أسبوع)') + egNum('pmo', `projects.${i}.pl`, 'الإنجاز المخطط حتى الآن %') + egNum('pmo', `projects.${i}.act`, 'الإنجاز الفعلي %') + egNum('pmo', `projects.${i}.cost`, 'التكلفة الفعلية AC') + egNum('pmo', `projects.${i}.risks`, 'مخاطر حرجة مفتوحة') + egNum('pmo', `projects.${i}.dec`, 'قرارات معلقة') + egTxt('pmo', `projects.${i}.res`, 'الموارد (أسماء)') + egTxt('pmo', `projects.${i}.hrs`, 'الساعات الأسبوعية لكل مورد'))}<div class="row between" style="margin-top:6px">${egSel('pmo', `projects.${i}.gate`, '', PMO_GATES.map(([g, n]) => [g, g + ' · ' + n]))}${egDel('pmo', 'projects', i)}</div></details>`).join('') + `<div class="row" style="gap:8px;margin-top:8px">${egAdd('pmo', 'projects', 'إضافة مشروع PMO')}${egNum('pmo', 'cap', 'طاقة المورد الأسبوعية (ساعة)')}</div>`);
+  if (s.tab === 'gates') inputs = s.projects.map((p, i) => { const gi = PMO_GATES.findIndex(g => g[0] === p.gate), ok = PMO_CHK.every(([k]) => (p.chk || {})[k]); return egCard(`<span class="pmo-code">${esc(p.code || '')}</span> ${esc(p.n)} — ${p.gate} · ${(PMO_GATES[gi] || [, ''])[1]}`, ok ? 'جاهز للانتقال' : 'شروط ناقصة', `<div class="row" style="gap:6px">${PMO_CHK.map(([k, l]) => choice('eg-set', `pmo.projects.${i}.chk.${k}`, (p.chk || {})[k] ? '' : '1', !!(p.chk || {})[k], l)).join('')}</div><div class="row" style="gap:8px"><button type="button" class="btn sm ${ok ? 'primary' : ''}" data-act="pmo-gate" data-k="${i}" ${gi >= PMO_GATES.length - 1 ? 'disabled' : ''}>طلب الانتقال إلى ${(PMO_GATES[gi + 1] || ['—'])[0]}</button><span class="faint" style="font-size:12px">${ok ? 'كل الشروط مستوفاة — يُسجل القرار في سجل التدقيق.' : 'الانتقال يتطلب استيفاء الشروط الستة.'}</span></div>`); }).join('');
   return `${engHead('NAIOSH PMO 360 · DIA-PMO', 'مكتب إدارة المشاريع الذكي والحوكمة والأتمتة', 'مركز قيادة موحد للمحافظ والبرامج والمشاريع: هل تسير المشاريع وفق الجدول والميزانية؟ أين الانحرافات وأسبابها؟ من يملك القرار؟ — مع أتمتة الأعمال المتكررة وإبقاء القرارات الجوهرية بيد صاحب الصلاحية.', engExport('PMO'))}
-  ${egTabs('pmo', [['portfolio', 'المحفظة والقيمة المكتسبة'], ['gates', 'بوابات المراحل'], ['risk', 'الإنذار المبكر والموارد'], ['setup', 'نموذج المكتب والأتمتة']])}
+  ${egTabs('pmo', [['portfolio', 'محفظة مشاريع PMO'], ['gates', 'بوابات المراحل'], ['risk', 'الإنذار المبكر والموارد'], ['setup', 'نموذج المكتب والأتمتة']])}
   ${inputs}${egOut('pmo')}`;
 };
 
@@ -5378,6 +5433,7 @@ function engine3Handle(act, k, el) {
     const e = egS('emp'); e.cands.push({ code: 'C-SKL', edu: 'EDU-06', years: 0, skills: sk.join('، '), projects: Object.values(S.eg_skl.ev || {}).filter(v => v === 'proj' || v === 'test').length, cert: Object.values(S.eg_skl.ev || {}).includes('cert') ? 'yes' : 'no', city: 'yes', mode: 'yes', salary: 'yes', prof: 3 });
     toast('أُضيف مرشح من ملف ذكاء المهارات (' + sk.length + ' مهارة)'); render(); return true;
   }
+  if (/^pmo-(pp|pick|add|ladd|ldel)$/.test(act)) return pmoUiHandle(act, k, el);
   if (act === 'pmo-gate') {
     const p = egS('pmo').projects[+k], gi = PMO_GATES.findIndex(g => g[0] === p.gate), miss = PMO_CHK.filter(([c]) => !(p.chk || {})[c]).map(x => x[1]);
     if (miss.length) { toast('لا يمكن الانتقال — شروط ناقصة: ' + miss.join('، ')); return true; }
@@ -5412,6 +5468,7 @@ function engSections3(code) {
     return { title: 'التقرير التنفيذي لمكتب إدارة المشاريع — PMO 360', audience: 'الإدارة العليا ومدير PMO', ref: 'DIA-PMO', sections: [
       { h: 'ملخص المحفظة', kv: kvx([['نوع المكتب', PMO_TYPE[m.s.type][0]], ['عدد المشاريع', m.P.length], ['الميزانية الكلية', fmtN(m.tot.bac, 0)], ['المتوقع عند الإكمال', fmtN(m.tot.eac, 0)], ['SPI المحفظة', fmtN(m.tot.spi, 2)], ['CPI المحفظة', fmtN(m.tot.cpi, 2)], ['تحتاج تدخلًا', m.P.filter(x => x.rag[1] === 't-c').length]]) },
       { h: 'القيمة المكتسبة', cols: ['المشروع', 'البوابة', 'PV', 'EV', 'AC', 'SPI', 'CPI', 'EAC', 'الحالة'], rows: m.P.map(x => [x.p.n, x.p.gate, fmtN(x.pv, 0), fmtN(x.ev, 0), fmtN(x.ac, 0), x.started ? fmtN(x.spi, 2) : '—', x.started ? fmtN(x.cpi, 2) : '—', fmtN(x.eac, 0), x.rag[0]]) },
+      { h: 'مشاريع PMO — الإدارة والمسؤول والنشاط', cols: ['الرمز', 'المشروع', 'الإدارة / القسم', 'المسمى الوظيفي للمسؤول', 'نوع النشاط', 'النشاط'], rows: egS('pmo').projects.map(p => [p.code || '', p.n, p.dept || '—', p.job || '—', p.atype || '—', p.act || '—']) },
       { h: 'أعمال تحتاج تدخلًا', cols: ['المشروع', 'الإشارة', 'الدليل', 'الإجراء', 'التصعيد'], rows: m.alerts.map(a => [a[0], a[1], a[2], a[4], a[5]]) },
       { h: 'مستويات الأتمتة', cols: ['العملية', 'المستوى'], rows: PMO_PROC.map(([k, n]) => [n, m.s.auto[k] + ' · ' + (PMO_A.find(a => a[0] === m.s.auto[k]) || [, ''])[1]]) },
       { h: 'الحوكمة', bullets: ['لا تتجاوز أي عملية آلية صلاحيات HUB-AUTH.', 'لا يُعتمد إنفاق أو تعديل ميزانية لمجرد توصية الذكاء الاصطناعي.', 'لا يُنسب التأخير لجهة دون أدلة.'] }] };
@@ -5437,6 +5494,45 @@ function engSections3(code) {
   }
   return null;
 }
+/* ---- PMO picker events ---- */
+function pmoUiHandle(act, k, el) {
+  const s = egS('pmo'); pmoEnsure(s);
+  const [i, key] = String(k).split('|'), p = s.projects[+i];
+  const setVal = (val) => { const before = p[key]; p[key] = val; if (key === 'atype' && p.act && !s.lists.act.some(a => a[0] === p.act && a[1] === val)) p.act = ''; if (key === 'act' && !p.atype) { const t = s.lists.act.find(a => a[0] === val); if (t) p.atype = t[1]; } PMO_UI.open = null; save(); render(); if (before !== val) toast('«' + p.code + '»: ' + PMO_PK[key][0] + ' ← ' + val); };
+  if (act === 'pmo-pp') { PMO_UI.last = +i; PMO_UI.open = PMO_UI.open === k ? null : k; render(); if (PMO_UI.open) setTimeout(() => { const q = document.querySelector('[data-pmo-q="' + k + '"]'); if (q) q.focus(); }, 0); return true; }
+  if (act === 'pmo-pick') { setVal(el.dataset.v); return true; }
+  if (act === 'pmo-add') {
+    const q = document.querySelector('[data-pmo-q="' + k + '"]'), val = q ? q.value.trim() : '';
+    if (!val) { toast('اكتب الاسم الجديد في خانة البحث ثم اضغط «إضافة»'); if (q) q.focus(); return true; }
+    if (key === 'act') { if (!s.lists.act.some(a => a[0] === val)) s.lists.act.push([val, p.atype || s.lists.atype[0] || 'عام']); }
+    else if (!s.lists[key].includes(val)) s.lists[key].push(val);
+    log('د. عدنان', `أضاف «${val}» إلى قائمة ${PMO_PK[key][0]} في مكتب PMO`); setVal(val); return true;
+  }
+  if (act === 'pmo-ladd') {
+    const inp = document.querySelector('[data-pmo-new="' + k + '"]'), val = inp ? inp.value.trim() : '';
+    if (!val) { toast('اكتب الاسم أولًا'); return true; }
+    if (k === 'act') { const t = document.querySelector('[data-pmo-newt]'); if (!s.lists.act.some(a => a[0] === val)) s.lists.act.push([val, t ? t.value : 'عام']); }
+    else if (!s.lists[k].includes(val)) s.lists[k].push(val);
+    save(); render(); toast('أُضيف «' + val + '»'); return true;
+  }
+  if (act === 'pmo-ldel') { const [lk, j] = String(k).split('|'); const x = s.lists[lk][+j]; s.lists[lk].splice(+j, 1); save(); render(); toast('حُذف «' + (Array.isArray(x) ? x[0] : x) + '» من القائمة'); return true; }
+  return false;
+}
+document.addEventListener('input', (e) => {
+  const q = e.target; if (!q.dataset || !q.dataset.pmoQ) return;
+  const t = q.value.trim(), menu = q.closest('.pp-menu'); if (!menu) return;
+  let any = false; menu.querySelectorAll('.pp-o').forEach(o => { const hit = !t || o.textContent.includes(t); o.style.display = hit ? '' : 'none'; if (hit) any = true; });
+  const add = menu.querySelector('.pp-add'); if (add) add.textContent = t ? '+ إضافة «' + t + '»' : add.textContent.replace(/«.*»/, '').trim();
+});
+document.addEventListener('keydown', (e) => {
+  const q = e.target; if (!q.dataset || !q.dataset.pmoQ) return;
+  if (e.key === 'Escape') { PMO_UI.open = null; render(); }
+  if (e.key === 'Enter') { e.preventDefault(); const t = q.value.trim(), m = q.closest('.pp-menu'), hit = m && [...m.querySelectorAll('.pp-o')].find(o => o.dataset.v === t); (hit || m.querySelector('.pp-add')).click(); }
+});
+document.addEventListener('click', (e) => {
+  if (!PMO_UI.open || (e.target.closest && e.target.closest('.pp'))) return;
+  PMO_UI.open = null; if (S.route === 'pmo') render();
+});
 </script>
 <style>
 /* ---- command-center launcher: every section of the side menu as boxes, laid out horizontally ---- */
