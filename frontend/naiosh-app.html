@@ -436,6 +436,8 @@ const P = {
   fwd:'M9 6l6 6-6 6',
   coin:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M15 8.6c-.6-.9-1.7-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.2-1.6 M12 5.4v1.7 M12 17v1.6',
   results:'M4 20V4 M4 20h16 M7 15l3-3 3 2 5-6 M16 8h2v2',
+  initiative:'M12 20s-7-4.3-7-9.5A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.5C19 15.7 12 20 12 20 M8.5 12.5h2l1-2 2 4 1-2h1',
+  facility:'M3 20h18 M3 20V9l5-3 5 3v11 M13 20V12h8v8 M6 12h2 M6 15h2 M16 15h2 M16 17.5h2 M8.5 20v-2.5',
   legal:'M14.5 3.5l6 6 M11.5 6.5l6 6 M13 5l-5 5 M18 10l-5 5 M10.5 12.5L3.5 19.5 M3 21h9',
   ebiz:'M3 21h18 M5 21V8l7-4 7 4v13 M9 21v-5h6v5 M9 10h.01 M12 10h.01 M15 10h.01 M9 13h.01 M15 13h.01',
   request:'M6 3h9l5 5v13H6z M14 3v6h6 M9 17v-3 M12 17v-6 M15 17v-4',
@@ -517,11 +519,11 @@ const NAV = [
   { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','تحليل الأسباب','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
-  { t: 'تحليل المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','تحليل المنافسين','CIB'],['eco','التحليل الاقتصادي للمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','تحليل المخاطر','SAF']] },
+  { t: 'تحليل المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','تحليل المنافسين','CIB'],['eco','التحليل الاقتصادي للمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','تحليل المخاطر','SAF'],['facility','تحليل المطاعم والفنادق والفعاليات','FHI']] },
   { t: 'الإدارة المؤسسية والجودة', items: [['pmo','مكتب إدارة المشاريع PMO 360','PMO'],['tqg','الجودة الشاملة والحوكمة','TQG']] },
   { t: 'التحليل القانوني والمؤسسي', items: [['legal','التحليل القانوني LEGAL 360','LEGAL'],['ebiz','التحليل المؤسسي والقانوني 360','EBI']] },
   { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','تحليل التعليم والتدريب','ETI'],['cv','تحليل السيرة الذاتية','CV'],['skills','تحليل المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
-  { t: 'التحليل المجتمعي', items: [['self','تحليل الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'التحليل المجتمعي', items: [['initiative','تحليل المبادرات المجتمعية','CII'],['self','تحليل الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -547,6 +549,7 @@ const TITLES = {
   sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'تحليل المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني'],
   employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'تحليل بيانات التعليم والتدريب'],
   pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'تحليل المنافسين والموقع التنافسي'],
+  initiative: ['DIA-CII · Community Initiatives Intelligence 360', 'تحليل المبادرات المجتمعية ودراسة جدواها'], facility: ['NAIOSH-FHI · Facility & Hospitality Intelligence 360', 'تحليل المطاعم والفنادق والفعاليات والمرافق'],
   legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التحليل المؤسسي والقانوني والمالي وسوق العمل']
 };
 function counts() {
@@ -3753,7 +3756,7 @@ function anChart(ch) {
   const X = (i) => pl + (N > 1 ? i * (W - pl - pr) / (N - 1) : 0), Y = (v) => pt + (hi - v) / (hi - lo) * (H - pt - pb);
   const path = (ys, off = 0) => ys.map((v, i) => fin(v) ? [X(i + off), Y(v)] : null).filter(Boolean).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   let g = '';
-  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtN(v)}</text>`; }
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">&#x200E;${fmtN(v)}</text>`; }
   const step = Math.max(1, Math.ceil(N / 6));
   for (let i = 0; i < N; i += step) g += `<text x="${X(i).toFixed(1)}" y="${H - 9}" text-anchor="middle">${esc(ch.lab[i])}</text>`;
   if (ch.fc) {
@@ -4100,7 +4103,7 @@ function dzCols(items, opt = {}) {
   items.forEach(([lab, v, col], i) => {
     const x = 10 + step * i + (step - bw) / 2, y0 = Y(0), y1 = Y(v), top = Math.min(y0, y1), h = Math.max(2, Math.abs(y1 - y0));
     g += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" style="fill:${col || (v >= 0 ? 'var(--green)' : 'var(--red)')};opacity:.9"/>`;
-    g += `<text x="${(x + bw / 2).toFixed(1)}" y="${(v >= 0 ? top - 5 : top + h + 12).toFixed(1)}" text-anchor="middle" direction="ltr" style="fill:var(--soft);font:11px var(--f-mono);direction:ltr;unicode-bidi:bidi-override">${esc(opt.fmt ? opt.fmt(v) : fmtN(v, 0))}</text>`;
+    g += `<text x="${(x + bw / 2).toFixed(1)}" y="${(v >= 0 ? top - 5 : top + h + 12).toFixed(1)}" text-anchor="middle" direction="ltr" style="fill:var(--soft);font:11px var(--f-mono);direction:ltr;unicode-bidi:bidi-override">&#x200E;${esc(opt.fmt ? opt.fmt(v) : fmtN(v, 0))}</text>`;
     g += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" style="fill:var(--faint);font:11.5px var(--f-body)">${esc(lab)}</text>`;
   });
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="${esc(opt.label || 'رسم بياني')}" style="width:100%;height:auto">${g}</svg>`;
@@ -5874,6 +5877,287 @@ engSections3 = function (code) {
       { h: 'حدود التحليل', bullets: ['المؤشرات تبسيطات محاسبية ولا تكفي لتقييم ائتماني أو قانوني.', 'يُميَّز بين إجابة الشركة والبيان الموثق رسميًا والاستنتاج الآلي.', 'لا تُكشف بيانات غير عامة دون أساس قانوني وصلاحية.'] }] };
   }
   return _es4(code);
+};
+</script>
+<script data-app="">
+/* ================= Engines wave 5 =================
+   DIA-CII · NAIOSH COMMUNITY INITIATIVES INTELLIGENCE 360 — need & beneficiaries, evidence classes, adaptive questions,
+            capital sufficiency with cash timing (B_t = B_t-1 + I_t − O_t), five funding scenarios, risks, gates G0–G8, impact chain.
+   NAIOSH-FHI · FACILITY & HOSPITALITY INTELLIGENCE 360 — restaurants, hotels, housing, events, facilities, real estate:
+            sector KPIs vs baseline/target, evidence log & data quality, four separate registers, prioritisation, improvement plan. */
+
+/* =========================================================================================
+   DIA-CII — Community Initiatives
+   ========================================================================================= */
+const CII_TYPE = [['edu', 'التعليم والتدريب', 'الحاجة التعليمية، الفئات، المناهج، المدربون، تكاليف المتعلم، نتائج التعلم والتوظيف'], ['health', 'الإدارة الصحية والصحة المجتمعية', 'فجوات الخدمة، القدرة الاستيعابية، الكوادر، الإحالات، الخصوصية، التراخيص والسلامة السريرية'], ['sport', 'الرياضة والشباب', 'المشاركة، المنشآت، المدربون، السلامة، إتاحة الوصول، استمرارية البرامج'], ['aid', 'المساعدات والإغاثة', 'حجم الاحتياج، سرعة الاستجابة، التوزيع، عدالة الوصول، أمن العاملين، منع الازدواجية'], ['event', 'الترفيه والفعاليات', 'الطلب، الطاقة الاستيعابية، التكلفة، الحشود، التصاريح، إمكانية التكرار'], ['vol', 'التطوع والإغاثة المحلية والدولية', 'تعبئة المتطوعين، التدريب، التنسيق عبر الحدود، الحماية، اللوجستيات']];
+const CII_STAGE = ['فكرة', 'فكرة مدروسة', 'تجربة أولية', 'قيد التشغيل', 'توسع'];
+const CII_AX = [['need', 'المشكلة والحاجة', 'ما المشكلة؟ من المتأثر؟ ما الأدلة على وجودها؟ ما الخدمات الحالية التي لا تغطيها؟'], ['benef', 'المستفيدون', 'كم العدد وكيف حُسب؟ كيف تصل للأكثر احتياجًا؟ هل شارك المجتمع في التصميم؟'], ['sol', 'الحل والتميز', 'كيف تعالج المبادرة المشكلة؟ هل توجد مبادرات مشابهة؟ ما القيمة المضافة؟'], ['impl', 'التنفيذ', 'أين ومتى ومن المسؤول؟ ما الموارد والموافقات؟ ما البديل إذا تأخر مورد أو شريك؟'], ['part', 'الشراكات', 'ما الجهات المرتبطة؟ هل توجد اتفاقيات فعلية؟ ما التزامات كل شريك؟'], ['fund', 'التمويل', 'كم تحتاج قبل التشغيل؟ ما تكلفة التأسيس والتشغيل؟ ما المتاح فعليًا وما المتوقع فقط؟'], ['risk', 'المخاطر والحماية', 'ما أسوأ النتائج؟ كيف تحمي المستفيدين والبيانات والمتطوعين؟ مخاطر الاحتيال والتعارض؟'], ['sust', 'الأثر والاستدامة', 'ما الذي سيتغير؟ كيف تقيسه؟ ماذا بعد انتهاء التمويل ومن يتحمل التشغيل؟']];
+const CII_ANS = [['ev', 'مُجاب مع دليل'], ['noev', 'مُجاب دون دليل'], ['', 'غير مُجاب']];
+const CII_BASIS = [['doc', 'موثق (مسح ميداني / سجل رسمي / طلبات تسجيل)'], ['est', 'مقدّر مع افتراضات موضحة'], ['none', 'غير مدعوم حاليًا']];
+const CII_CLS = [['claim', 'ادعاء صاحب المبادرة'], ['doc', 'معلومة مستخرجة من مستند'], ['ver', 'بيانات جرى التحقق منها'], ['est', 'تقدير أو افتراض'], ['ai', 'استنتاج تحليلي آلي'], ['appr', 'نتيجة اعتمدها مراجع مخول']];
+const CII_FT = ['صورة', 'فيديو', 'PDF', 'Excel / CSV', 'Word', 'صوت', 'بيانات يدوية', 'مصدر متصل API'];
+const CII_PST = [['signed', 'اتفاقية موقعة'], ['loi', 'خطاب نوايا'], ['exp', 'متوقع فقط']];
+const CII_RCAT = ['الاحتياج المجتمعي', 'مالية وسيولة', 'تشغيلية وموارد بشرية', 'قانونية وتنظيمية', 'الشراكات والاعتماد على طرف واحد', 'سلامة المستفيدين وحمايتهم', 'الخصوصية والأمن السيبراني', 'السمعة والقبول المجتمعي', 'بيئية وطوارئ', 'النزاهة والاحتيال وتعارض المصالح'];
+const CII_LVL = ['المدخلات', 'الأنشطة', 'المخرجات', 'النتائج', 'الأثر'];
+const CII_TESTS = ['مبادرتان من قطاعين بأسئلة ومؤشرات مخصصة', 'حفظ الإجابات والعودة للمسودة', 'رفع صور وفيديو وPDF وExcel مع حالة المعالجة', 'ربط المستخرج بمصدره الأصلي', 'كشف الأدلة المتعارضة والناقصة دون تحويلها لحقائق', 'حساب فجوة التمويل واختبار تأخر المنحة', 'توقعات متعددة مع الافتراضات وعدم اليقين', 'منع تجاوز الموافقات والصلاحيات', 'تقرير يوضح المصادر والقيود والنواقص', 'تحويل التوصيات المعتمدة إلى مهام', 'قياس النتائج مقابل خط الأساس والمستهدف', 'العزل بين بيانات المبادرات والجهات'];
+const CII_SC = [['base', 'أساسي', { cf: 1, delay: 0, pl: 1, ex: 0, sc: 1, bf: 1 }, 'التكاليف والتدفقات حسب الخطة'], ['cons', 'متحفظ', { cf: 1.1, delay: 2, pl: 0.5, ex: 0, sc: 1, bf: 0.9 }, 'تأخر التمويل شهرين، تكاليف +10%، تحصيل نصف التبرعات'], ['stress', 'ضاغط', { cf: 1.15, delay: 3, pl: 0, ex: 0, sc: 1, bf: 0.8 }, 'فقدان مصدر التبرعات وطارئ تشغيلي +15%'], ['alt', 'بديل مرحلي', { cf: 0.75, delay: 0, pl: 1, ex: 0, sc: 0.75, bf: 0.75 }, 'تقليل النطاق 25% أو التنفيذ على مراحل'], ['grow', 'توسع', { cf: 1.4, delay: 0, pl: 1, ex: 1, sc: 1.5, bf: 1.5 }, 'مستفيدون +50% مع تكلفة التوسع والتمويل المتوقع']];
+EG_INIT.cii = () => ({
+  tab: 'intake', type: 'edu', typeOther: '', name: 'برنامج تأهيل الشباب للعمل التقني', owner: 'جمعية المستقبل للتنمية', country: 'الأردن', region: 'عمّان', months: 12, stage: 'فكرة مدروسة',
+  problem: 'ارتفاع بطالة الشباب وضعف المهارات الرقمية المطلوبة في السوق', needEv: 'part', benef: 500, benefBasis: 'est', reach: 70, codesign: 'no', fu: {},
+  ans: { need: 'ev', benef: 'noev', sol: 'ev', impl: 'noev', part: 'ev', fund: 'ev', risk: 'noev', sust: '' },
+  partners: [{ n: 'وزارة العمل', t: 'حكومي', st: 'loi' }, { n: 'شركة تقنية محلية', t: 'قطاع خاص', st: 'signed' }, { n: 'صندوق دولي للتنمية', t: 'دولي', st: 'exp' }],
+  evid: [{ n: 'دراسة احتياج سوق العمل', ft: 'PDF', cls: 'doc' }, { n: 'عدد المستفيدين المتوقع 500', ft: 'بيانات يدوية', cls: 'claim' }, { n: 'خطاب دعم الشريك التقني', ft: 'PDF', cls: 'ver' }, { n: 'صور مقر التدريب', ft: 'صورة', cls: 'doc' }],
+  fin: { cur: 'JOD', avail: 60000, appr: 90000, apprM: 2, pledged: 50000, pledgedM: 5, expected: 60000, inkind: 15000, commit: 8000, setup: 35000, op: 12000, cont: 10, reserve: 5000 },
+  risks: [{ n: 'تأخر المنحة قبل بدء دفع الالتزامات', cat: 'مالية وسيولة', l: 4, i: 4, owner: 'المدير المالي', ctrl: 'احتياطي نقدي وتأجيل أنشطة غير حرجة', ind: 'عدم وصول الدفعة حتى الشهر 3', rev: '' }, { n: 'انسحاب الشريك التقني', cat: 'الشراكات والاعتماد على طرف واحد', l: 2, i: 5, owner: '', ctrl: '', ind: '', rev: '' }, { n: 'تسريب بيانات المتدربين', cat: 'الخصوصية والأمن السيبراني', l: 2, i: 4, owner: 'مسؤول التقنية', ctrl: 'صلاحيات وتشفير', ind: 'محاولات دخول غير مصرح', rev: '' }],
+  opps: [{ n: 'شراكة توفر قاعات ومدربين', val: 25000, cost: 2000, speed: 'سريعة', ver: 'yes' }, { n: 'منحة إقليمية للمهارات الرقمية', val: 80000, cost: 5000, speed: 'متوسطة', ver: 'no' }],
+  kpis: [{ n: 'عدد المتدربين المكملين', lvl: 'المخرجات', base: 0, target: 400, act: '', src: 'سجل الحضور' }, { n: 'نسبة التوظيف بعد 6 أشهر', lvl: 'النتائج', base: 15, target: 45, act: '', src: 'مسح متابعة' }],
+  approver: '', decision: 'pending', tests: {}
+});
+EG_ROWS['cii.partners'] = () => ({ n: '', t: '', st: 'exp' });
+EG_ROWS['cii.evid'] = () => ({ n: '', ft: 'PDF', cls: 'claim' });
+EG_ROWS['cii.risks'] = () => ({ n: '', cat: CII_RCAT[0], l: 3, i: 3, owner: '', ctrl: '', ind: '', rev: '' });
+EG_ROWS['cii.opps'] = () => ({ n: '', val: 0, cost: 0, speed: 'متوسطة', ver: 'no' });
+EG_ROWS['cii.kpis'] = () => ({ n: '', lvl: 'النتائج', base: '', target: '', act: '', src: '' });
+function ciiCash(s, sc) {
+  const f = s.fin, n = Math.max(1, Math.round(egN(s.months))), N = (k) => egN(f[k]), P = sc[2];
+  const setupCash = Math.max(0, N('setup') * P.cf - N('inkind')), op = N('op') * P.cf * (1 + N('cont') / 100);
+  let B = N('avail'); const bal = [B]; let minB = B, low = null;
+  for (let m = 1; m <= n; m++) {
+    let I = 0, O = op;
+    if (m === Math.max(1, Math.round(N('apprM'))) + P.delay) I += N('appr');
+    if (m === Math.max(1, Math.round(N('pledgedM'))) + P.delay) I += N('pledged') * P.pl;
+    if (P.ex && m === Math.max(1, Math.round(N('apprM'))) + 2) I += N('expected') * P.ex;
+    if (m === 1) O += setupCash + N('commit');
+    B = B + I - O; bal.push(B); if (B < minB) minB = B; if (low === null && B < N('reserve')) low = m;
+  }
+  const total = (N('setup') * P.cf + N('op') * P.cf * n) * (1 + N('cont') / 100), conf = N('avail') + N('appr'), need = total - Math.min(N('inkind'), N('setup') * P.cf) + N('commit');
+  return { bal, minB, low, total, gap: need - conf, end: B, benef: Math.round(egN(s.benef) * P.bf), months: n };
+}
+function ciiModel() {
+  const s = egS('cii'), A = s.ans || {};
+  const answered = CII_AX.filter(([k]) => A[k]).length, withEv = CII_AX.filter(([k]) => A[k] === 'ev').length;
+  const cls = Object.fromEntries(CII_CLS.map(([k]) => [k, s.evid.filter(e => e.cls === k).length]));
+  const verified = cls.ver + cls.appr, evN = s.evid.length;
+  const needScore = Math.round((s.needEv === 'yes' ? 35 : s.needEv === 'part' ? 20 : 0) + (s.benefBasis === 'doc' ? 30 : s.benefBasis === 'est' ? 15 : 0) + Math.min(20, egN(s.reach) / 5) + (s.codesign === 'yes' ? 15 : 0));
+  const signed = s.partners.filter(p => p.st === 'signed').length;
+  const sc = CII_SC.map(x => ({ id: x[0], n: x[1], d: x[3], r: ciiCash(s, x) }));
+  const base = sc[0].r, confOnly = ciiCash(s, ['c', 'مؤكد فقط', { cf: 1, delay: 0, pl: 0, ex: 0, sc: 1, bf: 1 }]);
+  const res = egN(s.fin.reserve);
+  const verdict = confOnly.minB >= res && confOnly.gap <= 0 ? ['كافٍ وفق السيناريو الأساسي', 'good', 'الأموال المؤكدة تغطي الاحتياجات والالتزامات في كل شهر وفق الافتراضات المدخلة.'] : base.minB >= res ? ['كافٍ بشروط', 'warn', 'يغطي التشغيل فقط إذا حُصّلت التبرعات المتعهد بها في موعدها — أو خُفضت تكاليف أو أُجلت أنشطة.'] : ['غير كافٍ وفق السيناريو الحالي', 'bad', `ينخفض الرصيد النقدي عن الحد المطلوب في الشهر ${base.low || '—'} — توجد فجوة تمويلية أو مشكلة توقيت.`];
+  const risks = s.risks.map(r => ({ r, sc: egN(r.l) * egN(r.i), miss: ['owner', 'ctrl', 'ind'].filter(k => !String(r[k] || '').trim()) })).sort((a, b) => b.sc - a.sc);
+  const critNoCtrl = risks.filter(x => x.sc >= 15 && x.miss.includes('ctrl'));
+  const specialist = risks.some(x => x.sc >= 12 && /سلامة|قانونية|الخصوصية/.test(x.r.cat) && x.miss.length);
+  const kOk = s.kpis.filter(k => String(k.base).trim() !== '' && String(k.target).trim() !== '').length, kAct = s.kpis.filter(k => String(k.act).trim() !== '').length;
+  const gates = [
+    ['G0', 'استقبال', !!(s.name && s.type), 'تسجيل الفكرة وصاحبها ونطاقها'],
+    ['G1', 'الحاجة', s.needEv !== 'no' && !!s.problem && s.benefBasis !== 'none', 'أساس معقول يثبت المشكلة والمستفيدين'],
+    ['G2', 'اكتمال الأدلة', answered >= 6 && evN >= 2 && verified >= 1, 'فحص البيانات والنواقص والتعارضات'],
+    ['G3', 'الجدوى', signed >= 1 && egN(s.months) > 0 && egN(s.fin.op) > 0, 'تقييم فني وتشغيلي ومالي — شريك تنفيذي مؤكد على الأقل'],
+    ['G4', 'المخاطر والحماية', s.risks.length > 0 && !critNoCtrl.length && risks.every(x => !x.miss.includes('owner')), 'لكل خطر مالك، ولا خطر حرج بلا ضابط'],
+    ['G5', 'التمويل', verdict[1] !== 'bad', 'كفاية رأس المال والسيولة ومصادر التمويل'],
+    ['G6', 'الاعتماد', s.decision === 'approved' && !!String(s.approver || '').trim(), 'قرار من الجهة المخولة'],
+    ['G7', 'التنفيذ', kOk >= 2, 'خطة ومؤشرات بخط أساس ومستهدف'],
+    ['G8', 'مراجعة الأثر', kAct >= 1, 'مقارنة النتائج الفعلية بخط الأساس والمستهدف']];
+  const at = gates.findIndex(g => !g[2]);
+  const decision = !gates[1][2] || !gates[2][2] ? ['تحتاج إلى استكمال', 'توجد بيانات أو أدلة أساسية ناقصة.', 'bad'] : (s.needEv === 'no' && verdict[1] === 'bad') ? ['غير موصى بها بصيغتها الحالية', 'فجوات جوهرية في الحاجة والتمويل معًا.', 'bad'] : verdict[1] === 'bad' ? ['تحتاج إلى تمويل إضافي أو تنفيذ مرحلي', 'التمويل الحالي لا يدعم النطاق المخطط وفق السيناريوهات.', 'bad'] : specialist ? ['تتطلب مراجعة متخصصة', 'مخاطر صحية أو قانونية أو حماية تحتاج خبيرًا.', 'warn'] : !gates[3][2] ? ['تحتاج إلى إعادة تصميم', 'النطاق أو الموارد أو آلية التنفيذ تحتاج تعديلًا.', 'warn'] : !gates[4][2] ? ['تتطلب مراجعة متخصصة', 'مخاطر حرجة دون ضوابط أو مالك.', 'warn'] : ['مهيأة للانتقال إلى الاعتماد النهائي', 'استوفت متطلبات التقييم، ويبقى القرار لدى الجهة المخولة.', 'good'];
+  const missing = [];
+  CII_AX.forEach(([k, n]) => { if (!A[k]) missing.push('محور «' + n + '» غير مُجاب'); else if (A[k] === 'noev') missing.push('محور «' + n + '» دون دليل'); });
+  if (s.benefBasis !== 'doc') missing.push('عدد المستفيدين (' + fmtN(egN(s.benef), 0) + ') غير موثق — لا يُعتمد بوصفه حقيقة');
+  s.partners.filter(p => p.st === 'exp').forEach(p => missing.push('الشريك «' + p.n + '» متوقع فقط دون اتفاق'));
+  const swot = { s: [], w: [], o: [], t: [] };
+  if (signed) swot.s.push(['شريك تنفيذي مؤكد (' + signed + ')', 'اتفاقية موقعة', 'البناء عليه في خطة التنفيذ']);
+  if (s.needEv === 'yes' || cls.doc + cls.ver >= 2) swot.s.push(['حاجة مدعومة بمستندات', cls.doc + cls.ver + ' دليل مستند/متحقق', 'إرفاقها في ملف التمويل']);
+  if (s.benefBasis !== 'doc') swot.w.push(['عدد المستفيدين غير موثق', CII_BASIS.find(b => b[0] === s.benefBasis)[1], 'مسح ميداني أو سجل تسجيل مسبق']);
+  if (!A.sust) swot.w.push(['الاستدامة بعد انتهاء التمويل غير مقدرة', 'محور الأثر والاستدامة غير مُجاب', 'خطة تشغيل وتمويل بعد المنحة']);
+  if (s.codesign !== 'yes') swot.w.push(['المجتمع لم يشارك في تصميم الحل', 'إجابة المستخدم', 'جلسات تشاور مع المستفيدين']);
+  s.opps.forEach(o => swot.o.push([o.n, o.ver === 'yes' ? 'متحقق من وجودها' : 'غير متحقق بعد', 'قيمة تقديرية ' + fmtN(egN(o.val), 0)]));
+  risks.filter(x => x.sc >= 10).forEach(x => swot.t.push([x.r.n, x.r.cat + ' · الدرجة ' + x.sc, x.r.ctrl || 'يلزم ضابط وقائي']));
+  return { s, answered, withEv, cls, verified, evN, needScore, signed, sc, base, confOnly, verdict, risks, critNoCtrl, gates, at, decision, missing, swot, kOk, kAct };
+}
+EG_OUT.cii = () => {
+  const m = ciiModel(), s = m.s, cur = s.fin.cur || '';
+  if (s.tab === 'intake') return egCard('نتيجة الاستقبال والمقابلة التشخيصية', 'CII-INTAKE', `${anKpis([['قوة الحاجة المجتمعية', m.needScore + '%', m.needScore >= 60 ? 'good' : 'bad'], ['محاور مُجابة', m.answered + ' من 8'], ['مُجابة مع دليل', m.withEv + ' من 8', m.withEv >= 6 ? 'good' : 'bad'], ['أدلة متحقق منها أو معتمدة', m.verified + ' من ' + m.evN], ['شركاء باتفاقية موقعة', m.signed + ' من ' + s.partners.length]])}
+    <div class="banner ${s.benefBasis === 'doc' ? 'g' : 'y'}" style="font-size:12.5px">${ic(s.benefBasis === 'doc' ? 'check' : 'warn', 15)}<span>عدد المستفيدين (${fmtN(egN(s.benef), 0)}) مصنف: <b>${CII_BASIS.find(b => b[0] === s.benefBasis)[1]}</b>${s.benefBasis !== 'doc' ? ' — لا يعتمده النظام بوصفه حقيقة.' : '.'} الوصول الفعلي المتوقع ${fmtN(egN(s.benef) * egN(s.reach) / 100, 0)} مستفيد.</span></div>
+    ${s.benefBasis !== 'doc' ? `<div class="sub" style="gap:6px"><b style="font-size:12.5px">أسئلة متابعة تلقائية</b>${egGrid(230, ['كيف تم تقدير العدد؟', 'هل يوجد مسح ميداني أو سجل رسمي أو طلبات تسجيل؟', 'ما نسبة المستفيدين الذين يمكن الوصول إليهم فعليًا؟', 'هل الطاقة الاستيعابية كافية للمدربين والقاعات والميزانية؟'].map((q, j) => egTxt('cii', 'fu.b' + j, q)).join(''))}</div>` : ''}
+    ${anTbl({ h: 'تصنيف الأدلة — حتى لا يتحول ادعاء أو توقع إلى حقيقة معتمدة', cols: ['التصنيف', 'العدد'], rows: CII_CLS.map(([k, n]) => [n, m.cls[k]]) })}
+    ${anTbl({ h: 'البيانات الناقصة', cols: ['البند'], rows: m.missing.map(x => [x]) })}
+    ${egNote('قوة الحاجة = دليل المشكلة 35% + توثيق عدد المستفيدين 30% + نسبة الوصول الفعلي حتى 20% + مشاركة المجتمع في التصميم 15%. المعايير القطاعية: ' + ((CII_TYPE.find(t => t[0] === s.type) || [, , ''])[2]) + '.')}`);
+  if (s.tab === 'capital') {
+    const b = m.base, n = b.months;
+    return egCard('كفاية رأس المال والسيولة عبر الزمن', 'CII-CAPITAL', `${anKpis([['إجمالي تكلفة المبادرة', fmtN(b.total, 0) + ' ' + cur], ['التمويل المؤكد', fmtN(egN(s.fin.avail) + egN(s.fin.appr), 0)], ['فجوة التمويل', fmtN(b.gap, 0), b.gap > 0 ? 'bad' : 'good'], ['أدنى رصيد (أساسي)', fmtN(b.minB, 0), b.minB < egN(s.fin.reserve) ? 'bad' : 'good'], ['مدة الصمود النقدي', b.low ? (b.low - 1) + ' شهر' : 'كامل المدة ' + n + ' شهر', b.low ? 'bad' : 'good']])}
+      <div class="banner ${m.verdict[1] === 'good' ? 'g' : m.verdict[1] === 'warn' ? 'y' : 'r'}" style="font-size:13px">${ic(m.verdict[1] === 'good' ? 'check' : 'warn', 16)}<span><b>${m.verdict[0]}</b> — ${m.verdict[2]}</span></div>
+      ${anTbl({ h: 'فصل أنواع التمويل', cols: ['النوع', 'المبلغ', 'يُحتسب نقدًا مؤكدًا؟'], rows: [['رأس المال المتاح فعليًا', fmtN(egN(s.fin.avail), 0), 'نعم'], ['تمويل موافق عليه رسميًا (الشهر ' + egN(s.fin.apprM) + ')', fmtN(egN(s.fin.appr), 0), 'نعم — عند وصوله'], ['منح وتبرعات لم تُحصّل (الشهر ' + egN(s.fin.pledgedM) + ')', fmtN(egN(s.fin.pledged), 0), 'بشرط التحصيل'], ['تمويل متوقع غير معتمد', fmtN(egN(s.fin.expected), 0), 'لا'], ['مساهمات عينية', fmtN(egN(s.fin.inkind), 0), 'تخفض تكلفة التأسيس فقط ولا تدفع الرواتب'], ['التزامات ومستحقات', fmtN(egN(s.fin.commit), 0), 'تُخصم في الشهر الأول']] })}
+      ${anTbl({ h: 'سيناريوهات التمويل — أثرها على السيولة والمستفيدين', cols: ['السيناريو', 'الافتراضات', 'التكلفة الكلية', 'الفجوة', 'أدنى رصيد', 'ينخفض عن الحد في', 'المستفيدون'], rows: m.sc.map(x => [x.n, x.d, fmtN(x.r.total, 0), fmtN(x.r.gap, 0), fmtN(x.r.minB, 0), x.r.low ? 'الشهر ' + x.r.low : 'لا ينخفض', fmtN(x.r.benef, 0)]) })}
+      ${anChart({ lab: Array.from({ length: n + 1 }, (_, i) => 'ش' + i), series: [{ y: m.sc[0].r.bal, c: 'var(--green)', n: 'أساسي' }], extra: [{ y: m.sc[1].r.bal, c: 'var(--yellow)', n: 'متحفظ' }, { y: m.sc[2].r.bal, c: 'var(--red)', n: 'ضاغط' }, { y: m.sc[3].r.bal, c: 'var(--blue)', n: 'بديل مرحلي' }] })}
+      ${egNote('الرصيد الشهري B_t = B_(t−1) + التدفقات الداخلة − الخارجة. التكلفة الكلية = التأسيس + التشغيل × المدة + الطوارئ. لا يُوصف رأس المال بأنه كافٍ لمجرد أن إجمالي التمويل أكبر من الميزانية؛ يُفحص توقيت الأموال مقابل توقيت الالتزامات.')}`);
+  }
+  if (s.tab === 'swot') return egCard('القوة والضعف والفرص والمخاطر — كل نقطة بدليل وإجراء', 'CII-SWOT', `${anKpis([['مخاطر مسجلة', m.risks.length], ['حرجة (≥15)', m.risks.filter(x => x.sc >= 15).length, m.risks.some(x => x.sc >= 15) ? 'bad' : 'good'], ['بلا مالك أو ضابط أو مؤشر', m.risks.filter(x => x.miss.length).length, m.risks.some(x => x.miss.length) ? 'bad' : 'good'], ['فرص متحقق منها', s.opps.filter(o => o.ver === 'yes').length + ' من ' + s.opps.length]])}
+    ${egGrid(260, [['s', 'القوة'], ['w', 'الضعف'], ['o', 'الفرص'], ['t', 'التهديدات']].map(([k, n]) => anTbl({ h: n, cols: ['النقطة', 'الدليل', 'الإجراء'], rows: m.swot[k] })).join(''))}
+    ${anTbl({ h: 'سجل المخاطر', cols: ['الخطر', 'الفئة', 'الاحتمال', 'الأثر', 'الدرجة', 'المالك', 'الضابط', 'مؤشر الإنذار', 'ناقص'], rows: m.risks.map(x => [x.r.n, x.r.cat, x.r.l, x.r.i, x.sc, x.r.owner || '—', x.r.ctrl || '—', x.r.ind || '—', x.miss.length ? x.miss.map(k => ({ owner: 'مالك', ctrl: 'ضابط', ind: 'مؤشر' })[k]).join('، ') : '—']) })}
+    ${anTbl({ h: 'الفرص مرتبة بالقيمة إلى التكلفة', cols: ['الفرصة', 'القيمة المجتمعية', 'التكلفة', 'السرعة', 'متحقق منها'], rows: [...s.opps].sort((a, b) => egN(b.val) / Math.max(1, egN(b.cost)) - egN(a.val) / Math.max(1, egN(a.cost))).map(o => [o.n, fmtN(egN(o.val), 0), fmtN(egN(o.cost), 0), o.speed, o.ver === 'yes' ? 'نعم' : 'لا']) })}`);
+  return egCard('بوابات القرار وقياس الأثر', 'CII-GATES', `<div class="banner ${m.decision[2] === 'good' ? 'g' : m.decision[2] === 'warn' ? 'y' : 'r'}" style="font-size:13.5px">${ic(m.decision[2] === 'good' ? 'check' : 'warn', 16)}<span><b>${m.decision[0]}</b> — ${m.decision[1]}</span></div>
+    ${anTbl({ h: 'البوابات G0–G8', cols: ['البوابة', 'المرحلة', 'الحالة', 'شرط الانتقال'], rows: m.gates.map((g, i) => [g[0], g[1], g[2] ? 'مستوفاة' : i === m.at ? 'البوابة الحالية' : 'لم تُستوفَ', g[3]]) })}
+    <div class="row" style="gap:6px;align-items:center">${CII_LVL.map((l, i) => `<span class="chip" style="${s.kpis.some(k => k.lvl === l) ? 'border-color:var(--greenline);color:var(--greenfg)' : ''}">${l}</span>${i < 4 ? '<span class="faint">←</span>' : ''}`).join('')}</div>
+    ${anTbl({ h: 'مؤشرات الأثر', cols: ['المؤشر', 'المستوى', 'خط الأساس', 'المستهدف', 'الفعلي', 'التقدم', 'المصدر'], rows: s.kpis.map(k => { const b = egN(k.base), t = egN(k.target), a = String(k.act).trim() === '' ? null : egN(k.act); return [k.n, k.lvl, k.base === '' ? '—' : fmtN(b), k.target === '' ? '—' : fmtN(t), a === null ? 'لم يُقس' : fmtN(a), a === null || t === b ? '—' : fmtN((a - b) / (t - b) * 100, 0) + '%', k.src || '—']; }) })}
+    ${egBar('اختبارات القبول', CII_TESTS.filter((_, i) => (s.tests || {})[i]).length / CII_TESTS.length * 100, '%')}
+    ${egNote('النتائج توصيات تحليلية وليست قرارات تمويل تلقائية. عدد الأنشطة المنفذة لا يثبت وحده أن حياة المستفيدين تحسنت؛ لذلك تُفصل المخرجات عن النتائج والأثر.')}`);
+};
+VIEWS.initiative = () => {
+  const s = egS('cii');
+  let inputs = '';
+  if (s.tab === 'intake') inputs = egCard('ملف المبادرة', 'CII-INTAKE', egQ(1, 'نوع المبادرة', egCh('cii', 'type', CII_TYPE.map(([k, n]) => [k, n])) + egTxt('cii', 'typeOther', 'أو نوع جديد (يُضاف عبر إعدادات الحوكمة)')) +
+    egGrid(170, egTxt('cii', 'name', 'اسم المبادرة') + egTxt('cii', 'owner', 'الجهة المالكة') + egTxt('cii', 'country', 'الدولة') + egTxt('cii', 'region', 'المنطقة') + egNum('cii', 'months', 'المدة (شهر)') + egSel('cii', 'stage', 'مرحلة النضج', CII_STAGE.map(x => [x, x]))) +
+    egQ(2, 'الحاجة والمستفيدون', egGrid(200, egTxt('cii', 'problem', 'المشكلة') + egSel('cii', 'needEv', 'دليل المشكلة', [['yes', 'مثبتة بأدلة'], ['part', 'أدلة جزئية'], ['no', 'لا أدلة']]) + egNum('cii', 'benef', 'عدد المستفيدين المتوقع') + egSel('cii', 'benefBasis', 'أساس العدد', CII_BASIS) + egNum('cii', 'reach', 'نسبة الوصول الفعلي %') + egSel('cii', 'codesign', 'مشاركة المجتمع في التصميم', [['yes', 'نعم'], ['no', 'لا']]))) +
+    egQ(3, 'المقابلة التشخيصية — 8 محاور', CII_AX.map(([k, n, q]) => `<div class="sub" style="gap:5px;padding:9px 12px"><b style="font-size:12.5px">${n}</b><span class="faint" style="font-size:11.5px">${q}</span>${egCh('cii', 'ans.' + k, CII_ANS)}</div>`).join('')) +
+    egQ(4, 'الشركاء', s.partners.map((p, i) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-items:end">${egTxt('cii', `partners.${i}.n`, 'الجهة')}${egTxt('cii', `partners.${i}.t`, 'النوع')}${egSel('cii', `partners.${i}.st`, 'حالة الالتزام', CII_PST)}${egDel('cii', 'partners', i)}</div>`).join('') + egAdd('cii', 'partners', 'إضافة شريك')) +
+    egQ(5, 'بوابة الأدلة — كل أنواع الملفات', s.evid.map((e, i) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-items:end">${egTxt('cii', `evid.${i}.n`, 'الدليل')}${egSel('cii', `evid.${i}.ft`, 'النوع', CII_FT.map(x => [x, x]))}${egSel('cii', `evid.${i}.cls`, 'التصنيف', CII_CLS)}${egDel('cii', 'evid', i)}</div>`).join('') + egAdd('cii', 'evid', 'إضافة دليل') + `<span class="faint" style="font-size:11px">لرفع الملفات نفسها استخدم «طلب تحليل بيانات» أو «نتائج التحليل الفعلية» — تُقبل الصور والفيديو وPDF وExcel وWord وغيرها.</span>`));
+  if (s.tab === 'capital') inputs = egCard('البيانات المالية', 'CII-CAPITAL', egGrid(170, egTxt('cii', 'fin.cur', 'العملة') + egNum('cii', 'fin.avail', 'رأس المال المتاح فعليًا') + egNum('cii', 'fin.appr', 'تمويل موافق عليه رسميًا') + egNum('cii', 'fin.apprM', 'شهر وصوله') + egNum('cii', 'fin.pledged', 'منح وتبرعات لم تُحصّل') + egNum('cii', 'fin.pledgedM', 'شهر تحصيلها المتوقع') + egNum('cii', 'fin.expected', 'تمويل متوقع غير معتمد') + egNum('cii', 'fin.inkind', 'مساهمات عينية (قيمة)') + egNum('cii', 'fin.commit', 'التزامات ومستحقات') + egNum('cii', 'fin.setup', 'تكلفة التأسيس والتجهيز') + egNum('cii', 'fin.op', 'تكلفة التشغيل الشهرية') + egNum('cii', 'fin.cont', 'احتياطي الطوارئ %') + egNum('cii', 'fin.reserve', 'الحد الأدنى للرصيد') + egNum('cii', 'months', 'مدة المبادرة (شهر)')));
+  if (s.tab === 'swot') inputs = egCard('سجل المخاطر والفرص', 'CII-RISK', egQ(1, 'المخاطر — لكل خطر مالك وضابط ومؤشر إنذار وتاريخ مراجعة', s.risks.map((r, i) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)">${egTxt('cii', `risks.${i}.n`, 'الخطر')}${egSel('cii', `risks.${i}.cat`, 'الفئة', CII_RCAT.map(x => [x, x]))}${egNum('cii', `risks.${i}.l`, 'الاحتمال 1–5')}${egNum('cii', `risks.${i}.i`, 'الأثر 1–5')}${egTxt('cii', `risks.${i}.owner`, 'المالك')}${egTxt('cii', `risks.${i}.ctrl`, 'الضابط الوقائي')}${egTxt('cii', `risks.${i}.ind`, 'مؤشر الإنذار المبكر')}${egTxt('cii', `risks.${i}.rev`, 'تاريخ المراجعة')}${egDel('cii', 'risks', i)}</div>`).join('') + egAdd('cii', 'risks', 'إضافة خطر')) +
+    egQ(2, 'الفرص', s.opps.map((o, i) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end">${egTxt('cii', `opps.${i}.n`, 'الفرصة')}${egNum('cii', `opps.${i}.val`, 'القيمة المحتملة')}${egNum('cii', `opps.${i}.cost`, 'التكلفة')}${egSel('cii', `opps.${i}.speed`, 'سرعة الاستفادة', [['سريعة', 'سريعة'], ['متوسطة', 'متوسطة'], ['بطيئة', 'بطيئة']])}${egSel('cii', `opps.${i}.ver`, 'متحقق من وجودها', [['yes', 'نعم'], ['no', 'لا']])}${egDel('cii', 'opps', i)}</div>`).join('') + egAdd('cii', 'opps', 'إضافة فرصة')));
+  if (s.tab === 'gates') inputs = egCard('الاعتماد والأثر', 'CII-GATES', egGrid(200, egTxt('cii', 'approver', 'الجهة أو الشخص المخول') + egSel('cii', 'decision', 'قرار الجهة المخولة', [['pending', 'لم يُتخذ'], ['approved', 'اعتمدت'], ['cond', 'اعتمدت بشروط'], ['rejected', 'رُفضت']])) +
+    egQ(1, 'مؤشرات الأثر — المدخلات ← الأنشطة ← المخرجات ← النتائج ← الأثر', s.kpis.map((k, i) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end">${egTxt('cii', `kpis.${i}.n`, 'المؤشر')}${egSel('cii', `kpis.${i}.lvl`, 'المستوى', CII_LVL.map(x => [x, x]))}${egNum('cii', `kpis.${i}.base`, 'خط الأساس')}${egNum('cii', `kpis.${i}.target`, 'المستهدف')}${egNum('cii', `kpis.${i}.act`, 'الفعلي')}${egTxt('cii', `kpis.${i}.src`, 'المصدر')}${egDel('cii', 'kpis', i)}</div>`).join('') + egAdd('cii', 'kpis', 'إضافة مؤشر')) +
+    egQ(2, 'اختبارات القبول (اجتازت)', `<div class="row" style="gap:6px">${CII_TESTS.map((n, j) => choice('eg-set', `cii.tests.${j}`, (s.tests || {})[j] ? '' : '1', !!(s.tests || {})[j], n)).join('')}</div>`));
+  return `${engHead('NAIOSH COMMUNITY INITIATIVES INTELLIGENCE 360 · DIA-CII', 'تحليل المبادرات المجتمعية ودراسة جدواها', 'من فكرة المبادرة إلى قرار دعمها: هل تستجيب لحاجة حقيقية؟ ما الناقص؟ هل رأس المال كافٍ وفي الوقت المناسب؟ ما المخاطر والفرص والسيناريوهات؟ وما الشروط قبل الاعتماد؟ — المبادرة لا تُعتمد لجمال فكرتها، بل لأدلتها وجدواها وأثرها.', engExport('CII'))}
+  ${egTabs('cii', [['intake', 'ملف المبادرة والحاجة'], ['capital', 'رأس المال والسيولة'], ['swot', 'المخاطر والفرص'], ['gates', 'بوابات القرار والأثر']])}
+  ${inputs}${egOut('cii')}`;
+};
+
+/* =========================================================================================
+   NAIOSH-FHI — Facility & Hospitality
+   ========================================================================================= */
+// [key, name, unit, direction (+1 higher is better), baseline, target, current]
+const FHI_SEC = {
+  rest: { n: 'المطاعم', code: 'FHI-REST', cap: 'عدد المقاعد', k: [['sales', 'المبيعات الشهرية', '', 1, 380000, 420000, 352000], ['ticket', 'متوسط قيمة الطلب', '', 1, 62, 68, 60], ['food', 'تكلفة الغذاء من المبيعات', '%', -1, 31, 29, 34], ['waste', 'نسبة الهدر', '%', -1, 6, 4, 7.5], ['prep', 'زمن تجهيز الطلب', 'دقيقة', -1, 14, 12, 17], ['comp', 'الشكاوى لكل 1000 طلب', '', -1, 4, 3, 6], ['hyg', 'درجة النظافة وسلامة الغذاء', '%', 1, 88, 95, 84]] },
+  hotel: { n: 'الفنادق', code: 'FHI-HOTEL', cap: 'عدد الغرف', k: [['occ', 'نسبة الإشغال', '%', 1, 68, 75, 64], ['adr', 'متوسط سعر الغرفة ADR', '', 1, 420, 440, 410], ['cancel', 'نسبة الإلغاء', '%', -1, 12, 9, 14], ['sat', 'رضا النزلاء', '%', 1, 84, 90, 81], ['fix', 'زمن معالجة بلاغ الصيانة', 'ساعة', -1, 6, 4, 9], ['energy', 'الطاقة لكل غرفة مشغولة', 'ك.و.س', -1, 38, 33, 41]] },
+  housing: { n: 'الإسكان', code: 'FHI-HOUSING', cap: 'عدد الوحدات', k: [['occ', 'نسبة الإشغال', '%', 1, 90, 95, 87], ['collect', 'نسبة التحصيل', '%', 1, 92, 97, 88], ['resp', 'زمن الاستجابة للصيانة', 'ساعة', -1, 24, 12, 30], ['sat', 'رضا السكان', '%', 1, 76, 85, 72], ['faults', 'الأعطال المتكررة شهريًا', '', -1, 14, 8, 18], ['util', 'تكلفة المرافق لكل وحدة', '', -1, 160, 140, 172]] },
+  event: { n: 'الفعاليات', code: 'FHI-EVENT', cap: 'الطاقة الاستيعابية', k: [['util', 'استغلال الطاقة الاستيعابية', '%', 1, 75, 85, 92], ['queue', 'زمن الانتظار عند المداخل', 'دقيقة', -1, 12, 8, 19], ['inc', 'الحوادث المسجلة', '', -1, 3, 1, 4], ['budget', 'انحراف الميزانية', '%', -1, 5, 0, 9], ['sat', 'رضا الزوار', '%', 1, 80, 88, 78], ['exits', 'جاهزية مخارج الطوارئ', '%', 1, 100, 100, 92]] },
+  fm: { n: 'المرافق', code: 'FHI-FM', cap: 'عدد الأصول', k: [['pm', 'الالتزام بالصيانة الوقائية', '%', 1, 80, 95, 72], ['down', 'ساعات التوقف الشهرية', 'ساعة', -1, 30, 15, 41], ['mttr', 'متوسط زمن الإصلاح', 'ساعة', -1, 8, 5, 10], ['backlog', 'أوامر العمل المتأخرة', '', -1, 25, 10, 37], ['sla', 'الالتزام باتفاقية مستوى الخدمة', '%', 1, 88, 95, 85], ['energy', 'تكلفة الطاقة الشهرية', '', -1, 52000, 46000, 55000]] },
+  re: { n: 'العقارات', code: 'FHI-RE', cap: 'المساحة م²', k: [['occ', 'نسبة الإشغال', '%', 1, 88, 94, 85], ['collect', 'تحصيل الإيجارات', '%', 1, 94, 98, 91], ['noi', 'صافي الدخل التشغيلي الشهري', '', 1, 210000, 230000, 198000], ['arrears', 'المتأخرات من الإيرادات', '%', -1, 6, 3, 8], ['renew', 'عقود تنتهي خلال 90 يومًا', '', -1, 5, 3, 7], ['capex', 'صيانة رأسمالية مؤجلة', '', -1, 300000, 150000, 340000]] }
+};
+const FHI_PURPOSE = [['full', 'تقييم شامل'], ['issue', 'تشخيص مشكلة'], ['invest', 'فحص ما قبل الاستثمار'], ['perf', 'تحسين الأداء'], ['risk', 'تقييم المخاطر']];
+const FHI_ET = [['image', 'صورة'], ['video', 'فيديو'], ['pdf', 'PDF'], ['excel', 'Excel / CSV'], ['docx', 'Word'], ['audio', 'صوت'], ['manual', 'إدخال يدوي']];
+const FHI_Q = [['high', 'عالية'], ['med', 'متوسطة'], ['low', 'منخفضة']];
+const FHI_EST = [['pending', 'بانتظار المراجعة'], ['ok', 'متحقق منه'], ['rej', 'مرفوض / غير كافٍ']];
+const FHI_KIND = [['s', 'قوة'], ['w', 'ضعف'], ['r', 'خطر'], ['o', 'فرصة']];
+const FHI_RULE = [['sev', 'الخطورة'], ['urg', 'الأولوية التشغيلية'], ['eco', 'الأثر الاقتصادي'], ['feas', 'الجدوى'], ['evq', 'جودة الدليل']];
+const FHI_MODE = [['manual', 'تشغيل يدوي'], ['ai', 'بمساعدة الذكاء الاصطناعي'], ['auto', 'مؤتمت منضبط']];
+const FHI_TESTS = ['إنشاء منشأة وتخصيص نموذج قطاعها', 'رفع صور وPDF وExcel وفيديو مع حالة المعالجة', 'رفض الملف التالف أو الضار بأمان', 'إظهار مصدر المعلومة (صفحة/ورقة/إطار)', 'كشف القيم المفقودة والتكرار والتعارض', 'تشغيل التحليل يدويًا عند تعطل الذكاء الاصطناعي', 'عدم اعتماد استنتاج عالي التأثير على دليل غير كافٍ', 'رفض الوصول لمنشأة عميل آخر', 'سجل كامل للتعديل والمراجعة والموافقة', 'تقرير قابل للتتبع بإصدار جديد عند التعديل', 'تحويل توصية معتمدة إلى مهمة حتى التحقق', 'الاستعادة من النسخ الاحتياطي والأداء تحت الحمل'];
+const fhiKdef = (sec) => (FHI_SEC[sec] || FHI_SEC.rest).k;
+function fhiNewK(sec) { return Object.fromEntries(fhiKdef(sec).map(([k, , , , b, t, v]) => [k, { v, b, t }])); }
+EG_INIT.fhi = () => ({
+  tab: 'facility', sel: 0, rule: 'sev', mode: 'ai',
+  facs: [{ code: 'FHI-F001', n: 'مطعم الواحة — فرع العليا', sector: 'rest', city: 'الرياض', cap: 120, staff: 28, purpose: 'perf', appr: 'no', k: fhiNewK('rest') }, { code: 'FHI-F002', n: 'فندق المرسى', sector: 'hotel', city: 'جدة', cap: 180, staff: 95, purpose: 'full', appr: 'yes', k: fhiNewK('hotel') }, { code: 'FHI-F003', n: 'مهرجان الشتاء', sector: 'event', city: 'عمّان', cap: 8000, staff: 140, purpose: 'risk', appr: 'no', k: fhiNewK('event') }],
+  evid: [{ id: 'EV-001', fac: 'FHI-F001', t: 'image', d: 'أثر رطوبة قرب مخزن التبريد', s: 'زيارة ميدانية', date: '', q: 'med', st: 'pending' }, { id: 'EV-002', fac: 'FHI-F001', t: 'excel', d: 'مبيعات وهدر آخر 6 أشهر', s: 'نظام نقاط البيع', date: '', q: 'high', st: 'ok' }, { id: 'EV-003', fac: 'FHI-F001', t: 'pdf', d: 'سجل الصيانة لمعدات المطبخ', s: 'مقاول الصيانة', date: '', q: 'high', st: 'ok' }],
+  finds: [{ fac: 'FHI-F001', kind: 's', x: 'متوسط قيمة الطلب مستقر', ev: 'EV-002', sev: 2, lik: 0, eco: 0, feas: 4, urg: 2, owner: '' }, { fac: 'FHI-F001', kind: 'w', x: 'الهدر أعلى من المستهدف', ev: 'EV-002', sev: 3, lik: 0, eco: 18000, feas: 4, urg: 3, owner: 'مدير المطبخ' }, { fac: 'FHI-F001', kind: 'r', x: 'احتمال تسرب يؤثر على سلامة الغذاء', ev: 'EV-001', sev: 5, lik: 3, eco: 25000, feas: 3, urg: 5, owner: '' }, { fac: 'FHI-F001', kind: 'o', x: 'إعادة تسعير الأصناف الأعلى تكلفة', ev: 'EV-002', sev: 2, lik: 0, eco: 30000, feas: 4, urg: 2, owner: 'مدير الفرع' }],
+  acts: [{ fac: 'FHI-F001', x: 'فحص فني للتسرب قبل أي إصلاح', owner: 'الصيانة', due: '', cost: 2500, st: 'doing', base: '', after: '' }, { fac: 'FHI-F001', x: 'خطة خفض الهدر بالتحضير حسب الطلب', owner: 'مدير المطبخ', due: '', cost: 4000, st: 'done', base: 7.5, after: 5.8 }],
+  tests: {}
+});
+EG_ROWS['fhi.facs'] = () => ({ code: '', n: 'منشأة جديدة', sector: 'rest', city: '', cap: 0, staff: 0, purpose: 'full', appr: 'no', k: fhiNewK('rest') });
+EG_ROWS['fhi.evid'] = () => { const s = egS('fhi'); return { id: '', fac: (s.facs[s.sel] || {}).code || '', t: 'image', d: '', s: '', date: '', q: 'med', st: 'pending' }; };
+EG_ROWS['fhi.finds'] = () => { const s = egS('fhi'); return { fac: (s.facs[s.sel] || {}).code || '', kind: 'w', x: '', ev: '', sev: 3, lik: 3, eco: 0, feas: 3, urg: 3, owner: '' }; };
+EG_ROWS['fhi.acts'] = () => { const s = egS('fhi'); return { fac: (s.facs[s.sel] || {}).code || '', x: '', owner: '', due: '', cost: 0, st: 'open', base: '', after: '' }; };
+function fhiEnsure(s) {
+  let mf = 0, me = 0;
+  s.facs.forEach(f => { const m = /^FHI-F(\d+)$/.exec(f.code || ''); if (m) mf = Math.max(mf, +m[1]); });
+  s.facs.forEach(f => { if (!f.code) f.code = 'FHI-F' + String(++mf).padStart(3, '0'); f.k = f.k || {}; fhiKdef(f.sector).forEach(([k, , , , b, t]) => { if (!f.k[k]) f.k[k] = { v: '', b, t }; }); });
+  s.evid.forEach(e => { const m = /^EV-(\d+)$/.exec(e.id || ''); if (m) me = Math.max(me, +m[1]); });
+  s.evid.forEach(e => { if (!e.id) e.id = 'EV-' + String(++me).padStart(3, '0'); });
+  if (!(s.sel >= 0 && s.sel < s.facs.length)) s.sel = 0;
+}
+function fhiModel() {
+  const s = egS('fhi'); fhiEnsure(s);
+  const f = s.facs[s.sel], sec = FHI_SEC[f.sector] || FHI_SEC.rest, code = f.code;
+  const K = sec.k.map(([k, n, u, dir]) => { const x = f.k[k] || {}, v = String(x.v).trim() === '' ? null : egN(x.v), b = egN(x.b), t = egN(x.t); const gap = v === null ? null : (t - v) * dir; const st = v === null ? ['لا بيانات', 't-n'] : (v - t) * dir >= 0 ? ['حقق المستهدف', 't-s'] : (v - b) * dir >= 0 ? ['أفضل من خط الأساس', 't-m'] : ['أسوأ من خط الأساس', 't-c']; return { k, n, u, dir, v, b, t, gap, st }; });
+  if (f.sector === 'hotel') { const o = K.find(x => x.k === 'occ'), a = K.find(x => x.k === 'adr'); if (o && a && o.v !== null && a.v !== null) K.push({ k: 'revpar', n: 'الإيراد لكل غرفة متاحة RevPAR (محسوب)', u: '', dir: 1, v: o.v / 100 * a.v, b: o.b / 100 * a.b, t: o.t / 100 * a.t, gap: null, st: o.v / 100 * a.v >= o.t / 100 * a.t ? ['حقق المستهدف', 't-s'] : ['دون المستهدف', 't-m'] }); }
+  const filled = K.filter(x => x.v !== null).length;
+  const ev = s.evid.filter(e => e.fac === code), evOk = ev.filter(e => e.st === 'ok').length, evLow = ev.filter(e => e.q === 'low' || e.st === 'rej').length;
+  const evq = (id) => { const e = s.evid.find(x => x.id === id); return !e ? 0 : e.st === 'rej' ? 0 : (e.q === 'high' ? 3 : e.q === 'med' ? 2 : 1) + (e.st === 'ok' ? 2 : 0); };
+  const F = s.finds.map((x, i) => ({ x, i, evq: evq(x.ev), risk: x.kind === 'r' ? egN(x.sev) * egN(x.lik) : null })).filter(y => y.x.fac === code);
+  const key = { sev: (y) => y.kind === 'r' ? y.risk : egN(y.x.sev), urg: (y) => egN(y.x.urg), eco: (y) => egN(y.x.eco), feas: (y) => egN(y.x.feas), evq: (y) => y.evq };
+  const rank = (arr) => [...arr].sort((a, b) => (key[s.rule] || key.sev)({ ...b, kind: b.x.kind }) - (key[s.rule] || key.sev)({ ...a, kind: a.x.kind }));
+  const weakEvHigh = F.filter(y => (egN(y.x.sev) >= 4 || (y.risk || 0) >= 15) && y.evq < 4);
+  const autoW = K.filter(x => x.st[1] === 'c').map(x => `«${x.n}» أسوأ من خط الأساس (${fmtN(x.v)} مقابل ${fmtN(x.b)})`);
+  const A = s.acts.map((a, i) => ({ a, i })).filter(y => y.a.fac === code);
+  const verified = A.filter(y => y.a.st === 'done' && String(y.a.base).trim() !== '' && String(y.a.after).trim() !== '').length;
+  const all = { facs: s.facs.length, appr: s.facs.filter(x => x.appr === 'yes').length, hi: s.finds.filter(x => x.kind === 'r' && egN(x.sev) * egN(x.lik) >= 15).length, imp: s.acts.filter(a => a.st === 'done' && String(a.base).trim() !== '' && String(a.after).trim() !== '').length };
+  return { s, f, sec, K, filled, ev, evOk, evLow, F, rank, weakEvHigh, autoW, A, verified, all };
+}
+EG_OUT.fhi = () => {
+  const m = fhiModel(), s = m.s, f = m.f;
+  if (s.tab === 'facility') return egCard(`لوحة الأداء — ${esc(f.code)} · ${esc(f.n)}`, m.sec.code, `${anKpis([['المنشآت المسجلة', m.all.facs], ['التقييمات المعتمدة', m.all.appr], ['المخاطر عالية الأولوية', m.all.hi, m.all.hi ? 'bad' : 'good'], ['التحسينات المتحققة', m.all.imp], ['مؤشرات بلا بيانات', m.K.filter(x => x.v === null).length, m.K.some(x => x.v === null) ? 'bad' : 'good']])}
+    ${anTbl({ h: 'مؤشرات ' + m.sec.n + ' مقابل خط الأساس والمستهدف', cols: ['المؤشر', 'الحالي', 'خط الأساس', 'المستهدف', 'الفجوة للمستهدف', 'الحالة'], rows: m.K.map(x => [x.n + (x.u ? ' (' + x.u + ')' : ''), x.v === null ? '—' : fmtN(x.v), fmtN(x.b), fmtN(x.t), x.gap === null || x.gap <= 0 ? '—' : fmtN(Math.abs(x.gap)), x.st[0]]) })}
+    ${m.autoW.length ? `<div class="sub" style="gap:4px"><b style="font-size:12.5px">نقاط ضعف مقترحة من المؤشرات</b>${m.autoW.map(t => `<span class="soft" style="font-size:12px">• ${esc(t)}</span>`).join('')}<span class="faint" style="font-size:11px">أضفها إلى سجل الضعف مع دليلها في تبويب «السجلات الأربعة».</span></div>` : ''}
+    ${anTbl({ h: 'المنشآت', cols: ['الرمز', 'المنشأة', 'القطاع', 'المدينة', 'الطاقة', 'الموظفون', 'هدف التحليل', 'التقييم'], rows: s.facs.map(x => [x.code, x.n, (FHI_SEC[x.sector] || {}).n, x.city, fmtN(egN(x.cap), 0), fmtN(egN(x.staff), 0), (FHI_PURPOSE.find(p => p[0] === x.purpose) || [, ''])[1], x.appr === 'yes' ? 'معتمد' : 'غير معتمد']) })}
+    ${egNote('لا يُسجل خفض التكاليف أو زيادة الإيرادات أثرًا محققًا لمجرد صدور توصية؛ يلزم خط أساس وقياس لاحق. المقارنة بين الفروع تُجرى فقط إذا توافقت تعريفات المؤشرات والفترات.')}`);
+  if (s.tab === 'evidence') return egCard('سجل الأدلة وجودة البيانات', 'FHI-02/03', `${anKpis([['اكتمال المؤشرات', fmtN(m.filled / Math.max(1, m.K.length) * 100, 0) + '%', m.filled === m.K.length ? 'good' : 'bad'], ['أدلة المنشأة', m.ev.length], ['متحقق منها', m.evOk + ' من ' + m.ev.length, m.evOk < m.ev.length ? 'bad' : 'good'], ['منخفضة الجودة أو مرفوضة', m.evLow, m.evLow ? 'bad' : 'good'], ['استنتاجات عالية التأثير بدليل ضعيف', m.weakEvHigh.length, m.weakEvHigh.length ? 'bad' : 'good']])}
+    ${m.weakEvHigh.length ? `<div class="banner y" style="font-size:12.5px">${ic('warn', 15)}<span>لا يُعتمد استنتاج عالي التأثير على دليل غير كافٍ: ${m.weakEvHigh.map(y => '«' + esc(y.x.x) + '»').join('، ')} — يلزم تحقق إضافي أو فحص مختص.</span></div>` : ''}
+    ${anTbl({ h: 'الأدلة', cols: ['المعرف', 'النوع', 'الوصف', 'المصدر', 'تاريخ الالتقاط', 'جودة الاستخراج', 'حالة المراجعة', 'نتائج مستندة إليه'], rows: m.ev.map(e => [e.id, (FHI_ET.find(t => t[0] === e.t) || [, ''])[1], e.d, e.s || '—', e.date || '—', (FHI_Q.find(q => q[0] === e.q) || [, ''])[1], (FHI_EST.find(q => q[0] === e.st) || [, ''])[1], s.finds.filter(x => x.ev === e.id).length]) })}
+    ${egNote('رفع الملف لا يعني أن محتواه صحيح. صورة تسرب لا تثبت سببه، وفيديو فعالية لا يعتمد عدد الحضور نهائيًا، وصور العقار لا تثبت قيمته السوقية أو سلامته الإنشائية. النصوص داخل الملفات تُعامل كمحتوى للتحليل لا كتعليمات للنظام.')}`);
+  if (s.tab === 'findings') {
+    const lbl = (y) => [y.x.x, y.x.ev || '—', y.evq >= 4 ? 'قوية' : y.evq >= 2 ? 'متوسطة' : 'ضعيفة'];
+    return egCard('السجلات الأربعة — منفصلة ومترابطة', 'FHI-06/07/08', `${anKpis(FHI_KIND.map(([k, n]) => [n, m.F.filter(y => y.x.kind === k).length]).concat([['الترتيب حسب', (FHI_RULE.find(r => r[0] === s.rule) || [, ''])[1]]]))}
+      ${anTbl({ h: 'القوة', cols: ['القدرة أو الميزة', 'الدليل', 'جودة الدليل', 'الأهمية', 'المالك'], rows: m.rank(m.F.filter(y => y.x.kind === 's')).map(y => [...lbl(y), y.x.sev, y.x.owner || '—']) })}
+      ${anTbl({ h: 'الضعف', cols: ['الفجوة', 'الدليل', 'جودة الدليل', 'الأثر التشغيلي', 'الأثر الاقتصادي', 'المالك'], rows: m.rank(m.F.filter(y => y.x.kind === 'w')).map(y => [...lbl(y), y.x.sev, fmtN(egN(y.x.eco), 0), y.x.owner || '—']) })}
+      ${anTbl({ h: 'المخاطر', cols: ['الحدث المحتمل', 'الدليل', 'جودة الدليل', 'الاحتمال', 'الشدة', 'الدرجة', 'الإلحاح', 'المسؤول'], rows: m.rank(m.F.filter(y => y.x.kind === 'r')).map(y => [...lbl(y), y.x.lik, y.x.sev, y.risk, y.x.urg, y.x.owner || 'لم يُحدد']) })}
+      ${anTbl({ h: 'الفرص', cols: ['الفرصة', 'الدليل', 'جودة الدليل', 'القيمة المحتملة', 'الجدوى', 'المالك'], rows: m.rank(m.F.filter(y => y.x.kind === 'o')).map(y => [...lbl(y), fmtN(egN(y.x.eco), 0), y.x.feas, y.x.owner || '—']) })}
+      ${egNote('لا تُدمج الخطورة والأولوية والأثر الاقتصادي والجدوى وجودة الدليل في درجة واحدة غامضة؛ تُعرض منفصلة وتُرتب بالقاعدة المختارة. درجة الخطر ترتيبية وليست احتمالًا دقيقًا.')}`);
+  }
+  const done = m.A.filter(y => y.a.st === 'done').length;
+  return egCard('خطة التحسين والتنفيذ والحوكمة', 'FHI-11/12', `${anKpis([['إجراءات', m.A.length], ['منجزة', done], ['تحسينات متحقق منها بقياس', m.verified + ' من ' + done, m.verified < done ? 'bad' : 'good'], ['نمط التشغيل', (FHI_MODE.find(x => x[0] === s.mode) || [, ''])[1]], ['اختبارات القبول', FHI_TESTS.filter((_, i) => (s.tests || {})[i]).length + ' من ' + FHI_TESTS.length]])}
+    ${anTbl({ h: 'الإجراءات', cols: ['الإجراء', 'المسؤول', 'الموعد', 'التكلفة', 'الحالة', 'قبل', 'بعد', 'التحقق من الأثر'], rows: m.A.map(({ a }) => [a.x, a.owner || '—', a.due || '—', fmtN(egN(a.cost), 0), a.st === 'done' ? 'منجز' : a.st === 'doing' ? 'قيد التنفيذ' : 'مفتوح', String(a.base).trim() === '' ? '—' : fmtN(egN(a.base)), String(a.after).trim() === '' ? '—' : fmtN(egN(a.after)), a.st !== 'done' ? '—' : String(a.base).trim() === '' || String(a.after).trim() === '' ? 'منجز دون قياس — لا يُعد أثرًا محققًا' : 'مقاس قبل وبعد']) })}
+    ${anTbl({ h: 'الأدوار والصلاحيات — IDENTITY × ROLE × SCOPE × PERMISSION × AUTHORITY × POLICY × CONTEXT', cols: ['الدور', 'الصلاحية'], rows: [['المحلل', 'إدخال البيانات وتحليلها وإعداد التوصيات'], ['المفتش الميداني', 'تسجيل الملاحظات ورفع الأدلة وقوائم الفحص'], ['مدير المنشأة', 'الاطلاع على منشأته واعتماد ما ضمن صلاحياته'], ['الخبير القطاعي', 'مراجعة النتائج الفنية'], ['المراجع / المدقق', 'التحقق من الأدلة والمنهجية'], ['مدير النظام', 'الإعدادات والمستخدمين — دون اعتماد تلقائي للقرارات'], ['المسؤول التنفيذي المخول', 'اعتماد القرارات ضمن نطاق سلطته']] })}
+    ${egNote('يجب أن تعمل المنشأة يدويًا حتى لو تعطل الذكاء الاصطناعي. لا تتجاوز الأتمتة صلاحيات المستخدم أو موافقات الحوكمة، ولا تنفذ إجراءً حساسًا لمجرد توصية نموذج.')}`);
+};
+VIEWS.facility = () => {
+  const s = egS('fhi'); fhiEnsure(s);
+  const f = s.facs[s.sel], sec = FHI_SEC[f.sector] || FHI_SEC.rest, i = s.sel, code = f.code;
+  const pick = `<div style="max-width:420px">${egSel('fhi', 'sel', 'المنشأة', s.facs.map((x, j) => [j, x.code + ' · ' + x.n]))}</div>`;
+  let inputs = '';
+  if (s.tab === 'facility') inputs = egCard('تسجيل المنشأة ومؤشراتها', sec.code, pick + egGrid(170, egTxt('fhi', `facs.${i}.n`, 'اسم المنشأة') + egSel('fhi', `facs.${i}.sector`, 'القطاع', Object.entries(FHI_SEC).map(([k, v]) => [k, v.n + ' — ' + v.code])) + egTxt('fhi', `facs.${i}.city`, 'المدينة') + egNum('fhi', `facs.${i}.cap`, sec.cap) + egNum('fhi', `facs.${i}.staff`, 'عدد الموظفين') + egSel('fhi', `facs.${i}.purpose`, 'هدف التحليل', FHI_PURPOSE) + egSel('fhi', `facs.${i}.appr`, 'اعتماد التقييم', [['no', 'غير معتمد'], ['yes', 'معتمد من صاحب الصلاحية']])) +
+    egQ(0, 'مؤشرات ' + sec.n + ' — الحالي وخط الأساس والمستهدف', sec.k.map(([k, n, u]) => `<div class="grid" style="grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:8px;align-items:end"><span style="font-size:12.5px;padding-bottom:10px">${n}${u ? ' <span class="faint">(' + u + ')</span>' : ''}</span>${egNum('fhi', `facs.${i}.k.${k}.v`, 'الحالي')}${egNum('fhi', `facs.${i}.k.${k}.b`, 'خط الأساس')}${egNum('fhi', `facs.${i}.k.${k}.t`, 'المستهدف')}</div>`).join('')) +
+    `<div class="row between" style="gap:8px;margin-top:6px">${egAdd('fhi', 'facs', 'تسجيل منشأة جديدة')}${egDel('fhi', 'facs', i)}</div>`);
+  if (s.tab === 'evidence') inputs = egCard('بوابة الأدلة متعددة الوسائط', 'FHI-INTAKE', pick + s.evid.map((e, j) => e.fac !== code ? '' : `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)"><span class="pmo-code" style="align-self:center;justify-self:start">${esc(e.id)}</span>${egSel('fhi', `evid.${j}.t`, 'النوع', FHI_ET)}${egTxt('fhi', `evid.${j}.d`, 'الوصف')}${egTxt('fhi', `evid.${j}.s`, 'المصدر')}${egTxt('fhi', `evid.${j}.date`, 'تاريخ الالتقاط')}${egSel('fhi', `evid.${j}.q`, 'جودة الاستخراج', FHI_Q)}${egSel('fhi', `evid.${j}.st`, 'حالة المراجعة', FHI_EST)}${egDel('fhi', 'evid', j)}</div>`).join('') + `<div class="row" style="gap:8px;margin-top:6px">${egAdd('fhi', 'evid', 'تسجيل دليل')}<span class="faint" style="font-size:11px">لرفع الملفات نفسها وتحليل جداولها استخدم «نتائج التحليل الفعلية» — تُقبل الصور والفيديو وPDF وExcel وWord.</span></div>`);
+  if (s.tab === 'findings') inputs = egCard('إدخال النتائج', 'FHI-FINDINGS', pick + `<div style="max-width:300px">${egSel('fhi', 'rule', 'قاعدة الترتيب', FHI_RULE)}</div>` + s.finds.map((x, j) => x.fac !== code ? '' : `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)">${egSel('fhi', `finds.${j}.kind`, 'السجل', FHI_KIND)}${egTxt('fhi', `finds.${j}.x`, 'الملاحظة')}${egSel('fhi', `finds.${j}.ev`, 'الدليل', [['', 'بلا دليل']].concat(s.evid.filter(e => e.fac === code).map(e => [e.id, e.id + ' · ' + e.d])))}${egNum('fhi', `finds.${j}.sev`, 'الشدة/الأهمية 1–5')}${egNum('fhi', `finds.${j}.lik`, 'الاحتمال 1–5')}${egNum('fhi', `finds.${j}.urg`, 'الإلحاح 1–5')}${egNum('fhi', `finds.${j}.eco`, 'الأثر الاقتصادي')}${egNum('fhi', `finds.${j}.feas`, 'الجدوى 1–5')}${egTxt('fhi', `finds.${j}.owner`, 'المالك')}${egDel('fhi', 'finds', j)}</div>`).join('') + egAdd('fhi', 'finds', 'إضافة نتيجة'));
+  if (s.tab === 'plan') inputs = egCard('الإجراءات ونمط التشغيل', 'FHI-PLAN', pick + egQ(1, 'نمط التشغيل', egCh('fhi', 'mode', FHI_MODE)) + egQ(2, 'الإجراءات — قبل وبعد لإثبات الأثر', s.acts.map((a, j) => a.fac !== code ? '' : `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)">${egTxt('fhi', `acts.${j}.x`, 'الإجراء')}${egTxt('fhi', `acts.${j}.owner`, 'المسؤول')}${egTxt('fhi', `acts.${j}.due`, 'الموعد')}${egNum('fhi', `acts.${j}.cost`, 'التكلفة')}${egSel('fhi', `acts.${j}.st`, 'الحالة', [['open', 'مفتوح'], ['doing', 'قيد التنفيذ'], ['done', 'منجز']])}${egNum('fhi', `acts.${j}.base`, 'القياس قبل')}${egNum('fhi', `acts.${j}.after`, 'القياس بعد')}${egDel('fhi', 'acts', j)}</div>`).join('') + egAdd('fhi', 'acts', 'إضافة إجراء')) + egQ(3, 'اختبارات القبول (اجتازت)', `<div class="row" style="gap:6px">${FHI_TESTS.map((n, j) => choice('eg-set', `fhi.tests.${j}`, (s.tests || {})[j] ? '' : '1', !!(s.tests || {})[j], n)).join('')}</div>`));
+  return `${engHead('NAIOSH FACILITY & HOSPITALITY INTELLIGENCE 360 · NAIOSH-FHI', 'تحليل المطاعم والفنادق والفعاليات والمرافق', 'نواة تحليل واحدة لستة قطاعات — المطاعم والفنادق والإسكان والفعاليات والمرافق والعقارات: توثيق حالة المنشأة، تحليل أدائها، القوة والضعف والمخاطر والفرص، ثم خطة تحسين قابلة للقياس والتدقيق.', engExport('FHI'))}
+  ${egTabs('fhi', [['facility', 'المنشأة والمؤشرات'], ['evidence', 'الأدلة وجودة البيانات'], ['findings', 'السجلات الأربعة'], ['plan', 'خطة التحسين والحوكمة']])}
+  ${inputs}${egOut('fhi')}`;
+};
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset || el.dataset.eg !== 'fhi') return;
+  if (el.dataset.p === 'sel') { egS('fhi').sel = +el.value; render(); return; }
+  if (/^facs\.\d+\.sector$/.test(el.dataset.p)) { const s = egS('fhi'), f = s.facs[+el.dataset.p.split('.')[1]]; f.k = fhiNewK(f.sector); render(); return; }
+  if (el.dataset.p === 'rule') render();
+});
+
+/* ---------- exports ---------- */
+const _es5 = engSections3;
+engSections3 = function (code) {
+  if (code === 'CII') {
+    const m = ciiModel(), s = m.s, b = m.base;
+    return { title: 'التقرير التحليلي المتكامل للمبادرة المجتمعية — ' + s.name, audience: 'صاحب المبادرة والجهة الممولة والجهة المخولة', ref: 'DIA-CII', sections: [
+      { h: 'الملخص التنفيذي', kv: kvx([['المبادرة', s.name], ['الجهة', s.owner], ['النوع', (CII_TYPE.find(t => t[0] === s.type) || [, s.typeOther])[1]], ['الدولة / المنطقة', s.country + ' / ' + s.region], ['المدة', s.months + ' شهر'], ['النتيجة العامة', m.decision[0]]]) },
+      { h: 'تحليل الاحتياج', kv: kvx([['المشكلة', s.problem], ['قوة الحاجة', m.needScore + '%'], ['المستفيدون', fmtN(egN(s.benef), 0) + ' — ' + CII_BASIS.find(x => x[0] === s.benefBasis)[1]], ['مشاركة المجتمع', s.codesign === 'yes' ? 'نعم' : 'لا']]) },
+      { h: 'القوة', cols: ['النقطة', 'الدليل', 'الإجراء'], rows: m.swot.s }, { h: 'الضعف والفجوات', cols: ['النقطة', 'الدليل', 'الإجراء'], rows: m.swot.w },
+      { h: 'المخاطر', cols: ['الخطر', 'الفئة', 'الدرجة', 'المالك', 'الضابط'], rows: m.risks.map(x => [x.r.n, x.r.cat, x.sc, x.r.owner || '—', x.r.ctrl || '—']) },
+      { h: 'الفرص والشراكات', cols: ['الفرصة', 'القيمة', 'متحقق منها'], rows: s.opps.map(o => [o.n, fmtN(egN(o.val), 0), o.ver === 'yes' ? 'نعم' : 'لا']) },
+      { h: 'الجدوى ورأس المال', kv: kvx([['التكلفة الكلية', fmtN(b.total, 0)], ['التمويل المؤكد', fmtN(egN(s.fin.avail) + egN(s.fin.appr), 0)], ['فجوة التمويل', fmtN(b.gap, 0)], ['أدنى رصيد', fmtN(b.minB, 0)], ['الحكم', m.verdict[0]]]) },
+      { h: 'السيناريوهات', cols: ['السيناريو', 'الفجوة', 'أدنى رصيد', 'المستفيدون'], rows: m.sc.map(x => [x.n, fmtN(x.r.gap, 0), fmtN(x.r.minB, 0), fmtN(x.r.benef, 0)]) },
+      { h: 'بوابات القرار', cols: ['البوابة', 'المرحلة', 'الحالة'], rows: m.gates.map(g => [g[0], g[1], g[2] ? 'مستوفاة' : 'لم تُستوفَ']) },
+      { h: 'قياس الأثر', cols: ['المؤشر', 'المستوى', 'خط الأساس', 'المستهدف', 'الفعلي'], rows: s.kpis.map(k => [k.n, k.lvl, String(k.base), String(k.target), String(k.act || '—')]) },
+      { h: 'الملاحق والقيود', bullets: m.missing.length ? m.missing : ['لا نواقص مسجلة.'] }] };
+  }
+  if (code === 'FHI') {
+    const m = fhiModel(), f = m.f;
+    return { title: 'التقرير التنفيذي للمنشأة — ' + f.code + ' · ' + f.n, audience: 'إدارة المنشأة وصاحب الصلاحية', ref: 'FHI', sections: [
+      { h: 'الملخص وحالة البيانات', kv: kvx([['المنشأة', f.n], ['القطاع', m.sec.n + ' (' + m.sec.code + ')'], ['المدينة', f.city], ['هدف التحليل', (FHI_PURPOSE.find(p => p[0] === f.purpose) || [, ''])[1]], ['اكتمال المؤشرات', fmtN(m.filled / Math.max(1, m.K.length) * 100, 0) + '%'], ['أدلة متحقق منها', m.evOk + ' من ' + m.ev.length]]) },
+      { h: 'الأداء الحالي ومؤشرات خط الأساس', cols: ['المؤشر', 'الحالي', 'خط الأساس', 'المستهدف', 'الحالة'], rows: m.K.map(x => [x.n, x.v === null ? '—' : fmtN(x.v), fmtN(x.b), fmtN(x.t), x.st[0]]) },
+      ...FHI_KIND.map(([k, n]) => ({ h: n, cols: ['الملاحظة', 'الدليل', 'الشدة', 'المالك'], rows: m.F.filter(y => y.x.kind === k).map(y => [y.x.x, y.x.ev || '—', String(y.x.sev), y.x.owner || '—']) })),
+      { h: 'الأدلة والمصادر', cols: ['المعرف', 'الوصف', 'المصدر', 'الجودة', 'المراجعة'], rows: m.ev.map(e => [e.id, e.d, e.s, (FHI_Q.find(q => q[0] === e.q) || [, ''])[1], (FHI_EST.find(q => q[0] === e.st) || [, ''])[1]]) },
+      { h: 'خطة العمل', cols: ['الإجراء', 'المسؤول', 'الموعد', 'الحالة', 'قبل', 'بعد'], rows: m.A.map(({ a }) => [a.x, a.owner || '—', a.due || '—', a.st, String(a.base || '—'), String(a.after || '—')]) },
+      { h: 'القيود التحليلية', bullets: ['رفع الملف لا يعني صحة محتواه.', 'لا يُعد التحسين أثرًا محققًا دون قياس قبل وبعد.', 'لا يُعتمد استنتاج عالي التأثير على دليل غير كافٍ.'] }] };
+  }
+  return _es5(code);
 };
 </script>
 <script data-app="">

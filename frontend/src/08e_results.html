@@ -69,7 +69,7 @@ function anChart(ch) {
   const X = (i) => pl + (N > 1 ? i * (W - pl - pr) / (N - 1) : 0), Y = (v) => pt + (hi - v) / (hi - lo) * (H - pt - pb);
   const path = (ys, off = 0) => ys.map((v, i) => fin(v) ? [X(i + off), Y(v)] : null).filter(Boolean).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   let g = '';
-  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtN(v)}</text>`; }
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1); g += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${pl - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">&#x200E;${fmtN(v)}</text>`; }
   const step = Math.max(1, Math.ceil(N / 6));
   for (let i = 0; i < N; i += step) g += `<text x="${X(i).toFixed(1)}" y="${H - 9}" text-anchor="middle">${esc(ch.lab[i])}</text>`;
   if (ch.fc) {
