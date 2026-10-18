@@ -514,12 +514,12 @@ const diagConf = () => S.qDone ? 81 : 58;
 const NAV = [
   { t: 'القيادة', items: [['home','مركز القيادة','01'],['ask','اسأل نايوش','02'],['request','طلب تحليل بيانات',''],['results','نتائج التحليل الفعلية',''],['consult','مركز الاستشارات','']] },
   { t: 'البيانات والسياق', items: [['data','مركز تحليل البيانات','03'],['quality','جودة البيانات','04'],['context','محرك السياق','05'],['questionnaire','الاستبيان الذكي','06']] },
-  { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','التشخيص','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
+  { t: 'التحليل والاستشراف', items: [['analysis','التحليل والأنماط','07'],['diagnosis','تحليل الأسباب','08'],['rootcause','السبب الجذري','09'],['foresight','التنبؤ والاستشراف','10'],['whatif','محاكاة ماذا لو','11'],['risks','المخاطر والفرص','12']] },
   { t: 'القرار والتنفيذ', items: [['solutions','استوديو الحلول','13'],['decision','مركز القرار','14'],['execution','مركز التنفيذ','15'],['impact','قياس الأثر','16']] },
   { t: 'التعلم والذاكرة', items: [['learning','التعلم المؤسسي','17'],['memory','الذاكرة المؤسسية','18'],['ledger','سجل القرارات','19']] },
   { t: 'تحليل المشروعات والمنشآت', items: [['bench','المقارنة المعيارية','BEN'],['compete','تحليل المنافسين','CIB'],['eco','التحليل الاقتصادي للمشاريع الجانبية','ECO'],['supply','سلاسل الإمداد واللوجستيات','SCM'],['sustain','الاستدامة والديمومة 360','SUS'],['safety','تحليل المخاطر','SAF']] },
   { t: 'الإدارة المؤسسية والجودة', items: [['pmo','مكتب إدارة المشاريع PMO 360','PMO'],['tqg','الجودة الشاملة والحوكمة','TQG']] },
-  { t: 'التحليل القانوني والمؤسسي', items: [['legal','التحليل القانوني LEGAL 360','LEGAL'],['ebiz','التشخيص المؤسسي والقانوني 360','EBI']] },
+  { t: 'التحليل القانوني والمؤسسي', items: [['legal','التحليل القانوني LEGAL 360','LEGAL'],['ebiz','التحليل المؤسسي والقانوني 360','EBI']] },
   { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','تحليل التعليم والتدريب','ETI'],['cv','تحليل السيرة الذاتية','CV'],['skills','تحليل المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
   { t: 'التحليل المجتمعي', items: [['self','تحليل الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
@@ -527,7 +527,7 @@ const NAV = [
 const TITLES = {
   home: ['مركز القيادة التنفيذي', 'لوحة القيادة'], ask: ['بوابة الدخول الذكية', 'اسأل نايوش Intelligence'],
   consult: ['الاستشارات', 'مركز الاستشارات'], data: ['البيانات · الحوكمة والجودة والتتبع', 'مركز تحليل البيانات'],
-  questionnaire: ['CNS-001 · استكمال البيانات', 'الاستبيان الذكي'], diagnosis: ['CNS-001 · لماذا حدث؟', 'التحليل والتشخيص'],
+  questionnaire: ['CNS-001 · استكمال البيانات', 'الاستبيان الذكي'], diagnosis: ['CNS-001 · لماذا حدث؟', 'تحليل الأسباب'],
   foresight: ['CNS-001 · ماذا قد يحدث؟', 'التنبؤ والاستشراف'], risks: ['CNS-001 · المخاطر والفرص والمرونة', 'المخاطر والفرص'],
   solutions: ['CNS-001 · NAIOSH SOLUTION STUDIO', 'استوديو الحلول'], decision: ['CNS-001 · التوصية ← القرار البشري', 'مركز القرار'],
   execution: ['CNS-001 · من القرار إلى الإجراء', 'مركز التنفيذ'], impact: ['CNS-001 · هل نجح الحل؟', 'قياس الأثر'],
@@ -547,7 +547,7 @@ const TITLES = {
   sustain: ['DIA-SUS · NAIOSH SUSTAIN 360', 'الاستدامة والديمومة والاستشراف'], skills: ['DIA-SKL · Skills Intelligence & Talent', 'تحليل المهارات والمواهب وسوق العمل'], career: ['DIA-CPA · Academic & Career Path', 'المسار الجامعي والمهني'],
   employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'تحليل بيانات التعليم والتدريب'],
   pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'تحليل المنافسين والموقع التنافسي'],
-  legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التشخيص المؤسسي والقانوني والمالي وسوق العمل']
+  legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التحليل المؤسسي والقانوني والمالي وسوق العمل']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
@@ -1234,7 +1234,7 @@ VIEWS.execution = () => {
 /* ================= SETTINGS ================= */
 let CAN_EDIT = false, READONLY = false, PUBLISHING = false, RESET_ARMED = false;
 const OPEN = new Set();
-const ROUTE_OPTS = [['home','الرئيسية'],['ask','اسأل نايوش'],['consult','مركز الاستشارات'],['data','مركز تحليل البيانات'],['questionnaire','الاستبيان الذكي'],['diagnosis','التحليل والتشخيص'],['foresight','التنبؤ والاستشراف'],['risks','المخاطر والفرص'],['solutions','استوديو الحلول'],['decision','مركز القرار'],['execution','مركز التنفيذ'],['impact','قياس الأثر'],['learning','التعلم المؤسسي'],['knowledge','قاعدة المعرفة'],['agents','الذكاء الاصطناعي والوكلاء'],['reports','التقارير'],['integration','مركز التكامل'],['governance','الحوكمة والتدقيق'],['architecture','المعمارية والوثائق']];
+const ROUTE_OPTS = [['home','الرئيسية'],['ask','اسأل نايوش'],['consult','مركز الاستشارات'],['data','مركز تحليل البيانات'],['questionnaire','الاستبيان الذكي'],['diagnosis','تحليل الأسباب'],['foresight','التنبؤ والاستشراف'],['risks','المخاطر والفرص'],['solutions','استوديو الحلول'],['decision','مركز القرار'],['execution','مركز التنفيذ'],['impact','قياس الأثر'],['learning','التعلم المؤسسي'],['knowledge','قاعدة المعرفة'],['agents','الذكاء الاصطناعي والوكلاء'],['reports','التقارير'],['integration','مركز التكامل'],['governance','الحوكمة والتدقيق'],['architecture','المعمارية والوثائق']];
 const COLOR_OPTS = [['g','أخضر — جيد'],['y','أصفر — انتباه'],['o','برتقالي — مرتفع'],['r','أحمر — حرج'],['b','أزرق — معلومة']];
 const AUTO_OPTS = [['','قيمة ثابتة'],['decisions','ينقص بعد تسجيل القرار'],['consult','يعرض مرحلة CNS-001'],['perf','مؤشر الأداء — يتغير بعد التنفيذ']];
 const F = (k, label, type = 'text', opt = null, wide = false) => ({ k, label, type, opt, wide });
@@ -5786,7 +5786,7 @@ function ebModel() {
 }
 EG_OUT.ebiz = () => {
   const m = ebModel(), s = m.s, cur = s.fin.cur || '';
-  if (s.tab === 'assess') return egCard('نتيجة التشخيص المؤسسي — 16 محورًا', 'EBI-02', `${anKpis([['أسئلة مُجابة', m.answered + ' من ' + EB_Q.length], ['إجابات مدعومة بمستند أو مصدر رسمي', m.evid + ' من ' + m.answered, m.evid / Math.max(1, m.answered) < 0.5 ? 'bad' : 'good'], ['مخاطر حرجة', m.crit, m.crit ? 'bad' : 'good'], ['محاور سليمة', m.ax.filter(a => a.st[0] === 'سليم').length + ' من 16'], ['فجوات تحتاج خطة', m.recs.length]])}
+  if (s.tab === 'assess') return egCard('نتيجة التحليل المؤسسي — 16 محورًا', 'EBI-02', `${anKpis([['أسئلة مُجابة', m.answered + ' من ' + EB_Q.length], ['إجابات مدعومة بمستند أو مصدر رسمي', m.evid + ' من ' + m.answered, m.evid / Math.max(1, m.answered) < 0.5 ? 'bad' : 'good'], ['مخاطر حرجة', m.crit, m.crit ? 'bad' : 'good'], ['محاور سليمة', m.ax.filter(a => a.st[0] === 'سليم').length + ' من 16'], ['فجوات تحتاج خطة', m.recs.length]])}
     ${m.crit ? `<div class="banner r" style="font-size:13px">${ic('warn', 16)}<span>مخاطر حرجة لا يجوز إخفاؤها في درجة عامة: ${m.ax.flatMap(a => a.crit.map(q => '«' + q[2].replace('؟', '') + '»')).join('، ')}</span></div>` : ''}
     ${anTbl({ h: 'خمس نتائج منفصلة لكل محور — دون دمجها في درجة واحدة', cols: ['المحور', 'الحالة', 'النضج', 'اكتمال الأدلة', 'الفجوات', 'المخاطر الحرجة', 'خطة التحسين'], rows: m.ax.map(a => [a.code + ' · ' + a.name, a.st[0], isFinite(a.mat) ? fmtN(a.mat, 0) + '%' : '—', isFinite(a.evc) ? fmtN(a.evc, 0) + '%' : '—', a.gaps.length, a.crit.length, a.gaps.map(q => q[4]).join('؛ ') || '—']) })}
     ${anChart({ bars: m.ax.filter(a => isFinite(a.mat)).map(a => [a.code + ' ' + a.name, Math.round(a.mat)]).sort((a, b) => b[1] - a[1]) })}
@@ -5818,7 +5818,7 @@ VIEWS.ebiz = () => {
   if (s.tab === 'fin') inputs = egCard('مدخلات المؤشرات', 'EBI-03', egGrid(180, egTxt('ebiz', 'fin.cur', 'العملة') + egNum('ebiz', 'fin.rev', 'الإيرادات السنوية') + egNum('ebiz', 'fin.exp', 'المصروفات السنوية') + egNum('ebiz', 'fin.assets', 'إجمالي الأصول') + egNum('ebiz', 'fin.liab', 'إجمالي الالتزامات') + egNum('ebiz', 'fin.cash', 'النقد المتاح') + egNum('ebiz', 'fin.liab90', 'الالتزامات خلال 90 يومًا') + egNum('ebiz', 'fin.emp', 'متوسط عدد الموظفين') + egNum('ebiz', 'fin.leave', 'عدد المغادرين خلال السنة')));
   if (s.tab === 'recs') { const m = ebModel(); inputs = egCard('متابعة التوصيات', 'EBI-05', m.recs.length ? m.recs.map(r => `<div class="sub" style="gap:8px"><div class="row between nowrap" style="gap:8px"><b style="font-size:13px">${r[5] ? '<span class="tag t-c" style="font-size:10px">حرج</span> ' : ''}${esc(r[3])}</b><button type="button" class="btn sm" data-go="${r[4]}">${ic(r[4], 13)}${esc(EB_REF[r[4]] || r[4])}</button></div><span class="faint" style="font-size:11.5px">${esc(r[1])} — ${esc(r[2])}</span>${egGrid(150, egTxt('ebiz', `recs.${r[0]}.owner`, 'المسؤول') + egTxt('ebiz', `recs.${r[0]}.due`, 'الموعد') + egTxt('ebiz', `recs.${r[0]}.kpi`, 'مؤشر النجاح') + egTxt('ebiz', `recs.${r[0]}.ev`, 'دليل الإغلاق') + egSel('ebiz', `recs.${r[0]}.st`, 'الحالة', [['open', 'مفتوحة'], ['doing', 'قيد التنفيذ'], ['done', 'مغلقة']]))}</div>`).join('') : '<span class="faint">لا توجد فجوات — أجب عن بنك الأسئلة أولًا.</span>'); }
   if (s.tab === 'verify') inputs = egCard('بيانات التحقق', 'EBI-06', egGrid(180, egTxt('ebiz', 'ver.name', 'اسم الشركة') + egTxt('ebiz', 'ver.reg', 'رقم السجل') + egTxt('ebiz', 'ver.country', 'الدولة') + egTxt('ebiz', 'ver.src', 'المصدر الرسمي') + egSel('ebiz', 'ver.regSt', 'حالة التسجيل', [['unk', 'لم يُتحقق'], ['ok', 'موجود وساري'], ['bad', 'غير موجود / مشطوب']]) + egSel('ebiz', 'ver.licSt', 'حالة الترخيص', [['unk', 'لم يُتحقق'], ['ok', 'ساري'], ['bad', 'منتهٍ']]) + egTxt('ebiz', 'ver.activity', 'النشاط المعلن') + egTxt('ebiz', 'ver.date', 'تاريخ التحقق')) + egNote('أدخل ما ظهر في المصدر الرسمي فقط. لا تُستنتج حالة الشركة من مصادر غير رسمية.'));
-  return `${engHead('NAIOSH E-LEGAL & BUSINESS INTELLIGENCE 360 · DIA-EBI', 'التشخيص المؤسسي والقانوني والمالي وسوق العمل', 'يساعد صاحب الشركة على فهم الوضع الحقيقي للمؤسسة: قانونيًا وإداريًا وماليًا وتشغيليًا وبشريًا وسوقيًا، ثم يحدد المخاطر والفجوات ويقترح خطة معالجة قابلة للتنفيذ — ويحيل كل مشكلة إلى المحرك المتخصص دون تكرار إدخال البيانات.', engExport('EBI'))}
+  return `${engHead('NAIOSH E-LEGAL & BUSINESS INTELLIGENCE 360 · DIA-EBI', 'التحليل المؤسسي والقانوني والمالي وسوق العمل', 'يساعد صاحب الشركة على فهم الوضع الحقيقي للمؤسسة: قانونيًا وإداريًا وماليًا وتشغيليًا وبشريًا وسوقيًا، ثم يحدد المخاطر والفجوات ويقترح خطة معالجة قابلة للتنفيذ — ويحيل كل مشكلة إلى المحرك المتخصص دون تكرار إدخال البيانات.', engExport('EBI'))}
   ${egTabs('ebiz', [['assess', 'التقييم الشامل — 16 محورًا'], ['fin', 'المؤشرات المالية'], ['recs', 'التوصيات والإحالة'], ['verify', 'التحقق من الشركات']])}
   ${inputs}${egOut('ebiz')}`;
 };
@@ -5865,7 +5865,7 @@ engSections3 = function (code) {
   }
   if (code === 'EBI') {
     const m = ebModel(), s = m.s, fi = m.fin;
-    return { title: 'تقرير التشخيص المؤسسي — E-LEGAL & BUSINESS INTELLIGENCE 360', audience: 'صاحب الشركة والإدارة العليا', ref: 'DIA-EBI', sections: [
+    return { title: 'تقرير التحليل المؤسسي — E-LEGAL & BUSINESS INTELLIGENCE 360', audience: 'صاحب الشركة والإدارة العليا', ref: 'DIA-EBI', sections: [
       { h: 'المؤسسة', kv: kvx([['القطاع', s.sector], ['الدولة', s.country], ['الحجم', s.size], ['المجيب', s.role], ['أسئلة مجابة', m.answered + ' من ' + EB_Q.length], ['مدعومة بأدلة', m.evid], ['مخاطر حرجة', m.crit]]) },
       { h: 'المحاور الستة عشر', cols: ['المحور', 'الحالة', 'النضج', 'اكتمال الأدلة', 'الفجوات', 'حرجة'], rows: m.ax.map(a => [a.code + ' ' + a.name, a.st[0], isFinite(a.mat) ? fmtN(a.mat, 0) + '%' : '—', isFinite(a.evc) ? fmtN(a.evc, 0) + '%' : '—', a.gaps.length, a.crit.length]) },
       { h: 'المؤشرات المالية', kv: kvx([['الربح التشغيلي التقريبي', fmtN(fi.profit, 0)], ['الهامش', fmtN(fi.margin, 1) + '%'], ['الالتزامات إلى الأصول', fmtN(fi.la, 1) + '%'], ['تغطية النقد 90 يومًا', fmtN(fi.cov, 0) + '%'], ['معدل المغادرة', fmtN(fi.turn, 1) + '%'], ['صافي الأصول', fmtN(fi.net, 0)]]) },

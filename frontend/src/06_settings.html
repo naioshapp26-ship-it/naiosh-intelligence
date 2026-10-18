@@ -3,7 +3,7 @@
 /* ================= SETTINGS ================= */
 let CAN_EDIT = false, READONLY = false, PUBLISHING = false, RESET_ARMED = false;
 const OPEN = new Set();
-const ROUTE_OPTS = [['home','الرئيسية'],['ask','اسأل نايوش'],['consult','مركز الاستشارات'],['data','مركز تحليل البيانات'],['questionnaire','الاستبيان الذكي'],['diagnosis','التحليل والتشخيص'],['foresight','التنبؤ والاستشراف'],['risks','المخاطر والفرص'],['solutions','استوديو الحلول'],['decision','مركز القرار'],['execution','مركز التنفيذ'],['impact','قياس الأثر'],['learning','التعلم المؤسسي'],['knowledge','قاعدة المعرفة'],['agents','الذكاء الاصطناعي والوكلاء'],['reports','التقارير'],['integration','مركز التكامل'],['governance','الحوكمة والتدقيق'],['architecture','المعمارية والوثائق']];
+const ROUTE_OPTS = [['home','الرئيسية'],['ask','اسأل نايوش'],['consult','مركز الاستشارات'],['data','مركز تحليل البيانات'],['questionnaire','الاستبيان الذكي'],['diagnosis','تحليل الأسباب'],['foresight','التنبؤ والاستشراف'],['risks','المخاطر والفرص'],['solutions','استوديو الحلول'],['decision','مركز القرار'],['execution','مركز التنفيذ'],['impact','قياس الأثر'],['learning','التعلم المؤسسي'],['knowledge','قاعدة المعرفة'],['agents','الذكاء الاصطناعي والوكلاء'],['reports','التقارير'],['integration','مركز التكامل'],['governance','الحوكمة والتدقيق'],['architecture','المعمارية والوثائق']];
 const COLOR_OPTS = [['g','أخضر — جيد'],['y','أصفر — انتباه'],['o','برتقالي — مرتفع'],['r','أحمر — حرج'],['b','أزرق — معلومة']];
 const AUTO_OPTS = [['','قيمة ثابتة'],['decisions','ينقص بعد تسجيل القرار'],['consult','يعرض مرحلة CNS-001'],['perf','مؤشر الأداء — يتغير بعد التنفيذ']];
 const F = (k, label, type = 'text', opt = null, wide = false) => ({ k, label, type, opt, wide });
