@@ -47,6 +47,7 @@ const P = {
   results:'M4 20V4 M4 20h16 M7 15l3-3 3 2 5-6 M16 8h2v2',
   initiative:'M12 20s-7-4.3-7-9.5A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.5C19 15.7 12 20 12 20 M8.5 12.5h2l1-2 2 4 1-2h1',
   facility:'M3 20h18 M3 20V9l5-3 5 3v11 M13 20V12h8v8 M6 12h2 M6 15h2 M16 15h2 M16 17.5h2 M8.5 20v-2.5',
+  psf:'M12 20.5s-6.5-3.9-8.6-8.2C1.6 8.4 3.6 4.5 7.3 4.5c1.9 0 3.5 1 4.7 2.6 1.2-1.6 2.8-2.6 4.7-2.6 3.7 0 5.7 3.9 3.9 7.8C18.5 16.6 12 20.5 12 20.5z M9.5 11.5h5 M12 9v5',
   legal:'M14.5 3.5l6 6 M11.5 6.5l6 6 M13 5l-5 5 M18 10l-5 5 M10.5 12.5L3.5 19.5 M3 21h9',
   ebiz:'M3 21h18 M5 21V8l7-4 7 4v13 M9 21v-5h6v5 M9 10h.01 M12 10h.01 M15 10h.01 M9 13h.01 M15 13h.01',
   request:'M6 3h9l5 5v13H6z M14 3v6h6 M9 17v-3 M12 17v-6 M15 17v-4',
@@ -132,7 +133,7 @@ const NAV = [
   { t: 'الإدارة المؤسسية والجودة', items: [['pmo','مكتب إدارة المشاريع PMO 360','PMO'],['tqg','الجودة الشاملة والحوكمة','TQG']] },
   { t: 'التحليل القانوني والمؤسسي', items: [['legal','التحليل القانوني LEGAL 360','LEGAL'],['ebiz','التحليل المؤسسي والقانوني 360','EBI']] },
   { t: 'التعليم والتوظيف وسوق العمل', items: [['career','المسار الجامعي والمهني','CPA'],['edu','تحليل التعليم والتدريب','ETI'],['cv','تحليل السيرة الذاتية','CV'],['skills','تحليل المهارات وسوق العمل','SKL'],['employ','التوظيف EMPLOY 360','EMP']] },
-  { t: 'التحليل المجتمعي', items: [['initiative','تحليل المبادرات المجتمعية','CII'],['self','تحليل الذات','SELF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
+  { t: 'التحليل المجتمعي', items: [['initiative','تحليل المبادرات المجتمعية','CII'],['self','تحليل الذات','SELF'],['psf','عيادة نايوش للتحليل النفسي 360','PSF'],['marriage','زواج أكثر وعيًا','MAR','soon']] },
   { t: 'الحوكمة والمنصة', items: [['governance','الحوكمة والتدقيق','20'],['integration','مركز التكامل','21'],['knowledge','قاعدة المعرفة','22'],['agents','الوكلاء والمحركات','23'],['reports','التقارير',''],['architecture','المعمارية والوثائق',''],['settings','الإعدادات','24']] }
 ];
 const TITLES = {
@@ -159,6 +160,7 @@ const TITLES = {
   employ: ['DIA-EMP · NAIOSH EMPLOY 360', 'التوظيف وتحليل سوق العمل وتنمية المهارات'], edu: ['DIA-ETI · Education & Training Intelligence 360', 'تحليل بيانات التعليم والتدريب'],
   pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'تحليل المنافسين والموقع التنافسي'],
   initiative: ['DIA-CII · Community Initiatives Intelligence 360', 'تحليل المبادرات المجتمعية ودراسة جدواها'], facility: ['NAIOSH-FHI · Facility & Hospitality Intelligence 360', 'تحليل المطاعم والفنادق والفعاليات والمرافق'],
+  psf: ['DIA-PSF · Psycho-Social & Family Intelligence 360', 'عيادة نايوش للتحليل النفسي والأسري 360'],
   legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التحليل المؤسسي والقانوني والمالي وسوق العمل']
 };
 function counts() {

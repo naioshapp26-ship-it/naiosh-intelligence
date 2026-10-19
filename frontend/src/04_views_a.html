@@ -32,7 +32,7 @@ VIEWS.home = () => {
   <section class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,340px)">
     <div class="card" style="gap:14px">
       <div class="stack" style="gap:4px">
-        <h2 class="title-xl">${esc(CFG.identity.greeting || '')}، د. عدنان</h2>
+        <h2 class="title-xl">${esc(!CFG.identity.greeting || /^(مساء|صباح) الخير$/.test(String(CFG.identity.greeting).trim()) ? 'مرحبا' : CFG.identity.greeting)} د. عدنان</h2>
         <p class="lead">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p>
       </div>
       <button type="button" data-go="ask" class="row nowrap" style="min-height:56px;padding:6px 8px 6px 6px;padding-inline-start:18px;border-radius:14px;background:var(--bg);border:1px solid #3A1C22;color:var(--faint);text-align:right;width:100%">
