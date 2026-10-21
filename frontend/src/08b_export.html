@@ -96,7 +96,7 @@ function buildXlsx(rep) {
   const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
   const sheets = [];
   // cover sheet: title, metadata, summary text and every key/value section
-  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(rep.by || expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
   const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
   for (const sec of rep.sections) {
     if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
@@ -174,7 +174,7 @@ async function buildPdf(rep) {
       ctx.fillStyle = yel; font(9, 700); ctx.fillText((rep.ref || 'CNS-001') + ' · ' + String(rep.code).replace('_', ' '), R, 32);
       ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
-      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(expUser())} · ${expNow()}`, R, 86);
+      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, R, 86);
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
       y = bandH + 26;
     } else {
@@ -281,6 +281,17 @@ async function buildPdf(rep) {
     g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = '#6A6A76'; g.font = `400 8px ${PDF_FONT}`;
     g.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${EXP_TXT(rep.title)} · داخلي — سري`, R, PDF_H - FOOT + 18);
     g.direction = 'ltr'; g.textAlign = 'left'; g.fillText(`${i + 1} / ${pages.length}`, L, PDF_H - FOOT + 18);
+    if (rep.seal) {
+      // sealed report: verification line on every page + diagonal watermark with the client and reference
+      const se = rep.seal;
+      g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = red; g.font = `700 7.5px ${PDF_FONT}`;
+      g.fillText(`رمز التحقق ${se.code} · ${se.ref} · صدر ${se.date} · تحقّق من أصالته: نايوش ← مركز المعلومات ← التحقق من تقرير`, R, PDF_H - FOOT + 28);
+      g.save(); g.globalAlpha = 0.07; g.fillStyle = red; g.font = `700 17px ${PDF_FONT}`; g.textAlign = 'center'; g.direction = 'rtl';
+      g.translate(PDF_W / 2, PDF_H / 2); g.rotate(-Math.PI / 6);
+      const wm = `${EXP_TXT(se.client)} · ${se.ref} · ${se.code} · NAIOSH`;
+      for (let yy = -PDF_H * 0.75; yy <= PDF_H * 0.75; yy += 120) for (let xx = -PDF_W * 0.75; xx <= PDF_W * 0.75; xx += 330) g.fillText(wm, xx + (Math.round(yy / 120) % 2 ? 165 : 0), yy);
+      g.restore();
+    }
     g.restore();
   });
   return pdfFromCanvases(pages, rep.title);

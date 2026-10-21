@@ -1,4 +1,5 @@
 'use strict';
+const commerce = require('../commerce');
 const db = require('../db');
 const audit = require('../audit');
 const A = require('../auth');
@@ -29,7 +30,12 @@ module.exports = (r) => {
     const pwProblem = A.passwordProblem(b.password); if (pwProblem) errors.password = pwProblem;
     if (!errors.email && db.get('SELECT id FROM users WHERE email = ?', email)) errors.email = 'هذا البريد مسجّل مسبقًا.';
     if (Object.keys(errors).length) throw bad('validation', 'تحقق من الحقول.', { errors });
-    const info = db.run('INSERT INTO users (email, name, role, password_hash, must_change) VALUES (?, ?, ?, ?, 1)', email, name, role, A.hashPassword(b.password));
+    const info = db.tx(() => {
+      const info = db.run('INSERT INTO users (email, name, role, password_hash, must_change) VALUES (?, ?, ?, ?, 1)', email, name, role, A.hashPassword(b.password));
+      const pts = commerce.settings().welcomePoints;
+      if (role === 'client' && pts > 0) commerce.move(Number(info.lastInsertRowid), pts, 'هدية الترحيب', null);
+      return info;
+    });
     audit.write({ user: me, action: 'user.create', detail: `أضاف المستخدم ${name} (${ROLES[role].label})`, ip: clientIp(req) });
     send(res, 201, { user: row(db.get('SELECT * FROM users WHERE id = ?', info.lastInsertRowid)) });
   });

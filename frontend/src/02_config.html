@@ -6,6 +6,18 @@ const CFG_DEFAULT = {
   identity: { brandAr: 'نايوش', brandEn: 'NAIOSH', brandSub: 'INTELLIGENCE', user: 'د. عدنان', userInitial: 'ع', role: 'صاحب قرار · الإدارة العليا', branch: 'الفرع الشمالي', greeting: 'مرحبا', demoBadge: true, tourDefault: true },
   theme: { red: '#FF2E4D', action: '#D90F2C', yellow: '#FFCD11' },
   modules: {},
+  commerce: { currency: 'JOD', welcomePoints: 300, requestCost: 50, allowExcel: true, promise: 'يكتمل التحليل الآلي خلال دقائق من استلام ملف البيانات' },
+  packs: [
+    { id: 'p100', name: 'باقة البداية', pts: 100, price: 9, d: 'تكفي لطلبَي تحليل', best: false },
+    { id: 'p300', name: 'باقة الأعمال', pts: 300, price: 24, d: '6 طلبات تحليل بتقارير موثّقة', best: true },
+    { id: 'p1000', name: 'باقة المؤسسات', pts: 1000, price: 69, d: 'للفرق والإدارات — 20 طلبًا', best: false },
+    { id: 'p3000', name: 'باقة الشركاء', pts: 3000, price: 179, d: 'أعلى توفير — رصيد لا ينتهي بمدة', best: false }
+  ],
+  offers: [
+    { code: 'NAIOSH10', pct: 10, t: 'خصم 10% على أي باقة', d: 'لأول عملية شحن', until: 'حتى نهاية الشهر', pack: '' },
+    { code: 'BIZ20', pct: 20, t: 'خصم 20% على باقة الأعمال', d: 'للمنشآت الصغيرة والمتوسطة', until: 'لفترة محدودة', pack: 'p300' },
+    { code: 'TEAM15', pct: 15, t: 'خصم 15% على باقة المؤسسات', d: 'عند الشحن لفريق كامل', until: 'لفترة محدودة', pack: 'p1000' }
+  ],
   command: [
     { label: 'مخاطر حرجة', value: '3', color: 'r', route: 'risks', auto: '' },
     { label: 'قرارات بانتظار اعتمادك', value: '5', color: 'o', route: 'decision', auto: 'decisions' },

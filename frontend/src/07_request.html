@@ -191,9 +191,10 @@ VIEWS.request = () => {
       <div class="stack" style="gap:8px"><span style="font-size:13px;font-weight:600">طريقة التواصل المفضلة</span>${rqRadios('contact', RQ_CONTACT)}</div>
       <label class="row nowrap" style="align-items:flex-start;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:var(--raised);border:1px solid ${RQ_ERR.consent ? '#FF6B81' : 'var(--line2)'}">
         <input type="checkbox" id="rq-consent" data-req="consent" data-req-live="1" ${r.consent ? 'checked' : ''} style="width:20px;height:20px;margin-top:2px;accent-color:var(--action)" ${RQ_ERR.consent ? 'aria-invalid="true"' : ''}>
-        <span style="font-size:13px;line-height:1.7">أوافق على استخدام البيانات المرتبطة بهذا الطلب للتحليل فقط، وفق صلاحياتي وسياسة الحوكمة، مع تسجيل كل وصول في سجل التدقيق. <span style="color:var(--red)">*</span></span>
+        <span style="font-size:13px;line-height:1.7">أوافق على <b>سياسة الخصوصية</b> وعلى استخدام البيانات المرتبطة بهذا الطلب للتحليل فقط، وفق صلاحياتي وسياسة الحوكمة، مع تسجيل كل وصول في سجل التدقيق. <span style="color:var(--red)">*</span></span>
       </label>
       ${RQ_ERR.consent ? `<span style="font-size:12px;color:#FF6B81">${RQ_ERR.consent}</span>` : ''}
+      ${typeof rdCostLine === 'function' ? rdCostLine() : ''}
       <div class="row"><button type="submit" class="btn primary" style="min-width:220px">${ic('ask', 16)}إرسال طلب التحليل</button><button type="button" class="btn" data-act="rq-clear">مسح النموذج</button></div>`)}
     </div>
     <aside class="stack" style="gap:16px;position:sticky;top:calc(80px + env(safe-area-inset-top,0px))" id="rq-panel">${rqPanel()}</aside>

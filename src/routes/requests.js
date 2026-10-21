@@ -12,6 +12,7 @@ const { requireUser, requirePerm } = require('../auth');
 const { can } = require('../roles');
 const { send, readJson, clientIp, bad, HttpError, str, arr } = require('../http');
 const { nextRef } = require('./ledger');
+const commerce = require('../commerce');
 
 const STATUSES = {
   new: 'جديد', collecting: 'جمع البيانات', ready: 'جاهز للتحليل', analyzing: 'قيد التحليل',
@@ -38,7 +39,8 @@ function reqView(row, me) {
     priority: row.priority, createdAt: row.created_at, updatedAt: row.updated_at,
     owner: row.owner_name, ownerId: row.created_by, mine: row.created_by === me.id,
     typesLabel: s.typesLabel || '', domainLabel: s.domainLabel || '', suff: s.suff ?? null, missing: s.missing || '—',
-    output: s.output || '', files: row.n_files || 0, videos: row.n_videos || 0
+    output: s.output || '', files: row.n_files || 0, videos: row.n_videos || 0, cost: s.cost || 0, axis: s.axis || '', axisLabel: s.axisLabel || '',
+    report: row.rep_code ? { code: row.rep_code, at: row.rep_at, sha256: row.rep_sha } : null
   };
 }
 
@@ -46,8 +48,9 @@ function canSee(me, row) { return row.created_by === me.id || can(me, 'requests.
 
 const LIST_SQL = `SELECT r.*, u.name AS owner_name,
   (SELECT COUNT(*) FROM uploads x WHERE x.request_id = r.id AND x.kind = 'file')  AS n_files,
-  (SELECT COUNT(*) FROM uploads x WHERE x.request_id = r.id AND x.kind = 'video') AS n_videos
-  FROM analysis_requests r JOIN users u ON u.id = r.created_by`;
+  (SELECT COUNT(*) FROM uploads x WHERE x.request_id = r.id AND x.kind = 'video') AS n_videos,
+  rp.code AS rep_code, rp.created_at AS rep_at, rp.sha256 AS rep_sha
+  FROM analysis_requests r JOIN users u ON u.id = r.created_by LEFT JOIN reports rp ON rp.request_id = r.id`;
 
 module.exports = (r) => {
   // Raw upload: body is the file itself. Headers: X-File-Name (URI-encoded), X-Upload-Kind: video|file
@@ -95,7 +98,7 @@ module.exports = (r) => {
       from: str(p.from, 20), to: str(p.to, 20), have: arr(p.have), link: str(p.link, 500),
       capex: str(p.capex, 60), currency: str(p.currency, 10), horizon: str(p.horizon, 10), ptype: str(p.ptype, 20),
       riskCats: arr(p.riskCats), riskAppetite: str(p.riskAppetite, 20),
-      cls: str(p.cls, 20), priority: str(p.priority, 20), level: str(p.level, 10), due: str(p.due, 20), outputs: arr(p.outputs), contact: str(p.contact, 40), consent: !!p.consent
+      axis: str(p.axis, 40), axisLabel: str(p.axisLabel, 160), cls: str(p.cls, 20), priority: str(p.priority, 20), level: str(p.level, 10), due: str(p.due, 20), outputs: arr(p.outputs), contact: str(p.contact, 40), consent: !!p.consent
     };
     if (!payload.name) errors.name = 'أدخل الاسم الكامل.';
     if (!payload.phone && !payload.email) errors.email = 'أدخل رقم الجوال أو البريد الإلكتروني للتواصل.';
@@ -114,7 +117,9 @@ module.exports = (r) => {
     if (ups.filter(u => u.kind === 'file').length > config.limits.filesPerRequest) throw bad('too_many_files', `الحد الأقصى ${config.limits.filesPerRequest} ملفًا.`);
 
     const suff = Math.max(0, Math.min(100, parseInt(s.suff, 10) || 0));
-    const summary = { typesLabel: str(s.typesLabel, 400), domainLabel: str(s.domainLabel, 120), suff, missing: str(s.missing, 600) || '—', output: str(s.output, 120) };
+    const cm = commerce.settings(), exempt = can(me, 'requests.viewAll'), cost = exempt ? 0 : cm.requestCost;
+    if (cost && commerce.balance(me.id) < cost) throw new HttpError(402, 'insufficient_points', `رصيدك لا يكفي: الطلب يحتاج ${cost} نقطة ورصيدك ${commerce.balance(me.id)}. اشحن رصيدك ثم أعد الإرسال.`, { need: cost, balance: commerce.balance(me.id) });
+    const summary = { typesLabel: str(s.typesLabel, 400), domainLabel: str(s.domainLabel, 120), suff, missing: str(s.missing, 600) || '—', output: str(s.output, 120), cost, axis: payload.axis, axisLabel: payload.axisLabel };
     const status = suff >= 80 ? 'ready' : 'collecting';
 
     const out = db.tx(() => {
@@ -123,6 +128,7 @@ module.exports = (r) => {
         ref, payload.title, status, payload.priority, JSON.stringify(payload), JSON.stringify(summary), me.id);
       const rid = Number(info.lastInsertRowid);
       for (const u of ups) db.run('UPDATE uploads SET request_id = ? WHERE id = ?', rid, u.id);
+      if (cost) commerce.move(me.id, -cost, 'طلب تحليل ' + ref, ref);
       db.run('INSERT INTO request_events (request_id, user_id, status_to, note) VALUES (?, ?, ?, ?)', rid, me.id, status, 'أُنشئ الطلب');
       audit.write({ user: me, action: 'request.create', detail: `أرسل طلب تحليل بيانات ${ref}: ${payload.title} — ${ups.length} مرفق`, ip: clientIp(req) });
       audit.write({ user: me, actor: 'المنسّق', action: 'request.contract', detail: `أنشأ عقد بيانات لـ ${ref} — الكفاية ${suff}%`, kind: 'sys' });
@@ -141,7 +147,7 @@ module.exports = (r) => {
     const me = requireUser(req);
     const row = db.get(LIST_SQL + ' WHERE r.id = ?', +p.id);
     if (!row || !canSee(me, row)) throw new HttpError(404, 'not_found', 'Request not found');
-    const files = db.all('SELECT id, kind, original_name AS name, mime, size, created_at FROM uploads WHERE request_id = ? ORDER BY created_at', row.id);
+    const files = db.all(`SELECT id, kind, original_name AS name, mime, size, created_at FROM uploads WHERE request_id = ? AND kind <> 'report' ORDER BY created_at`, row.id);
     const events = db.all(`SELECT e.*, u.name AS by_name FROM request_events e LEFT JOIN users u ON u.id = e.user_id WHERE request_id = ? ORDER BY e.id`, row.id)
       .map(e => ({ at: e.created_at, by: e.by_name, from: e.status_from && (STATUSES[e.status_from] || e.status_from), to: e.status_to && (STATUSES[e.status_to] || e.status_to), note: e.note }));
     send(res, 200, { request: { ...reqView(row, me), payload: JSON.parse(row.payload), files, events } });
@@ -157,10 +163,78 @@ module.exports = (r) => {
     if (!status && !note) throw bad('missing_fields', 'لا يوجد تغيير.');
     db.tx(() => {
       if (status && status !== row.status) db.run('UPDATE analysis_requests SET status = ?, updated_at = ? WHERE id = ?', status, db.nowIso(), row.id);
+      // a rejected request returns its points once
+      if (status === 'rejected' && row.status !== 'rejected') {
+        const cost = (JSON.parse(row.summary).cost) || 0;
+        if (cost && !db.get("SELECT 1 FROM wallet_tx WHERE user_id = ? AND ref = ? AND delta > 0", row.created_by, row.ref)) commerce.move(row.created_by, cost, 'استرداد — رُفض الطلب ' + row.ref, row.ref);
+      }
       db.run('INSERT INTO request_events (request_id, user_id, status_from, status_to, note) VALUES (?, ?, ?, ?, ?)', row.id, me.id, status ? row.status : null, status || null, note || null);
       audit.write({ user: me, action: 'request.update', detail: `${row.ref}: ${status ? (STATUSES[row.status] + ' ← ' + STATUSES[status]) : 'ملاحظة'}${note ? ' — ' + note.slice(0, 120) : ''}`, ip: clientIp(req) });
     });
     send(res, 200, { ok: true });
+  });
+
+  // Attach more files to one's own request (e.g. the data file needed for the automatic analysis).
+  r.add('POST', '/api/requests/:id/files', async (req, res, p) => {
+    const me = requireUser(req);
+    const row = db.get('SELECT * FROM analysis_requests WHERE id = ?', +p.id);
+    if (!row || row.created_by !== me.id) throw new HttpError(404, 'not_found', 'Request not found');
+    if (db.get('SELECT 1 FROM reports WHERE request_id = ?', row.id)) throw bad('closed', 'صدر تقرير هذا الطلب ولا يمكن تعديل مرفقاته.');
+    const b = await readJson(req, 16 * 1024);
+    const ups = arr(b.uploads, 5, 64).map(id => db.get('SELECT * FROM uploads WHERE id = ?', id));
+    if (!ups.length || ups.some(u => !u || u.owner_id !== me.id || u.request_id)) throw bad('invalid_upload', 'أحد المرفقات غير صالح أو مستخدم مسبقًا.');
+    db.tx(() => {
+      for (const u of ups) db.run('UPDATE uploads SET request_id = ? WHERE id = ?', row.id, u.id);
+      db.run('INSERT INTO request_events (request_id, user_id, note) VALUES (?, ?, ?)', row.id, me.id, 'أُرفق ملف بيانات: ' + ups.map(u => u.original_name).join('، '));
+      audit.write({ user: me, action: 'request.attach', detail: `${row.ref}: أرفق ${ups.length} ملف`, ip: clientIp(req) });
+    });
+    send(res, 200, { ok: true });
+  });
+
+  // The sealed report: uploaded once (raw PDF body), stored with its SHA-256 and verification code, never replaced.
+  r.add('POST', '/api/requests/:id/report', async (req, res, p) => {
+    const me = requireUser(req);
+    const row = db.get('SELECT * FROM analysis_requests WHERE id = ?', +p.id);
+    if (!row || !(row.created_by === me.id || can(me, 'requests.manage'))) throw new HttpError(404, 'not_found', 'Request not found');
+    if (db.get('SELECT 1 FROM reports WHERE request_id = ?', row.id)) throw new HttpError(409, 'report_exists', 'صدر تقرير هذا الطلب مسبقًا.');
+    const code = String(req.headers['x-report-code'] || '');
+    if (!/^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw bad('invalid_code', 'رمز التحقق غير صالح.');
+    if (db.get('SELECT 1 FROM reports WHERE code = ?', code)) throw new HttpError(409, 'code_taken', 'الرمز مستخدم — أعد المحاولة.');
+    const max = 30 * 1048576, chunks = []; let size = 0;
+    for await (const ch of req) { size += ch.length; if (size > max) throw new HttpError(413, 'too_large', 'التقرير أكبر من 30MB.'); chunks.push(ch); }
+    const buf = Buffer.concat(chunks);
+    if (buf.length < 100 || buf.subarray(0, 5).toString() !== '%PDF-') throw bad('not_pdf', 'التقرير يجب أن يكون PDF.');
+    const sha = crypto.createHash('sha256').update(buf).digest('hex');
+    fs.mkdirSync(uploadDir(), { recursive: true });
+    const id = crypto.randomUUID(), stored = id + '.pdf';
+    fs.writeFileSync(path.join(uploadDir(), stored), buf, { flag: 'wx' });
+    const at = db.nowIso(), name = `NAIOSH_${row.ref}_${code}.pdf`;
+    db.tx(() => {
+      db.run(`INSERT INTO uploads (id, owner_id, request_id, kind, original_name, mime, size, sha256, stored_name) VALUES (?, ?, ?, 'report', ?, 'application/pdf', ?, ?, ?)`, id, row.created_by, row.id, name, buf.length, sha, stored);
+      db.run('INSERT INTO reports (request_id, upload_id, code, sha256, size, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', row.id, id, code, sha, buf.length, me.id, at);
+      db.run('UPDATE analysis_requests SET status = ?, updated_at = ? WHERE id = ?', 'done', at, row.id);
+      db.run('INSERT INTO request_events (request_id, user_id, status_from, status_to, note) VALUES (?, ?, ?, ?, ?)', row.id, me.id, row.status, 'done', 'صدر التقرير الموثّق ' + code);
+      audit.write({ user: me, action: 'report.issue', detail: `${row.ref}: تقرير موثّق ${code} — SHA-256 ${sha.slice(0, 16)}…`, ip: clientIp(req) });
+    });
+    send(res, 201, { ok: true, code, sha256: sha, at, size: buf.length });
+  });
+
+  r.add('GET', '/api/requests/:id/report', async (req, res, p) => {
+    const me = requireUser(req);
+    const row = db.get('SELECT r.created_by, r.ref, rp.code, x.stored_name, x.original_name, x.size FROM reports rp JOIN analysis_requests r ON r.id = rp.request_id JOIN uploads x ON x.id = rp.upload_id WHERE rp.request_id = ?', +p.id);
+    if (!row || !(row.created_by === me.id || can(me, 'requests.viewAll'))) throw new HttpError(404, 'not_found', 'Report not found');
+    audit.write({ user: me, action: 'report.download', detail: `نزّل التقرير ${row.code}`, ip: clientIp(req) });
+    res.writeHead(200, { 'Content-Type': 'application/pdf', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store', 'Content-Length': row.size,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(row.original_name)}` });
+    fs.createReadStream(path.join(uploadDir(), row.stored_name)).pipe(res);
+  });
+
+  // Public check: is this report genuine? (code → reference, date and fingerprint; no personal data)
+  r.add('GET', '/api/public/reports/:code', async (req, res, p) => {
+    const code = String(p.code || '').toUpperCase();
+    const row = /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(code) && db.get('SELECT rp.code, rp.sha256, rp.size, rp.created_at, r.ref, r.title FROM reports rp JOIN analysis_requests r ON r.id = rp.request_id WHERE rp.code = ?', code);
+    if (!row) throw new HttpError(404, 'not_found', 'لا يوجد تقرير بهذا الرمز.');
+    send(res, 200, { code: row.code, ref: row.ref, title: row.title, issuedAt: row.created_at, sha256: row.sha256, size: row.size });
   });
 
   // Download / stream an attachment (owner of the request or anyone allowed to view all requests).

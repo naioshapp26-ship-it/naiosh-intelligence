@@ -165,6 +165,72 @@ test('admin safety: cannot deactivate self or the last admin; deactivation ends 
   assert.equal((await clientB('GET', '/api/auth/me')).status, 401);
 });
 
+test('contact messages: visitors send, validation, honeypot, staff manage, others blocked', async () => {
+  const v = client();
+  let r = await v('POST', '/api/public/messages', { kind: 'complaint', name: 'س', body: 'قصير' });
+  assert.equal(r.status, 400); assert.ok(r.body.errors.name && r.body.errors.email && r.body.errors.body);
+  r = await v('POST', '/api/public/messages', { kind: 'suggestion', name: 'زائر', email: 'v@example.com', body: 'أقترح إضافة تقرير شهري تلقائي.' });
+  assert.equal(r.status, 201); assert.match(r.body.ref, /^MSG-\d{4}-001$/);
+  r = await v('POST', '/api/public/messages', { kind: 'inquiry', name: 'bot', email: 'b@x.co', body: 'spam spam spam spam', website: 'http://spam' });
+  assert.equal(r.status, 201); assert.equal(r.body.ref, 'MSG-0');
+  assert.equal((await v('GET', '/api/messages')).status, 401);
+  const list = await admin('GET', '/api/messages');
+  assert.equal(list.status, 200); assert.equal(list.body.scope, 'all'); assert.equal(list.body.messages.length, 1);
+  const id = list.body.messages[0].id;
+  r = await admin('PATCH', '/api/messages/' + id, { status: 'closed', note: 'شكرًا، أُضيف للخطة' });
+  assert.equal(r.status, 200); assert.equal(r.body.message.status, 'closed');
+  for (let i = 0; i < 8; i++) await v('POST', '/api/public/messages', { kind: 'inquiry', name: 'زائر', email: 'v@example.com', body: 'رسالة اختبار رقم ' + i });
+  r = await v('POST', '/api/public/messages', { kind: 'inquiry', name: 'زائر', email: 'v@example.com', body: 'رسالة بعد تجاوز الحد' });
+  assert.equal(r.status, 429);
+});
+
+test('sign-up: real name, unique email and phone, both codes verified, welcome points, costs and sealed report', async () => {
+  const v = client();
+  let r = await v('POST', '/api/public/register', { name: 'سعد', email: 'bad', phone: '12', password: 'short', accept: false });
+  assert.equal(r.status, 400); assert.ok(r.body.errors.name && r.body.errors.email && r.body.errors.phone && r.body.errors.password && r.body.errors.accept);
+  r = await v('POST', '/api/public/register', { name: 'سعد الخطيب', email: 'saad@example.com', phone: '+962 79 555 1234', password: 'SaadPass2026', accept: true });
+  assert.equal(r.status, 201); assert.equal(r.body.phone, '+962795551234'); assert.match(r.body.demo.email, /^\d{6}$/);
+  const { id, demo } = r.body;
+  r = await v('POST', '/api/public/register/verify', { id, emailCode: demo.email, smsCode: '000000' });
+  assert.equal(r.status, 400); assert.ok(r.body.errors.smsCode && !r.body.errors.emailCode);
+  r = await v('POST', '/api/public/register/resend', { id }); assert.equal(r.status, 429);
+  r = await v('POST', '/api/public/register/verify', { id, emailCode: demo.email, smsCode: demo.sms });
+  assert.equal(r.status, 201); assert.equal(r.body.user.role, 'client'); assert.equal(r.body.welcomePoints, 300);
+  assert.equal((await v('GET', '/api/auth/me')).status, 200);
+  r = await v('GET', '/api/wallet'); assert.equal(r.body.balance, 300); assert.equal(r.body.requestCost, 50);
+  // the same email or phone cannot open a second account
+  r = await anon('POST', '/api/public/register', { name: 'شخص آخر', email: 'SAAD@example.com', phone: '+962795551234', password: 'OtherPass2026', accept: true });
+  assert.equal(r.status, 400); assert.ok(r.body.errors.email && r.body.errors.phone);
+  // a request costs points
+  const payload = { name: 'سعد الخطيب', email: 'saad@example.com', domain: 'D03', types: ['desc'], title: 'تحليل المشاريع', question: 'هل نسير حسب الخطة؟', consent: true, axis: 'pmo', axisLabel: 'مكتب إدارة المشاريع' };
+  r = await v('POST', '/api/requests', { payload, summary: { suff: 50 }, uploads: [] });
+  assert.equal(r.status, 201); assert.equal(r.body.request.cost, 50); assert.equal(r.body.request.axisLabel, 'مكتب إدارة المشاريع');
+  const rid = r.body.request.id;
+  assert.equal((await v('GET', '/api/wallet')).body.balance, 250);
+  // demo top-up
+  r = await v('POST', '/api/wallet/topup', { pack: 'p100' }); assert.equal(r.status, 200); assert.equal(r.body.balance, 350);
+  // sealed report: once, verifiable, immutable
+  const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(400, 65)]);
+  r = await v('POST', `/api/requests/${rid}/report`, pdf, { 'Content-Type': 'application/pdf', 'X-Report-Code': 'bad' }); assert.equal(r.status, 400);
+  r = await v('POST', `/api/requests/${rid}/report`, pdf, { 'Content-Type': 'application/pdf', 'X-Report-Code': 'ABCDE-23456' });
+  assert.equal(r.status, 201); const sha = require('node:crypto').createHash('sha256').update(pdf).digest('hex'); assert.equal(r.body.sha256, sha);
+  r = await v('POST', `/api/requests/${rid}/report`, pdf, { 'Content-Type': 'application/pdf', 'X-Report-Code': 'ABCDE-23457' }); assert.equal(r.status, 409);
+  r = await v('GET', `/api/requests/${rid}/report`); assert.equal(r.status, 200);
+  r = await anon('GET', '/api/public/reports/ABCDE-23456'); assert.equal(r.status, 200); assert.equal(r.body.sha256, sha);
+  assert.equal((await anon('GET', '/api/public/reports/ZZZZZ-ZZZZZ')).status, 404);
+  assert.ok([401, 404].includes((await clientB('GET', `/api/requests/${rid}/report`)).status));
+  assert.equal((await analyst('GET', `/api/requests/${rid}/report`)).status, 200);
+  assert.throws(() => db.run('UPDATE reports SET sha256 = ? WHERE code = ?', 'x', 'ABCDE-23456'), /immutable/);
+  // rejection refunds once
+  await admin('PATCH', '/api/requests/' + rid, { status: 'rejected' });
+  await admin('PATCH', '/api/requests/' + rid, { status: 'review' });
+  await admin('PATCH', '/api/requests/' + rid, { status: 'rejected' });
+  assert.equal((await v('GET', '/api/wallet')).body.balance, 400);
+  // not enough points
+  for (let i = 0; i < 8; i++) await v('POST', '/api/requests', { payload, summary: { suff: 50 }, uploads: [] });
+  r = await v('POST', '/api/requests', { payload, summary: { suff: 50 }, uploads: [] }); assert.equal(r.status, 402);
+});
+
 test('password change and login throttling', async () => {
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'nope', next: 'NewPassword2026' })).status, 400);
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'Password2026', next: 'short' })).status, 400);

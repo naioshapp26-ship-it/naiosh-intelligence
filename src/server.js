@@ -14,6 +14,8 @@ require('./routes/auth')(router);
 require('./routes/content')(router);
 require('./routes/users')(router);
 require('./routes/ledger')(router);
+require('./routes/messages')(router);
+require('./routes/accounts')(router);
 const requests = require('./routes/requests');
 requests(router);
 

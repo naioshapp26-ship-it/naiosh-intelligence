@@ -25,6 +25,11 @@ const config = {
     filesPerRequest: 20,
     videosPerRequest: 5
   },
+  // Sign-up verification codes: 'demo' shows the codes on screen (no email/SMS is sent); 'live' sends them
+  // through Resend (RESEND_API_KEY, MAIL_FROM) and Twilio (TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM).
+  verifyMode: env.VERIFY_MODE === 'live' ? 'live' : 'demo',
+  // Wallet top-ups: 'demo' adds points without any payment. A real gateway is connected later.
+  paymentMode: env.PAYMENT_MODE === 'live' ? 'live' : 'demo',
   admin: {
     email: env.ADMIN_EMAIL || '',
     password: env.ADMIN_PASSWORD || '',
