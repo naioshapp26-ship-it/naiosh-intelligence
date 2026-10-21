@@ -9,6 +9,18 @@
 .hm-rq code{font:600 11px var(--f-mono);color:var(--faint);direction:ltr}
 .hm-rq b{flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:640px){.hide-sm{display:none}}
+/* side menu hidden by default; menu icon always visible */
+.app.rd-noside{grid-template-columns:minmax(0,1fr)}
+@media (min-width:981px){.app.rd-noside .side{display:none}}
+.top .menu-btn{display:inline-flex!important}
+.top .menu-btn[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow)}
+.tb-pts{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;border-radius:20px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-size:13px;white-space:nowrap}
+.tb-pts b{font:800 15px var(--f-mono);color:var(--yellow)}
+.tb-pts:hover{border-color:var(--yellowline)}
+.tb-top{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:9px;border:0;background:linear-gradient(180deg,#ff3b57,#c90c28);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap}
+.tb-top:hover{filter:brightness(1.1)}
+@media (max-width:1300px){.tb-pts-l{display:none}}
+@media (max-width:760px){.tb-top span{display:none}.tb-top{padding:0 10px}.tb-end .who{display:none}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -206,6 +218,7 @@ document.addEventListener('input', (e) => {
   const d = e.target.dataset || {};
   if (d.rg) { const f = S.rg || (S.rg = {}); f[d.rg] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (RG_ERR[d.rg]) { delete RG_ERR[d.rg]; e.target.removeAttribute('aria-invalid'); const er = e.target.closest('.au-f'); const s = er && er.querySelector('.err'); if (s) s.remove(); } }
   if (d.lg) (S.lg || (S.lg = {}))[d.lg] = e.target.value;
+  if (S.rgv && (e.target.id === 'rg-ec' || e.target.id === 'rg-sc')) S.rgv[e.target.id === 'rg-ec' ? 'ec' : 'sc'] = e.target.value;
 });
 document.addEventListener('change', (e) => { const d = e.target.dataset || {}; if (d.rg) (S.rg || (S.rg = {}))[d.rg] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
 document.addEventListener('submit', async (e) => {
@@ -267,7 +280,7 @@ document.addEventListener('submit', async (e) => {
   }
 });
 function rdSignIn(acct, fresh) {
-  S.acct = { name: acct.name, email: acct.email, phone: acct.phone, org: acct.org };
+  S.acct = { name: acct.name, email: acct.email, phone: acct.phone, org: acct.org, client: true }; S.sideOpen = false; S.menu = false;
   S.guest = false; S.rgv = null; S.rg = null; S.lg = null; RG_ERR = {};
   if (fresh) { const w = +((CFG.commerce || {}).welcomePoints) || 0; S.wal = { bal: w, tx: [{ t: 'هدية الترحيب', pts: w, at: new Date().toISOString().slice(0, 10) }] }; S.requests = []; S.jobs = {}; }
   if (typeof log === 'function') log(acct.name, fresh ? 'أنشأ حسابًا موثّقًا بالبريد والجوال' : 'تسجيل دخول');
@@ -382,6 +395,7 @@ async function rdDataFile(ref) {
 async function rdLoadData(ref) {
   const file = await rdDataFile(ref); if (!file) return null;
   const q = (S.requests || []).find(x => x.ref === ref) || {};
+  if (rdServer() && q.id && q.capex === undefined) { try { const d = await api('GET', '/api/requests/' + q.id); Object.assign(q, { types: d.request.payload.types, systems: d.request.payload.systems, capex: d.request.payload.capex, currency: d.request.payload.currency }); } catch (e) {} }
   const { name, rows } = await anReadFile(file);
   if (!rdServer()) { const csv = anRowsToCSV(rows); if (csv.length < 300000) (S.jobData || (S.jobData = {}))[ref] = csv; rdJobs()[ref].dataName = name; }
   anLoad(rows, name, 'request', { ref, types: q.types || ['desc', 'diag'], systems: q.systems || [], title: q.axisLabel || q.title || '', capex: q.capex, currency: q.currency });
@@ -568,4 +582,53 @@ function rd2Handle(act, k, el) {
 }
 const _rd2H = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && rd2Handle(act, k, el)) return true; return _rd2H(act, k, el); };
+
+/* ---------- side menu: hidden for everyone, opened from the menu icon by the NAIOSH team only ---------- */
+const RD_CLIENT_OK = ['home', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
+function rdIsAdmin() {
+  if (rdGuest()) return false;
+  if (rdServer()) return typeof ME !== 'undefined' && !!ME && ME.role !== 'client';
+  return !(S.acct && S.acct.client);
+}
+function rdCanRoute(r) { return rdIsAdmin() || RD_CLIENT_OK.includes(r) || !VIEWS[r]; }
+TITLES.denied = ['صلاحيات الوصول', 'غير مسموح'];
+function rdGuardViews() {
+  Object.keys(VIEWS).forEach(k => {
+    const f = VIEWS[k]; if (k === 'denied' || f.rdGuard) return;
+    const g = function () { if (!rdGuest() && !rdCanRoute(k)) { S.deniedFrom = k; return VIEWS.denied(); } return f.apply(this, arguments); };
+    g.rdGuard = true; VIEWS[k] = g;
+  });
+}
+VIEWS.denied = () => `<section class="card" style="align-items:center;text-align:center;gap:14px;padding:48px 20px">
+  <span style="width:72px;height:72px;border-radius:36px;display:flex;align-items:center;justify-content:center;background:var(--redbg);border:1px solid var(--redline);color:var(--red)">${ic('lock', 34)}</span>
+  <h2 class="title-xl" style="font-size:26px">غير مسموح لك بعرض هذه الصفحة</h2>
+  <p class="muted" style="margin:0;max-width:520px;line-height:1.8">${S.deniedFrom && TITLES[S.deniedFrom] ? '«' + esc(TITLES[S.deniedFrom][1]) + '» ' : 'هذه الصفحة '}متاحة لفريق إدارة نايوش فقط. يمكنك طلب تحليل أي محور ومتابعة تقاريرك من القائمة العلوية.</p>
+  <div class="row" style="gap:8px;justify-content:center"><button type="button" class="btn primary" data-go="axes">${ic('axes', 16)}محاور التحليل</button><button type="button" class="btn" data-go="myreqs">${ic('myreqs', 16)}طلباتي وتقاريري</button><button type="button" class="btn" data-go="home">الرئيسية</button></div></section>`;
+function rdDenied(what) {
+  let m = document.getElementById('rd-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'rd-modal'; m.setAttribute('dir', 'rtl'); document.body.appendChild(m); }
+  RD_MOD = { kind: 'denied' };
+  m.innerHTML = `<div class="rd-ov" data-act="rd-close-bg"><div class="rd-dlg" role="alertdialog" aria-modal="true" aria-labelledby="rd-mt" style="align-items:center;text-align:center;width:min(440px,100%)">
+    <span style="width:60px;height:60px;border-radius:30px;display:flex;align-items:center;justify-content:center;background:var(--redbg);border:1px solid var(--redline);color:var(--red)">${ic('lock', 28)}</span>
+    <h2 id="rd-mt" class="h-sec" style="font-size:20px">غير مسموح لك بعرض هذه الصفحة</h2>
+    <p class="muted" style="margin:0;font-size:13.5px;line-height:1.8">${what ? esc(what) + ' متاحة' : 'هذه الصفحة متاحة'} لفريق إدارة نايوش فقط.</p>
+    <button type="button" class="btn primary" data-act="rd-close" style="min-width:140px">حسنًا</button></div></div>`;
+  const b = m.querySelector('.btn.primary'); if (b) b.focus();
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest) return;
+  const mb = e.target.closest('[data-act="menu"]');
+  if (mb) {
+    e.stopPropagation(); e.preventDefault();
+    if (!rdIsAdmin()) { rdDenied('القائمة الجانبية'); return; }
+    if (window.innerWidth > 980) { S.sideOpen = !S.sideOpen; render(); return; }
+    S.menu = !S.menu; document.getElementById('app').classList.toggle('open', S.menu); mb.setAttribute('aria-pressed', String(S.menu)); return;
+  }
+  if (rdGuest() || rdIsAdmin()) return;
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  const a = e.target.closest('[data-act]'); if (a && g.contains(a)) return;
+  if (rdCanRoute(g.dataset.go)) return;
+  e.stopPropagation(); e.preventDefault();
+  rdDenied(TITLES[g.dataset.go] ? '«' + TITLES[g.dataset.go][1] + '»' : '');
+}, true);
 </script>

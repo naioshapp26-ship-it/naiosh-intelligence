@@ -6378,6 +6378,7 @@ engSections3 = function (code) {
 .tb-sub .crumb{flex:1;min-width:0}
 .top .menu-btn{display:none}
 @media (max-width:980px){.top .menu-btn{display:inline-flex}}
+@media (max-width:1560px){.tb-nav button{padding:0 9px;font-size:14px}.tb-end .who{display:none}}
 @media (max-width:1100px){.tb-row{gap:8px;padding:8px 12px}.tb-nav button{padding:0 10px;font-size:14px}.tb-end .who{display:none}}
 @media (max-width:640px){.tb-logo img{width:36px;height:36px}.tb-row{min-height:56px}.tb-nav button{height:36px;font-size:13px;padding:0 9px}.tb-end [data-go="settings"],.tb-end [data-go="governance"]{display:none}.tb-sub{padding:8px 12px;min-height:48px}.tb-login span{display:none}.tb-login{padding:0 10px}.tb-tick{font-size:11.5px;padding:0 8px}}
 
@@ -6567,7 +6568,7 @@ Object.assign(TITLES, {
   contact: ['الشكاوى · المقترحات · الاستفسارات', 'اتصل بنا']
 });
 const RD_PUBLIC = ['home', 'axes', 'hub', 'info', 'contact', 'register', 'verify'];
-const RD_TOP = [['home', 'الرئيسية'], ['axes', 'محاور التحليل'], ['myreqs', 'طلباتي وتقاريري'], ['hub', 'نايوش هوب'], ['info', 'مركز المعلومات'], ['contact', 'اتصل بنا'], ['self', 'أنا 360']];
+const RD_TOP = [['home', 'الرئيسية'], ['axes', 'محاور التحليل'], ['myreqs', 'طلباتي وتقاريري'], ['hub', 'نايوش هوب'], ['sug', 'المقترحات', 'rd-contact', 'suggestion', 'bulb'], ['cmp', 'الشكاوى', 'rd-contact', 'complaint', 'risks'], ['info', 'مركز المعلومات'], ['contact', 'اتصل بنا'], ['self', 'أنا 360']];
 const RD_CURS = { JOD: 'د.أ', SAR: 'ر.س', AED: 'د.إ', KWD: 'د.ك', QAR: 'ر.ق', BHD: 'د.ب', OMR: 'ر.ع', EGP: 'ج.م', USD: '$', CAD: 'CAD', EUR: '€', GBP: '£' };
 const rdCur = () => { const c = String((CFG.commerce || {}).currency || 'JOD'); return RD_CURS[c] || c; };
 const rdPacks = () => (CFG.packs || []).filter(p => p && +p.pts > 0).map((p, i) => ({ ...p, id: p.id || 'p' + i, pts: +p.pts, price: +p.price || 0 }));
@@ -6614,26 +6615,33 @@ function rdTicker() {
 const _rdRenderTop = renderTop;
 renderTop = function () {
   if (S.guest && !RD_PUBLIC.includes(S.route)) S.route = 'home';
-  const R = effRoute(), act = rdNavActive(R), [crumb, title] = TITLES[R] || ['', ''];
-  const guest = rdGuest();
-  const nav = RD_TOP.filter(([id]) => !(guest && id === 'myreqs')).map(([id, l]) => `<button type="button" data-go="${id}" class="${id === 'self' ? 'tb-me' : ''}" ${act === id ? 'aria-current="page"' : ''}>${guest && !RD_PUBLIC.includes(id) ? ic('lock', 13, 'style="opacity:.6"') : ''}${l}</button>`).join('');
+  if (typeof rdGuardViews === 'function') rdGuardViews();
+  const admin = typeof rdIsAdmin === 'function' ? rdIsAdmin() : true;
+  document.getElementById('app').classList.toggle('rd-noside', !(admin && S.sideOpen));
+  const R0 = effRoute(), R = !rdGuest() && typeof rdCanRoute === 'function' && !rdCanRoute(R0) ? 'denied' : R0, [crumb, title] = TITLES[R] || ['', ''];
+  const guest = rdGuest(), ck = (S.cform || {}).kind;
+  const act = R === 'contact' && ck === 'suggestion' ? 'sug' : R === 'contact' && ck === 'complaint' ? 'cmp' : rdNavActive(R);
+  const nav = RD_TOP.filter(([id]) => !(guest && id === 'myreqs')).map(([id, l, a, k, i]) => `<button type="button" ${a ? `data-act="${a}" data-k="${k}"` : `data-go="${id}"`} class="${id === 'self' ? 'tb-me' : ''}" ${act === id ? 'aria-current="page"' : ''}>${guest && !a && !RD_PUBLIC.includes(id) ? ic('lock', 13, 'style="opacity:.6"') : i ? ic(i, 15, 'style="opacity:.85"') : ''}${l}</button>`).join('');
+  const me = typeof rdAcct === 'function' ? rdAcct() : { name: 'د. عدنان' };
   const end = guest
     ? `<button type="button" class="tb-login" data-act="rd-signup">${ic('star', 16)}<span>إنشاء حساب</span></button><button type="button" class="btn sm" data-act="rd-login" style="height:40px">${ic('login', 16)}<span class="hide-sm">دخول</span></button>`
-    : `<button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
-       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
-       <span class="avatar" aria-hidden="true">${esc(CFG.identity.userInitial || '')}</span>
-       <span class="who"><b>د. عدنان</b><span>صاحب قرار · الإدارة العليا</span></span>
+    : `<button type="button" class="tb-pts" data-act="rd-hub" data-k="wallet" title="نقاطك — المحفظة">${ic('wallet', 16)}<span class="tb-pts-l">نقاطك</span><b>${rdNum(rdWal().bal)}</b></button>
+       <button type="button" class="tb-top" data-act="rd-topup">${ic('plus', 15)}<span>اشحن رصيدك</span></button>
+       ${admin ? `<button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
+       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>` : ''}
+       <span class="avatar" aria-hidden="true">${esc(admin ? (CFG.identity.userInitial || '') : String(me.name || '؟').trim()[0])}</span>
+       ${admin ? '<span class="who"><b>د. عدنان</b><span>صاحب قرار · الإدارة العليا</span></span>' : `<span class="who"><b>${esc(me.name)}</b><span>عميل</span></span>`}
        <button type="button" class="icon-btn" data-act="rd-logout" aria-label="تسجيل الخروج" title="تسجيل الخروج">${ic('logout', 18)}</button>`;
   const sub = R === 'home' ? '' : `<div class="tb-sub">
       ${(R !== 'home' || (S.hist || []).length) ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back', 16)}<span>رجوع</span></button>` : ''}
       <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
       ${rdSearchBox('global-search', 'ابحث في المحاور، الاستشارات، المخاطر…')}
       ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
-      ${guest ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
+      ${guest || !admin ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
     </div>`;
   document.getElementById('top').innerHTML = `${rdTicker()}
     <div class="tb-row">
-      <button type="button" class="icon-btn menu-btn" data-act="menu" aria-label="فتح القائمة">${ic('menu', 20)}</button>
+      <button type="button" class="icon-btn menu-btn" data-act="menu" aria-label="القائمة الجانبية" title="القائمة الجانبية" aria-pressed="${admin && (S.sideOpen || S.menu) ? 'true' : 'false'}">${ic('menu', 20)}</button>
       <button type="button" class="tb-logo" data-go="home" aria-label="الرئيسية"><img src="${LOGO_SRC}" alt=""></button>
       <nav class="tb-nav" aria-label="القائمة العلوية">${nav}</nav>
       <div class="tb-end">${end}</div>
@@ -6648,7 +6656,7 @@ renderSide = function () {
 };
 function rdBot() {
   let b = document.getElementById('rd-bot');
-  const show = !S.tour.on && effRoute() !== 'ask';
+  const show = !S.tour.on && effRoute() !== 'ask' && (typeof rdIsAdmin !== 'function' || rdIsAdmin());
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'rd-bot'; b.className = 'hm-bot'; b.setAttribute('aria-label', 'اسأل نايوش'); b.title = 'اسأل نايوش'; b.dataset.act = 'rd-bot'; document.body.appendChild(b); }
   b.innerHTML = ic('bot', 26);
@@ -6673,7 +6681,7 @@ function rdSearch(q) {
   const n = rdNorm(q).trim(); if (!n) return [];
   const words = n.split(/\s+/);
   return rdIndex().map(o => { const a = rdNorm(o.t), b = rdNorm(o.s); let sc = 0; for (const w of words) { if (a.includes(w)) sc += a.startsWith(w) ? 3 : 2; else if (b.includes(w)) sc += 1; else return null; } return [sc, o]; })
-    .filter(Boolean).sort((x, y) => y[0] - x[0]).slice(0, 9).map(x => x[1]);
+    .filter(Boolean).filter(x => !x[1].go || typeof rdCanRoute !== 'function' || rdGuest() || rdCanRoute(x[1].go)).sort((x, y) => y[0] - x[0]).slice(0, 9).map(x => x[1]);
 }
 let RD_HITS = [];
 function rdShowHits(inp) {
@@ -6749,7 +6757,7 @@ function hmMatrix() {
     <div class="hm-h"><h2>مصفوفة المخاطر</h2><small>اضغط على خطر</small></div>
     <div class="hm-mx"><span class="ax">الأثر ←</span><div class="stack" style="gap:4px"><div class="hm-mxg">${cells}</div><span class="faint" style="font-size:10.5px;text-align:center">الاحتمال ←</span></div></div>
     ${sel ? `<button type="button" class="hm-rsel" data-act="hm-risk-open" data-k="${esc(sel.id)}"><span class="tag ${L[0]}">${L[1]}</span><b style="flex:1;font-weight:600">${esc(sel.name)}</b><code style="font:600 11px var(--f-mono);color:var(--faint)">${esc(sel.id)}</code></button>` : ''}
-    <button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button></section>`;
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || rdGuest() ? `<button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button>` : `<button type="button" class="hm-ask" data-go="axes">${ic('axes', 26)}اطلب تحليلك</button>`}</section>`;
 }
 function hmJourney() {
   const st = cnsStage(), done = S.lessonApproved ? 12 : S.measured ? 12 : S.decided ? 11 : S.qDone ? 9 : S.askStage === 1 ? 4 : 2;
@@ -6801,26 +6809,27 @@ function hmServices() {
 }
 function rdHome() {
   const guest = rdGuest(), st = cnsStage();
+  const staff = guest || typeof rdIsAdmin !== 'function' || rdIsAdmin(), pub = guest || !staff;
   const hello = guest
     ? `<div class="hm-guest">${ic('star', 22, 'style="color:var(--yellow)"')}<p><b style="color:var(--yellow)">مرحبا بك في نايوش للتحليل.</b> ما تراه الآن بيانات نموذجية توضح كيف تعمل المنظومة. أنشئ حسابك (بريد وجوال موثّقان) واحصل على نقاط ترحيب لتطلب تحليل بياناتك وتستلم تقريرًا موثّقًا.</p><span class="row" style="gap:8px"><button type="button" class="btn primary" data-act="rd-signup">${ic('star', 16)}إنشاء حساب</button><button type="button" class="btn" data-act="rd-login">${ic('login', 16)}دخول</button></span></div>`
-    : `<div class="hm-hello"><div class="stack" style="gap:2px"><h2 class="title-xl">${esc(rdGreet())} د. عدنان</h2><p class="lead" style="margin:0">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p></div>
-       <div class="row" style="gap:8px"><button type="button" class="btn sm" data-go="axes">${ic('axes', 15)}اختر محور التحليل</button><button type="button" class="btn sm" data-go="myreqs">${ic('myreqs', 15)}طلباتي وتقاريري</button><button type="button" class="btn sm y" data-go="ask">${ic('ask', 15)}اسأل نايوش</button></div></div>`;
+    : `<div class="hm-hello"><div class="stack" style="gap:2px"><h2 class="title-xl">${esc(rdGreet())} ${esc(staff ? 'د. عدنان' : rdAcct().name)}</h2><p class="lead" style="margin:0">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p></div>
+       <div class="row" style="gap:8px"><button type="button" class="btn sm" data-go="axes">${ic('axes', 15)}اختر محور التحليل</button><button type="button" class="btn sm" data-go="myreqs">${ic('myreqs', 15)}طلباتي وتقاريري</button>${staff ? `<button type="button" class="btn sm y" data-go="ask">${ic('ask', 15)}اسأل نايوش</button>` : ''}</div></div>`;
   const journey = `<section class="card" style="gap:10px;padding:14px 16px">
-      <div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">${guest ? 'رحلة الاستشارة · 13 مرحلة' : 'PROACTIVE CONSULTATION · CNS-001'}</span><h2 class="h-sec" style="font-size:15.5px">${guest ? 'من المشكلة إلى التعلم — كل استشارة تمر بهذه المراحل' : `انخفاض أداء الفرع الشمالي — المرحلة الآن: <span style="color:var(--yellow)">${st.name}</span>`}</h2></div>
-      ${guest ? '<button type="button" class="btn sm" data-go="info">كيف تعمل؟</button>' : `<button type="button" class="btn primary sm" data-go="${nextRoute()[0]}">${nextRoute()[1]}${ic('chev', 16)}</button>`}</div>
+      <div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">${pub ? 'رحلة الاستشارة · 13 مرحلة' : 'PROACTIVE CONSULTATION · CNS-001'}</span><h2 class="h-sec" style="font-size:15.5px">${pub ? 'من المشكلة إلى التعلم — كل استشارة تمر بهذه المراحل' : `انخفاض أداء الفرع الشمالي — المرحلة الآن: <span style="color:var(--yellow)">${st.name}</span>`}</h2></div>
+      ${pub ? '<button type="button" class="btn sm" data-go="info">كيف تعمل؟</button>' : `<button type="button" class="btn primary sm" data-go="${nextRoute()[0]}">${nextRoute()[1]}${ic('chev', 16)}</button>`}</div>
       ${stepper(st.idx)}</section>`;
   let kpiRow = '';
-  const more = guest ? '' : (() => {
+  const more = guest || (typeof rdIsAdmin === 'function' && !rdIsAdmin()) ? '' : (() => {
     let old = _lnHome(); const cut = old.indexOf('</section>');
     old = cut < 0 ? old : old.slice(cut + 10);
     const m = old.match(/<section class="grid g4" aria-label="المؤشرات الرئيسية">[\s\S]*?<\/section>/);
     if (m) { kpiRow = m[0]; old = old.replace(m[0], ''); }
     return `<details class="hm-more" ${S.hmMore ? 'open' : ''}><summary data-act="hm-more">${ic('architecture', 18, 'style="color:var(--yellow)"')}<span style="flex:1">مركز القيادة التفصيلي — المؤشرات والتنبيهات والاستشارات</span><span class="faint" style="font-size:12px">${S.hmMore ? 'إخفاء ▴' : 'عرض ▾'}</span></summary><div>${old}</div></details>`;
   })();
-  return `<div class="hm">${hello}${journey}${kpiRow}
+  return `<div class="hm">${hello}${journey}${pub ? '' : kpiRow}
     <div class="hm-grid">${hmThreeSteps()}${hmQuality()}${hmMatrix()}${hmJourney()}</div>
     <div class="hm-grid">${hmRegister()}${hmForecast()}${hmServices()}</div>
-    ${homeLauncher()}${more}</div>`;
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || guest ? homeLauncher() + more : ''}</div>`;
 }
 VIEWS.home = rdHome;
 
@@ -7039,6 +7048,18 @@ analyticsHandle = function (act, k, el) { if (act && (act.startsWith('rd-') || a
 .hm-rq code{font:600 11px var(--f-mono);color:var(--faint);direction:ltr}
 .hm-rq b{flex:1;font-size:13px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:640px){.hide-sm{display:none}}
+/* side menu hidden by default; menu icon always visible */
+.app.rd-noside{grid-template-columns:minmax(0,1fr)}
+@media (min-width:981px){.app.rd-noside .side{display:none}}
+.top .menu-btn{display:inline-flex!important}
+.top .menu-btn[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow)}
+.tb-pts{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;border-radius:20px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-size:13px;white-space:nowrap}
+.tb-pts b{font:800 15px var(--f-mono);color:var(--yellow)}
+.tb-pts:hover{border-color:var(--yellowline)}
+.tb-top{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:9px;border:0;background:linear-gradient(180deg,#ff3b57,#c90c28);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap}
+.tb-top:hover{filter:brightness(1.1)}
+@media (max-width:1300px){.tb-pts-l{display:none}}
+@media (max-width:760px){.tb-top span{display:none}.tb-top{padding:0 10px}.tb-end .who{display:none}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -7236,6 +7257,7 @@ document.addEventListener('input', (e) => {
   const d = e.target.dataset || {};
   if (d.rg) { const f = S.rg || (S.rg = {}); f[d.rg] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (RG_ERR[d.rg]) { delete RG_ERR[d.rg]; e.target.removeAttribute('aria-invalid'); const er = e.target.closest('.au-f'); const s = er && er.querySelector('.err'); if (s) s.remove(); } }
   if (d.lg) (S.lg || (S.lg = {}))[d.lg] = e.target.value;
+  if (S.rgv && (e.target.id === 'rg-ec' || e.target.id === 'rg-sc')) S.rgv[e.target.id === 'rg-ec' ? 'ec' : 'sc'] = e.target.value;
 });
 document.addEventListener('change', (e) => { const d = e.target.dataset || {}; if (d.rg) (S.rg || (S.rg = {}))[d.rg] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
 document.addEventListener('submit', async (e) => {
@@ -7297,7 +7319,7 @@ document.addEventListener('submit', async (e) => {
   }
 });
 function rdSignIn(acct, fresh) {
-  S.acct = { name: acct.name, email: acct.email, phone: acct.phone, org: acct.org };
+  S.acct = { name: acct.name, email: acct.email, phone: acct.phone, org: acct.org, client: true }; S.sideOpen = false; S.menu = false;
   S.guest = false; S.rgv = null; S.rg = null; S.lg = null; RG_ERR = {};
   if (fresh) { const w = +((CFG.commerce || {}).welcomePoints) || 0; S.wal = { bal: w, tx: [{ t: 'هدية الترحيب', pts: w, at: new Date().toISOString().slice(0, 10) }] }; S.requests = []; S.jobs = {}; }
   if (typeof log === 'function') log(acct.name, fresh ? 'أنشأ حسابًا موثّقًا بالبريد والجوال' : 'تسجيل دخول');
@@ -7412,6 +7434,7 @@ async function rdDataFile(ref) {
 async function rdLoadData(ref) {
   const file = await rdDataFile(ref); if (!file) return null;
   const q = (S.requests || []).find(x => x.ref === ref) || {};
+  if (rdServer() && q.id && q.capex === undefined) { try { const d = await api('GET', '/api/requests/' + q.id); Object.assign(q, { types: d.request.payload.types, systems: d.request.payload.systems, capex: d.request.payload.capex, currency: d.request.payload.currency }); } catch (e) {} }
   const { name, rows } = await anReadFile(file);
   if (!rdServer()) { const csv = anRowsToCSV(rows); if (csv.length < 300000) (S.jobData || (S.jobData = {}))[ref] = csv; rdJobs()[ref].dataName = name; }
   anLoad(rows, name, 'request', { ref, types: q.types || ['desc', 'diag'], systems: q.systems || [], title: q.axisLabel || q.title || '', capex: q.capex, currency: q.currency });
@@ -7598,6 +7621,55 @@ function rd2Handle(act, k, el) {
 }
 const _rd2H = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && rd2Handle(act, k, el)) return true; return _rd2H(act, k, el); };
+
+/* ---------- side menu: hidden for everyone, opened from the menu icon by the NAIOSH team only ---------- */
+const RD_CLIENT_OK = ['home', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
+function rdIsAdmin() {
+  if (rdGuest()) return false;
+  if (rdServer()) return typeof ME !== 'undefined' && !!ME && ME.role !== 'client';
+  return !(S.acct && S.acct.client);
+}
+function rdCanRoute(r) { return rdIsAdmin() || RD_CLIENT_OK.includes(r) || !VIEWS[r]; }
+TITLES.denied = ['صلاحيات الوصول', 'غير مسموح'];
+function rdGuardViews() {
+  Object.keys(VIEWS).forEach(k => {
+    const f = VIEWS[k]; if (k === 'denied' || f.rdGuard) return;
+    const g = function () { if (!rdGuest() && !rdCanRoute(k)) { S.deniedFrom = k; return VIEWS.denied(); } return f.apply(this, arguments); };
+    g.rdGuard = true; VIEWS[k] = g;
+  });
+}
+VIEWS.denied = () => `<section class="card" style="align-items:center;text-align:center;gap:14px;padding:48px 20px">
+  <span style="width:72px;height:72px;border-radius:36px;display:flex;align-items:center;justify-content:center;background:var(--redbg);border:1px solid var(--redline);color:var(--red)">${ic('lock', 34)}</span>
+  <h2 class="title-xl" style="font-size:26px">غير مسموح لك بعرض هذه الصفحة</h2>
+  <p class="muted" style="margin:0;max-width:520px;line-height:1.8">${S.deniedFrom && TITLES[S.deniedFrom] ? '«' + esc(TITLES[S.deniedFrom][1]) + '» ' : 'هذه الصفحة '}متاحة لفريق إدارة نايوش فقط. يمكنك طلب تحليل أي محور ومتابعة تقاريرك من القائمة العلوية.</p>
+  <div class="row" style="gap:8px;justify-content:center"><button type="button" class="btn primary" data-go="axes">${ic('axes', 16)}محاور التحليل</button><button type="button" class="btn" data-go="myreqs">${ic('myreqs', 16)}طلباتي وتقاريري</button><button type="button" class="btn" data-go="home">الرئيسية</button></div></section>`;
+function rdDenied(what) {
+  let m = document.getElementById('rd-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'rd-modal'; m.setAttribute('dir', 'rtl'); document.body.appendChild(m); }
+  RD_MOD = { kind: 'denied' };
+  m.innerHTML = `<div class="rd-ov" data-act="rd-close-bg"><div class="rd-dlg" role="alertdialog" aria-modal="true" aria-labelledby="rd-mt" style="align-items:center;text-align:center;width:min(440px,100%)">
+    <span style="width:60px;height:60px;border-radius:30px;display:flex;align-items:center;justify-content:center;background:var(--redbg);border:1px solid var(--redline);color:var(--red)">${ic('lock', 28)}</span>
+    <h2 id="rd-mt" class="h-sec" style="font-size:20px">غير مسموح لك بعرض هذه الصفحة</h2>
+    <p class="muted" style="margin:0;font-size:13.5px;line-height:1.8">${what ? esc(what) + ' متاحة' : 'هذه الصفحة متاحة'} لفريق إدارة نايوش فقط.</p>
+    <button type="button" class="btn primary" data-act="rd-close" style="min-width:140px">حسنًا</button></div></div>`;
+  const b = m.querySelector('.btn.primary'); if (b) b.focus();
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest) return;
+  const mb = e.target.closest('[data-act="menu"]');
+  if (mb) {
+    e.stopPropagation(); e.preventDefault();
+    if (!rdIsAdmin()) { rdDenied('القائمة الجانبية'); return; }
+    if (window.innerWidth > 980) { S.sideOpen = !S.sideOpen; render(); return; }
+    S.menu = !S.menu; document.getElementById('app').classList.toggle('open', S.menu); mb.setAttribute('aria-pressed', String(S.menu)); return;
+  }
+  if (rdGuest() || rdIsAdmin()) return;
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  const a = e.target.closest('[data-act]'); if (a && g.contains(a)) return;
+  if (rdCanRoute(g.dataset.go)) return;
+  e.stopPropagation(); e.preventDefault();
+  rdDenied(TITLES[g.dataset.go] ? '«' + TITLES[g.dataset.go][1] + '»' : '');
+}, true);
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================

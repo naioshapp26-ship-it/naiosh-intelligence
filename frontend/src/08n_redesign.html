@@ -29,6 +29,7 @@
 .tb-sub .crumb{flex:1;min-width:0}
 .top .menu-btn{display:none}
 @media (max-width:980px){.top .menu-btn{display:inline-flex}}
+@media (max-width:1560px){.tb-nav button{padding:0 9px;font-size:14px}.tb-end .who{display:none}}
 @media (max-width:1100px){.tb-row{gap:8px;padding:8px 12px}.tb-nav button{padding:0 10px;font-size:14px}.tb-end .who{display:none}}
 @media (max-width:640px){.tb-logo img{width:36px;height:36px}.tb-row{min-height:56px}.tb-nav button{height:36px;font-size:13px;padding:0 9px}.tb-end [data-go="settings"],.tb-end [data-go="governance"]{display:none}.tb-sub{padding:8px 12px;min-height:48px}.tb-login span{display:none}.tb-login{padding:0 10px}.tb-tick{font-size:11.5px;padding:0 8px}}
 
@@ -218,7 +219,7 @@ Object.assign(TITLES, {
   contact: ['الشكاوى · المقترحات · الاستفسارات', 'اتصل بنا']
 });
 const RD_PUBLIC = ['home', 'axes', 'hub', 'info', 'contact', 'register', 'verify'];
-const RD_TOP = [['home', 'الرئيسية'], ['axes', 'محاور التحليل'], ['myreqs', 'طلباتي وتقاريري'], ['hub', 'نايوش هوب'], ['info', 'مركز المعلومات'], ['contact', 'اتصل بنا'], ['self', 'أنا 360']];
+const RD_TOP = [['home', 'الرئيسية'], ['axes', 'محاور التحليل'], ['myreqs', 'طلباتي وتقاريري'], ['hub', 'نايوش هوب'], ['sug', 'المقترحات', 'rd-contact', 'suggestion', 'bulb'], ['cmp', 'الشكاوى', 'rd-contact', 'complaint', 'risks'], ['info', 'مركز المعلومات'], ['contact', 'اتصل بنا'], ['self', 'أنا 360']];
 const RD_CURS = { JOD: 'د.أ', SAR: 'ر.س', AED: 'د.إ', KWD: 'د.ك', QAR: 'ر.ق', BHD: 'د.ب', OMR: 'ر.ع', EGP: 'ج.م', USD: '$', CAD: 'CAD', EUR: '€', GBP: '£' };
 const rdCur = () => { const c = String((CFG.commerce || {}).currency || 'JOD'); return RD_CURS[c] || c; };
 const rdPacks = () => (CFG.packs || []).filter(p => p && +p.pts > 0).map((p, i) => ({ ...p, id: p.id || 'p' + i, pts: +p.pts, price: +p.price || 0 }));
@@ -265,26 +266,33 @@ function rdTicker() {
 const _rdRenderTop = renderTop;
 renderTop = function () {
   if (S.guest && !RD_PUBLIC.includes(S.route)) S.route = 'home';
-  const R = effRoute(), act = rdNavActive(R), [crumb, title] = TITLES[R] || ['', ''];
-  const guest = rdGuest();
-  const nav = RD_TOP.filter(([id]) => !(guest && id === 'myreqs')).map(([id, l]) => `<button type="button" data-go="${id}" class="${id === 'self' ? 'tb-me' : ''}" ${act === id ? 'aria-current="page"' : ''}>${guest && !RD_PUBLIC.includes(id) ? ic('lock', 13, 'style="opacity:.6"') : ''}${l}</button>`).join('');
+  if (typeof rdGuardViews === 'function') rdGuardViews();
+  const admin = typeof rdIsAdmin === 'function' ? rdIsAdmin() : true;
+  document.getElementById('app').classList.toggle('rd-noside', !(admin && S.sideOpen));
+  const R0 = effRoute(), R = !rdGuest() && typeof rdCanRoute === 'function' && !rdCanRoute(R0) ? 'denied' : R0, [crumb, title] = TITLES[R] || ['', ''];
+  const guest = rdGuest(), ck = (S.cform || {}).kind;
+  const act = R === 'contact' && ck === 'suggestion' ? 'sug' : R === 'contact' && ck === 'complaint' ? 'cmp' : rdNavActive(R);
+  const nav = RD_TOP.filter(([id]) => !(guest && id === 'myreqs')).map(([id, l, a, k, i]) => `<button type="button" ${a ? `data-act="${a}" data-k="${k}"` : `data-go="${id}"`} class="${id === 'self' ? 'tb-me' : ''}" ${act === id ? 'aria-current="page"' : ''}>${guest && !a && !RD_PUBLIC.includes(id) ? ic('lock', 13, 'style="opacity:.6"') : i ? ic(i, 15, 'style="opacity:.85"') : ''}${l}</button>`).join('');
+  const me = typeof rdAcct === 'function' ? rdAcct() : { name: 'د. عدنان' };
   const end = guest
     ? `<button type="button" class="tb-login" data-act="rd-signup">${ic('star', 16)}<span>إنشاء حساب</span></button><button type="button" class="btn sm" data-act="rd-login" style="height:40px">${ic('login', 16)}<span class="hide-sm">دخول</span></button>`
-    : `<button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
-       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
-       <span class="avatar" aria-hidden="true">${esc(CFG.identity.userInitial || '')}</span>
-       <span class="who"><b>د. عدنان</b><span>صاحب قرار · الإدارة العليا</span></span>
+    : `<button type="button" class="tb-pts" data-act="rd-hub" data-k="wallet" title="نقاطك — المحفظة">${ic('wallet', 16)}<span class="tb-pts-l">نقاطك</span><b>${rdNum(rdWal().bal)}</b></button>
+       <button type="button" class="tb-top" data-act="rd-topup">${ic('plus', 15)}<span>اشحن رصيدك</span></button>
+       ${admin ? `<button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
+       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>` : ''}
+       <span class="avatar" aria-hidden="true">${esc(admin ? (CFG.identity.userInitial || '') : String(me.name || '؟').trim()[0])}</span>
+       ${admin ? '<span class="who"><b>د. عدنان</b><span>صاحب قرار · الإدارة العليا</span></span>' : `<span class="who"><b>${esc(me.name)}</b><span>عميل</span></span>`}
        <button type="button" class="icon-btn" data-act="rd-logout" aria-label="تسجيل الخروج" title="تسجيل الخروج">${ic('logout', 18)}</button>`;
   const sub = R === 'home' ? '' : `<div class="tb-sub">
       ${(R !== 'home' || (S.hist || []).length) ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back', 16)}<span>رجوع</span></button>` : ''}
       <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
       ${rdSearchBox('global-search', 'ابحث في المحاور، الاستشارات، المخاطر…')}
       ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
-      ${guest ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
+      ${guest || !admin ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
     </div>`;
   document.getElementById('top').innerHTML = `${rdTicker()}
     <div class="tb-row">
-      <button type="button" class="icon-btn menu-btn" data-act="menu" aria-label="فتح القائمة">${ic('menu', 20)}</button>
+      <button type="button" class="icon-btn menu-btn" data-act="menu" aria-label="القائمة الجانبية" title="القائمة الجانبية" aria-pressed="${admin && (S.sideOpen || S.menu) ? 'true' : 'false'}">${ic('menu', 20)}</button>
       <button type="button" class="tb-logo" data-go="home" aria-label="الرئيسية"><img src="${LOGO_SRC}" alt=""></button>
       <nav class="tb-nav" aria-label="القائمة العلوية">${nav}</nav>
       <div class="tb-end">${end}</div>
@@ -299,7 +307,7 @@ renderSide = function () {
 };
 function rdBot() {
   let b = document.getElementById('rd-bot');
-  const show = !S.tour.on && effRoute() !== 'ask';
+  const show = !S.tour.on && effRoute() !== 'ask' && (typeof rdIsAdmin !== 'function' || rdIsAdmin());
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'rd-bot'; b.className = 'hm-bot'; b.setAttribute('aria-label', 'اسأل نايوش'); b.title = 'اسأل نايوش'; b.dataset.act = 'rd-bot'; document.body.appendChild(b); }
   b.innerHTML = ic('bot', 26);
@@ -324,7 +332,7 @@ function rdSearch(q) {
   const n = rdNorm(q).trim(); if (!n) return [];
   const words = n.split(/\s+/);
   return rdIndex().map(o => { const a = rdNorm(o.t), b = rdNorm(o.s); let sc = 0; for (const w of words) { if (a.includes(w)) sc += a.startsWith(w) ? 3 : 2; else if (b.includes(w)) sc += 1; else return null; } return [sc, o]; })
-    .filter(Boolean).sort((x, y) => y[0] - x[0]).slice(0, 9).map(x => x[1]);
+    .filter(Boolean).filter(x => !x[1].go || typeof rdCanRoute !== 'function' || rdGuest() || rdCanRoute(x[1].go)).sort((x, y) => y[0] - x[0]).slice(0, 9).map(x => x[1]);
 }
 let RD_HITS = [];
 function rdShowHits(inp) {
@@ -400,7 +408,7 @@ function hmMatrix() {
     <div class="hm-h"><h2>مصفوفة المخاطر</h2><small>اضغط على خطر</small></div>
     <div class="hm-mx"><span class="ax">الأثر ←</span><div class="stack" style="gap:4px"><div class="hm-mxg">${cells}</div><span class="faint" style="font-size:10.5px;text-align:center">الاحتمال ←</span></div></div>
     ${sel ? `<button type="button" class="hm-rsel" data-act="hm-risk-open" data-k="${esc(sel.id)}"><span class="tag ${L[0]}">${L[1]}</span><b style="flex:1;font-weight:600">${esc(sel.name)}</b><code style="font:600 11px var(--f-mono);color:var(--faint)">${esc(sel.id)}</code></button>` : ''}
-    <button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button></section>`;
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || rdGuest() ? `<button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button>` : `<button type="button" class="hm-ask" data-go="axes">${ic('axes', 26)}اطلب تحليلك</button>`}</section>`;
 }
 function hmJourney() {
   const st = cnsStage(), done = S.lessonApproved ? 12 : S.measured ? 12 : S.decided ? 11 : S.qDone ? 9 : S.askStage === 1 ? 4 : 2;
@@ -452,26 +460,27 @@ function hmServices() {
 }
 function rdHome() {
   const guest = rdGuest(), st = cnsStage();
+  const staff = guest || typeof rdIsAdmin !== 'function' || rdIsAdmin(), pub = guest || !staff;
   const hello = guest
     ? `<div class="hm-guest">${ic('star', 22, 'style="color:var(--yellow)"')}<p><b style="color:var(--yellow)">مرحبا بك في نايوش للتحليل.</b> ما تراه الآن بيانات نموذجية توضح كيف تعمل المنظومة. أنشئ حسابك (بريد وجوال موثّقان) واحصل على نقاط ترحيب لتطلب تحليل بياناتك وتستلم تقريرًا موثّقًا.</p><span class="row" style="gap:8px"><button type="button" class="btn primary" data-act="rd-signup">${ic('star', 16)}إنشاء حساب</button><button type="button" class="btn" data-act="rd-login">${ic('login', 16)}دخول</button></span></div>`
-    : `<div class="hm-hello"><div class="stack" style="gap:2px"><h2 class="title-xl">${esc(rdGreet())} د. عدنان</h2><p class="lead" style="margin:0">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p></div>
-       <div class="row" style="gap:8px"><button type="button" class="btn sm" data-go="axes">${ic('axes', 15)}اختر محور التحليل</button><button type="button" class="btn sm" data-go="myreqs">${ic('myreqs', 15)}طلباتي وتقاريري</button><button type="button" class="btn sm y" data-go="ask">${ic('ask', 15)}اسأل نايوش</button></div></div>`;
+    : `<div class="hm-hello"><div class="stack" style="gap:2px"><h2 class="title-xl">${esc(rdGreet())} ${esc(staff ? 'د. عدنان' : rdAcct().name)}</h2><p class="lead" style="margin:0">ماذا تريد أن تعرف اليوم؟ قل لنا ما المشكلة… وسنساعدك على فهمها.</p></div>
+       <div class="row" style="gap:8px"><button type="button" class="btn sm" data-go="axes">${ic('axes', 15)}اختر محور التحليل</button><button type="button" class="btn sm" data-go="myreqs">${ic('myreqs', 15)}طلباتي وتقاريري</button>${staff ? `<button type="button" class="btn sm y" data-go="ask">${ic('ask', 15)}اسأل نايوش</button>` : ''}</div></div>`;
   const journey = `<section class="card" style="gap:10px;padding:14px 16px">
-      <div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">${guest ? 'رحلة الاستشارة · 13 مرحلة' : 'PROACTIVE CONSULTATION · CNS-001'}</span><h2 class="h-sec" style="font-size:15.5px">${guest ? 'من المشكلة إلى التعلم — كل استشارة تمر بهذه المراحل' : `انخفاض أداء الفرع الشمالي — المرحلة الآن: <span style="color:var(--yellow)">${st.name}</span>`}</h2></div>
-      ${guest ? '<button type="button" class="btn sm" data-go="info">كيف تعمل؟</button>' : `<button type="button" class="btn primary sm" data-go="${nextRoute()[0]}">${nextRoute()[1]}${ic('chev', 16)}</button>`}</div>
+      <div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">${pub ? 'رحلة الاستشارة · 13 مرحلة' : 'PROACTIVE CONSULTATION · CNS-001'}</span><h2 class="h-sec" style="font-size:15.5px">${pub ? 'من المشكلة إلى التعلم — كل استشارة تمر بهذه المراحل' : `انخفاض أداء الفرع الشمالي — المرحلة الآن: <span style="color:var(--yellow)">${st.name}</span>`}</h2></div>
+      ${pub ? '<button type="button" class="btn sm" data-go="info">كيف تعمل؟</button>' : `<button type="button" class="btn primary sm" data-go="${nextRoute()[0]}">${nextRoute()[1]}${ic('chev', 16)}</button>`}</div>
       ${stepper(st.idx)}</section>`;
   let kpiRow = '';
-  const more = guest ? '' : (() => {
+  const more = guest || (typeof rdIsAdmin === 'function' && !rdIsAdmin()) ? '' : (() => {
     let old = _lnHome(); const cut = old.indexOf('</section>');
     old = cut < 0 ? old : old.slice(cut + 10);
     const m = old.match(/<section class="grid g4" aria-label="المؤشرات الرئيسية">[\s\S]*?<\/section>/);
     if (m) { kpiRow = m[0]; old = old.replace(m[0], ''); }
     return `<details class="hm-more" ${S.hmMore ? 'open' : ''}><summary data-act="hm-more">${ic('architecture', 18, 'style="color:var(--yellow)"')}<span style="flex:1">مركز القيادة التفصيلي — المؤشرات والتنبيهات والاستشارات</span><span class="faint" style="font-size:12px">${S.hmMore ? 'إخفاء ▴' : 'عرض ▾'}</span></summary><div>${old}</div></details>`;
   })();
-  return `<div class="hm">${hello}${journey}${kpiRow}
+  return `<div class="hm">${hello}${journey}${pub ? '' : kpiRow}
     <div class="hm-grid">${hmThreeSteps()}${hmQuality()}${hmMatrix()}${hmJourney()}</div>
     <div class="hm-grid">${hmRegister()}${hmForecast()}${hmServices()}</div>
-    ${homeLauncher()}${more}</div>`;
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || guest ? homeLauncher() + more : ''}</div>`;
 }
 VIEWS.home = rdHome;
 
