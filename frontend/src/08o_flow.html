@@ -21,6 +21,19 @@
 .tb-top:hover{filter:brightness(1.1)}
 @media (max-width:1300px){.tb-pts-l{display:none}}
 @media (max-width:760px){.tb-top span{display:none}.tb-top{padding:0 10px}.tb-end .who{display:none}}
+/* request button inside each topic box + inline form */
+.ln-box{padding-bottom:52px}
+.ln-req{position:absolute;inset-inline:12px;bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;height:32px;border-radius:9px;border:1px solid color-mix(in srgb,var(--acc) 45%,var(--line2));background:color-mix(in srgb,var(--acc) 10%,var(--raised));color:var(--fg);font-size:12.5px;font-weight:700;cursor:pointer}
+.ln-req:hover,.ln-req:focus-visible{background:var(--acc);border-color:var(--acc);color:#0b0b0d;outline:none}
+.ln-req.on{background:var(--acc);border-color:var(--acc);color:#0b0b0d}
+.ln-box.ax-on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
+.ax-panel{grid-column:1/-1;display:flex;flex-direction:column;gap:14px;margin-top:4px;padding:16px;border-radius:16px;border:1px solid color-mix(in srgb,var(--acc) 55%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 7%,var(--sunk)),var(--sunk) 160px);scroll-margin-top:170px;animation:axIn .18s ease-out}
+@keyframes axIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.ax-ph{display:flex;align-items:center;gap:12px}
+.ax-ph .ai{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,transparent);flex-shrink:0}
+.ax-panel #rq-panel{position:static!important}
+.ax-panel > section.card:first-of-type{display:none}
+@media (max-width:760px){.ln-box{padding-bottom:46px}.ln-req{height:28px;font-size:11.5px}.ax-panel{padding:10px}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -289,7 +302,7 @@ function rdSignIn(acct, fresh) {
 }
 function rdGoNext() {
   const n = S.rdNext; S.rdNext = null;
-  if (n && n.startsWith('ax:')) { rdOpenAxis(n.slice(3)); return; }
+  if (n && n.startsWith('ax:')) { const k = n.slice(3); if (k.startsWith('t:')) { rdOpenAxis(k); return; } rdInline(k, 'axes'); return; }
   go(n && VIEWS[n] ? n : 'axes');
 }
 async function rdLoadWallet() {
@@ -311,14 +324,14 @@ function rdAxisInfo(key) {
   const T = TITLES[key] || ['', ''];
   return { key, id: key, label: (T[1] || (it && it[1]) || key), code: it ? it[2] : '', icon: key, q: T[0] || '', sys: [] };
 }
-function rdOpenAxis(key) {
+function rdOpenAxis(key) { rdPrepAxis(key); go('request'); }
+function rdPrepAxis(key) {
   const A = rdAxisInfo(key), me = rdAcct();
   const dom = Object.keys(RD_DOM).find(d => RD_DOM[d].includes(A.id)) || 'D01';
   const r = S.req = freshReq();
   Object.assign(r, { axis: A.key, axisLabel: A.label, title: A.label, domain: dom, systems: [...A.sys], types: ['desc', 'diag'], name: me.name || '', email: me.email || '', phone: me.phone || '', org: me.org || '' });
   if (!r.riskCats) Object.assign(r, { capex: '', currency: (CFG.commerce || {}).currency || 'JOD', horizon: '5', ptype: 'new', riskCats: [], riskAppetite: 'متوسط' });
   S.reqDone = null; RQ_ERR = {};
-  go('request');
 }
 // محاور التحليل page: every icon opens the request form with that topic
 const _rdAxesView = VIEWS.axes;
@@ -381,7 +394,7 @@ anCapture = function (r, ref) {
   setTimeout(() => rdRunJob(ref), 50);
 };
 const rdWait = (ms) => new Promise(r => setTimeout(r, ms));
-function rdJobRender() { if (S.route === 'myreqs' || S.route === 'home') render(); else save(); }
+function rdJobRender() { if (S.route === 'myreqs' || S.route === 'home' || (S.route === 'axes' && S.axOpen)) render(); else save(); }
 async function rdDataFile(ref) {
   if (RD_FILES[ref]) return RD_FILES[ref];
   if (!rdServer()) { const csv = (S.jobData || {})[ref]; return csv ? new File([csv], (rdJobs()[ref] || {}).dataName || 'data.csv', { type: 'text/csv' }) : null; }
@@ -462,7 +475,10 @@ VIEWS.myreqs = () => {
   if (!list.length) return head + `<section class="card" style="align-items:center;text-align:center;gap:12px;padding:40px 20px">${ic('myreqs', 40, 'style="color:var(--faint)"')}<h2 class="h-sec">لا طلبات بعد</h2><p class="muted" style="margin:0">اختر محور التحليل، املأ النموذج، ووافق على الخصوصية — ويبدأ التحليل فورًا.</p><button type="button" class="btn primary" data-go="axes">اختر محور التحليل</button></section>`;
   list.forEach(q => { const j = rdJob(q.ref); if (j.state === 'run' && !RD_ACTIVE.has(q.ref)) setTimeout(() => rdRunJob(q.ref), 30); });
   const promise = (CFG.commerce || {}).promise || '';
-  return head + list.map(q => {
+  return head + list.map(q => rdReqCard(q, sel, promise)).join('');
+};
+function rdReqCard(q, sel, promise) {
+  {
     const j = rdJob(q.ref), L = rdJobLabel(q.ref), open = S.mrOpen === q.ref, fmt = S.mrFmt || 'pdf';
     const trk = `<ol class="mr-trk" aria-label="مراحل الطلب">${RD_STAGES.map((l, i) => { const st = j.state === 'done' || i < j.stage ? 'ok' : i === j.stage && j.state === 'run' ? 'now' : ''; return `<li class="${st}"><span class="d">${st === 'ok' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P.check}"/></svg>` : i + 1}</span><span class="l">${l}</span></li>`; }).join('')}</ol>`;
     let body = '';
@@ -483,8 +499,8 @@ VIEWS.myreqs = () => {
           <button type="button" class="btn link sm" style="align-self:flex-start" data-act="rd-view-results" data-k="${esc(q.ref)}">${ic('chart', 14)}عرض لوحة التحليل التفاعلية</button></div>`;
     }
     return `<article class="mr ${sel === q.ref ? 'sel' : ''}" id="mr-${esc(q.ref)}"><div class="mr-top"><div class="stack" style="gap:3px"><span class="row nowrap" style="gap:8px"><code style="font:700 12.5px var(--f-mono);color:var(--yellow);direction:ltr">${esc(q.ref)}</code><span class="tag ${L[0]}">${L[1]}</span></span><b style="font-size:16px">${esc(q.axisLabel || q.title)}</b><span class="faint" style="font-size:12px">${esc(q.title)} · ${esc(q.typesLabel || '')} · ${esc(String(q.at || q.date || '').slice(0, 10))}${q.cost ? ' · ' + rdNum(q.cost) + ' نقطة' : ''}</span></div></div>${trk}${body}</article>`;
-  }).join('');
-};
+  }
+}
 
 /* ---------- save as ---------- */
 async function rdSaveAs(name, blob, fmt) {
@@ -570,7 +586,10 @@ function rd2Handle(act, k, el) {
     }
     case 'rd-demo-in': { S.acct = null; S.guest = false; RD_MOD = null; rdModal(null); toast('مرحبا د. عدنان'); rdGoNext(); return true; }
     case 'rd-privacy': rdPrivacy(); return true;
-    case 'ax-req': if (rdGuest()) { rdRegister('ax:' + k); return true; } rdOpenAxis(k); return true;
+    case 'ax-req': if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
+    case 'ax-inline': if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
+    case 'ax-close': S.axOpen = null; S.axDone = null; S.reqDone = null; RQ_ERR = {}; render(); { const b = document.querySelector(`.ln-box[data-k="${k}"],.ln-box[data-go="${k}"]`); if (b) b.scrollIntoView({ block: 'center' }); } return true;
+    case 'ax-again': S.axDone = null; S.reqDone = null; rdPrepAxis(k); render(); rdScrollPanel(); return true;
     case 'rd-open-req': S.myreqSel = k; go('myreqs'); setTimeout(() => { const a = document.getElementById('mr-' + k); if (a) a.scrollIntoView({ block: 'center' }); }, 40); return true;
     case 'rd-receive': S.mrOpen = S.mrOpen === k ? null : k; S.myreqSel = k; render(); return true;
     case 'rd-fmt': S.mrFmt = k; render(); return true;
@@ -631,4 +650,46 @@ document.addEventListener('click', (e) => {
   e.stopPropagation(); e.preventDefault();
   rdDenied(TITLES[g.dataset.go] ? '«' + TITLES[g.dataset.go][1] + '»' : '');
 }, true);
+
+/* ---------- request form inside the topic boxes (same page) ---------- */
+function rdScrollPanel() { setTimeout(() => { const p = document.getElementById('ax-panel'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 40); }
+function rdInline(key, route) {
+  if (S.axOpen === key && !S.axDone && !route) { S.axOpen = null; render(); return; }
+  rdPrepAxis(key); S.axOpen = key; S.axDone = null;
+  if (route && S.route !== route) go(route); else render();
+  rdScrollPanel();
+}
+function rdAxPanel(key) {
+  const A = rdAxisInfo(key);
+  const head = `<div class="ax-ph"><span class="ai">${ic(A.icon, 22)}</span><div class="stack" style="gap:1px;flex:1;min-width:0"><span class="eyebrow">طلب تحليل${A.code ? ' · ' + esc(A.code) : ''}</span><b style="font-size:17px;font-family:var(--f-display)">${esc(A.label)}</b></div><button type="button" class="icon-btn" data-act="ax-close" data-k="${esc(key)}" aria-label="إغلاق النموذج" title="إغلاق">${ic('x', 18)}</button></div>`;
+  if (S.axDone) {
+    const q = (S.requests || []).find(x => x.ref === S.axDone);
+    return `<div class="ax-panel" id="ax-panel">${head}<div class="banner g">${ic('check', 18, 'style="color:var(--green)"')}<span style="flex:1">أُرسل طلبك <b dir="ltr">${esc(S.axDone)}</b> — انتقل إلى النظام وبدأ التحليل. يمكنك البقاء هنا ومتابعة التقدّم.</span></div>
+      ${q ? rdReqCard(q, S.axDone, (CFG.commerce || {}).promise || '') : ''}
+      <div class="row" style="gap:8px"><button type="button" class="btn" data-act="ax-again" data-k="${esc(key)}">${ic('plus', 15)}طلب آخر لهذا المحور</button><button type="button" class="btn" data-go="myreqs">${ic('myreqs', 15)}طلباتي وتقاريري</button><button type="button" class="btn link" data-act="ax-close" data-k="${esc(key)}">إغلاق</button></div></div>`;
+  }
+  if (!S.req || S.req.axis !== key) rdPrepAxis(key);
+  return `<div class="ax-panel" id="ax-panel">${head}${_rdReqView()}</div>`;
+}
+const _rdHL = homeLauncher;
+homeLauncher = function () {
+  let h = _rdHL();
+  h = h.replace(/(<button type="button" class="ln-box[^"]*" data-go="([a-z0-9_]+)"[^>]*>)([\s\S]*?)<\/button>/g, (m, open, id, inner) => {
+    if (RD_NOT_AXIS.includes(id)) return m;
+    const on = S.axOpen === id;
+    return `${open.replace('class="ln-box', `class="ln-box${on ? ' ax-on' : ''}`)}${inner}<span class="ln-req${on ? ' on' : ''}" role="button" tabindex="0" data-act="ax-inline" data-k="${id}" aria-expanded="${on}" title="طلب تحليل ${esc(rdAxisInfo(id).label)}">${ic('request', 14)}<span>طلب تحليل</span></span></button>`;
+  });
+  if (S.axOpen && !rdGuest()) {
+    const i = h.search(new RegExp(`data-(?:go|k)="${S.axOpen}"`));
+    if (i >= 0) { const end = h.indexOf('</div>', i); if (end >= 0) h = h.slice(0, end + 6) + rdAxPanel(S.axOpen) + h.slice(end + 6); }
+  }
+  return h;
+};
+// once a request is sent from a box, stay on the page and show its progress there
+const _rdCap2 = anCapture;
+anCapture = function (r, ref) {
+  _rdCap2(r, ref);
+  if (S.axOpen && (S.route === 'axes' || S.route === 'home')) { S.axDone = ref; setTimeout(() => { S.reqDone = null; render(); rdScrollPanel(); }, 30); }
+};
+document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('ln-req')) { e.preventDefault(); e.target.click(); } });
 </script>
