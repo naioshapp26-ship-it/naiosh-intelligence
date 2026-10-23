@@ -172,9 +172,9 @@ async function buildPdf(rep) {
     ctx.direction = 'rtl'; ctx.textAlign = 'right';
     if (first) {
       ctx.fillStyle = yel; font(9, 700); ctx.fillText((rep.ref || 'CNS-001') + ' · ' + String(rep.code).replace('_', ' '), R, 32);
-      ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
+      ctx.fillStyle = '#fff'; { const t = EXP_TXT(rep.title), maxW = R - (L + 94 + 16); let sz = 22; font(sz, 700); while (sz > 10 && ctx.measureText(t).width > maxW) { sz -= 0.5; font(sz, 700); } ctx.fillText(t, R, 62); }
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
-      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, R, 86);
+      { const t = `${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, maxW = R - (L + 94 + 16); let sz = 9.5; while (sz > 6.5 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 400); } ctx.fillText(t, R, 86); }
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
       y = bandH + 26;
     } else {

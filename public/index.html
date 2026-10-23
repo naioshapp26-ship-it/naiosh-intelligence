@@ -2247,9 +2247,9 @@ async function buildPdf(rep) {
     ctx.direction = 'rtl'; ctx.textAlign = 'right';
     if (first) {
       ctx.fillStyle = yel; font(9, 700); ctx.fillText((rep.ref || 'CNS-001') + ' · ' + String(rep.code).replace('_', ' '), R, 32);
-      ctx.fillStyle = '#fff'; font(22, 700); ctx.fillText(EXP_TXT(rep.title), R, 62);
+      ctx.fillStyle = '#fff'; { const t = EXP_TXT(rep.title), maxW = R - (L + 94 + 16); let sz = 22; font(sz, 700); while (sz > 10 && ctx.measureText(t).width > maxW) { sz -= 0.5; font(sz, 700); } ctx.fillText(t, R, 62); }
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
-      ctx.fillText(`${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, R, 86);
+      { const t = `${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, maxW = R - (L + 94 + 16); let sz = 9.5; while (sz > 6.5 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 400); } ctx.fillText(t, R, 86); }
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
       y = bandH + 26;
     } else {
@@ -6361,6 +6361,207 @@ engSections3 = function (code) {
 };
 </script>
 <style>
+.val-ff{width:100%;max-width:760px;height:auto;display:block;margin-inline:auto}
+.val-ff text{font:600 11px var(--f-ui,inherit);fill:var(--fg2)}
+.val-ff .n{font:700 11px var(--f-mono);fill:var(--faint)}
+.val-big{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:18px;border-radius:16px;border:1px solid var(--yellowline);background:radial-gradient(130% 170% at 100% 0%,#2a2208,var(--surface) 65%)}
+.val-big .v{font:800 34px var(--f-mono);color:var(--yellow);direction:ltr}
+.val-sens td.base{outline:2px solid var(--yellow);outline-offset:-2px}
+</style>
+<script data-app="">
+/* =========================================================================================
+   DIA-VAL — Company Financial Valuation Analysis (التقييم المالي للشركات)
+   Three methods (DCF · market multiples · adjusted net assets), weighted reconciliation,
+   private-company adjustments, sensitivity, scenarios, data-quality gate and red flags.
+   An analytical estimate — not a substitute for a licensed valuer's signed opinion.
+   ========================================================================================= */
+const VAL_SECTOR = { retail: ['التجزئة والتجارة', 7.0, 13, 0.6], services: ['الخدمات المهنية', 8.5, 15, 1.4], industry: ['الصناعة والتصنيع', 7.5, 12, 1.0], tech: ['التقنية والبرمجيات', 14, 24, 3.5], health: ['الرعاية الصحية', 11, 19, 2.2], food: ['الأغذية والمطاعم', 8, 15, 1.1], construction: ['المقاولات والإنشاءات', 6, 10, 0.5], logistics: ['النقل واللوجستيات', 7, 12, 0.8], realestate: ['العقار', 13, 15, 6.0], edu: ['التعليم والتدريب', 9, 16, 1.8] };
+const VAL_PURPOSE = [['sale', 'بيع الشركة أو حصة منها'], ['invest', 'جذب مستثمر أو شريك'], ['merge', 'اندماج أو استحواذ'], ['finance', 'الحصول على تمويل'], ['partners', 'خروج شريك أو تسوية بين الشركاء'], ['internal', 'تخطيط داخلي ومتابعة القيمة'], ['legal', 'نزاع أو متطلب قانوني']];
+const VAL_STAGE = [['startup', 'ناشئة (خسائر أو نمو مبكر)'], ['growth', 'نمو سريع'], ['mature', 'ناضجة ومستقرة'], ['decline', 'تراجع أو إعادة هيكلة']];
+const VAL_OWN = [['private', 'خاصة (غير مدرجة)'], ['listed', 'مدرجة في السوق']];
+const VAL_QUAL = [['audited', 'القوائم المالية مدققة من مراجع خارجي'], ['years3', 'تتوفر 3 سنوات تاريخية على الأقل'], ['normalized', 'استُبعدت البنود غير المتكررة (تسويات لمرة واحدة)'], ['ownerpay', 'رواتب الملاك معدّلة لمستوى السوق'], ['peers', 'الشركات المقارنة من القطاع والحجم نفسيهما'], ['forecast', 'التوقعات معتمدة من الإدارة ومبررة'], ['assets', 'الأصول الرئيسية مقيّمة بالقيمة السوقية'], ['contingent', 'الالتزامات المحتملة والقضايا معروفة ومُفصح عنها']];
+const VAL_YEARS = ['2023', '2024', '2025'];
+EG_INIT.val = () => ({
+  tab: 'company',
+  co: { name: 'شركة الأفق للتجارة والخدمات', sector: 'retail', stage: 'mature', own: 'private', purpose: 'sale', country: 'الأردن', cur: 'JOD', stake: 100, date: '2026-10' },
+  fin: { rev: [4200000, 4650000, 5100000], ebitda: [610000, 700000, 790000], da: [120000, 130000, 140000], ni: [330000, 390000, 450000], capex: [150000, 170000, 180000], nwc: [600000, 650000, 700000] },
+  bs: { cash: 350000, debt: 1200000, equity: 2100000, nonop: 0, minority: 0, assetAdj: 250000, liabAdj: 0 },
+  dcf: { g: 8, margin: 15.5, tax: 20, capexPct: 3.5, nwcPct: 13.7, daPct: 2.7, rf: 5.5, erp: 6, beta: 1.1, size: 3, specific: 2, kd: 8, wd: 30, tg: 2.5 },
+  peers: [{ n: 'شركة مقارنة أ', evE: 7.4, pe: 13.5, evR: 0.7 }, { n: 'شركة مقارنة ب', evE: 6.6, pe: 11.8, evR: 0.55 }, { n: 'شركة مقارنة ج', evE: 8.1, pe: 14.2, evR: 0.8 }, { n: 'صفقة استحواذ مماثلة', evE: 7.0, pe: 12.5, evR: 0.62 }],
+  w: { dcf: 50, mult: 35, nav: 15 },
+  adj: { dlom: 20, control: 0, key: 5 },
+  qual: { audited: true, years3: true, normalized: false, ownerpay: false, peers: true, forecast: false, assets: false, contingent: true },
+  risks: [{ n: 'اعتماد كبير على عميل أو مورد واحد', imp: 3, note: '' }, { n: 'اعتماد الإدارة على المالك (رجل المفتاح)', imp: 4, note: '' }]
+});
+EG_ROWS['val.peers'] = () => ({ n: 'شركة مقارنة جديدة', evE: 7, pe: 12, evR: 0.7 });
+EG_ROWS['val.risks'] = () => ({ n: 'خطر جديد', imp: 3, note: '' });
+const valMed = (a) => { const x = a.filter(v => isFinite(v) && v > 0).sort((p, q) => p - q); if (!x.length) return 0; const m = x.length >> 1; return x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2; };
+const valQ = (a, q) => { const x = a.filter(v => isFinite(v) && v > 0).sort((p, r) => p - r); if (!x.length) return 0; const i = (x.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return x[lo] + (x[hi] - x[lo]) * (i - lo); };
+function valDcf(s, o = {}) {
+  const d = s.dcf, F = s.fin, last = egN(F.rev[2]);
+  const g = (o.g ?? egN(d.g)) / 100, mg = (o.margin ?? egN(d.margin)) / 100, tax = egN(d.tax) / 100;
+  const ke = egN(d.rf) + egN(d.beta) * egN(d.erp) + egN(d.size) + egN(d.specific), wd = Math.min(90, Math.max(0, egN(d.wd))) / 100;
+  const wacc = (o.wacc ?? ((1 - wd) * ke + wd * egN(d.kd) * (1 - tax))) / 100, tg = (o.tg ?? egN(d.tg)) / 100;
+  const rows = []; let prev = last, pv = 0;
+  for (let t = 1; t <= 5; t++) {
+    const rev = prev * (1 + g), ebitda = rev * mg, da = rev * egN(d.daPct) / 100, ebit = ebitda - da, nopat = ebit * (1 - tax), capex = rev * egN(d.capexPct) / 100, dnwc = (rev - prev) * egN(d.nwcPct) / 100;
+    const fcf = nopat + da - capex - dnwc, df = 1 / Math.pow(1 + wacc, t);
+    rows.push({ t, rev, ebitda, ebit, nopat, capex, dnwc, fcf, df, pv: fcf * df }); pv += fcf * df; prev = rev;
+  }
+  const ok = wacc > tg + 0.01;
+  const tv = ok ? rows[4].fcf * (1 + tg) / (wacc - tg) : 0, pvTv = tv / Math.pow(1 + wacc, 5);
+  const ev = pv + pvTv, netDebt = egN(s.bs.debt) - egN(s.bs.cash);
+  return { rows, pv, tv, pvTv, ev, eq: ev - netDebt + egN(s.bs.nonop) - egN(s.bs.minority), ke, wacc: wacc * 100, tg: tg * 100, ok, tvShare: ev > 0 ? pvTv / ev * 100 : 0 };
+}
+function valModel() {
+  const s = egS('val'), F = s.fin, co = s.co, sec = VAL_SECTOR[co.sector] || VAL_SECTOR.retail;
+  const Y = VAL_YEARS.map((y, i) => ({ y, rev: egN(F.rev[i]), ebitda: egN(F.ebitda[i]), da: egN(F.da[i]), ni: egN(F.ni[i]), capex: egN(F.capex[i]), nwc: egN(F.nwc[i]) }));
+  const L = Y[2], netDebt = egN(s.bs.debt) - egN(s.bs.cash);
+  const cagr = Y[0].rev > 0 && L.rev > 0 ? (Math.pow(L.rev / Y[0].rev, 1 / 2) - 1) * 100 : 0;
+  const hist = { cagr, margin: L.rev ? L.ebitda / L.rev * 100 : 0, net: L.rev ? L.ni / L.rev * 100 : 0, roe: egN(s.bs.equity) ? L.ni / egN(s.bs.equity) * 100 : 0, lev: L.ebitda > 0 ? netDebt / L.ebitda : Infinity, capexPct: L.rev ? L.capex / L.rev * 100 : 0, nwcPct: L.rev ? L.nwc / L.rev * 100 : 0, daPct: L.rev ? L.da / L.rev * 100 : 0 };
+  const D = valDcf(s);
+  // market multiples (peers; sector benchmark if no peers)
+  const P = s.peers.length ? s.peers : [{ n: 'متوسط القطاع (استرشادي)', evE: sec[1], pe: sec[2], evR: sec[3] }];
+  const med = { evE: valMed(P.map(p => egN(p.evE))), pe: valMed(P.map(p => egN(p.pe))), evR: valMed(P.map(p => egN(p.evR))) };
+  const q1 = { evE: valQ(P.map(p => egN(p.evE)), .25), pe: valQ(P.map(p => egN(p.pe)), .25), evR: valQ(P.map(p => egN(p.evR)), .25) }, q3 = { evE: valQ(P.map(p => egN(p.evE)), .75), pe: valQ(P.map(p => egN(p.pe)), .75), evR: valQ(P.map(p => egN(p.evR)), .75) };
+  const bridge = (ev) => ev - netDebt + egN(s.bs.nonop) - egN(s.bs.minority);
+  const M = [
+    { k: 'evE', n: 'قيمة المنشأة / EBITDA', base: L.ebitda, valid: L.ebitda > 0, eq: (m) => bridge(L.ebitda * m) },
+    { k: 'pe', n: 'مكرر الربحية P/E', base: L.ni, valid: L.ni > 0, eq: (m) => L.ni * m },
+    { k: 'evR', n: 'قيمة المنشأة / الإيرادات', base: L.rev, valid: L.rev > 0, eq: (m) => bridge(L.rev * m) }
+  ].map(x => ({ ...x, med: med[x.k], lo: x.valid ? x.eq(q1[x.k]) : 0, mid: x.valid ? x.eq(med[x.k]) : 0, hi: x.valid ? x.eq(q3[x.k]) : 0 }));
+  const MV = M.filter(x => x.valid && x.mid > 0), multEq = MV.length ? (MV.find(x => x.k === 'evE') || MV[0]).mid * 0.6 + MV.reduce((a, x) => a + x.mid, 0) / MV.length * 0.4 : 0;
+  // adjusted net assets
+  const nav = egN(s.bs.equity) + egN(s.bs.assetAdj) - egN(s.bs.liabAdj);
+  // reconciliation (weights renormalised over valid methods)
+  const meth = [['dcf', 'التدفقات النقدية المخصومة DCF', D.ok && D.eq > 0 ? D.eq : 0], ['mult', 'المضاعفات السوقية', multEq], ['nav', 'صافي الأصول المعدّل', nav]];
+  const wsum = meth.reduce((a, [k, , v]) => a + (v > 0 ? egN(s.w[k]) : 0), 0) || 1;
+  const pre = meth.reduce((a, [k, , v]) => a + (v > 0 ? v * egN(s.w[k]) / wsum : 0), 0);
+  const priv = co.own === 'private';
+  const ctrl = pre * egN(s.adj.control) / 100, dlom = priv ? (pre + ctrl) * egN(s.adj.dlom) / 100 : 0, key = (pre + ctrl - dlom) * egN(s.adj.key) / 100;
+  const fin = pre + ctrl - dlom - key, stake = fin * Math.min(100, Math.max(0, egN(co.stake))) / 100;
+  const vals = meth.map(([, , v]) => v).filter(v => v > 0), spread = vals.length > 1 ? (Math.max(...vals) - Math.min(...vals)) / (vals.reduce((a, b) => a + b, 0) / vals.length) * 100 : 0;
+  const adjF = pre > 0 ? fin / pre : 1;
+  const ff = [
+    { n: 'DCF — سيناريوهات', lo: Math.max(0, valDcf(s, { g: egN(s.dcf.g) - 3, margin: egN(s.dcf.margin) - 2 }).eq), hi: valDcf(s, { g: egN(s.dcf.g) + 3, margin: egN(s.dcf.margin) + 2 }).eq, mid: D.eq },
+    ...M.filter(x => x.valid).map(x => ({ n: x.n, lo: x.lo, hi: x.hi, mid: x.mid })),
+    { n: 'صافي الأصول المعدّل', lo: nav * 0.9, hi: nav * 1.1, mid: nav }
+  ].map(x => ({ ...x, lo: x.lo * adjF, hi: x.hi * adjF, mid: x.mid * adjF }));
+  // sensitivity WACC × g
+  const sw = [-2, -1, 0, 1, 2].map(dw => D.wacc + dw), sg = [-1, -0.5, 0, 0.5, 1].map(dg => D.tg + dg);
+  const sens = sw.map(w => sg.map(g => { const r = valDcf(s, { wacc: w, tg: g }); return r.ok ? r.eq : null; }));
+  const scen = [['متشائم', -3, -2], ['أساسي', 0, 0], ['متفائل', 3, 2]].map(([n, dg, dm]) => { const r = valDcf(s, { g: egN(s.dcf.g) + dg, margin: egN(s.dcf.margin) + dm }); return { n, g: egN(s.dcf.g) + dg, m: egN(s.dcf.margin) + dm, eq: r.eq * adjF, ev: r.ev }; });
+  // data quality gate
+  const qn = VAL_QUAL.filter(([k]) => s.qual[k]).length, qpct = qn / VAL_QUAL.length * 100;
+  const conf = qpct >= 75 && spread < 35 ? ['مرتفعة', 't-s'] : qpct >= 50 && spread < 60 ? ['متوسطة', 't-m'] : ['منخفضة', 't-c'];
+  const flags = [];
+  if (!D.ok) flags.push('معدل الخصم WACC لا يزيد على معدل النمو الدائم بأكثر من 1% — القيمة النهائية غير صالحة؛ خفّض النمو الدائم أو راجع WACC.');
+  if (D.tvShare > 75) flags.push(`القيمة النهائية تمثل ${fmtN(D.tvShare, 0)}% من قيمة المنشأة في DCF — النتيجة حساسة جدًا لافتراضات المدى البعيد.`);
+  if (L.ebitda <= 0) flags.push('EBITDA سالب أو صفر — مضاعف EV/EBITDA غير صالح، والاعتماد يكون على الإيرادات أو الأصول أو DCF بسيناريوهات.');
+  if (L.ni <= 0) flags.push('صافي الربح سالب — مكرر الربحية P/E مستبعد.');
+  if (hist.lev > 4) flags.push(`صافي الدين يعادل ${fmtN(hist.lev, 1)} ضعف EBITDA — مديونية مرتفعة تخفض قيمة حقوق الملكية وترفع المخاطر.`);
+  if (spread > 40) flags.push(`فرق كبير بين نتائج الطرق (${fmtN(spread, 0)}%) — راجع الافتراضات والشركات المقارنة قبل اعتماد رقم واحد.`);
+  if (egN(s.dcf.g) > hist.cagr + 5) flags.push(`النمو المتوقع ${fmtN(egN(s.dcf.g), 1)}% أعلى بوضوح من النمو التاريخي ${fmtN(hist.cagr, 1)}% — يلزم تبرير موثّق.`);
+  if (Math.abs(egN(s.dcf.margin) - hist.margin) > 4) flags.push(`هامش EBITDA المتوقع ${fmtN(egN(s.dcf.margin), 1)}% يختلف عن الحالي ${fmtN(hist.margin, 1)}% — اشرح سبب التغير.`);
+  if (!s.peers.length) flags.push('لا توجد شركات مقارنة — استُخدمت مضاعفات قطاعية استرشادية فقط.');
+  if (!s.qual.audited) flags.push('القوائم غير مدققة — ثقة التقييم محدودة حتى التدقيق.');
+  const riskSc = s.risks.reduce((a, r) => a + egN(r.imp), 0);
+  const rec = [];
+  const P0 = co.purpose;
+  if (P0 === 'sale' || P0 === 'merge') rec.push('اعرض نطاق القيمة لا رقمًا واحدًا في التفاوض، وابدأ من الحد الأعلى المبرر بالأدلة.', 'جهّز غرفة بيانات (القوائم المدققة، العقود، التسويات) لتقليل خصم المخاطر الذي يطلبه المشتري.');
+  if (P0 === 'invest') rec.push(`عند جذب مستثمر: القيمة قبل الاستثمار ${fmtN(fin, 0)}؛ أي مبلغ يُضخ يضاف إليها لحساب نسبة المستثمر.`, 'وضّح خطة استخدام الأموال وأثرها على النمو والهامش لتبرير التوقعات.');
+  if (P0 === 'finance') rec.push(`نسبة صافي الدين إلى EBITDA ${isFinite(hist.lev) ? fmtN(hist.lev, 1) : '—'}x — الممولون يفضلون أقل من 3x.`, 'قدّم توقعات التدفقات النقدية الشهرية لإثبات القدرة على السداد.');
+  if (P0 === 'partners') rec.push('اتفقوا مسبقًا على الطريقة والأوزان وخصم الحصة غير المسيطرة قبل حساب حصة الشريك الخارج.', 'وثّق التقييم بتاريخ محدد لأن القيمة تتغير مع الوقت.');
+  if (P0 === 'legal') rec.push('النزاعات تتطلب تقييمًا موقّعًا من مقيّم مرخّص — استخدم هذا التحليل كأساس للنقاش وتحديد نقاط الخلاف.');
+  if (P0 === 'internal') rec.push('حدّث التقييم كل 6 أشهر وتابع محركات القيمة: النمو، الهامش، رأس المال العامل، المديونية.');
+  if (!s.qual.normalized) rec.push('استبعد البنود غير المتكررة وعدّل رواتب الملاك لرفع دقة الربحية المعيارية.');
+  if (hist.nwcPct > 20) rec.push(`رأس المال العامل ${fmtN(hist.nwcPct, 0)}% من الإيرادات — تحسين التحصيل والمخزون يرفع التدفق النقدي والقيمة مباشرة.`);
+  return { s, co, sec, Y, L, hist, netDebt, D, M, P, med, nav, meth, wsum, pre, ctrl, dlom, key, fin, stake, spread, ff, sw, sg, sens, scen, qn, qpct, conf, flags, riskSc, rec, priv };
+}
+const valF = (v) => fmtN(v, 0);
+function valFF(m) {
+  const all = m.ff.flatMap(x => [x.lo, x.hi]).concat([m.fin]).filter(v => isFinite(v) && v > 0);
+  if (!all.length) return '';
+  const mn = Math.min(...all) * 0.9, mx = Math.max(...all) * 1.05, W = 640, L0 = 170, R0 = 620, x = (v) => L0 + (Math.max(mn, v) - mn) / (mx - mn) * (R0 - L0), rh = 34, H = m.ff.length * rh + 46;
+  return `<svg class="val-ff" viewBox="0 0 ${W} ${H}" role="img" aria-label="نطاقات القيمة حسب كل طريقة"><g direction="ltr">
+    ${m.ff.map((r, i) => { const y = 14 + i * rh; return `<text x="${L0 - 10}" y="${y + 15}" text-anchor="end">${esc(r.n)}</text><rect x="${x(r.lo)}" y="${y + 4}" width="${Math.max(3, x(r.hi) - x(r.lo))}" height="16" rx="4" fill="var(--blue)" opacity=".75"/><circle cx="${x(r.mid)}" cy="${y + 12}" r="4" fill="#fff"/>`; }).join('')}
+    <line x1="${x(m.fin)}" x2="${x(m.fin)}" y1="6" y2="${H - 26}" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="${x(m.fin)}" y="${H - 10}" text-anchor="middle" class="n" style="fill:var(--yellow)">${valF(m.fin)}</text>
+    <text x="${L0}" y="${H - 10}" class="n">${valF(mn)}</text><text x="${R0}" y="${H - 10}" text-anchor="end" class="n">${valF(mx)}</text></g></svg>`;
+}
+EG_OUT.val = () => {
+  const m = valModel(), s = m.s, cur = s.co.cur || '';
+  const head = `<div class="val-big"><div class="stack" style="gap:4px"><span class="lbl">القيمة التقديرية لحقوق الملكية${egN(s.co.stake) < 100 ? ' · الحصة ' + fmtN(egN(s.co.stake), 0) + '%: ' + valF(m.stake) : ''}</span><span class="v">${valF(m.fin)} <small style="font-size:15px;color:var(--faint)">${esc(cur)}</small></span></div>
+    <div class="stack" style="gap:6px;flex:1;min-width:220px"><span class="soft" style="font-size:13px">النطاق المعقول <b dir="ltr">${valF(Math.min(...m.ff.map(x => x.lo).filter(v => v > 0)))} – ${valF(Math.max(...m.ff.map(x => x.hi)))}</b></span><span class="row nowrap" style="gap:8px"><span class="lbl">درجة الثقة</span><span class="tag ${m.conf[1]}">${m.conf[0]}</span><span class="faint" style="font-size:12px">جودة البيانات ${fmtN(m.qpct, 0)}% · تباين الطرق ${fmtN(m.spread, 0)}%</span></span></div></div>`;
+  const flags = m.flags.length ? `<div class="banner y" style="font-size:12.5px;align-items:flex-start">${ic('risks', 16, 'style="color:var(--yellow);margin-top:2px"')}<div class="stack" style="gap:3px">${m.flags.map(f => `<span>• ${esc(f)}</span>`).join('')}</div></div>` : '';
+  if (s.tab === 'company' || s.tab === 'fin') return egCard('القراءة المالية التاريخية', 'VAL-01/02', head + `${anKpis([['نمو الإيرادات السنوي المركب', fmtN(m.hist.cagr, 1) + '%', m.hist.cagr > 0 ? 'good' : 'bad'], ['هامش EBITDA', fmtN(m.hist.margin, 1) + '%'], ['هامش صافي الربح', fmtN(m.hist.net, 1) + '%', m.hist.net > 0 ? 'good' : 'bad'], ['العائد على حقوق الملكية', fmtN(m.hist.roe, 1) + '%'], ['صافي الدين / EBITDA', isFinite(m.hist.lev) ? fmtN(m.hist.lev, 1) + 'x' : '—', m.hist.lev > 3 ? 'bad' : 'good'], ['رأس المال العامل من الإيرادات', fmtN(m.hist.nwcPct, 1) + '%']])}
+    ${anTbl({ h: 'الملخص المالي (' + esc(cur) + ')', cols: ['السنة', 'الإيرادات', 'EBITDA', 'الهامش', 'صافي الربح', 'الإنفاق الرأسمالي', 'رأس المال العامل'], rows: m.Y.map(y => [y.y, valF(y.rev), valF(y.ebitda), y.rev ? fmtN(y.ebitda / y.rev * 100, 1) + '%' : '—', valF(y.ni), valF(y.capex), valF(y.nwc)]) })}
+    ${anTbl({ h: 'من قيمة المنشأة إلى قيمة حقوق الملكية', cols: ['البند', 'القيمة'], rows: [['الديون', valF(egN(s.bs.debt))], ['النقد', valF(egN(s.bs.cash))], ['صافي الدين', valF(m.netDebt)], ['أصول غير تشغيلية (+)', valF(egN(s.bs.nonop))], ['حقوق الأقلية (−)', valF(egN(s.bs.minority))]] })}${flags}
+    ${egNote('الأرقام التاريخية أساس كل الطرق: أي خطأ فيها ينتقل إلى التقييم. افصل البنود غير المتكررة، وعدّل رواتب الملاك لمستوى السوق قبل الاعتماد.')}`);
+  if (s.tab === 'dcf') return egCard('التدفقات النقدية المخصومة — DCF', 'VAL-03', head + `${anKpis([['تكلفة حقوق الملكية', fmtN(m.D.ke, 1) + '%'], ['WACC', fmtN(m.D.wacc, 1) + '%'], ['النمو الدائم', fmtN(m.D.tg, 1) + '%'], ['قيمة المنشأة DCF', valF(m.D.ev)], ['حصة القيمة النهائية', fmtN(m.D.tvShare, 0) + '%', m.D.tvShare > 75 ? 'bad' : 'good'], ['حقوق الملكية DCF', valF(m.D.eq), m.D.eq > 0 ? 'good' : 'bad']])}
+    ${anTbl({ h: 'التوقعات والتدفق النقدي الحر للمنشأة FCFF', cols: ['السنة', 'الإيرادات', 'EBITDA', 'NOPAT', 'الإنفاق الرأسمالي', 'تغير رأس المال العامل', 'FCFF', 'معامل الخصم', 'القيمة الحالية'], rows: m.D.rows.map(r => ['+' + r.t, valF(r.rev), valF(r.ebitda), valF(r.nopat), valF(r.capex), valF(r.dnwc), valF(r.fcf), fmtN(r.df, 3), valF(r.pv)]) })}
+    ${anTbl({ h: 'تجميع القيمة', cols: ['البند', 'القيمة'], rows: [['مجموع القيم الحالية (5 سنوات)', valF(m.D.pv)], ['القيمة النهائية', valF(m.D.tv)], ['القيمة الحالية للقيمة النهائية', valF(m.D.pvTv)], ['قيمة المنشأة', valF(m.D.ev)], ['− صافي الدين + أصول غير تشغيلية − الأقلية', valF(m.D.eq - m.D.ev)], ['قيمة حقوق الملكية', valF(m.D.eq)]] })}
+    <div class="stack" style="gap:6px"><span class="lbl">الحساسية: قيمة حقوق الملكية حسب WACC (صفوف) والنمو الدائم (أعمدة)</span><div class="tbl-wrap val-sens"><table><thead><tr><th>WACC \\ g</th>${m.sg.map(g => `<th class="mono" dir="ltr">${fmtN(g, 1)}%</th>`).join('')}</tr></thead><tbody>${m.sens.map((row, i) => `<tr><th class="mono" dir="ltr">${fmtN(m.sw[i], 1)}%</th>${row.map((v, j) => `<td class="mono ${i === 2 && j === 2 ? 'base' : ''}" dir="ltr">${v === null ? '—' : valF(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>${flags}
+    ${egNote('WACC = وزن حقوق الملكية × (العائد الخالي من المخاطر + بيتا × علاوة السوق + علاوة الحجم + علاوة المخاطر الخاصة) + وزن الدين × تكلفة الدين بعد الضريبة. القيمة النهائية بطريقة جوردن: FCFF السنة الخامسة × (1 + g) ÷ (WACC − g).')}`);
+  if (s.tab === 'mult') return egCard('المضاعفات السوقية', 'VAL-04', head + `${anKpis([['شركات مقارنة', s.peers.length || 'استرشادي'], ['وسيط EV/EBITDA', fmtN(m.med.evE, 1) + 'x'], ['وسيط P/E', fmtN(m.med.pe, 1) + 'x'], ['وسيط EV/الإيرادات', fmtN(m.med.evR, 2) + 'x'], ['مرجع القطاع EV/EBITDA', fmtN(m.sec[1], 1) + 'x']])}
+    ${anTbl({ h: 'الشركات والصفقات المقارنة', cols: ['الشركة', 'EV/EBITDA', 'P/E', 'EV/الإيرادات'], rows: m.P.map(p => [p.n, fmtN(egN(p.evE), 1), fmtN(egN(p.pe), 1), fmtN(egN(p.evR), 2)]) })}
+    ${anTbl({ h: 'قيمة حقوق الملكية حسب كل مضاعف (الربع الأدنى · الوسيط · الربع الأعلى)', cols: ['المضاعف', 'أساس الشركة', 'الوسيط', 'منخفض', 'وسيط', 'مرتفع', 'صالح؟'], rows: m.M.map(x => [x.n, valF(x.base), fmtN(x.med, 2) + 'x', x.valid ? valF(x.lo) : '—', x.valid ? valF(x.mid) : '—', x.valid ? valF(x.hi) : '—', x.valid ? 'نعم' : 'لا — الأساس سالب']) })}${flags}
+    ${egNote('المضاعفات الاسترشادية للقطاعات تقريبية وتختلف حسب البلد والحجم والفترة؛ استبدلها بشركات مدرجة أو صفقات فعلية مماثلة. EV/EBITDA الأكثر وزنًا لأنه أقل تأثرًا بهيكل التمويل.')}`);
+  if (s.tab === 'recon') return egCard('التسوية بين الطرق والقيمة النهائية', 'VAL-05/06', head + `${valFF(m)}
+    ${anTbl({ h: 'الأوزان', cols: ['الطريقة', 'قيمة حقوق الملكية', 'الوزن المدخل', 'الوزن الفعلي', 'المساهمة'], rows: m.meth.map(([k, n, v]) => [n, v > 0 ? valF(v) : 'مستبعدة', fmtN(egN(s.w[k]), 0) + '%', v > 0 ? fmtN(egN(s.w[k]) / m.wsum * 100, 0) + '%' : '0%', v > 0 ? valF(v * egN(s.w[k]) / m.wsum) : '—']) })}
+    ${anTbl({ h: 'من القيمة المرجحة إلى القيمة النهائية', cols: ['الخطوة', 'القيمة'], rows: [['القيمة المرجحة', valF(m.pre)], ['+ علاوة السيطرة ' + fmtN(egN(s.adj.control), 0) + '%', valF(m.ctrl)], [m.priv ? '− خصم عدم قابلية التسويق ' + fmtN(egN(s.adj.dlom), 0) + '%' : 'خصم التسويق لا ينطبق (شركة مدرجة)', valF(-m.dlom)], ['− خصم الاعتماد على أشخاص رئيسيين ' + fmtN(egN(s.adj.key), 0) + '%', valF(-m.key)], ['القيمة النهائية لحقوق الملكية', valF(m.fin)], ['قيمة الحصة محل التقييم ' + fmtN(egN(s.co.stake), 0) + '%', valF(m.stake)]] })}
+    ${anTbl({ h: 'السيناريوهات', cols: ['السيناريو', 'النمو', 'هامش EBITDA', 'قيمة المنشأة', 'حقوق الملكية بعد التعديلات'], rows: m.scen.map(x => [x.n, fmtN(x.g, 1) + '%', fmtN(x.m, 1) + '%', valF(x.ev), valF(x.eq)]) })}${flags}
+    ${egNote('الخط الأصفر في الرسم هو القيمة النهائية بعد الأوزان والتعديلات؛ الأشرطة نطاق كل طريقة. لا تُدمج طريقة مستبعدة (قيمة سالبة أو غير صالحة) في المتوسط.')}`);
+  return egCard('جودة البيانات والمخاطر والتوصيات', 'VAL-07/08', head + `${anKpis([['اكتمال شروط الجودة', m.qn + ' من ' + VAL_QUAL.length, m.qpct >= 75 ? 'good' : 'bad'], ['درجة الثقة', m.conf[0], m.conf[1] === 't-s' ? 'good' : 'bad'], ['تنبيهات', m.flags.length, m.flags.length ? 'bad' : 'good'], ['مخاطر مسجلة', s.risks.length], ['مجموع شدتها', m.riskSc]])}
+    ${anTbl({ h: 'بوابة جودة البيانات', cols: ['الشرط', 'الحالة'], rows: VAL_QUAL.map(([k, n]) => [n, s.qual[k] ? 'متحقق' : 'غير متحقق']) })}
+    ${anTbl({ h: 'المخاطر المؤثرة في القيمة', cols: ['الخطر', 'الشدة 1–5', 'الملاحظة'], rows: s.risks.map(r => [r.n, String(r.imp), r.note || '—']) })}
+    <div class="sub" style="gap:6px"><b style="font-size:13px">التوصيات حسب غرض التقييم: ${esc((VAL_PURPOSE.find(p => p[0] === s.co.purpose) || [, ''])[1])}</b>${m.rec.map(r => `<span class="soft" style="font-size:12.5px">• ${esc(r)}</span>`).join('')}</div>${flags}
+    ${egNote('هذا تقدير تحليلي مبني على البيانات المدخلة، ولا يغني عن تقييم معتمد يوقّعه مقيّم مرخّص عند البيع الرسمي أو النزاع أو المتطلبات النظامية. كل رقم قابل للتتبع إلى مدخلاته.')}`);
+};
+VIEWS.valuation = () => {
+  const s = egS('val'), cur = s.co.cur || '';
+  let inputs = '';
+  if (s.tab === 'company') inputs = egCard('الشركة وغرض التقييم', 'VAL-01', egGrid(190, egTxt('val', 'co.name', 'اسم الشركة') + egSel('val', 'co.sector', 'القطاع', Object.entries(VAL_SECTOR).map(([k, v]) => [k, v[0]])) + egSel('val', 'co.stage', 'مرحلة الشركة', VAL_STAGE) + egSel('val', 'co.own', 'نوع الملكية', VAL_OWN) + egTxt('val', 'co.country', 'الدولة') + egSel('val', 'co.cur', 'العملة', (typeof RQ_CURRENCY !== 'undefined' ? RQ_CURRENCY : [['JOD', 'دينار أردني']]).map(([c, l]) => [c, c + ' — ' + l])) + egNum('val', 'co.stake', 'الحصة محل التقييم %') + egTxt('val', 'co.date', 'تاريخ التقييم')) + egQ(1, 'غرض التقييم — يحدد الطريقة الأنسب والتوصيات', egCh('val', 'co.purpose', VAL_PURPOSE)));
+  if (s.tab === 'fin') inputs = egCard('القوائم المالية — آخر 3 سنوات (' + esc(cur) + ')', 'VAL-02', `<div class="tbl-wrap"><table><thead><tr><th>البند</th>${VAL_YEARS.map(y => `<th>${y}</th>`).join('')}</tr></thead><tbody>${[['rev', 'الإيرادات'], ['ebitda', 'EBITDA (الربح قبل الفوائد والضرائب والإهلاك)'], ['da', 'الإهلاك والإطفاء'], ['ni', 'صافي الربح'], ['capex', 'الإنفاق الرأسمالي'], ['nwc', 'رأس المال العامل']].map(([k, n]) => `<tr><td style="font-size:12.5px">${n}</td>${VAL_YEARS.map((_, i) => `<td style="min-width:120px">${egNum('val', `fin.${k}.${i}`, '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` +
+    egQ(0, 'الميزانية بتاريخ التقييم', egGrid(160, egNum('val', 'bs.cash', 'النقد') + egNum('val', 'bs.debt', 'الديون بفوائد') + egNum('val', 'bs.equity', 'حقوق الملكية الدفترية') + egNum('val', 'bs.nonop', 'أصول غير تشغيلية') + egNum('val', 'bs.minority', 'حقوق الأقلية') + egNum('val', 'bs.assetAdj', 'تعديل الأصول للقيمة السوقية (+/−)') + egNum('val', 'bs.liabAdj', 'التزامات غير مسجلة'))));
+  if (s.tab === 'dcf') inputs = egCard('افتراضات DCF', 'VAL-03', egQ(1, 'التشغيل — للسنوات الخمس القادمة', egGrid(150, egNum('val', 'dcf.g', 'نمو الإيرادات السنوي %') + egNum('val', 'dcf.margin', 'هامش EBITDA %') + egNum('val', 'dcf.daPct', 'الإهلاك % من الإيرادات') + egNum('val', 'dcf.capexPct', 'الإنفاق الرأسمالي % من الإيرادات') + egNum('val', 'dcf.nwcPct', 'رأس المال العامل % من الزيادة') + egNum('val', 'dcf.tax', 'معدل الضريبة %'))) +
+    egQ(2, 'معدل الخصم WACC', egGrid(150, egNum('val', 'dcf.rf', 'العائد الخالي من المخاطر %') + egNum('val', 'dcf.erp', 'علاوة مخاطر السوق %') + egNum('val', 'dcf.beta', 'بيتا') + egNum('val', 'dcf.size', 'علاوة الحجم %') + egNum('val', 'dcf.specific', 'علاوة مخاطر خاصة %') + egNum('val', 'dcf.kd', 'تكلفة الدين %') + egNum('val', 'dcf.wd', 'وزن الدين في التمويل %') + egNum('val', 'dcf.tg', 'النمو الدائم %'))));
+  if (s.tab === 'mult') inputs = egCard('الشركات والصفقات المقارنة', 'VAL-04', s.peers.map((p, j) => `<div class="grid" style="grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)">${egTxt('val', `peers.${j}.n`, 'الشركة أو الصفقة')}${egNum('val', `peers.${j}.evE`, 'EV/EBITDA')}${egNum('val', `peers.${j}.pe`, 'P/E')}${egNum('val', `peers.${j}.evR`, 'EV/الإيرادات')}${egDel('val', 'peers', j)}</div>`).join('') + `<div class="row" style="gap:8px;margin-top:6px">${egAdd('val', 'peers', 'إضافة شركة مقارنة')}</div>`);
+  if (s.tab === 'recon') inputs = egCard('الأوزان والتعديلات', 'VAL-05', egQ(1, 'أوزان الطرق (تُطبَّع تلقائيًا)', egGrid(160, egNum('val', 'w.dcf', 'وزن DCF %') + egNum('val', 'w.mult', 'وزن المضاعفات %') + egNum('val', 'w.nav', 'وزن صافي الأصول %'))) + egQ(2, 'تعديلات الشركات الخاصة', egGrid(180, egNum('val', 'adj.control', 'علاوة السيطرة % (عند شراء حصة مسيطرة)') + egNum('val', 'adj.dlom', 'خصم عدم قابلية التسويق % (للخاصة)') + egNum('val', 'adj.key', 'خصم الاعتماد على أشخاص رئيسيين %'))));
+  if (s.tab === 'quality') inputs = egCard('بوابة الجودة والمخاطر', 'VAL-07', egQ(1, 'شروط جودة البيانات', `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">${VAL_QUAL.map(([k, n]) => `<label class="sub row nowrap" style="flex-direction:row;cursor:pointer;min-height:44px;gap:10px"><input type="checkbox" data-val-q="${k}" ${s.qual[k] ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13px">${n}</span></label>`).join('')}</div>`) +
+    egQ(2, 'المخاطر المؤثرة في القيمة', s.risks.map((r, j) => `<div class="grid" style="grid-template-columns:minmax(0,2fr) 110px minmax(0,2fr) auto;gap:8px;align-items:end;padding-bottom:8px;border-bottom:1px dashed var(--line)">${egTxt('val', `risks.${j}.n`, 'الخطر')}${egNum('val', `risks.${j}.imp`, 'الشدة 1–5')}${egTxt('val', `risks.${j}.note`, 'الملاحظة أو المعالجة')}${egDel('val', 'risks', j)}</div>`).join('') + `<div class="row" style="gap:8px;margin-top:6px">${egAdd('val', 'risks', 'إضافة خطر')}</div>`));
+  return `${engHead('DIA-VAL · COMPANY VALUATION ANALYSIS 360', 'التقييم المالي للشركات', 'تقدير قيمة الشركة بثلاث طرق مستقلة — التدفقات النقدية المخصومة، المضاعفات السوقية، وصافي الأصول المعدّل — ثم التسوية بينها بأوزان شفافة، مع تعديلات الشركات الخاصة، وتحليل الحساسية والسيناريوهات، وبوابة جودة البيانات.', engExport('VAL'))}
+  ${egTabs('val', [['company', 'الشركة والغرض'], ['fin', 'القوائم المالية'], ['dcf', 'التدفقات المخصومة DCF'], ['mult', 'المضاعفات السوقية'], ['recon', 'التسوية والقيمة النهائية'], ['quality', 'الجودة والمخاطر والتوصيات']])}
+  ${inputs}${egOut('val')}`;
+};
+document.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.valQ; if (!k) return; egS('val').qual[k] = e.target.checked; egRefresh('val'); save(); });
+// navigation
+(function () {
+  P.valuation = 'M3 20h18 M5 20V10 M10 20V6 M15 20v-8 M20 20V4 M4 8l5-4 5 4 6-5';
+  TITLES.valuation = ['DIA-VAL · Company Valuation Analysis 360', 'التقييم المالي للشركات'];
+  const g = NAV.find(x => x.items.some(([id]) => id === 'eco')) || NAV[NAV.length - 1];
+  if (!g.items.some(([id]) => id === 'valuation')) g.items.splice(g.items.findIndex(([id]) => id === 'eco') + 1, 0, ['valuation', 'التقييم المالي للشركات', 'VAL']);
+})();
+// export
+const _valEs = engSections3;
+engSections3 = function (code) {
+  if (code !== 'VAL') return _valEs(code);
+  const m = valModel(), s = m.s, cur = s.co.cur || '';
+  return { title: 'تقرير التقييم المالي — ' + s.co.name, audience: 'الملاك وصاحب القرار', ref: 'DIA-VAL', sections: [
+    { h: 'الملخص التنفيذي', kv: kvx([['الشركة', s.co.name], ['القطاع', m.sec[0]], ['غرض التقييم', (VAL_PURPOSE.find(p => p[0] === s.co.purpose) || [, ''])[1]], ['تاريخ التقييم', s.co.date], ['القيمة التقديرية لحقوق الملكية', valF(m.fin) + ' ' + cur], ['قيمة الحصة ' + fmtN(egN(s.co.stake), 0) + '%', valF(m.stake) + ' ' + cur], ['النطاق المعقول', valF(Math.min(...m.ff.map(x => x.lo).filter(v => v > 0))) + ' – ' + valF(Math.max(...m.ff.map(x => x.hi)))], ['درجة الثقة', m.conf[0]]]) },
+    { h: 'الملخص المالي التاريخي', cols: ['السنة', 'الإيرادات', 'EBITDA', 'صافي الربح'], rows: m.Y.map(y => [y.y, valF(y.rev), valF(y.ebitda), valF(y.ni)]) },
+    { h: 'التدفقات النقدية المخصومة', kv: kvx([['WACC', fmtN(m.D.wacc, 1) + '%'], ['النمو الدائم', fmtN(m.D.tg, 1) + '%'], ['قيمة المنشأة', valF(m.D.ev)], ['حصة القيمة النهائية', fmtN(m.D.tvShare, 0) + '%'], ['حقوق الملكية', valF(m.D.eq)]]) },
+    { h: 'توقعات FCFF', cols: ['السنة', 'الإيرادات', 'EBITDA', 'FCFF', 'القيمة الحالية'], rows: m.D.rows.map(r => ['+' + r.t, valF(r.rev), valF(r.ebitda), valF(r.fcf), valF(r.pv)]) },
+    { h: 'المضاعفات السوقية', cols: ['المضاعف', 'الوسيط', 'منخفض', 'وسيط', 'مرتفع'], rows: m.M.map(x => [x.n, fmtN(x.med, 2), x.valid ? valF(x.lo) : '—', x.valid ? valF(x.mid) : '—', x.valid ? valF(x.hi) : '—']) },
+    { h: 'التسوية والتعديلات', cols: ['البند', 'القيمة'], rows: [...m.meth.map(([k, n, v]) => [n + ' (وزن ' + fmtN(egN(s.w[k]), 0) + '%)', v > 0 ? valF(v) : 'مستبعدة']), ['القيمة المرجحة', valF(m.pre)], ['علاوة السيطرة', valF(m.ctrl)], ['خصم عدم قابلية التسويق', valF(-m.dlom)], ['خصم الأشخاص الرئيسيين', valF(-m.key)], ['القيمة النهائية', valF(m.fin)]] },
+    { h: 'السيناريوهات', cols: ['السيناريو', 'النمو', 'الهامش', 'حقوق الملكية'], rows: m.scen.map(x => [x.n, fmtN(x.g, 1) + '%', fmtN(x.m, 1) + '%', valF(x.eq)]) },
+    { h: 'الحساسية (WACC × النمو الدائم)', cols: ['WACC \\ g', ...m.sg.map(g => fmtN(g, 1) + '%')], rows: m.sens.map((row, i) => [fmtN(m.sw[i], 1) + '%', ...row.map(v => v === null ? '—' : valF(v))]) },
+    { h: 'التنبيهات', bullets: m.flags.length ? m.flags : ['لا تنبيهات.'] },
+    { h: 'التوصيات', bullets: m.rec.length ? m.rec : ['—'] },
+    { h: 'حدود التقرير', bullets: ['تقدير تحليلي مبني على البيانات المدخلة ولا يغني عن تقييم معتمد من مقيّم مرخّص.', 'المضاعفات القطاعية الاسترشادية تقريبية — استبدلها بشركات وصفقات مقارنة فعلية.', 'جودة البيانات ' + fmtN(m.qpct, 0) + '% — ' + VAL_QUAL.filter(([k]) => !s.qual[k]).map(([, n]) => n).join('؛ ')] }] };
+};
+</script>
+<style>
 /* ================= v28 redesign: top navigation, promo ticker, new home, hub, wallet, contact, info ================= */
 .top{flex-direction:column;align-items:stretch;gap:0;padding:0}
 .tb-tick{display:flex;align-items:center;gap:10px;height:32px;padding:0 16px;background:linear-gradient(90deg,#120709,#1d0a0e 50%,#120709);border-bottom:1px solid var(--redline);overflow:hidden;font-size:12.5px;font-weight:600}
@@ -7369,7 +7570,7 @@ async function rdAfterLogin() {
 }
 
 /* ---------- axes → request form ---------- */
-const RD_DOM = { D01: ['home', 'ask', 'consult', 'analysis', 'diagnosis', 'rootcause', 'foresight', 'whatif', 'solutions', 'decision', 'bench', 'compete'], D02: ['governance', 'tqg', 'quality', 'context', 'ledger'], D03: ['eco', 'pmo', 'ebiz', 'execution', 'impact'], D04: ['fin'], D05: ['supply', 'facility', 'integration', 'erp', 'ops'], D06: ['employ', 'skills', 'cv', 'career', 'self', 'psf', 'hr', 'talent', 'marriage'], D07: ['crm', 'mkt', 'sales', 'cs'], D08: ['risks', 'safety'], D09: ['agents', 'architecture', 'data', 'reports'], D10: ['edu', 'learning', 'memory', 'knowledge', 'questionnaire', 'lms'], D11: ['legal'], D12: ['sustain', 'initiative'] };
+const RD_DOM = { D01: ['home', 'ask', 'consult', 'analysis', 'diagnosis', 'rootcause', 'foresight', 'whatif', 'solutions', 'decision', 'bench', 'compete'], D02: ['governance', 'tqg', 'quality', 'context', 'ledger'], D03: ['eco', 'pmo', 'ebiz', 'execution', 'impact'], D04: ['fin', 'valuation'], D05: ['supply', 'facility', 'integration', 'erp', 'ops'], D06: ['employ', 'skills', 'cv', 'career', 'self', 'psf', 'hr', 'talent', 'marriage'], D07: ['crm', 'mkt', 'sales', 'cs'], D08: ['risks', 'safety'], D09: ['agents', 'architecture', 'data', 'reports'], D10: ['edu', 'learning', 'memory', 'knowledge', 'questionnaire', 'lms'], D11: ['legal'], D12: ['sustain', 'initiative'] };
 function rdAxisInfo(key) {
   if (String(key).startsWith('t:')) { const t = (typeof DASH_TOPICS !== 'undefined' ? DASH_TOPICS : []).find(x => x.id === key.slice(2)) || {}; return { key, id: t.id || '', label: 'تحليل ' + (t.name || ''), code: t.sys || '', icon: t.icon || 'chart', q: t.q || '', sys: t.sys ? [t.sys] : [] }; }
   let it = null; NAV.forEach(g => g.items.forEach(x => { if (x[0] === key) it = x; }));
@@ -7429,6 +7630,7 @@ function rdJobLabel(ref) {
   const j = rdJob(ref);
   if (j.state === 'done') return ['t-s', 'التقرير جاهز'];
   if (j.state === 'wait') return ['t-m', 'بانتظار ملف البيانات'];
+  if (j.state === 'manual') return ['t-i', 'لدى فريق التحليل'];
   if (j.state === 'error') return ['t-c', 'تعذّر التحليل'];
   return ['t-i', RD_STAGES[j.stage] + '…'];
 }
@@ -7484,7 +7686,7 @@ async function rdRunJob(ref) {
     j.stage = 0; rdJobRender(); await rdWait(700);
     j.stage = 1; rdJobRender(); await rdWait(600);
     const loaded = await rdLoadData(ref);
-    if (!loaded) { j.state = 'wait'; rdJobRender(); return; }
+    if (!loaded) { const q = (S.requests || []).find(x => x.ref === ref) || {}; j.state = (q.files || 0) + (q.videos || 0) > 0 || (q.extra || []).length ? 'manual' : 'wait'; j.stage = 1; rdJobRender(); return; }
     j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900);
     j.stage = 3; rdJobRender();
     let code = rdCode(), blob, sha, at = new Date().toISOString();
@@ -7506,17 +7708,24 @@ async function rdRunJob(ref) {
   } catch (e) { console.error(e); j.state = 'error'; j.err = e.message || 'خطأ غير متوقع'; rdJobRender(); }
   finally { RD_ACTIVE.delete(ref); save(); }
 }
-async function rdAttach(ref, file) {
-  if (!file) return;
-  if (!AN_DATA_RE.test(file.name)) { toast('اختر ملف بيانات: CSV أو Excel'); return; }
+const RD_VID_RE = /\.(mp4|mov|webm|m4v|avi|mkv)$/i, RD_TAB_RE = /\.(csv|tsv|txt|tab|xlsx|xlsm|xls|ods|json)$/i;
+async function rdAttach(ref, files) {
+  files = [...(files || [])]; if (!files.length) return;
+  const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
   if (rdServer()) {
-    const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
-    try { toast('جارٍ رفع ' + file.name + '…'); const up = await uploadOne(file, 'file', () => {}); await api('POST', '/api/requests/' + q.id + '/files', { uploads: [up.id] }); }
-    catch (e) { toast(e.message); return; }
+    try {
+      const ids = [];
+      for (const f of files) { toast('جارٍ رفع ' + f.name + '…'); const up = await uploadOne(f, RD_VID_RE.test(f.name) ? 'video' : 'file', () => {}); ids.push(up.id); }
+      await api('POST', '/api/requests/' + q.id + '/files', { uploads: ids });
+    } catch (e) { toast(e.message); return; }
   }
-  RD_FILES[ref] = file; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref);
+  q.extra = (q.extra || []).concat(files.map(f => f.name));
+  const data = files.find(f => RD_TAB_RE.test(f.name));
+  toast('أُرفق ' + files.length + ' ملف');
+  if (data) { RD_FILES[ref] = data; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref); return; }
+  const j = rdJob(ref); j.state = 'manual'; j.stage = 1; save(); rdJobRender();
 }
-document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files[0]) rdAttach(r, e.target.files[0]); });
+document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files.length) rdAttach(r, e.target.files); });
 
 /* ---------- طلباتي وتقاريري ---------- */
 VIEWS.myreqs = () => {
@@ -7535,8 +7744,8 @@ function rdReqCard(q, sel, promise) {
     const trk = `<ol class="mr-trk" aria-label="مراحل الطلب">${RD_STAGES.map((l, i) => { const st = j.state === 'done' || i < j.stage ? 'ok' : i === j.stage && j.state === 'run' ? 'now' : ''; return `<li class="${st}"><span class="d">${st === 'ok' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P.check}"/></svg>` : i + 1}</span><span class="l">${l}</span></li>`; }).join('')}</ol>`;
     let body = '';
     if (j.state === 'run') body = `<div class="banner" style="background:#0d1a2b;border:1px solid #1d3b5c">${ic('chart', 18, 'style="color:var(--blue)"')}<span style="flex:1">انتقل الطلب إلى النظام: <b>${RD_STAGES[j.stage]}</b>${j.rows ? ' · ' + rdNum(j.rows) + ' سجل' : ''}. ${esc(promise)}</span></div>`;
-    if (j.state === 'wait') body = `<div class="banner y">${ic('data', 18, 'style="color:var(--yellow)"')}<span style="flex:1">لم يُرفق ملف بيانات قابل للتحليل (CSV أو Excel). أرفقه ليبدأ التحليل الآلي فورًا.</span><label class="btn sm primary" style="cursor:pointer">${ic('upload', 14)}إرفاق ملف البيانات<input type="file" data-rd-attach="${esc(q.ref)}" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json" hidden></label></div>`;
-    if (j.state === 'error') body = `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span style="flex:1">تعذّر إكمال التحليل: ${esc(j.err || '')}</span><button type="button" class="btn sm" data-act="rd-retry" data-k="${esc(q.ref)}">إعادة المحاولة</button><label class="btn sm" style="cursor:pointer">إرفاق ملف آخر<input type="file" data-rd-attach="${esc(q.ref)}" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json" hidden></label></div>`;
+    if (j.state === 'wait' || j.state === 'manual') body = `<div class="banner ${j.state === 'manual' ? '' : 'y'}" style="${j.state === 'manual' ? 'background:#0d1a2b;border:1px solid #1d3b5c' : ''}">${ic(j.state === 'manual' ? 'agents' : 'data', 18, 'style="color:var(--yellow)"')}<span style="flex:1">${j.state === 'manual' ? 'استلمنا مرفقاتك' + (q.extra && q.extra.length ? ' (' + esc(q.extra.slice(-3).join('، ')) + ')' : '') + '. الصور والفيديو والمستندات يراجعها فريق التحليل ويُصدر تقريرك الموثّق هنا. وإذا كان لديك جدول بيانات (Excel أو CSV) أرفقه ليبدأ التحليل الآلي فورًا.' : 'أرفق ملفاتك — أي نوع: Excel، CSV، PDF، Word، صور، فيديو. جداول البيانات تبدأ التحليل الآلي فورًا، وباقي الملفات يراجعها فريق التحليل.'}</span><label class="btn sm primary" style="cursor:pointer">${ic('upload', 14)}إرفاق ملفات<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label></div>`;
+    if (j.state === 'error') body = `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span style="flex:1">تعذّر إكمال التحليل: ${esc(j.err || '')}</span><button type="button" class="btn sm" data-act="rd-retry" data-k="${esc(q.ref)}">إعادة المحاولة</button><label class="btn sm" style="cursor:pointer">إرفاق ملفات أخرى<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label></div>`;
     if (j.state === 'done') {
       const seal = `<div class="mr-seal"><span>رمز التحقق <code>${esc(j.code || '')}</code></span><span>صدر ${esc(String(j.at || '').slice(0, 10))}</span><span>البصمة SHA-256 <code>${esc(String(j.sha || '').slice(0, 16))}…</code></span><span>${ic('check', 13, 'style="color:var(--green)"')} نسخة محفوظة في ملفك لدى نايوش</span></div>`;
       body = !open ? `<button type="button" class="mr-rec" data-act="rd-receive" data-k="${esc(q.ref)}">${ic('reports', 24)}استلام التقرير</button>${seal}`
@@ -7647,6 +7856,17 @@ function rd2Handle(act, k, el) {
     case 'rd-fmt': S.mrFmt = k; render(); return true;
     case 'rd-export': rdExport(k); return true;
     case 'rd-retry': rdJobs()[k] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(k); return true;
+    case 'rd-staff-issue': {
+      if (el && el.getAttribute('aria-disabled') === 'true') { toast('شغّل التحليل على مرفق الطلب أولًا (زر التحليل في المرفقات)'); return true; }
+      const [id, ref] = String(k).split('|'), q = (SV.inbox || []).find(x => String(x.id) === id) || {}, code = rdCode();
+      const rep = anReport('pdf'); rep.title = 'تقرير التحليل — ' + (q.axisLabel || q.title || ref); rep.ref = ref; rep.code = 'REPORT'; rep.audience = q.owner || ''; rep.by = (typeof ME !== 'undefined' && ME ? ME.name : '') + ' — فريق التحليل في نايوش';
+      const date = new Date().toISOString().slice(0, 10);
+      rep.sections.unshift({ h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', q.axisLabel || q.title || '—'], ['مقدّم الطلب', q.owner || '—'], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', 'نسخة موثّقة — محفوظة لدى نايوش ولا تُعدَّل']] });
+      rep.seal = { code, ref, client: q.owner || '', date };
+      toast('جارٍ إعداد التقرير…');
+      buildPdf(rep).then(b => rdStaffUpload(id, ref, b, code)).catch(err => toast(err.message));
+      return true;
+    }
     case 'rd-view-results': rdLoadData(k).then(ok => { if (ok) go('results'); else toast('بيانات الطلب غير متاحة في هذا المتصفح'); }).catch(e => toast(e.message)); return true;
   }
   return false;
@@ -7744,6 +7964,34 @@ anCapture = function (r, ref) {
   if (S.axOpen && (S.route === 'axes' || S.route === 'home')) { S.axDone = ref; setTimeout(() => { S.reqDone = null; render(); rdScrollPanel(); }, 30); }
 };
 document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('ln-req')) { e.preventDefault(); e.target.click(); } });
+
+/* ---------- staff: issue the sealed report for requests the automatic analysis can't handle (images, video, documents) ---------- */
+function rdStaffReportCard(q) {
+  if (q.report) return `<div class="card" style="gap:8px"><h3 class="h-sec">${ic('verify', 17, 'style="color:var(--green)"')} التقرير الموثّق</h3><span class="soft" style="font-size:13px">رمز التحقق <b dir="ltr" style="color:var(--yellow)">${esc(q.report.code)}</b> · صدر ${esc(String(q.report.at || '').slice(0, 10))}</span><a class="btn sm" href="/api/requests/${q.id}/report" download>${ic('reports', 14)}تنزيل التقرير</a></div>`;
+  const fromRes = typeof AN !== 'undefined' && AN && AN.R && S.res && S.res.src && S.res.src.ref === q.ref;
+  return `<div class="card" style="gap:10px"><h3 class="h-sec">إصدار التقرير الموثّق للعميل</h3>
+    <p class="muted" style="margin:0;font-size:12.5px;line-height:1.7">يُحفظ التقرير مرة واحدة في ملف العميل مع رمز تحقق وبصمة، ولا يمكن تعديله بعد الإصدار. يظهر للعميل فورًا في «طلباتي وتقاريري».</p>
+    <div class="row" style="gap:8px">
+      <button type="button" class="btn sm primary" data-act="rd-staff-issue" data-k="${q.id}|${esc(q.ref)}" ${fromRes ? '' : 'aria-disabled="true" title="شغّل التحليل على مرفق الطلب أولًا"'}>${ic('chart', 14)}إصدار من نتائج التحليل الحالية</button>
+      <label class="btn sm" style="cursor:pointer">${ic('upload', 14)}رفع تقرير PDF جاهز<input type="file" accept="application/pdf,.pdf" data-rd-staff-pdf="${q.id}|${esc(q.ref)}" hidden></label>
+    </div></div>`;
+}
+async function rdStaffUpload(id, ref, blob, code) {
+  const res = await fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.message || 'تعذّر حفظ التقرير');
+  toast('صدر التقرير الموثّق ' + code + ' — وصل للعميل');
+  if (SV.detail) delete SV.detail[id];
+  if (typeof refreshRequests === 'function') await refreshRequests();
+  try { const dd = await api('GET', '/api/requests/' + id); SV.detail[id] = dd.request; } catch (e) {}
+  render();
+}
+document.addEventListener('change', async (e) => {
+  const k = e.target.dataset && e.target.dataset.rdStaffPdf; if (!k || !e.target.files[0]) return;
+  const [id, ref] = k.split('|'), f = e.target.files[0];
+  if (!/\.pdf$/i.test(f.name)) { toast('اختر ملف PDF'); return; }
+  try { await rdStaffUpload(id, ref, f, rdCode()); } catch (err) { toast(err.message); }
+});
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -7886,6 +8134,7 @@ function svDetail(q) {
     <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <textarea id="sv-note" rows="2" placeholder="ملاحظة لصاحب الطلب أو للفريق (اختياري)"></textarea>
     <button type="submit" class="btn primary">حفظ التحديث</button></form>` : ''}
+  ${SV.canManage && typeof rdStaffReportCard === 'function' ? rdStaffReportCard(q) : ''}
   <div class="card" style="gap:8px"><h3 class="h-sec">السجل</h3>${q.events.map(e => `<div class="row nowrap" style="gap:10px;font-size:12.5px;align-items:flex-start"><span class="mono faint" style="min-width:110px">${dt(e.at)}</span><span>${esc(e.by || '')}: ${e.from ? esc(e.from) + ' ← ' : ''}${esc(e.to || '')}${e.note ? ' — ' + esc(e.note) : ''}</span></div>`).join('')}</div>`;
 }
 

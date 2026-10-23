@@ -139,6 +139,7 @@ function svDetail(q) {
     <select id="sv-status" style="min-height:44px;background:var(--bg);border:1px solid var(--line2);border-radius:10px;color:var(--fg);padding:0 10px">${Object.entries(SV.inboxStatuses).map(([k, l]) => `<option value="${k}" ${k === q.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <textarea id="sv-note" rows="2" placeholder="ملاحظة لصاحب الطلب أو للفريق (اختياري)"></textarea>
     <button type="submit" class="btn primary">حفظ التحديث</button></form>` : ''}
+  ${SV.canManage && typeof rdStaffReportCard === 'function' ? rdStaffReportCard(q) : ''}
   <div class="card" style="gap:8px"><h3 class="h-sec">السجل</h3>${q.events.map(e => `<div class="row nowrap" style="gap:10px;font-size:12.5px;align-items:flex-start"><span class="mono faint" style="min-width:110px">${dt(e.at)}</span><span>${esc(e.by || '')}: ${e.from ? esc(e.from) + ' ← ' : ''}${esc(e.to || '')}${e.note ? ' — ' + esc(e.note) : ''}</span></div>`).join('')}</div>`;
 }
 

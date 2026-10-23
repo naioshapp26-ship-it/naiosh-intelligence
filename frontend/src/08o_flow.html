@@ -317,7 +317,7 @@ async function rdAfterLogin() {
 }
 
 /* ---------- axes → request form ---------- */
-const RD_DOM = { D01: ['home', 'ask', 'consult', 'analysis', 'diagnosis', 'rootcause', 'foresight', 'whatif', 'solutions', 'decision', 'bench', 'compete'], D02: ['governance', 'tqg', 'quality', 'context', 'ledger'], D03: ['eco', 'pmo', 'ebiz', 'execution', 'impact'], D04: ['fin'], D05: ['supply', 'facility', 'integration', 'erp', 'ops'], D06: ['employ', 'skills', 'cv', 'career', 'self', 'psf', 'hr', 'talent', 'marriage'], D07: ['crm', 'mkt', 'sales', 'cs'], D08: ['risks', 'safety'], D09: ['agents', 'architecture', 'data', 'reports'], D10: ['edu', 'learning', 'memory', 'knowledge', 'questionnaire', 'lms'], D11: ['legal'], D12: ['sustain', 'initiative'] };
+const RD_DOM = { D01: ['home', 'ask', 'consult', 'analysis', 'diagnosis', 'rootcause', 'foresight', 'whatif', 'solutions', 'decision', 'bench', 'compete'], D02: ['governance', 'tqg', 'quality', 'context', 'ledger'], D03: ['eco', 'pmo', 'ebiz', 'execution', 'impact'], D04: ['fin', 'valuation'], D05: ['supply', 'facility', 'integration', 'erp', 'ops'], D06: ['employ', 'skills', 'cv', 'career', 'self', 'psf', 'hr', 'talent', 'marriage'], D07: ['crm', 'mkt', 'sales', 'cs'], D08: ['risks', 'safety'], D09: ['agents', 'architecture', 'data', 'reports'], D10: ['edu', 'learning', 'memory', 'knowledge', 'questionnaire', 'lms'], D11: ['legal'], D12: ['sustain', 'initiative'] };
 function rdAxisInfo(key) {
   if (String(key).startsWith('t:')) { const t = (typeof DASH_TOPICS !== 'undefined' ? DASH_TOPICS : []).find(x => x.id === key.slice(2)) || {}; return { key, id: t.id || '', label: 'تحليل ' + (t.name || ''), code: t.sys || '', icon: t.icon || 'chart', q: t.q || '', sys: t.sys ? [t.sys] : [] }; }
   let it = null; NAV.forEach(g => g.items.forEach(x => { if (x[0] === key) it = x; }));
@@ -377,6 +377,7 @@ function rdJobLabel(ref) {
   const j = rdJob(ref);
   if (j.state === 'done') return ['t-s', 'التقرير جاهز'];
   if (j.state === 'wait') return ['t-m', 'بانتظار ملف البيانات'];
+  if (j.state === 'manual') return ['t-i', 'لدى فريق التحليل'];
   if (j.state === 'error') return ['t-c', 'تعذّر التحليل'];
   return ['t-i', RD_STAGES[j.stage] + '…'];
 }
@@ -432,7 +433,7 @@ async function rdRunJob(ref) {
     j.stage = 0; rdJobRender(); await rdWait(700);
     j.stage = 1; rdJobRender(); await rdWait(600);
     const loaded = await rdLoadData(ref);
-    if (!loaded) { j.state = 'wait'; rdJobRender(); return; }
+    if (!loaded) { const q = (S.requests || []).find(x => x.ref === ref) || {}; j.state = (q.files || 0) + (q.videos || 0) > 0 || (q.extra || []).length ? 'manual' : 'wait'; j.stage = 1; rdJobRender(); return; }
     j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900);
     j.stage = 3; rdJobRender();
     let code = rdCode(), blob, sha, at = new Date().toISOString();
@@ -454,17 +455,24 @@ async function rdRunJob(ref) {
   } catch (e) { console.error(e); j.state = 'error'; j.err = e.message || 'خطأ غير متوقع'; rdJobRender(); }
   finally { RD_ACTIVE.delete(ref); save(); }
 }
-async function rdAttach(ref, file) {
-  if (!file) return;
-  if (!AN_DATA_RE.test(file.name)) { toast('اختر ملف بيانات: CSV أو Excel'); return; }
+const RD_VID_RE = /\.(mp4|mov|webm|m4v|avi|mkv)$/i, RD_TAB_RE = /\.(csv|tsv|txt|tab|xlsx|xlsm|xls|ods|json)$/i;
+async function rdAttach(ref, files) {
+  files = [...(files || [])]; if (!files.length) return;
+  const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
   if (rdServer()) {
-    const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
-    try { toast('جارٍ رفع ' + file.name + '…'); const up = await uploadOne(file, 'file', () => {}); await api('POST', '/api/requests/' + q.id + '/files', { uploads: [up.id] }); }
-    catch (e) { toast(e.message); return; }
+    try {
+      const ids = [];
+      for (const f of files) { toast('جارٍ رفع ' + f.name + '…'); const up = await uploadOne(f, RD_VID_RE.test(f.name) ? 'video' : 'file', () => {}); ids.push(up.id); }
+      await api('POST', '/api/requests/' + q.id + '/files', { uploads: ids });
+    } catch (e) { toast(e.message); return; }
   }
-  RD_FILES[ref] = file; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref);
+  q.extra = (q.extra || []).concat(files.map(f => f.name));
+  const data = files.find(f => RD_TAB_RE.test(f.name));
+  toast('أُرفق ' + files.length + ' ملف');
+  if (data) { RD_FILES[ref] = data; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref); return; }
+  const j = rdJob(ref); j.state = 'manual'; j.stage = 1; save(); rdJobRender();
 }
-document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files[0]) rdAttach(r, e.target.files[0]); });
+document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files.length) rdAttach(r, e.target.files); });
 
 /* ---------- طلباتي وتقاريري ---------- */
 VIEWS.myreqs = () => {
@@ -483,8 +491,8 @@ function rdReqCard(q, sel, promise) {
     const trk = `<ol class="mr-trk" aria-label="مراحل الطلب">${RD_STAGES.map((l, i) => { const st = j.state === 'done' || i < j.stage ? 'ok' : i === j.stage && j.state === 'run' ? 'now' : ''; return `<li class="${st}"><span class="d">${st === 'ok' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P.check}"/></svg>` : i + 1}</span><span class="l">${l}</span></li>`; }).join('')}</ol>`;
     let body = '';
     if (j.state === 'run') body = `<div class="banner" style="background:#0d1a2b;border:1px solid #1d3b5c">${ic('chart', 18, 'style="color:var(--blue)"')}<span style="flex:1">انتقل الطلب إلى النظام: <b>${RD_STAGES[j.stage]}</b>${j.rows ? ' · ' + rdNum(j.rows) + ' سجل' : ''}. ${esc(promise)}</span></div>`;
-    if (j.state === 'wait') body = `<div class="banner y">${ic('data', 18, 'style="color:var(--yellow)"')}<span style="flex:1">لم يُرفق ملف بيانات قابل للتحليل (CSV أو Excel). أرفقه ليبدأ التحليل الآلي فورًا.</span><label class="btn sm primary" style="cursor:pointer">${ic('upload', 14)}إرفاق ملف البيانات<input type="file" data-rd-attach="${esc(q.ref)}" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json" hidden></label></div>`;
-    if (j.state === 'error') body = `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span style="flex:1">تعذّر إكمال التحليل: ${esc(j.err || '')}</span><button type="button" class="btn sm" data-act="rd-retry" data-k="${esc(q.ref)}">إعادة المحاولة</button><label class="btn sm" style="cursor:pointer">إرفاق ملف آخر<input type="file" data-rd-attach="${esc(q.ref)}" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json" hidden></label></div>`;
+    if (j.state === 'wait' || j.state === 'manual') body = `<div class="banner ${j.state === 'manual' ? '' : 'y'}" style="${j.state === 'manual' ? 'background:#0d1a2b;border:1px solid #1d3b5c' : ''}">${ic(j.state === 'manual' ? 'agents' : 'data', 18, 'style="color:var(--yellow)"')}<span style="flex:1">${j.state === 'manual' ? 'استلمنا مرفقاتك' + (q.extra && q.extra.length ? ' (' + esc(q.extra.slice(-3).join('، ')) + ')' : '') + '. الصور والفيديو والمستندات يراجعها فريق التحليل ويُصدر تقريرك الموثّق هنا. وإذا كان لديك جدول بيانات (Excel أو CSV) أرفقه ليبدأ التحليل الآلي فورًا.' : 'أرفق ملفاتك — أي نوع: Excel، CSV، PDF، Word، صور، فيديو. جداول البيانات تبدأ التحليل الآلي فورًا، وباقي الملفات يراجعها فريق التحليل.'}</span><label class="btn sm primary" style="cursor:pointer">${ic('upload', 14)}إرفاق ملفات<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label></div>`;
+    if (j.state === 'error') body = `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span style="flex:1">تعذّر إكمال التحليل: ${esc(j.err || '')}</span><button type="button" class="btn sm" data-act="rd-retry" data-k="${esc(q.ref)}">إعادة المحاولة</button><label class="btn sm" style="cursor:pointer">إرفاق ملفات أخرى<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label></div>`;
     if (j.state === 'done') {
       const seal = `<div class="mr-seal"><span>رمز التحقق <code>${esc(j.code || '')}</code></span><span>صدر ${esc(String(j.at || '').slice(0, 10))}</span><span>البصمة SHA-256 <code>${esc(String(j.sha || '').slice(0, 16))}…</code></span><span>${ic('check', 13, 'style="color:var(--green)"')} نسخة محفوظة في ملفك لدى نايوش</span></div>`;
       body = !open ? `<button type="button" class="mr-rec" data-act="rd-receive" data-k="${esc(q.ref)}">${ic('reports', 24)}استلام التقرير</button>${seal}`
@@ -595,6 +603,17 @@ function rd2Handle(act, k, el) {
     case 'rd-fmt': S.mrFmt = k; render(); return true;
     case 'rd-export': rdExport(k); return true;
     case 'rd-retry': rdJobs()[k] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(k); return true;
+    case 'rd-staff-issue': {
+      if (el && el.getAttribute('aria-disabled') === 'true') { toast('شغّل التحليل على مرفق الطلب أولًا (زر التحليل في المرفقات)'); return true; }
+      const [id, ref] = String(k).split('|'), q = (SV.inbox || []).find(x => String(x.id) === id) || {}, code = rdCode();
+      const rep = anReport('pdf'); rep.title = 'تقرير التحليل — ' + (q.axisLabel || q.title || ref); rep.ref = ref; rep.code = 'REPORT'; rep.audience = q.owner || ''; rep.by = (typeof ME !== 'undefined' && ME ? ME.name : '') + ' — فريق التحليل في نايوش';
+      const date = new Date().toISOString().slice(0, 10);
+      rep.sections.unshift({ h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', q.axisLabel || q.title || '—'], ['مقدّم الطلب', q.owner || '—'], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', 'نسخة موثّقة — محفوظة لدى نايوش ولا تُعدَّل']] });
+      rep.seal = { code, ref, client: q.owner || '', date };
+      toast('جارٍ إعداد التقرير…');
+      buildPdf(rep).then(b => rdStaffUpload(id, ref, b, code)).catch(err => toast(err.message));
+      return true;
+    }
     case 'rd-view-results': rdLoadData(k).then(ok => { if (ok) go('results'); else toast('بيانات الطلب غير متاحة في هذا المتصفح'); }).catch(e => toast(e.message)); return true;
   }
   return false;
@@ -692,4 +711,32 @@ anCapture = function (r, ref) {
   if (S.axOpen && (S.route === 'axes' || S.route === 'home')) { S.axDone = ref; setTimeout(() => { S.reqDone = null; render(); rdScrollPanel(); }, 30); }
 };
 document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('ln-req')) { e.preventDefault(); e.target.click(); } });
+
+/* ---------- staff: issue the sealed report for requests the automatic analysis can't handle (images, video, documents) ---------- */
+function rdStaffReportCard(q) {
+  if (q.report) return `<div class="card" style="gap:8px"><h3 class="h-sec">${ic('verify', 17, 'style="color:var(--green)"')} التقرير الموثّق</h3><span class="soft" style="font-size:13px">رمز التحقق <b dir="ltr" style="color:var(--yellow)">${esc(q.report.code)}</b> · صدر ${esc(String(q.report.at || '').slice(0, 10))}</span><a class="btn sm" href="/api/requests/${q.id}/report" download>${ic('reports', 14)}تنزيل التقرير</a></div>`;
+  const fromRes = typeof AN !== 'undefined' && AN && AN.R && S.res && S.res.src && S.res.src.ref === q.ref;
+  return `<div class="card" style="gap:10px"><h3 class="h-sec">إصدار التقرير الموثّق للعميل</h3>
+    <p class="muted" style="margin:0;font-size:12.5px;line-height:1.7">يُحفظ التقرير مرة واحدة في ملف العميل مع رمز تحقق وبصمة، ولا يمكن تعديله بعد الإصدار. يظهر للعميل فورًا في «طلباتي وتقاريري».</p>
+    <div class="row" style="gap:8px">
+      <button type="button" class="btn sm primary" data-act="rd-staff-issue" data-k="${q.id}|${esc(q.ref)}" ${fromRes ? '' : 'aria-disabled="true" title="شغّل التحليل على مرفق الطلب أولًا"'}>${ic('chart', 14)}إصدار من نتائج التحليل الحالية</button>
+      <label class="btn sm" style="cursor:pointer">${ic('upload', 14)}رفع تقرير PDF جاهز<input type="file" accept="application/pdf,.pdf" data-rd-staff-pdf="${q.id}|${esc(q.ref)}" hidden></label>
+    </div></div>`;
+}
+async function rdStaffUpload(id, ref, blob, code) {
+  const res = await fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.message || 'تعذّر حفظ التقرير');
+  toast('صدر التقرير الموثّق ' + code + ' — وصل للعميل');
+  if (SV.detail) delete SV.detail[id];
+  if (typeof refreshRequests === 'function') await refreshRequests();
+  try { const dd = await api('GET', '/api/requests/' + id); SV.detail[id] = dd.request; } catch (e) {}
+  render();
+}
+document.addEventListener('change', async (e) => {
+  const k = e.target.dataset && e.target.dataset.rdStaffPdf; if (!k || !e.target.files[0]) return;
+  const [id, ref] = k.split('|'), f = e.target.files[0];
+  if (!/\.pdf$/i.test(f.name)) { toast('اختر ملف PDF'); return; }
+  try { await rdStaffUpload(id, ref, f, rdCode()); } catch (err) { toast(err.message); }
+});
 </script>
