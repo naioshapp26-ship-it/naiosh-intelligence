@@ -34,6 +34,12 @@
 .ax-panel #rq-panel{position:static!important}
 .ax-panel > section.card:first-of-type{display:none}
 @media (max-width:760px){.ln-box{padding-bottom:46px}.ln-req{height:28px;font-size:11.5px}.ax-panel{padding:10px}}
+/* password eye */
+.pw-wrap{position:relative;display:block;width:100%}
+.pw-wrap input{width:100%;padding-left:44px!important;box-sizing:border-box}
+.pw-eye{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;border:0;background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pw-eye:hover,.pw-eye:focus-visible{color:var(--yellow);background:var(--raised);outline:none}
+.pw-eye[aria-pressed="true"]{color:var(--yellow)}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -190,8 +196,8 @@ VIEWS.register = () => {
     card = `<div class="stack" style="gap:4px"><h2 class="title-xl" style="font-size:24px">تحقّق من بريدك وجوالك</h2><p class="muted" style="font-size:13.5px;margin:0">أرسلنا رمزًا إلى <b><bdi dir="ltr">${esc(rdMask(v.email))}</bdi></b> ورمزًا آخر إلى <b><bdi dir="ltr">${esc(rdMask(v.phone))}</bdi></b>. الرمزان صالحان ${v.expiresMin || 15} دقيقة.</p></div>
       ${v.demo ? `<div class="au-demo">${ic('info', 18, 'style="color:var(--yellow);flex-shrink:0;margin-top:3px"')}<span><b>وضع تجريبي:</b> لا تُرسل رسائل فعلية الآن. في التشغيل الفعلي تصلك الرموز على بريدك وجوالك.<br>رمز البريد <code>${v.demo.email}</code> · رمز الجوال <code>${v.demo.sms}</code></span></div>` : ''}
       <form id="rg-verify" class="stack" style="gap:14px" novalidate>
-        <div class="au-code"><label class="au-f"><span class="lbl">رمز البريد الإلكتروني</span><input id="rg-ec" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.ec || '')}" ${inv('emailCode')}>${E('emailCode')}</label>
-          <label class="au-f"><span class="lbl">رمز الجوال</span><input id="rg-sc" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.sc || '')}" ${inv('smsCode')}>${E('smsCode')}</label></div>
+        <div class="au-code"><label class="au-f"><span class="lbl">رمز البريد الإلكتروني</span><input type="text" id="rg-ec" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.ec || '')}" ${inv('emailCode')}>${E('emailCode')}</label>
+          <label class="au-f"><span class="lbl">رمز الجوال</span><input type="text" id="rg-sc" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.sc || '')}" ${inv('smsCode')}>${E('smsCode')}</label></div>
         ${E('form')}
         <button type="submit" class="btn primary block" style="min-height:50px" ${RG_BUSY ? 'aria-disabled="true"' : ''}>${ic('check', 17)}تأكيد وإنشاء الحساب</button>
       </form>
@@ -200,10 +206,10 @@ VIEWS.register = () => {
   } else if (tab === 'signup') {
     card = `<div class="stack" style="gap:4px"><h2 class="title-xl" style="font-size:24px">إنشاء حساب</h2><p class="muted" style="font-size:13.5px;margin:0">بياناتك الحقيقية تحمي حسابك وتقاريرك من انتحال الشخصية. نتحقق من البريد والجوال برمزين.</p></div>
       <form id="rg-form" class="stack" style="gap:12px" novalidate>
-        <label class="au-f"><span class="lbl">الاسم الكامل كما في الهوية *</span><input data-rg="name" value="${esc(f.name)}" autocomplete="name" placeholder="الاسم الأول واسم العائلة" ${inv('name')}>${E('name')}</label>
+        <label class="au-f"><span class="lbl">الاسم الكامل كما في الهوية *</span><input type="text" data-rg="name" value="${esc(f.name)}" autocomplete="name" placeholder="الاسم الأول واسم العائلة" ${inv('name')}>${E('name')}</label>
         <label class="au-f"><span class="lbl">البريد الإلكتروني *</span><input data-rg="email" type="email" dir="ltr" value="${esc(f.email)}" autocomplete="email" placeholder="name@company.com" ${inv('email')}>${E('email')}</label>
         <div class="au-f"><span class="lbl">رقم الجوال *</span><div class="au-ph"><select data-rg="cc" aria-label="رمز الدولة">${RD_CC.map(([c, l]) => `<option value="${c}" ${f.cc === c ? 'selected' : ''}>${c} ${l}</option>`).join('')}</select><input data-rg="phone" type="tel" inputmode="tel" value="${esc(f.phone)}" autocomplete="tel-national" placeholder="791234567" aria-label="رقم الجوال" ${inv('phone')}></div>${E('phone')}</div>
-        <label class="au-f"><span class="lbl">الجهة أو المنظمة (اختياري)</span><input data-rg="org" value="${esc(f.org)}" autocomplete="organization"></label>
+        <label class="au-f"><span class="lbl">الجهة أو المنظمة (اختياري)</span><input type="text" data-rg="org" value="${esc(f.org)}" autocomplete="organization"></label>
         <div class="grid g2"><label class="au-f"><span class="lbl">كلمة المرور *</span><input data-rg="password" type="password" dir="ltr" autocomplete="new-password" ${inv('password')}>${E('password')}</label>
           <label class="au-f"><span class="lbl">تأكيد كلمة المرور *</span><input data-rg="password2" type="password" dir="ltr" autocomplete="new-password" ${inv('password2')}>${E('password2')}</label></div>
         <span class="faint" style="font-size:11.5px;margin-top:-6px">10 أحرف على الأقل، حروف وأرقام.</span>
@@ -554,7 +560,7 @@ VIEWS.verify = () => {
         ${fm ? (fm.ok ? `<div class="banner g">${ic('check', 18, 'style="color:var(--green)"')}<span>«${esc(fm.name)}» مطابق للنسخة الأصلية — لم يُعدَّل.</span></div>` : `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span>«${esc(fm.name)}» <b>غير مطابق</b> — الملف عُدِّل أو ليس نسخة هذا التقرير.</span></div>`) : ''}</section>`;
   }
   return `<section class="stack" style="gap:6px"><h2 class="pg-title">التحقق من تقرير</h2><p class="lead" style="margin:0">كل تقرير يصدر عن نايوش يحمل رمز تحقق أسفل كل صفحة. اكتبه هنا لتتأكد أنه أصلي.</p></section>
-    <section class="card" style="gap:12px"><form id="vf-form" class="row" style="gap:8px" novalidate><input id="vf-code" dir="ltr" value="${esc(V.code)}" placeholder="AB3CD-7EFGH" maxlength="11" style="flex:1;min-width:180px;font:700 18px var(--f-mono);letter-spacing:.12em;text-align:center;min-height:50px" aria-label="رمز التحقق"><button type="submit" class="btn primary" style="min-height:50px">${ic('verify', 17)}تحقّق</button></form></section>${out}`;
+    <section class="card" style="gap:12px"><form id="vf-form" class="row" style="gap:8px" novalidate><input type="text" id="vf-code" dir="ltr" value="${esc(V.code)}" placeholder="AB3CD-7EFGH" maxlength="11" style="flex:1;min-width:180px;font:700 18px var(--f-mono);letter-spacing:.12em;text-align:center;min-height:50px" aria-label="رمز التحقق"><button type="submit" class="btn primary" style="min-height:50px">${ic('verify', 17)}تحقّق</button></form></section>${out}`;
 };
 document.addEventListener('submit', async (e) => {
   if (e.target.id !== 'vf-form') return; e.preventDefault();
@@ -739,4 +745,32 @@ document.addEventListener('change', async (e) => {
   if (!/\.pdf$/i.test(f.name)) { toast('اختر ملف PDF'); return; }
   try { await rdStaffUpload(id, ref, f, rdCode()); } catch (err) { toast(err.message); }
 });
+
+/* ---------- show / hide password (every password field, including the sign-in screen) ---------- */
+const RD_EYE = 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', RD_EYE_OFF = 'M3 3l18 18 M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2 M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5 M9.9 9.9a3 3 0 0 0 4.2 4.2';
+const rdEyeSvg = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+function rdPwEnhance(root) {
+  (root || document).querySelectorAll('input[type="password"]:not([data-pw-eye]), input[data-pw-eye="shown"]:not([data-pw-wrapped])').forEach(inp => {
+    if (inp.closest('.pw-wrap')) { inp.dataset.pwEye = inp.dataset.pwEye || 'hidden'; return; }
+    inp.dataset.pwEye = 'hidden';
+    const w = document.createElement('span'); w.className = 'pw-wrap';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pw-eye'; b.setAttribute('aria-label', 'إظهار كلمة المرور'); b.title = 'إظهار كلمة المرور'; b.innerHTML = rdEyeSvg(RD_EYE);
+    w.appendChild(b);
+  });
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('.pw-eye'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const inp = b.parentNode.querySelector('input'); if (!inp) return;
+  const show = inp.type === 'password';
+  const pos = [inp.selectionStart, inp.selectionEnd];
+  inp.type = show ? 'text' : 'password'; inp.dataset.pwEye = show ? 'shown' : 'hidden';
+  b.innerHTML = rdEyeSvg(show ? RD_EYE_OFF : RD_EYE);
+  const l = show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'; b.setAttribute('aria-label', l); b.title = l; b.setAttribute('aria-pressed', String(show));
+  inp.focus(); try { inp.setSelectionRange(pos[0], pos[1]); } catch (x) {}
+}, true);
+new MutationObserver((ms) => { if (ms.some(m => m.addedNodes.length)) rdPwEnhance(document); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', () => rdPwEnhance(document));
+setTimeout(() => rdPwEnhance(document), 0);
 </script>
