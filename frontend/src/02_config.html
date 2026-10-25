@@ -6,6 +6,8 @@ const CFG_DEFAULT = {
   identity: { brandAr: 'نايوش', brandEn: 'NAIOSH', brandSub: 'INTELLIGENCE', user: 'د. عدنان', userInitial: 'ع', role: 'صاحب قرار · الإدارة العليا', branch: 'الفرع الشمالي', greeting: 'مرحبا', demoBadge: true, tourDefault: true },
   theme: { red: '#FF2E4D', action: '#D90F2C', yellow: '#FFCD11' },
   modules: {},
+  // analysis topics clients can see and request on «محاور التحليل»; every other topic is a system tool for the NAIOSH team
+  clientAxes: ['bench', 'compete', 'eco', 'valuation', 'supply', 'sustain', 'safety', 'facility', 'pmo', 'tqg', 'legal', 'ebiz', 'career', 'edu', 'cv', 'skills', 'employ', 'initiative', 'self', 'psf', 'marriage'],
   commerce: { currency: 'JOD', welcomePoints: 300, requestCost: 50, allowExcel: true, promise: 'يكتمل التحليل الآلي خلال دقائق من استلام ملف البيانات' },
   packs: [
     { id: 'p100', name: 'باقة البداية', pts: 100, price: 9, d: 'تكفي لطلبَي تحليل', best: false },

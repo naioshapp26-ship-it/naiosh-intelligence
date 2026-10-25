@@ -15,7 +15,7 @@ module.exports = (r) => {
   r.add('GET', '/api/public/identity', async (req, res) => {
     const { cfg } = readCfg();
     const i = cfg.identity || {}, t = cfg.theme || {};
-    send(res, 200, { brandAr: i.brandAr || null, brandEn: i.brandEn || null, brandSub: i.brandSub || null, theme: { red: t.red || null, action: t.action || null, yellow: t.yellow || null } });
+    send(res, 200, { brandAr: i.brandAr || null, brandEn: i.brandEn || null, brandSub: i.brandSub || null, theme: { red: t.red || null, action: t.action || null, yellow: t.yellow || null }, clientAxes: Array.isArray(cfg.clientAxes) ? cfg.clientAxes : null });
   });
 
   r.add('GET', '/api/config', async (req, res) => {

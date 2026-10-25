@@ -485,12 +485,7 @@ function rdHome() {
 VIEWS.home = rdHome;
 
 /* ---------- محاور التحليل ---------- */
-VIEWS.axes = () => {
-  const keep = S.lnHide; S.lnHide = false;
-  let h = homeLauncher(); S.lnHide = keep;
-  h = h.replace(/<button type="button" class="btn link sm" data-act="ln-toggle">إخفاء<\/button>/, '').replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2>/, '<h2 class="pg-title">محاور التحليل</h2>');
-  return h;
-};
+VIEWS.axes = () => homeLauncher(); // replaced by the two-group page in 08o_flow
 
 /* ---------- نايوش هوب ---------- */
 VIEWS.hub = () => {

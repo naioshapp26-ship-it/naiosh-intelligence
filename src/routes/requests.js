@@ -118,6 +118,10 @@ module.exports = (r) => {
 
     const suff = Math.max(0, Math.min(100, parseInt(s.suff, 10) || 0));
     const cm = commerce.settings(), exempt = can(me, 'requests.viewAll'), cost = exempt ? 0 : cm.requestCost;
+    if (!exempt && payload.axis && !payload.axis.startsWith('t:')) {
+      let ca = null; try { const row = db.get("SELECT value FROM settings WHERE key = 'cfg'"); ca = row ? JSON.parse(row.value).clientAxes : null; } catch (_) {}
+      if (Array.isArray(ca) && !ca.includes(payload.axis)) throw new HttpError(403, 'axis_not_available', 'هذا المحور غير متاح لطلبات العملاء.');
+    }
     if (cost && commerce.balance(me.id) < cost) throw new HttpError(402, 'insufficient_points', `رصيدك لا يكفي: الطلب يحتاج ${cost} نقطة ورصيدك ${commerce.balance(me.id)}. اشحن رصيدك ثم أعد الإرسال.`, { need: cost, balance: commerce.balance(me.id) });
     const summary = { typesLabel: str(s.typesLabel, 400), domainLabel: str(s.domainLabel, 120), suff, missing: str(s.missing, 600) || '—', output: str(s.output, 120), cost, axis: payload.axis, axisLabel: payload.axisLabel };
     const status = suff >= 80 ? 'ready' : 'collecting';

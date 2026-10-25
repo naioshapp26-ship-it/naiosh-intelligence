@@ -312,7 +312,7 @@ let SV_PUBLIC = false;
 window.addEventListener('hashchange', () => { if (SV_PUBLIC && /^#login/.test(location.hash)) { history.replaceState(null, '', location.pathname); showLogin(); } });
 async function publicBoot() {
   SV_PUBLIC = true;
-  try { const id = await api('GET', '/api/public/identity'); if (id && id.brandAr) CFG.identity.brandAr = id.brandAr; if (id && id.theme) Object.keys(id.theme).forEach(k => { if (id.theme[k]) CFG.theme[k] = id.theme[k]; }); } catch (e) {}
+  try { const id = await api('GET', '/api/public/identity'); if (id && id.brandAr) CFG.identity.brandAr = id.brandAr; if (id && id.theme) Object.keys(id.theme).forEach(k => { if (id.theme[k]) CFG.theme[k] = id.theme[k]; }); if (id && Array.isArray(id.clientAxes)) CFG.clientAxes = id.clientAxes; } catch (e) {}
   CAN_EDIT = false; READONLY = true;
   let keep = {}; try { const raw = localStorage.getItem('naiosh-public'); if (raw) keep = JSON.parse(raw) || {}; } catch (e) {}
   S = Object.assign(freshState(), keep, { guest: true, menu: false, route: RD_PUBLIC.includes(keep.route) ? keep.route : 'home' });

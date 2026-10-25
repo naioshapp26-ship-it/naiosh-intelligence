@@ -276,6 +276,8 @@ const CFG_DEFAULT = {
   identity: { brandAr: 'نايوش', brandEn: 'NAIOSH', brandSub: 'INTELLIGENCE', user: 'د. عدنان', userInitial: 'ع', role: 'صاحب قرار · الإدارة العليا', branch: 'الفرع الشمالي', greeting: 'مرحبا', demoBadge: true, tourDefault: true },
   theme: { red: '#FF2E4D', action: '#D90F2C', yellow: '#FFCD11' },
   modules: {},
+  // analysis topics clients can see and request on «محاور التحليل»; every other topic is a system tool for the NAIOSH team
+  clientAxes: ['bench', 'compete', 'eco', 'valuation', 'supply', 'sustain', 'safety', 'facility', 'pmo', 'tqg', 'legal', 'ebiz', 'career', 'edu', 'cv', 'skills', 'employ', 'initiative', 'self', 'psf', 'marriage'],
   commerce: { currency: 'JOD', welcomePoints: 300, requestCost: 50, allowExcel: true, promise: 'يكتمل التحليل الآلي خلال دقائق من استلام ملف البيانات' },
   packs: [
     { id: 'p100', name: 'باقة البداية', pts: 100, price: 9, d: 'تكفي لطلبَي تحليل', best: false },
@@ -7048,12 +7050,7 @@ function rdHome() {
 VIEWS.home = rdHome;
 
 /* ---------- محاور التحليل ---------- */
-VIEWS.axes = () => {
-  const keep = S.lnHide; S.lnHide = false;
-  let h = homeLauncher(); S.lnHide = keep;
-  h = h.replace(/<button type="button" class="btn link sm" data-act="ln-toggle">إخفاء<\/button>/, '').replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2>/, '<h2 class="pg-title">محاور التحليل</h2>');
-  return h;
-};
+VIEWS.axes = () => homeLauncher(); // replaced by the two-group page in 08o_flow
 
 /* ---------- نايوش هوب ---------- */
 VIEWS.hub = () => {
@@ -7102,14 +7099,14 @@ VIEWS.contact = () => {
       ${m.subject ? `<b style="font-size:14px">${esc(m.subject)}</b>` : ''}<p style="margin:0;font-size:13px;line-height:1.7;color:var(--fg2);white-space:pre-wrap">${esc(m.body)}</p>
       <span class="faint" style="font-size:11.5px">${esc(m.name || '')}${m.email ? ' · ' + esc(m.email) : ''}${m.phone ? ' · ' + esc(m.phone) : ''} · ${esc(String(m.createdAt || m.at || '').slice(0, 16).replace('T', ' '))}</span>
       ${m.note && !admin ? `<div class="banner g" style="font-size:12.5px">${ic('check', 16, 'style="color:var(--green)"')}<span>رد الفريق: ${esc(m.note)}</span></div>` : ''}
-      ${admin ? `<div class="row" style="gap:8px"><select data-msg-st="${m.id}" aria-label="حالة الرسالة" style="min-height:38px">${Object.entries(SV.msgStatuses || { new: 'جديدة', open: 'قيد المعالجة', closed: 'مغلقة' }).map(([k, l]) => `<option value="${k}" ${m.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select><input data-msg-note="${m.id}" value="${esc(m.note || '')}" placeholder="رد أو ملاحظة للمرسل" style="flex:1;min-width:160px;min-height:38px"><button type="button" class="btn sm" data-act="rd-msg-save" data-k="${m.id}">حفظ</button></div>` : ''}</div>`).join('') : '<p class="faint" style="font-size:13px">لا رسائل بعد.</p>';
+      ${admin ? `<div class="row" style="gap:8px"><select data-msg-st="${m.id}" aria-label="حالة الرسالة" style="min-height:38px">${Object.entries(SV.msgStatuses || { new: 'جديدة', open: 'قيد المعالجة', closed: 'مغلقة' }).map(([k, l]) => `<option value="${k}" ${m.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select><input type="text" data-msg-note="${m.id}" value="${esc(m.note || '')}" placeholder="رد أو ملاحظة للمرسل" style="flex:1;min-width:160px;min-height:38px"><button type="button" class="btn sm" data-act="rd-msg-save" data-k="${m.id}">حفظ</button></div>` : ''}</div>`).join('') : '<p class="faint" style="font-size:13px">لا رسائل بعد.</p>';
   const form = `<section class="card" style="gap:14px"><h2 class="h-sec">أرسل رسالتك</h2>
     <div class="rd-seg" role="group" aria-label="نوع الرسالة">${K.map(([k, l, i]) => `<button type="button" data-act="rd-ckind" data-k="${k}" aria-pressed="${f.kind === k}">${ic(i, 16)}${l}</button>`).join('')}</div>${er('kind')}
     <form class="rd-form" id="rd-contact-form" novalidate>
-      <label><span class="lbl">الاسم *</span><input data-cf="name" value="${esc(f.name)}" autocomplete="name" required>${er('name')}</label>
+      <label><span class="lbl">الاسم *</span><input type="text" data-cf="name" value="${esc(f.name)}" autocomplete="name" required>${er('name')}</label>
       <label><span class="lbl">البريد الإلكتروني</span><input data-cf="email" type="email" dir="ltr" value="${esc(f.email)}" autocomplete="email">${er('email')}</label>
       <label><span class="lbl">رقم الجوال</span><input data-cf="phone" type="tel" dir="ltr" value="${esc(f.phone)}" autocomplete="tel"></label>
-      <label><span class="lbl">الموضوع</span><input data-cf="subject" value="${esc(f.subject)}"></label>
+      <label><span class="lbl">الموضوع</span><input type="text" data-cf="subject" value="${esc(f.subject)}"></label>
       <label class="full"><span class="lbl">التفاصيل *</span><textarea data-cf="body" rows="5" required>${esc(f.body)}</textarea>${er('body')}</label>
       <label class="rd-hp" aria-hidden="true">اترك هذا الحقل فارغًا<input data-cf="website" tabindex="-1" autocomplete="off"></label>
       <div class="full row between" style="gap:10px"><span class="faint" style="font-size:12px">نرد خلال يومي عمل. تحصل على رقم مرجعي للمتابعة.</span><button type="submit" class="btn primary" ${SV_BUSY_MSG ? 'aria-disabled="true"' : ''}>${ic('check', 16)}إرسال</button></div>
@@ -7189,7 +7186,7 @@ function rdModalBody() {
   const pays = [['mada', 'مدى'], ['apple', 'Apple Pay'], ['card', 'بطاقة ائتمانية'], ['stc', 'STC Pay']];
   return `<div class="row between"><h2 id="rd-mt" class="h-sec" style="font-size:19px">شحن الرصيد</h2>${x}</div>
     <div class="rd-pay" role="group" aria-label="الباقة">${rdPacks().map(p => `<button type="button" data-act="rd-pk" data-k="${p.id}" aria-pressed="${p.id === pk.id}">${rdNum(p.pts)} نقطة · ${rdNum(p.price)} ${rdCur()}</button>`).join('')}</div>
-    <label class="stack" style="gap:6px"><span class="lbl">كود الخصم</span><span class="row nowrap" style="gap:8px"><input id="rd-code" dir="ltr" value="${esc(M.code || '')}" placeholder="NAIOSH10" style="flex:1"><button type="button" class="btn sm" data-act="rd-code">تطبيق</button></span>
+    <label class="stack" style="gap:6px"><span class="lbl">كود الخصم</span><span class="row nowrap" style="gap:8px"><input type="text" id="rd-code" dir="ltr" value="${esc(M.code || '')}" placeholder="NAIOSH10" style="flex:1"><button type="button" class="btn sm" data-act="rd-code">تطبيق</button></span>
       ${M.code ? (okCode ? `<span style="color:var(--green);font-size:12.5px">خصم ${off.pct}% مطبّق</span>` : `<span style="color:#FF6B81;font-size:12.5px">${off ? 'الكود لا ينطبق على هذه الباقة' : 'الكود غير صحيح'}</span>`) : ''}</label>
     <span class="lbl">طريقة الدفع</span><div class="rd-pay" role="group" aria-label="طريقة الدفع">${pays.map(([k, l]) => `<button type="button" data-act="rd-paym" data-k="${k}" aria-pressed="${(M.pay || 'mada') === k}">${l}</button>`).join('')}</div>
     <div class="row between" style="padding:12px 14px;border-radius:12px;background:var(--sunk);border:1px solid var(--line)"><span class="soft">الإجمالي</span><b style="font:800 22px var(--f-mono)">${okCode ? `<s class="faint" style="font-size:14px">${rdNum(pk.price)}</s> ` : ''}${price.toLocaleString('en-US')} ${rdCur()}</b></div>
@@ -7287,6 +7284,16 @@ analyticsHandle = function (act, k, el) { if (act && (act.startsWith('rd-') || a
 .ax-panel #rq-panel{position:static!important}
 .ax-panel > section.card:first-of-type{display:none}
 @media (max-width:760px){.ln-box{padding-bottom:46px}.ln-req{height:28px;font-size:11.5px}.ax-panel{padding:10px}}
+/* password eye */
+.pw-wrap{position:relative;display:block;width:100%}
+.pw-wrap input{width:100%;padding-left:44px!important;box-sizing:border-box}
+.pw-eye{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;border:0;background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pw-eye:hover,.pw-eye:focus-visible{color:var(--yellow);background:var(--raised);outline:none}
+.pw-eye[aria-pressed="true"]{color:var(--yellow)}
+.ln-mv{position:absolute;top:10px;inset-inline-start:10px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:11px;border:1px solid var(--line2);background:var(--sunk);color:var(--faint);font-size:10.5px;font-weight:700;cursor:pointer;z-index:1}
+.ln-mv:hover,.ln-mv:focus-visible{border-color:var(--yellow);color:var(--yellow);outline:none}
+.rd-sys{border-color:var(--redline);background:linear-gradient(180deg,#160c0f,var(--surface) 140px)}
+@media (max-width:760px){.ln-mv span{display:none}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -7443,8 +7450,8 @@ VIEWS.register = () => {
     card = `<div class="stack" style="gap:4px"><h2 class="title-xl" style="font-size:24px">تحقّق من بريدك وجوالك</h2><p class="muted" style="font-size:13.5px;margin:0">أرسلنا رمزًا إلى <b><bdi dir="ltr">${esc(rdMask(v.email))}</bdi></b> ورمزًا آخر إلى <b><bdi dir="ltr">${esc(rdMask(v.phone))}</bdi></b>. الرمزان صالحان ${v.expiresMin || 15} دقيقة.</p></div>
       ${v.demo ? `<div class="au-demo">${ic('info', 18, 'style="color:var(--yellow);flex-shrink:0;margin-top:3px"')}<span><b>وضع تجريبي:</b> لا تُرسل رسائل فعلية الآن. في التشغيل الفعلي تصلك الرموز على بريدك وجوالك.<br>رمز البريد <code>${v.demo.email}</code> · رمز الجوال <code>${v.demo.sms}</code></span></div>` : ''}
       <form id="rg-verify" class="stack" style="gap:14px" novalidate>
-        <div class="au-code"><label class="au-f"><span class="lbl">رمز البريد الإلكتروني</span><input id="rg-ec" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.ec || '')}" ${inv('emailCode')}>${E('emailCode')}</label>
-          <label class="au-f"><span class="lbl">رمز الجوال</span><input id="rg-sc" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.sc || '')}" ${inv('smsCode')}>${E('smsCode')}</label></div>
+        <div class="au-code"><label class="au-f"><span class="lbl">رمز البريد الإلكتروني</span><input type="text" id="rg-ec" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.ec || '')}" ${inv('emailCode')}>${E('emailCode')}</label>
+          <label class="au-f"><span class="lbl">رمز الجوال</span><input type="text" id="rg-sc" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="${esc(v.sc || '')}" ${inv('smsCode')}>${E('smsCode')}</label></div>
         ${E('form')}
         <button type="submit" class="btn primary block" style="min-height:50px" ${RG_BUSY ? 'aria-disabled="true"' : ''}>${ic('check', 17)}تأكيد وإنشاء الحساب</button>
       </form>
@@ -7453,10 +7460,10 @@ VIEWS.register = () => {
   } else if (tab === 'signup') {
     card = `<div class="stack" style="gap:4px"><h2 class="title-xl" style="font-size:24px">إنشاء حساب</h2><p class="muted" style="font-size:13.5px;margin:0">بياناتك الحقيقية تحمي حسابك وتقاريرك من انتحال الشخصية. نتحقق من البريد والجوال برمزين.</p></div>
       <form id="rg-form" class="stack" style="gap:12px" novalidate>
-        <label class="au-f"><span class="lbl">الاسم الكامل كما في الهوية *</span><input data-rg="name" value="${esc(f.name)}" autocomplete="name" placeholder="الاسم الأول واسم العائلة" ${inv('name')}>${E('name')}</label>
+        <label class="au-f"><span class="lbl">الاسم الكامل كما في الهوية *</span><input type="text" data-rg="name" value="${esc(f.name)}" autocomplete="name" placeholder="الاسم الأول واسم العائلة" ${inv('name')}>${E('name')}</label>
         <label class="au-f"><span class="lbl">البريد الإلكتروني *</span><input data-rg="email" type="email" dir="ltr" value="${esc(f.email)}" autocomplete="email" placeholder="name@company.com" ${inv('email')}>${E('email')}</label>
         <div class="au-f"><span class="lbl">رقم الجوال *</span><div class="au-ph"><select data-rg="cc" aria-label="رمز الدولة">${RD_CC.map(([c, l]) => `<option value="${c}" ${f.cc === c ? 'selected' : ''}>${c} ${l}</option>`).join('')}</select><input data-rg="phone" type="tel" inputmode="tel" value="${esc(f.phone)}" autocomplete="tel-national" placeholder="791234567" aria-label="رقم الجوال" ${inv('phone')}></div>${E('phone')}</div>
-        <label class="au-f"><span class="lbl">الجهة أو المنظمة (اختياري)</span><input data-rg="org" value="${esc(f.org)}" autocomplete="organization"></label>
+        <label class="au-f"><span class="lbl">الجهة أو المنظمة (اختياري)</span><input type="text" data-rg="org" value="${esc(f.org)}" autocomplete="organization"></label>
         <div class="grid g2"><label class="au-f"><span class="lbl">كلمة المرور *</span><input data-rg="password" type="password" dir="ltr" autocomplete="new-password" ${inv('password')}>${E('password')}</label>
           <label class="au-f"><span class="lbl">تأكيد كلمة المرور *</span><input data-rg="password2" type="password" dir="ltr" autocomplete="new-password" ${inv('password2')}>${E('password2')}</label></div>
         <span class="faint" style="font-size:11.5px;margin-top:-6px">10 أحرف على الأقل، حروف وأرقام.</span>
@@ -7587,10 +7594,44 @@ function rdPrepAxis(key) {
   S.reqDone = null; RQ_ERR = {};
 }
 // محاور التحليل page: every icon opens the request form with that topic
-const _rdAxesView = VIEWS.axes;
-const RD_NOT_AXIS = ['myreqs', 'settings'];
-VIEWS.axes = () => _rdAxesView().replace(/<button type="button" class="ln-box([^"]*)" data-go="([a-z0-9_]+)"/g, (m, cls, id) => RD_NOT_AXIS.includes(id) ? m : `<button type="button" class="ln-box${cls}" data-act="ax-req" data-k="${id}"`)
-  .replace('<span class="faint" style="font-size:12px">', '<span class="faint" style="font-size:12px">اختر المحور الذي تريد تحليله ليفتح نموذج طلب التحليل جاهزًا بالموضوع · ');
+const RD_NOT_AXIS = ['myreqs', 'settings', 'home'];
+const rdClientAxes = () => Array.isArray(CFG.clientAxes) ? CFG.clientAxes : (CFG_DEFAULT.clientAxes || []);
+const rdIsClientAxis = (id) => String(id).startsWith('t:') || rdClientAxes().includes(id);
+function rdLauncherFor(ids) {
+  const saved = NAV.map(g => g.items);
+  NAV.forEach(g => { g.items = g.items.filter(([id]) => ids.includes(id)); });
+  const keep = S.lnHide; S.lnHide = false;
+  try { return homeLauncher(); } finally { S.lnHide = keep; NAV.forEach((g, i) => { g.items = saved[i]; }); }
+}
+// «محاور التحليل»: two groups — topics for clients, and system tools for the NAIOSH team only
+VIEWS.axes = () => {
+  const admin = rdIsAdmin(), all = NAV.flatMap(g => g.items.map(i => i[0])).filter(id => !RD_NOT_AXIS.includes(id) && modOn(id));
+  const cl = all.filter(id => rdClientAxes().includes(id)), sys = all.filter(id => !rdClientAxes().includes(id));
+  const strip = (h) => h.replace(/<button type="button" class="btn link sm" data-act="ln-toggle">إخفاء<\/button>/, '');
+  const mv = (h, to) => !admin ? h : h.replace(/(<button type="button" class="ln-box[^"]*" data-(?:go|act)="[^"]*"(?: data-k="([a-z0-9_]+)")?[^>]*>)/g, (m) => m)
+    .replace(/<span class="ln-req/g, (m, off, str) => m)
+    .replace(/(<span class="ln-req[^"]*" role="button" tabindex="0" data-act="ax-inline" data-k="([a-z0-9_]+)")/g, (m, x, id) => `<span class="ln-mv" role="button" tabindex="0" data-act="ax-move" data-k="${id}|${to}" title="${to === 'client' ? 'إظهاره للعملاء' : 'إخفاؤه عن العملاء (للمنظومة فقط)'}">${ic(to === 'client' ? 'axes' : 'lock', 12)}<span>${to === 'client' ? 'إظهار للعملاء' : 'للمنظومة فقط'}</span></span>${m}`);
+  let clientHtml = cl.length ? strip(rdLauncherFor(cl))
+    .replace(/<button type="button" class="ln-box([^"]*)" data-go="([a-z0-9_]+)"/g, (m, cls, id) => `<button type="button" class="ln-box${cls}" data-act="ax-req" data-k="${id}"`)
+    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('axes', 18, 'style="color:var(--yellow)"')} محاور التحليل${admin ? ' للعملاء' : ''}</h2><span class="faint" style="font-size:12px">${cl.length} محورًا — اختر المحور الذي تريد تحليله، واضغط «طلب تحليل» ليفتح النموذج هنا</span>`)
+    : `<section class="card"><p class="muted" style="margin:0">لا توجد محاور متاحة للعملاء حاليًا.</p></section>`;
+  if (admin) clientHtml = mv(clientHtml, 'system');
+  let sysHtml = '';
+  if (admin && sys.length) sysHtml = mv(strip(rdLauncherFor(sys)), 'client')
+    .replace(/<section class="card" style="gap:16px">/, '<section class="card rd-sys" style="gap:16px">')
+    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('lock', 18, 'style="color:var(--red)"')} محاور المنظومة — للإدارة فقط</h2><span class="faint" style="font-size:12px">${sys.length} أداة داخلية لا يراها العملاء — رحلة الاستشارة والحوكمة والمنصة</span>`);
+  return `<section class="stack" style="gap:6px"><h2 class="pg-title">محاور التحليل</h2>${admin ? '<p class="lead" style="margin:0">قسمان: ما يراه العملاء ويطلبون تحليله، وأدوات المنظومة الداخلية للإدارة. انقل أي محور بين القسمين بزر «إظهار للعملاء» أو «للمنظومة فقط».</p>' : ''}</section>${clientHtml}${sysHtml}`;
+};
+async function rdMoveAxis(id, to) {
+  const list = [...rdClientAxes()].filter(x => x !== id); if (to === 'client') list.push(id);
+  CFG.clientAxes = list;
+  if (rdServer()) {
+    try { await api('PUT', '/api/config', { cfg: CFG }); CFG_DIRTY = false; toast(`«${rdAxisInfo(id).label}» ${to === 'client' ? 'يظهر الآن للعملاء' : 'أصبح للمنظومة فقط'}`); }
+    catch (e) { toast(e.message); }
+  } else { if (typeof markDirty === 'function') markDirty(); toast(`«${rdAxisInfo(id).label}» ${to === 'client' ? 'يظهر الآن للعملاء' : 'أصبح للمنظومة فقط'} — انشر الإعدادات ليُحفظ للجميع`); }
+  if (S.axOpen === id && to === 'system') S.axOpen = null;
+  render();
+}
 // request form: only from an axis; shows the chosen topic and the cost
 function rdCostLine() {
   if (rdGuest()) return '';
@@ -7807,7 +7848,7 @@ VIEWS.verify = () => {
         ${fm ? (fm.ok ? `<div class="banner g">${ic('check', 18, 'style="color:var(--green)"')}<span>«${esc(fm.name)}» مطابق للنسخة الأصلية — لم يُعدَّل.</span></div>` : `<div class="banner r">${ic('warn', 18, 'style="color:#FF6B81"')}<span>«${esc(fm.name)}» <b>غير مطابق</b> — الملف عُدِّل أو ليس نسخة هذا التقرير.</span></div>`) : ''}</section>`;
   }
   return `<section class="stack" style="gap:6px"><h2 class="pg-title">التحقق من تقرير</h2><p class="lead" style="margin:0">كل تقرير يصدر عن نايوش يحمل رمز تحقق أسفل كل صفحة. اكتبه هنا لتتأكد أنه أصلي.</p></section>
-    <section class="card" style="gap:12px"><form id="vf-form" class="row" style="gap:8px" novalidate><input id="vf-code" dir="ltr" value="${esc(V.code)}" placeholder="AB3CD-7EFGH" maxlength="11" style="flex:1;min-width:180px;font:700 18px var(--f-mono);letter-spacing:.12em;text-align:center;min-height:50px" aria-label="رمز التحقق"><button type="submit" class="btn primary" style="min-height:50px">${ic('verify', 17)}تحقّق</button></form></section>${out}`;
+    <section class="card" style="gap:12px"><form id="vf-form" class="row" style="gap:8px" novalidate><input type="text" id="vf-code" dir="ltr" value="${esc(V.code)}" placeholder="AB3CD-7EFGH" maxlength="11" style="flex:1;min-width:180px;font:700 18px var(--f-mono);letter-spacing:.12em;text-align:center;min-height:50px" aria-label="رمز التحقق"><button type="submit" class="btn primary" style="min-height:50px">${ic('verify', 17)}تحقّق</button></form></section>${out}`;
 };
 document.addEventListener('submit', async (e) => {
   if (e.target.id !== 'vf-form') return; e.preventDefault();
@@ -7847,8 +7888,9 @@ function rd2Handle(act, k, el) {
     }
     case 'rd-demo-in': { S.acct = null; S.guest = false; RD_MOD = null; rdModal(null); toast('مرحبا د. عدنان'); rdGoNext(); return true; }
     case 'rd-privacy': rdPrivacy(); return true;
-    case 'ax-req': if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
-    case 'ax-inline': if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
+    case 'ax-move': { const [id, to] = String(k).split('|'); if (rdIsAdmin()) rdMoveAxis(id, to); return true; }
+    case 'ax-req': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
+    case 'ax-inline': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
     case 'ax-close': S.axOpen = null; S.axDone = null; S.reqDone = null; RQ_ERR = {}; render(); { const b = document.querySelector(`.ln-box[data-k="${k}"],.ln-box[data-go="${k}"]`); if (b) b.scrollIntoView({ block: 'center' }); } return true;
     case 'ax-again': S.axDone = null; S.reqDone = null; rdPrepAxis(k); render(); rdScrollPanel(); return true;
     case 'rd-open-req': S.myreqSel = k; go('myreqs'); setTimeout(() => { const a = document.getElementById('mr-' + k); if (a) a.scrollIntoView({ block: 'center' }); }, 40); return true;
@@ -7992,6 +8034,34 @@ document.addEventListener('change', async (e) => {
   if (!/\.pdf$/i.test(f.name)) { toast('اختر ملف PDF'); return; }
   try { await rdStaffUpload(id, ref, f, rdCode()); } catch (err) { toast(err.message); }
 });
+
+/* ---------- show / hide password (every password field, including the sign-in screen) ---------- */
+const RD_EYE = 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', RD_EYE_OFF = 'M3 3l18 18 M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2 M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5 M9.9 9.9a3 3 0 0 0 4.2 4.2';
+const rdEyeSvg = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+function rdPwEnhance(root) {
+  (root || document).querySelectorAll('input[type="password"]:not([data-pw-eye]), input[data-pw-eye="shown"]:not([data-pw-wrapped])').forEach(inp => {
+    if (inp.closest('.pw-wrap')) { inp.dataset.pwEye = inp.dataset.pwEye || 'hidden'; return; }
+    inp.dataset.pwEye = 'hidden';
+    const w = document.createElement('span'); w.className = 'pw-wrap';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pw-eye'; b.setAttribute('aria-label', 'إظهار كلمة المرور'); b.title = 'إظهار كلمة المرور'; b.innerHTML = rdEyeSvg(RD_EYE);
+    w.appendChild(b);
+  });
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('.pw-eye'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const inp = b.parentNode.querySelector('input'); if (!inp) return;
+  const show = inp.type === 'password';
+  const pos = [inp.selectionStart, inp.selectionEnd];
+  inp.type = show ? 'text' : 'password'; inp.dataset.pwEye = show ? 'shown' : 'hidden';
+  b.innerHTML = rdEyeSvg(show ? RD_EYE_OFF : RD_EYE);
+  const l = show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'; b.setAttribute('aria-label', l); b.title = l; b.setAttribute('aria-pressed', String(show));
+  inp.focus(); try { inp.setSelectionRange(pos[0], pos[1]); } catch (x) {}
+}, true);
+new MutationObserver((ms) => { if (ms.some(m => m.addedNodes.length)) rdPwEnhance(document); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', () => rdPwEnhance(document));
+setTimeout(() => rdPwEnhance(document), 0);
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -8307,7 +8377,7 @@ let SV_PUBLIC = false;
 window.addEventListener('hashchange', () => { if (SV_PUBLIC && /^#login/.test(location.hash)) { history.replaceState(null, '', location.pathname); showLogin(); } });
 async function publicBoot() {
   SV_PUBLIC = true;
-  try { const id = await api('GET', '/api/public/identity'); if (id && id.brandAr) CFG.identity.brandAr = id.brandAr; if (id && id.theme) Object.keys(id.theme).forEach(k => { if (id.theme[k]) CFG.theme[k] = id.theme[k]; }); } catch (e) {}
+  try { const id = await api('GET', '/api/public/identity'); if (id && id.brandAr) CFG.identity.brandAr = id.brandAr; if (id && id.theme) Object.keys(id.theme).forEach(k => { if (id.theme[k]) CFG.theme[k] = id.theme[k]; }); if (id && Array.isArray(id.clientAxes)) CFG.clientAxes = id.clientAxes; } catch (e) {}
   CAN_EDIT = false; READONLY = true;
   let keep = {}; try { const raw = localStorage.getItem('naiosh-public'); if (raw) keep = JSON.parse(raw) || {}; } catch (e) {}
   S = Object.assign(freshState(), keep, { guest: true, menu: false, route: RD_PUBLIC.includes(keep.route) ? keep.route : 'home' });

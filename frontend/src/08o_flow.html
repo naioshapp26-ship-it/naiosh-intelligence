@@ -40,6 +40,10 @@
 .pw-eye{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;border:0;background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .pw-eye:hover,.pw-eye:focus-visible{color:var(--yellow);background:var(--raised);outline:none}
 .pw-eye[aria-pressed="true"]{color:var(--yellow)}
+.ln-mv{position:absolute;top:10px;inset-inline-start:10px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:11px;border:1px solid var(--line2);background:var(--sunk);color:var(--faint);font-size:10.5px;font-weight:700;cursor:pointer;z-index:1}
+.ln-mv:hover,.ln-mv:focus-visible{border-color:var(--yellow);color:var(--yellow);outline:none}
+.rd-sys{border-color:var(--redline);background:linear-gradient(180deg,#160c0f,var(--surface) 140px)}
+@media (max-width:760px){.ln-mv span{display:none}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -340,10 +344,44 @@ function rdPrepAxis(key) {
   S.reqDone = null; RQ_ERR = {};
 }
 // محاور التحليل page: every icon opens the request form with that topic
-const _rdAxesView = VIEWS.axes;
-const RD_NOT_AXIS = ['myreqs', 'settings'];
-VIEWS.axes = () => _rdAxesView().replace(/<button type="button" class="ln-box([^"]*)" data-go="([a-z0-9_]+)"/g, (m, cls, id) => RD_NOT_AXIS.includes(id) ? m : `<button type="button" class="ln-box${cls}" data-act="ax-req" data-k="${id}"`)
-  .replace('<span class="faint" style="font-size:12px">', '<span class="faint" style="font-size:12px">اختر المحور الذي تريد تحليله ليفتح نموذج طلب التحليل جاهزًا بالموضوع · ');
+const RD_NOT_AXIS = ['myreqs', 'settings', 'home'];
+const rdClientAxes = () => Array.isArray(CFG.clientAxes) ? CFG.clientAxes : (CFG_DEFAULT.clientAxes || []);
+const rdIsClientAxis = (id) => String(id).startsWith('t:') || rdClientAxes().includes(id);
+function rdLauncherFor(ids) {
+  const saved = NAV.map(g => g.items);
+  NAV.forEach(g => { g.items = g.items.filter(([id]) => ids.includes(id)); });
+  const keep = S.lnHide; S.lnHide = false;
+  try { return homeLauncher(); } finally { S.lnHide = keep; NAV.forEach((g, i) => { g.items = saved[i]; }); }
+}
+// «محاور التحليل»: two groups — topics for clients, and system tools for the NAIOSH team only
+VIEWS.axes = () => {
+  const admin = rdIsAdmin(), all = NAV.flatMap(g => g.items.map(i => i[0])).filter(id => !RD_NOT_AXIS.includes(id) && modOn(id));
+  const cl = all.filter(id => rdClientAxes().includes(id)), sys = all.filter(id => !rdClientAxes().includes(id));
+  const strip = (h) => h.replace(/<button type="button" class="btn link sm" data-act="ln-toggle">إخفاء<\/button>/, '');
+  const mv = (h, to) => !admin ? h : h.replace(/(<button type="button" class="ln-box[^"]*" data-(?:go|act)="[^"]*"(?: data-k="([a-z0-9_]+)")?[^>]*>)/g, (m) => m)
+    .replace(/<span class="ln-req/g, (m, off, str) => m)
+    .replace(/(<span class="ln-req[^"]*" role="button" tabindex="0" data-act="ax-inline" data-k="([a-z0-9_]+)")/g, (m, x, id) => `<span class="ln-mv" role="button" tabindex="0" data-act="ax-move" data-k="${id}|${to}" title="${to === 'client' ? 'إظهاره للعملاء' : 'إخفاؤه عن العملاء (للمنظومة فقط)'}">${ic(to === 'client' ? 'axes' : 'lock', 12)}<span>${to === 'client' ? 'إظهار للعملاء' : 'للمنظومة فقط'}</span></span>${m}`);
+  let clientHtml = cl.length ? strip(rdLauncherFor(cl))
+    .replace(/<button type="button" class="ln-box([^"]*)" data-go="([a-z0-9_]+)"/g, (m, cls, id) => `<button type="button" class="ln-box${cls}" data-act="ax-req" data-k="${id}"`)
+    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('axes', 18, 'style="color:var(--yellow)"')} محاور التحليل${admin ? ' للعملاء' : ''}</h2><span class="faint" style="font-size:12px">${cl.length} محورًا — اختر المحور الذي تريد تحليله، واضغط «طلب تحليل» ليفتح النموذج هنا</span>`)
+    : `<section class="card"><p class="muted" style="margin:0">لا توجد محاور متاحة للعملاء حاليًا.</p></section>`;
+  if (admin) clientHtml = mv(clientHtml, 'system');
+  let sysHtml = '';
+  if (admin && sys.length) sysHtml = mv(strip(rdLauncherFor(sys)), 'client')
+    .replace(/<section class="card" style="gap:16px">/, '<section class="card rd-sys" style="gap:16px">')
+    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('lock', 18, 'style="color:var(--red)"')} محاور المنظومة — للإدارة فقط</h2><span class="faint" style="font-size:12px">${sys.length} أداة داخلية لا يراها العملاء — رحلة الاستشارة والحوكمة والمنصة</span>`);
+  return `<section class="stack" style="gap:6px"><h2 class="pg-title">محاور التحليل</h2>${admin ? '<p class="lead" style="margin:0">قسمان: ما يراه العملاء ويطلبون تحليله، وأدوات المنظومة الداخلية للإدارة. انقل أي محور بين القسمين بزر «إظهار للعملاء» أو «للمنظومة فقط».</p>' : ''}</section>${clientHtml}${sysHtml}`;
+};
+async function rdMoveAxis(id, to) {
+  const list = [...rdClientAxes()].filter(x => x !== id); if (to === 'client') list.push(id);
+  CFG.clientAxes = list;
+  if (rdServer()) {
+    try { await api('PUT', '/api/config', { cfg: CFG }); CFG_DIRTY = false; toast(`«${rdAxisInfo(id).label}» ${to === 'client' ? 'يظهر الآن للعملاء' : 'أصبح للمنظومة فقط'}`); }
+    catch (e) { toast(e.message); }
+  } else { if (typeof markDirty === 'function') markDirty(); toast(`«${rdAxisInfo(id).label}» ${to === 'client' ? 'يظهر الآن للعملاء' : 'أصبح للمنظومة فقط'} — انشر الإعدادات ليُحفظ للجميع`); }
+  if (S.axOpen === id && to === 'system') S.axOpen = null;
+  render();
+}
 // request form: only from an axis; shows the chosen topic and the cost
 function rdCostLine() {
   if (rdGuest()) return '';
@@ -600,8 +638,9 @@ function rd2Handle(act, k, el) {
     }
     case 'rd-demo-in': { S.acct = null; S.guest = false; RD_MOD = null; rdModal(null); toast('مرحبا د. عدنان'); rdGoNext(); return true; }
     case 'rd-privacy': rdPrivacy(); return true;
-    case 'ax-req': if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
-    case 'ax-inline': if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
+    case 'ax-move': { const [id, to] = String(k).split('|'); if (rdIsAdmin()) rdMoveAxis(id, to); return true; }
+    case 'ax-req': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
+    case 'ax-inline': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
     case 'ax-close': S.axOpen = null; S.axDone = null; S.reqDone = null; RQ_ERR = {}; render(); { const b = document.querySelector(`.ln-box[data-k="${k}"],.ln-box[data-go="${k}"]`); if (b) b.scrollIntoView({ block: 'center' }); } return true;
     case 'ax-again': S.axDone = null; S.reqDone = null; rdPrepAxis(k); render(); rdScrollPanel(); return true;
     case 'rd-open-req': S.myreqSel = k; go('myreqs'); setTimeout(() => { const a = document.getElementById('mr-' + k); if (a) a.scrollIntoView({ block: 'center' }); }, 40); return true;
