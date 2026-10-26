@@ -44,6 +44,32 @@
 .ln-mv:hover,.ln-mv:focus-visible{border-color:var(--yellow);color:var(--yellow);outline:none}
 .rd-sys{border-color:var(--redline);background:linear-gradient(180deg,#160c0f,var(--surface) 140px)}
 @media (max-width:760px){.ln-mv span{display:none}}
+.hm-grid .s8{grid-column:span 8}
+@media (max-width:1500px){.hm-grid .s8{grid-column:span 12}}
+.hi .hi-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.hi-t{direction:rtl;position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:104px;padding:10px 10px 36px;border-radius:12px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);text-align:right;min-width:0}
+.hi-t:hover{border-color:var(--line3);transform:translateY(-1px)}
+.hi-t.on{border-color:var(--yellow);box-shadow:0 0 0 3px #ffcd111c}
+.hi-t.sys{background:#140d10;border-color:#2a1a1f}
+.hi-t.soon{opacity:.6}
+.hi-i{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--yellow);background:rgba(255,205,17,.1);flex-shrink:0}
+.hi-t.sys .hi-i{color:var(--redsoft);background:rgba(255,46,77,.1)}
+.hi-n{font-size:12.5px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hi-c{position:absolute;top:10px;inset-inline-end:10px;font:600 9.5px var(--f-mono);color:var(--faint);border:1px solid var(--line2);border-radius:5px;padding:0 4px;direction:ltr}
+.hi-r{position:absolute;inset-inline:8px;bottom:8px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:700;background:var(--raised);border:1px solid var(--line2);color:var(--fg2);cursor:pointer}
+.hi-r:hover,.hi-r:focus-visible{background:var(--yellow);border-color:var(--yellow);color:#111;outline:none}
+.hi-r.lock{background:none;border-color:transparent;color:var(--faint);inset-inline:auto;inset-inline-start:8px;cursor:default}
+.hi-sep{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;font-weight:700;color:var(--redsoft)}
+.hi-sep small{font:600 11px var(--f-mono);color:var(--faint)}
+.hi-sep.alt{color:var(--yellow)}.hi-sep.alt::after{background:var(--line2)}
+.hi{--acc:var(--yellow)}
+.hi-mv{position:absolute;top:8px;inset-inline-end:8px;display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 6px;border-radius:10px;border:1px solid var(--line2);background:var(--surface);color:var(--faint);font-size:9.5px;font-weight:700;cursor:pointer;z-index:1}
+.hi-mv:hover,.hi-mv:focus-visible{border-color:var(--yellow);color:var(--yellow);outline:none}
+.hi-t:has(.hi-mv) .hi-c{display:none}
+.hi-q{font-size:10.5px;color:var(--faint);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hi-sep::after{content:"";flex:1;height:1px;background:var(--redline)}
+.hm-fc{justify-content:space-between}
+@media (max-width:640px){.hi .hi-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* auth */
 .au-wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
 @media (max-width:900px){.au-wrap{grid-template-columns:minmax(0,1fr)}}
@@ -312,7 +338,7 @@ function rdSignIn(acct, fresh) {
 }
 function rdGoNext() {
   const n = S.rdNext; S.rdNext = null;
-  if (n && n.startsWith('ax:')) { const k = n.slice(3); if (k.startsWith('t:')) { rdOpenAxis(k); return; } rdInline(k, 'axes'); return; }
+  if (n && n.startsWith('ax:')) { const k = n.slice(3); rdInline(k, 'axes'); return; }
   go(n && VIEWS[n] ? n : 'axes');
 }
 async function rdLoadWallet() {
@@ -354,24 +380,7 @@ function rdLauncherFor(ids) {
   try { return homeLauncher(); } finally { S.lnHide = keep; NAV.forEach((g, i) => { g.items = saved[i]; }); }
 }
 // «محاور التحليل»: two groups — topics for clients, and system tools for the NAIOSH team only
-VIEWS.axes = () => {
-  const admin = rdIsAdmin(), all = NAV.flatMap(g => g.items.map(i => i[0])).filter(id => !RD_NOT_AXIS.includes(id) && modOn(id));
-  const cl = all.filter(id => rdClientAxes().includes(id)), sys = all.filter(id => !rdClientAxes().includes(id));
-  const strip = (h) => h.replace(/<button type="button" class="btn link sm" data-act="ln-toggle">إخفاء<\/button>/, '');
-  const mv = (h, to) => !admin ? h : h.replace(/(<button type="button" class="ln-box[^"]*" data-(?:go|act)="[^"]*"(?: data-k="([a-z0-9_]+)")?[^>]*>)/g, (m) => m)
-    .replace(/<span class="ln-req/g, (m, off, str) => m)
-    .replace(/(<span class="ln-req[^"]*" role="button" tabindex="0" data-act="ax-inline" data-k="([a-z0-9_]+)")/g, (m, x, id) => `<span class="ln-mv" role="button" tabindex="0" data-act="ax-move" data-k="${id}|${to}" title="${to === 'client' ? 'إظهاره للعملاء' : 'إخفاؤه عن العملاء (للمنظومة فقط)'}">${ic(to === 'client' ? 'axes' : 'lock', 12)}<span>${to === 'client' ? 'إظهار للعملاء' : 'للمنظومة فقط'}</span></span>${m}`);
-  let clientHtml = cl.length ? strip(rdLauncherFor(cl))
-    .replace(/<button type="button" class="ln-box([^"]*)" data-go="([a-z0-9_]+)"/g, (m, cls, id) => `<button type="button" class="ln-box${cls}" data-act="ax-req" data-k="${id}"`)
-    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('axes', 18, 'style="color:var(--yellow)"')} محاور التحليل${admin ? ' للعملاء' : ''}</h2><span class="faint" style="font-size:12px">${cl.length} محورًا — اختر المحور الذي تريد تحليله، واضغط «طلب تحليل» ليفتح النموذج هنا</span>`)
-    : `<section class="card"><p class="muted" style="margin:0">لا توجد محاور متاحة للعملاء حاليًا.</p></section>`;
-  if (admin) clientHtml = mv(clientHtml, 'system');
-  let sysHtml = '';
-  if (admin && sys.length) sysHtml = mv(strip(rdLauncherFor(sys)), 'client')
-    .replace(/<section class="card" style="gap:16px">/, '<section class="card rd-sys" style="gap:16px">')
-    .replace(/<h2 class="h-sec" style="font-size:17px">محاور المنظومة<\/h2><span class="faint" style="font-size:12px">[^<]*<\/span>/, `<h2 class="h-sec" style="font-size:19px">${ic('lock', 18, 'style="color:var(--red)"')} محاور المنظومة — للإدارة فقط</h2><span class="faint" style="font-size:12px">${sys.length} أداة داخلية لا يراها العملاء — رحلة الاستشارة والحوكمة والمنصة</span>`);
-  return `<section class="stack" style="gap:6px"><h2 class="pg-title">محاور التحليل</h2>${admin ? '<p class="lead" style="margin:0">قسمان: ما يراه العملاء ويطلبون تحليله، وأدوات المنظومة الداخلية للإدارة. انقل أي محور بين القسمين بزر «إظهار للعملاء» أو «للمنظومة فقط».</p>' : ''}</section>${clientHtml}${sysHtml}`;
-};
+VIEWS.axes = () => `<section class="stack" style="gap:6px"><h2 class="pg-title">محاور التحليل</h2>${rdIsAdmin() ? '<p class="lead" style="margin:0">ما يراه العملاء ويطلبون تحليله، وتحته أدوات المنظومة للإدارة. انقل أي محور بزر «إظهار للعملاء» أو «للمنظومة فقط».</p>' : ''}</section>${hmIcons(true)}`;
 async function rdMoveAxis(id, to) {
   const list = [...rdClientAxes()].filter(x => x !== id); if (to === 'client') list.push(id);
   CFG.clientAxes = list;
@@ -639,7 +648,7 @@ function rd2Handle(act, k, el) {
     case 'rd-demo-in': { S.acct = null; S.guest = false; RD_MOD = null; rdModal(null); toast('مرحبا د. عدنان'); rdGoNext(); return true; }
     case 'rd-privacy': rdPrivacy(); return true;
     case 'ax-move': { const [id, to] = String(k).split('|'); if (rdIsAdmin()) rdMoveAxis(id, to); return true; }
-    case 'ax-req': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } if (String(k).startsWith('t:')) rdOpenAxis(k); else rdInline(k); return true;
+    case 'ax-req': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
     case 'ax-inline': if (!rdGuest() && !rdIsAdmin() && !rdIsClientAxis(k)) { rdDenied('هذا المحور'); return true; } if (rdGuest()) { rdRegister('ax:' + k); return true; } rdInline(k); return true;
     case 'ax-close': S.axOpen = null; S.axDone = null; S.reqDone = null; RQ_ERR = {}; render(); { const b = document.querySelector(`.ln-box[data-k="${k}"],.ln-box[data-go="${k}"]`); if (b) b.scrollIntoView({ block: 'center' }); } return true;
     case 'ax-again': S.axDone = null; S.reqDone = null; rdPrepAxis(k); render(); rdScrollPanel(); return true;
@@ -812,4 +821,29 @@ document.addEventListener('click', (e) => {
 new MutationObserver((ms) => { if (ms.some(m => m.addedNodes.length)) rdPwEnhance(document); }).observe(document.documentElement, { childList: true, subtree: true });
 document.addEventListener('DOMContentLoaded', () => rdPwEnhance(document));
 setTimeout(() => rdPwEnhance(document), 0);
+
+/* ---------- home: every analysis icon side by side in one compact grid ---------- */
+function hmIcons(full) {
+  const admin = rdIsAdmin(), all = NAV.flatMap(g => g.items).filter(([id]) => !RD_NOT_AXIS.includes(id) && modOn(id));
+  const cl = all.filter(([id]) => rdClientAxes().includes(id)), sys = admin ? all.filter(([id]) => !rdClientAxes().includes(id)) : [];
+  const tops = (typeof DASH_TOPICS !== 'undefined' ? DASH_TOPICS : []);
+  const req = (k) => `<span class="hi-r" role="button" tabindex="0" data-act="ax-inline" data-k="${k}" title="طلب تحليل">${ic('request', 12)}<span>طلب تحليل</span></span>`;
+  const tile = ([id, label, code, flag], sysT) => `<button type="button" class="hi-t${sysT ? ' sys' : ''}${S.axOpen === id ? ' on' : ''}${flag === 'soon' ? ' soon' : ''}" ${sysT ? `data-go="${id}"` : `data-act="ax-req" data-k="${id}"`} title="${esc(label)}">
+      <span class="hi-i">${ic(id, 18)}</span><span class="hi-n">${esc(label)}</span>${code ? `<span class="hi-c">${esc(code)}</span>` : ''}
+      ${sysT ? `<span class="hi-r lock">${ic('lock', 11)}</span>` : req(id)}${full && admin ? `<span class="hi-mv" role="button" tabindex="0" data-act="ax-move" data-k="${id}|${sysT ? 'client' : 'system'}" title="${sysT ? 'إظهاره للعملاء' : 'إخفاؤه عن العملاء'}">${ic(sysT ? 'axes' : 'lock', 11)}<span>${sysT ? 'إظهار للعملاء' : 'للمنظومة فقط'}</span></span>` : ''}</button>`;
+  const ttile = (t) => `<button type="button" class="hi-t${S.axOpen === 't:' + t.id ? ' on' : ''}" style="--acc:${t.acc}" data-act="ax-req" data-k="t:${t.id}" title="${esc(t.q)}">
+      <span class="hi-i" style="color:${t.acc};background:color-mix(in srgb,${t.acc} 14%,transparent)">${ic(t.icon, 18)}</span><span class="hi-n">${esc(t.name)}</span><span class="hi-q">${esc(t.q)}</span>${req('t:' + t.id)}</button>`;
+  const keys = cl.map(x => x[0]).concat(tops.map(t => 't:' + t.id)).concat(sys.map(x => x[0]));
+  const open = S.axOpen && !rdGuest() && keys.includes(S.axOpen);
+  const stp = [['1', 'اختر الموضوع'], ['2', 'املأ الطلب'], ['3', 'استلم تقريرك']].map(([n, l], i) => `<span class="hm-stp ${i === 0 ? 'on' : ''}"><b>${n}</b><span>${l}</span></span>`).join('');
+  return `<section class="hm-c ${full ? '' : 's12'} hi" aria-label="محاور التحليل" id="hm-icons">
+    <div class="hm-h" style="flex-wrap:wrap;gap:10px"><h2 style="font-size:${full ? 19 : 16.5}px">محاور التحليل — اطلب تحليلك في ثلاث خطوات</h2>${full ? '' : `<button type="button" class="btn link sm" data-go="axes">الصفحة الكاملة${ic('chev', 14)}</button>`}</div>
+    <div class="hm-steps" style="max-width:640px">${stp}</div>
+    <div class="hi-sep alt">${ic('data', 13)}<span>تحليل بيانات أنظمتك</span><small>${tops.length}</small></div>
+    <div class="hi-g">${tops.map(ttile).join('')}</div>${open && S.axOpen.startsWith('t:') ? rdAxPanel(S.axOpen) : ''}
+    <div class="hi-sep alt">${ic('axes', 13)}<span>المحاور المتخصصة</span><small>${cl.length}</small></div>
+    <div class="hi-g">${cl.map(x => tile(x, false)).join('')}</div>${open && cl.some(x => x[0] === S.axOpen) ? rdAxPanel(S.axOpen) : ''}
+    ${sys.length ? `<div class="hi-sep">${ic('lock', 13)}<span>محاور المنظومة — للإدارة فقط</span><small>${sys.length}</small></div><div class="hi-g">${sys.map(x => tile(x, true)).join('')}</div>${open && sys.some(x => x[0] === S.axOpen) ? rdAxPanel(S.axOpen) : ''}` : ''}
+    <p class="faint" style="font-size:11.5px;margin:0">اختر الموضوع ← يفتح نموذج الطلب هنا جاهزًا بالموضوع ← يصلك التقرير الموثّق في «طلباتي وتقاريري».</p></section>`;
+}
 </script>

@@ -388,12 +388,13 @@ function hmQuality() {
   if (!cur) return '';
   const col = (v) => v >= 90 ? 'var(--green)' : v >= 80 ? 'var(--yellow)' : v >= 70 ? 'var(--orange)' : 'var(--red)';
   const G = { good: ['t-s', 'جيد'], warn: ['t-m', 'متوسط'], low: ['t-c', 'منخفض'] }[cur.g] || ['t-i', '—'];
-  return `<section class="hm-c s3" aria-label="أبعاد الجودة">
+  return `<section class="hm-c s4" aria-label="أبعاد الجودة">
     <div class="hm-h"><h2>أبعاد الجودة — ${esc(cur.name)}</h2><span class="tag ${G[0]}">${G[1]}</span></div>
     <div class="hm-sys">${src.map(s => `<button type="button" class="chip" data-act="hm-sys" data-k="${esc(s.code)}" aria-pressed="${s.code === cur.code}">${esc(s.code)}</button>`).join('')}</div>
     <div class="hm-q">${RD_DIMS.map((d, i) => { const v = +(cur.d || [])[i] || 0; return `<span>${d}</span><span class="bt"><i style="width:${v}%;background:${col(v)}"></i></span><span class="pv" style="color:${col(v)}">${v}%</span>`; }).join('')}</div>
     <p class="hm-note">${esc(cur.note || '')}</p>
-    <button type="button" class="btn link sm" style="align-self:flex-start" data-go="data">تفاصيل جودة البيانات${ic('chev', 14)}</button></section>`;
+    <button type="button" class="btn link sm" style="align-self:flex-start" data-go="data">تفاصيل جودة البيانات${ic('chev', 14)}</button>
+    <div class="stack" style="gap:8px;margin-top:auto">${rdGuest() ? `<button type="button" class="hm-top" data-act="rd-signup">أنشئ حسابك واحصل على ${+((CFG.commerce || {}).welcomePoints) || 0} نقطة</button>` : `<button type="button" class="hm-top" data-go="myreqs">${ic('myreqs', 16)} طلباتي وتقاريري</button>`}<button type="button" class="hm-app" data-act="rd-app">${ic('phone', 18)} تنزيل التطبيق</button></div></section>`;
 }
 function hmMatrix() {
   const rs = CFG.risks || [], sel = rs.find(r => r.id === S.risk) || rs[0];
@@ -404,11 +405,11 @@ function hmMatrix() {
     cells += `<div style="background:${heat(p, i)}">${here.map(r => `<button type="button" data-act="hm-risk" data-k="${esc(r.id)}" aria-pressed="${sel && sel.id === r.id}" title="${esc(r.name)}">${esc(r.id)}</button>`).join('')}</div>`;
   }
   const L = sel ? (RD_LV[sel.lv] || ['t-i', '—']) : null;
-  return `<section class="hm-c s3" aria-label="مصفوفة المخاطر">
+  return `<section class="hm-c s4" aria-label="مصفوفة المخاطر">
     <div class="hm-h"><h2>مصفوفة المخاطر</h2><small>اضغط على خطر</small></div>
     <div class="hm-mx"><span class="ax">الأثر ←</span><div class="stack" style="gap:4px"><div class="hm-mxg">${cells}</div><span class="faint" style="font-size:10.5px;text-align:center">الاحتمال ←</span></div></div>
     ${sel ? `<button type="button" class="hm-rsel" data-act="hm-risk-open" data-k="${esc(sel.id)}"><span class="tag ${L[0]}">${L[1]}</span><b style="flex:1;font-weight:600">${esc(sel.name)}</b><code style="font:600 11px var(--f-mono);color:var(--faint)">${esc(sel.id)}</code></button>` : ''}
-    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || rdGuest() ? `<button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button>` : `<button type="button" class="hm-ask" data-go="axes">${ic('axes', 26)}اطلب تحليلك</button>`}</section>`;
+  </section>`;
 }
 function hmJourney() {
   const st = cnsStage(), done = S.lessonApproved ? 12 : S.measured ? 12 : S.decided ? 11 : S.qDone ? 9 : S.askStage === 1 ? 4 : 2;
@@ -432,7 +433,7 @@ function hmForecast() {
   const end = xs(n - 1 + fut);
   const band = `M${nx} ${ny} L${end} ${y(72)} L${end} ${y(61)} Z`;
   const grid = [80, 70, 60].map(v => `<line x1="${x0}" x2="${x1}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="34" y="${y(v) + 4}" text-anchor="end" direction="ltr">${v}</text>`).join('');
-  return `<section class="hm-c s4 hm-fc" aria-label="التنبؤ">
+  return `<section class="hm-c s4 hm-fc" aria-label="التنبؤ"><div class="stack" style="gap:12px;flex:1">
     <div class="hm-h"><h2>التنبؤ — مؤشر أداء الفرع الشمالي</h2><button type="button" class="btn link sm" data-go="foresight">السيناريوهات${ic('chev', 14)}</button></div>
     <div class="hm-lg"><span style="color:#fff"><i style="border-top-style:solid"></i>الفعلي</span>${sc.map(([c, l, v]) => `<span style="color:${c}"><i></i>${l} ${v}</span>`).join('')}</div>
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="المؤشر انخفض من 80 إلى 64، والسيناريو الأساسي يتوقع 67 خلال 6 أشهر">
@@ -443,7 +444,8 @@ function hmForecast() {
       <circle cx="${nx}" cy="${ny}" r="7" fill="#0B0B0D" stroke="var(--yellow)" stroke-width="3"/>
       ${months.map((m, i) => i % 2 === 0 ? `<text x="${xs(i)}" y="${H - 6}" text-anchor="middle">${m}</text>` : '').join('')}
     </svg>
-    <p class="faint" style="font-size:12px;margin:0;line-height:1.7">الخط الأصفر = اليوم. المنطقة الزرقاء نطاق عدم اليقين للسيناريو الأساسي.</p></section>`;
+    <p class="faint" style="font-size:12px;margin:0;line-height:1.7">الخط الأصفر = اليوم. المنطقة الزرقاء نطاق عدم اليقين للسيناريو الأساسي.</p></div>
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || rdGuest() ? `<button type="button" class="hm-ask" data-go="ask">${ic('ask', 26)}اسأل نايوش</button>` : `<button type="button" class="hm-ask" data-go="axes">${ic('axes', 26)}اطلب تحليلك</button>`}</section>`;
 }
 function hmServices() {
   const guest = rdGuest(), mine = guest ? [] : (typeof rdMyReqs === 'function' ? rdMyReqs() : []).slice(0, 3);
@@ -478,9 +480,9 @@ function rdHome() {
     return `<details class="hm-more" ${S.hmMore ? 'open' : ''}><summary data-act="hm-more">${ic('architecture', 18, 'style="color:var(--yellow)"')}<span style="flex:1">مركز القيادة التفصيلي — المؤشرات والتنبيهات والاستشارات</span><span class="faint" style="font-size:12px">${S.hmMore ? 'إخفاء ▴' : 'عرض ▾'}</span></summary><div>${old}</div></details>`;
   })();
   return `<div class="hm">${hello}${journey}${pub ? '' : kpiRow}
-    <div class="hm-grid">${hmThreeSteps()}${hmQuality()}${hmMatrix()}${hmJourney()}</div>
-    <div class="hm-grid">${hmRegister()}${hmForecast()}${hmServices()}</div>
-    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() || guest ? homeLauncher() + more : ''}</div>`;
+    <div class="hm-grid">${hmQuality()}${hmForecast()}${hmMatrix()}</div>
+    <div class="hm-grid">${typeof hmIcons === 'function' ? hmIcons() : hmThreeSteps()}</div>
+    ${typeof rdIsAdmin !== 'function' || rdIsAdmin() ? more : ''}</div>`;
 }
 VIEWS.home = rdHome;
 
