@@ -1,0 +1,221 @@
+<style>
+.fd-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:16px;align-items:start}
+@media (max-width:1100px){.fd-grid{grid-template-columns:minmax(0,1fr)}}
+.fd-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.fd-tabs button{height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-weight:700;display:inline-flex;align-items:center;gap:7px}
+.fd-tabs button[aria-selected="true"]{border-color:var(--yellow);color:var(--yellow);background:var(--yellowbg)}
+.fd-tabs button .soon-tag{margin-inline-start:4px}
+.fd-row{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--sunk)}
+.fd-row.off{opacity:.55}
+.fd-row .q{font-weight:700;font-size:14px}
+.fd-row .a{font-size:12.5px;color:var(--fg2);line-height:1.7;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fd-row .v{display:flex;flex-wrap:wrap;gap:4px}
+.fd-row .v span{font-size:11px;padding:1px 7px;border-radius:8px;background:var(--raised);border:1px solid var(--line2);color:var(--muted)}
+.fd-un{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--yellowline);background:var(--yellowbg)}
+.fd-un b{flex:1;font-size:13.5px;font-weight:600}
+.qa-chat{display:flex;flex-direction:column;gap:10px;max-height:460px;overflow-y:auto;padding:4px}
+.qa-msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.8;white-space:pre-wrap}
+.qa-msg.me{align-self:flex-start;background:var(--action);color:#fff;border-end-start-radius:4px}
+.qa-msg.bot{align-self:flex-end;background:var(--raised);border:1px solid var(--line2);border-end-end-radius:4px}
+.qa-msg.bot .meta{display:block;margin-top:6px;font-size:11px;color:var(--faint)}
+.qa-in{display:flex;gap:8px}
+.qa-in input{flex:1;min-height:48px}
+</style>
+<script data-app="">
+/* ================= تغذية البيانات (admin) → تغذية «اسأل نايوش» =================
+   The admin trains questions (with other phrasings) and their answers. «اسأل نايوش» answers from them with
+   Arabic-aware matching; questions it cannot answer are collected so the admin can train them next. */
+const QA_STOP = new Set(['ما', 'ماذا', 'هل', 'كيف', 'كم', 'لماذا', 'متى', 'اين', 'أين', 'من', 'في', 'على', 'عن', 'الى', 'إلى', 'او', 'أو', 'و', 'ثم', 'هو', 'هي', 'هذا', 'هذه', 'ذلك', 'التي', 'الذي', 'مع', 'لي', 'لك', 'انا', 'أنا', 'نحن', 'يا', 'اي', 'أي', 'شو', 'ايش', 'قديش', 'بدي', 'ممكن', 'لو', 'ان', 'أن', 'إن', 'قد', 'كان', 'يكون', 'the', 'a', 'is', 'what', 'how', 'to', 'of', 'in']);
+function qaNorm(s) {
+  return String(s || '').toLowerCase()
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+}
+function qaStem(w) {
+  let x = w;
+  if (x.length > 4 && x.startsWith('وال')) x = x.slice(3); else if (x.length > 3 && /^(ال|بال|لل|كال|فال)/.test(x)) x = x.replace(/^(بال|كال|فال|ال|لل)/, '');
+  if (x.length > 4 && /^[وفب]/.test(x)) x = x.slice(1);
+  if (x.length > 4 && /(ات|ون|ين|ها|هم|كم|نا)$/.test(x)) x = x.slice(0, -2);
+  else if (x.length > 3 && /[هي]$/.test(x)) x = x.slice(0, -1);
+  return x;
+}
+const qaToks = (s) => qaNorm(s).split(' ').filter(w => w && !QA_STOP.has(w)).map(qaStem).filter(w => w.length > 1);
+function qaGrams(s) { const t = ' ' + qaNorm(s).replace(/\s/g, '') + ' ', g = new Set(); for (let i = 0; i < t.length - 2; i++) g.add(t.slice(i, i + 3)); return g; }
+function qaSim(a, b) {
+  const A = qaToks(a), B = qaToks(b); if (!A.length || !B.length) return 0;
+  const sb = new Set(B); let hit = 0; for (const w of new Set(A)) if (sb.has(w)) hit++;
+  const tok = hit / Math.max(new Set(A).size, sb.size) * 0.65 + hit / new Set(A).size * 0.35;
+  const ga = qaGrams(a), gb = qaGrams(b); let gi = 0; for (const g of ga) if (gb.has(g)) gi++;
+  const tri = gi / Math.max(1, ga.size + gb.size - gi);
+  return Math.min(1, tok * 0.75 + tri * 0.4);
+}
+function qaMatch(q, entries) {
+  const scored = entries.filter(e => e.active).map(e => {
+    const forms = [e.question, ...(e.variants || [])];
+    let s = Math.max(...forms.map(f => qaSim(q, f)));
+    const kw = (e.keywords || '').split(/[,،]/).map(k => qaNorm(k)).filter(Boolean), nq = qaNorm(q);
+    if (kw.length) s = Math.min(1, s + 0.08 * kw.filter(k => nq.includes(k)).length);
+    return { e, s };
+  }).sort((x, y) => y.s - x.s);
+  return { best: scored[0] || null, top: scored.slice(0, 3) };
+}
+
+function qaMatch(q, entries) {
+  const scored = entries.filter(e => e.active).map(e => {
+    const forms = [e.question, ...(e.variants || [])];
+    let s = Math.max(...forms.map(f => qaSim(q, f)));
+    const kw = (e.keywords || '').split(/[,،]/).map(k => qaNorm(k)).filter(Boolean), nq = qaNorm(q);
+    if (kw.length) s = Math.min(1, s + 0.08 * kw.filter(k => nq.includes(k)).length);
+    return { e, s };
+  }).sort((x, y) => y.s - x.s);
+  return { best: scored[0] || null, top: scored.slice(0, 3) };
+}
+const QA_TH = 0.42, QA_SUG = 0.22;
+const QA_SEED = [{"id": 1, "question": "ما هي نايوش؟", "variants": ["عرفني على نايوش", "شو هي منظومة نايوش", "ما هي منظومة نايوش للتحليل"], "answer": "نايوش منظومة تحليل تساعد المؤسسات والأفراد على فهم المشكلة واتخاذ القرار بناءً على البيانات: تختار محور التحليل، ترفع بياناتك، ويصلك تقرير موثّق بالنتائج والتوصيات. القرار دائمًا لك.", "category": "عن نايوش", "keywords": "نايوش,منظومة", "link": "info", "active": true, "uses": 0}, {"id": 2, "question": "كيف أطلب تحليلًا؟", "variants": ["كيف اطلب تحليل بيانات", "طريقة طلب التحليل", "بدي اعمل طلب تحليل"], "answer": "من «محاور التحليل» اختر الموضوع واضغط «طلب تحليل». يفتح النموذج جاهزًا بالموضوع؛ أرفق ملف بياناتك (Excel أو CSV أو غيره)، وافق على سياسة الخصوصية وأرسل. تتابع المراحل في «طلباتي وتقاريري».", "category": "الطلبات", "keywords": "طلب,تحليل,نموذج", "link": "axes", "active": true, "uses": 0}, {"id": 3, "question": "كم تكلفة طلب التحليل؟", "variants": ["كم سعر التحليل", "كم نقطة يحتاج الطلب", "تكلفة الطلب"], "answer": "يُخصم من رصيدك عدد النقاط المحدد للطلب عند الإرسال، ويُسترد تلقائيًا إذا رُفض الطلب. تظهر التكلفة ورصيدك قبل الإرسال مباشرة.", "category": "النقاط والدفع", "keywords": "تكلفة,سعر,نقاط", "link": "hub", "active": true, "uses": 0}, {"id": 4, "question": "كيف أشحن رصيدي؟", "variants": ["كيف اشحن نقاط", "شحن الرصيد", "اريد شراء نقاط"], "answer": "اضغط «اشحن رصيدك» أعلى الصفحة، اختر الباقة وطريقة الدفع، ويمكنك إدخال كود خصم إن وجد. الرصيد لا ينتهي بمدة.", "category": "النقاط والدفع", "keywords": "شحن,رصيد,باقة", "link": "hub", "active": true, "uses": 0}, {"id": 5, "question": "ما أنواع الملفات التي يمكنني رفعها؟", "variants": ["ما الملفات المقبولة", "هل اقدر ارفع صور او فيديو", "صيغ الملفات"], "answer": "يمكنك رفع أي ملف: Excel وCSV وPDF وWord وصور وفيديو. جداول البيانات (Excel وCSV) يبدأ تحليلها آليًا فورًا، وباقي الملفات يراجعها فريق التحليل ويُصدر تقريرك.", "category": "الطلبات", "keywords": "ملفات,رفع,صور,فيديو,اكسل", "link": "", "active": true, "uses": 0}, {"id": 6, "question": "كم يستغرق التحليل؟", "variants": ["متى يجهز التقرير", "مدة التحليل", "كم وقت ياخذ التحليل"], "answer": "التحليل الآلي لجداول البيانات يكتمل خلال دقائق من استلام الملف. الطلبات التي تحتوي صورًا أو مستندات فقط يراجعها فريق التحليل، ويصلك إشعار حين يجهز التقرير.", "category": "الطلبات", "keywords": "مدة,وقت,متى", "link": "myreqs", "active": true, "uses": 0}, {"id": 7, "question": "كيف أتحقق من أصالة التقرير؟", "variants": ["هل التقرير اصلي", "التحقق من التقرير", "رمز التحقق"], "answer": "كل تقرير يحمل رمز تحقق أسفل كل صفحة. افتح «التحقق من تقرير» واكتب الرمز، ويمكنك اختيار ملف PDF لمقارنة بصمته بالنسخة الأصلية المحفوظة لدى نايوش.", "category": "التقارير", "keywords": "تحقق,اصالة,رمز", "link": "verify", "active": true, "uses": 0}, {"id": 8, "question": "هل بياناتي آمنة؟", "variants": ["الخصوصية", "من يرى بياناتي", "هل تشاركون بياناتي"], "answer": "بياناتك لا يراها إلا أنت والمصرّح لهم من فريق نايوش حسب أدوارهم، وكل وصول مسجّل في سجل تدقيق لا يمكن تعديله. لا نبيع بياناتك ولا نشاركها دون موافقتك.", "category": "الخصوصية", "keywords": "خصوصيه,امان,بيانات", "link": "info", "active": true, "uses": 0}];
+const QA_CATS = ['عن نايوش', 'الطلبات', 'النقاط والدفع', 'التقارير', 'الخصوصية', 'محاور التحليل', 'الحساب', 'عام'];
+const QA_LINKS = [['', 'بدون رابط'], ['axes', 'محاور التحليل'], ['myreqs', 'طلباتي وتقاريري'], ['hub', 'نايوش هوب'], ['info', 'مركز المعلومات'], ['verify', 'التحقق من تقرير'], ['contact', 'اتصل بنا'], ['valuation', 'التقييم المالي للشركات']];
+let QA_SV = null; // server copy { entries, unanswered }
+const qaData = () => {
+  if (rdServer()) return QA_SV || { entries: [], unanswered: [] };
+  if (!S.qa) S.qa = JSON.parse(JSON.stringify(QA_SEED));
+  if (!S.qaUn) S.qaUn = [];
+  return { entries: S.qa, unanswered: S.qaUn };
+};
+async function qaLoad() { if (!rdServer()) return; try { QA_SV = await api('GET', '/api/qa'); QA_SV.unanswered = QA_SV.unanswered.map(u => ({ ...u, at: u.last_at })); } catch (e) { toast(e.message); } }
+Object.assign(P, { feed: 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3 M20 6v4 M4 12v6c0 1.7 3.6 3 8 3 M17 14v7 M14 17.5l3-3.5 3 3.5' });
+TITLES.feed = ['للإدارة فقط · تدريب المنظومة', 'تغذية البيانات'];
+(function () { const g = NAV.find(x => x.items.some(([id]) => id === 'knowledge')) || NAV[NAV.length - 1]; if (!g.items.some(([id]) => id === 'feed')) g.items.splice(0, 0, ['feed', 'تغذية البيانات', 'FEED']); })();
+
+/* ---------- the page ---------- */
+let QA_ERR = {}, QA_TEST = null;
+VIEWS.feed = () => {
+  if (rdServer() && typeof svCan === 'function' && !svCan('config.edit')) return `<section class="card"><h2 class="h-sec">${ic('lock', 18, 'style="color:var(--red)"')} تغذية البيانات لمدير النظام فقط</h2></section>`;
+  if (rdServer() && !QA_SV) { qaLoad().then(() => { if (S.route === 'feed') render(); }); return `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`; }
+  const tab = S.fdTab || 'ask', D = qaData();
+  const tabs = [['ask', 'تغذية «اسأل نايوش»', 'ask', ''], ['kb', 'قاعدة المعرفة', 'knowledge', 'قريبًا'], ['bench', 'المضاعفات والمراجع القطاعية', 'chart', 'قريبًا'], ['src', 'مصادر البيانات', 'data', 'قريبًا']];
+  const head = `<section class="stack" style="gap:6px"><h2 class="pg-title">تغذية البيانات</h2><p class="lead" style="margin:0">علّم المنظومة: أضف الأسئلة وإجاباتها، وراجع ما سأل عنه المستخدمون ولم يجد إجابة. للإدارة فقط.</p></section>
+    <div class="fd-tabs" role="tablist">${tabs.map(([id, l, i, soon]) => `<button type="button" role="tab" data-act="fd-tab" data-k="${id}" aria-selected="${tab === id}">${ic(i, 16)}${l}${soon ? `<span class="soon-tag">${soon}</span>` : ''}</button>`).join('')}</div>`;
+  if (tab !== 'ask') return head + `<section class="card" style="align-items:center;text-align:center;padding:40px 20px;gap:10px">${ic('feed', 36, 'style="color:var(--faint)"')}<h2 class="h-sec">قريبًا</h2><p class="muted" style="margin:0">نبدأ بتغذية «اسأل نايوش». هذا القسم يُبنى في المرحلة التالية.</p></section>`;
+  const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
+  const qf = (S.qaFilter || '').trim(), qn = qaNorm(qf);
+  const list = D.entries.filter(e => !qn || qaNorm(e.question + ' ' + (e.variants || []).join(' ') + ' ' + e.answer + ' ' + e.category).includes(qn));
+  const active = D.entries.filter(e => e.active).length, uses = D.entries.reduce((a, e) => a + (e.uses || 0), 0);
+  const E = (k) => QA_ERR[k] ? `<span style="color:#FF6B81;font-size:12px">${esc(QA_ERR[k])}</span>` : '';
+  const form = `<section class="card" style="gap:12px" id="qa-form-card"><div class="row between"><h2 class="h-sec">${f.id ? 'تعديل سؤال مدرّب' : 'تدريب سؤال جديد'}</h2>${f.id || f.fromUn ? '<button type="button" class="btn link sm" data-act="qa-new">سؤال جديد</button>' : ''}</div>
+    <form id="qa-form" class="stack" style="gap:12px" novalidate>
+      <label class="stack" style="gap:5px"><span class="lbl">السؤال *</span><input type="text" data-qa="question" value="${esc(f.question)}" placeholder="مثال: كيف أشحن رصيدي؟">${E('question')}</label>
+      <label class="stack" style="gap:5px"><span class="lbl">صيغ أخرى للسؤال — سطر لكل صيغة (كلما زادت الصيغ فهم نايوش أكثر)</span><textarea data-qa="variants" rows="3" placeholder="بدي اشحن نقاط&#10;شحن الرصيد&#10;كيف اشتري باقة">${esc(f.variants)}</textarea></label>
+      <label class="stack" style="gap:5px"><span class="lbl">الإجابة التي يقولها نايوش *</span><textarea data-qa="answer" rows="5" placeholder="اكتب الإجابة كما تريد أن تظهر للمستخدم">${esc(f.answer)}</textarea>${E('answer')}</label>
+      <div class="grid g3"><label class="stack" style="gap:5px"><span class="lbl">التصنيف</span><select data-qa="category">${QA_CATS.map(c => `<option ${f.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
+        <label class="stack" style="gap:5px"><span class="lbl">كلمات مفتاحية (بفاصلة)</span><input type="text" data-qa="keywords" value="${esc(f.keywords)}" placeholder="شحن، رصيد، باقة"></label>
+        <label class="stack" style="gap:5px"><span class="lbl">زر داخل الإجابة يفتح</span><select data-qa="link">${QA_LINKS.map(([k, l]) => `<option value="${k}" ${f.link === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" data-qa="active" ${f.active ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13px">مفعّل — يستخدمه نايوش في الإجابة</span></label>
+      <div class="row" style="gap:8px"><button type="submit" class="btn primary">${ic('check', 16)}${f.id ? 'حفظ التعديل' : 'حفظ وتدريب'}</button>${f.id ? `<button type="button" class="btn link sm" style="color:#FF6B81" data-act="qa-del" data-k="${f.id}">حذف السؤال</button>` : ''}</div>
+    </form></section>`;
+  const test = `<section class="card" style="gap:10px"><h2 class="h-sec">${ic('ask', 17, 'style="color:var(--yellow)"')} جرّب نايوش</h2>
+    <form id="qa-test" class="qa-in" novalidate><input type="text" id="qa-test-q" placeholder="اكتب سؤالًا كما يكتبه المستخدم…" value="${esc((QA_TEST || {}).q || '')}"><button type="submit" class="btn">اختبار</button></form>
+    ${QA_TEST ? (QA_TEST.best && QA_TEST.best.s >= QA_TH ? `<div class="banner g" style="align-items:flex-start">${ic('check', 16, 'style="color:var(--green);margin-top:3px"')}<div class="stack" style="gap:4px"><b>يجيب من: «${esc(QA_TEST.best.e.question)}» · تطابق ${Math.round(QA_TEST.best.s * 100)}%</b><span class="soft" style="font-size:12.5px;white-space:pre-wrap">${esc(QA_TEST.best.e.answer)}</span></div></div>`
+      : `<div class="banner y" style="align-items:flex-start">${ic('warn', 16, 'style="color:var(--yellow);margin-top:3px"')}<div class="stack" style="gap:6px"><b>لا توجد إجابة مدرّبة لهذا السؤال${QA_TEST.best && QA_TEST.best.s > 0 ? ' (أقرب سؤال «' + esc(QA_TEST.best.e.question) + '» بتطابق ' + Math.round(QA_TEST.best.s * 100) + '%)' : ''}</b><span class="row" style="gap:6px"><button type="button" class="btn sm primary" data-act="qa-train-test">${ic('plus', 14)}درّبه الآن</button>${QA_TEST.best && QA_TEST.best.s > 0 ? `<button type="button" class="btn sm" data-act="qa-add-variant" data-k="${QA_TEST.best.e.id}">أضفه صيغةً للسؤال الأقرب</button>` : ''}</span></div></div>`) : '<span class="faint" style="font-size:12px">يُظهر الاختبار السؤال المدرّب الذي سيجيب منه نايوش ونسبة التطابق.</span>'}</section>`;
+  const un = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">أسئلة لم يجد لها نايوش إجابة</h2><span class="tag ${D.unanswered.length ? 't-m' : 't-s'}">${D.unanswered.length}</span></div>
+    ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">درّبه</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
+  const listHtml = `<section class="card" style="gap:10px"><div class="row between" style="gap:8px"><h2 class="h-sec">الأسئلة المدرّبة (${D.entries.length})</h2><span class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="qa-export">${ic('upload', 14)}تصدير</button><label class="btn sm" style="cursor:pointer">${ic('plus', 14)}استيراد CSV<input type="file" id="qa-import" accept=".csv,text/csv" hidden></label></span></div>
+    <input type="search" id="qa-filter" placeholder="ابحث في الأسئلة والإجابات…" value="${esc(S.qaFilter || '')}">
+    ${list.length ? list.map(e => `<div class="fd-row ${e.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><span class="q">${esc(e.question)}</span><span class="row nowrap" style="gap:6px"><span class="tag t-i">${esc(e.category || 'عام')}</span>${e.uses ? `<span class="faint" style="font-size:11px">استُخدم ${e.uses}</span>` : ''}</span></div>
+      ${(e.variants || []).length ? `<div class="v">${e.variants.slice(0, 6).map(v => `<span>${esc(v)}</span>`).join('')}${e.variants.length > 6 ? `<span>+${e.variants.length - 6}</span>` : ''}</div>` : ''}
+      <span class="a">${esc(e.answer)}</span>
+      <div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="qa-edit" data-k="${e.id}">تعديل</button><button type="button" class="btn link sm" data-act="qa-toggle" data-k="${e.id}">${e.active ? 'إيقاف' : 'تفعيل'}</button></div></div>`).join('') : '<p class="faint" style="margin:0">لا نتائج.</p>'}
+    <span class="faint" style="font-size:11px">الاستيراد: ملف CSV بأعمدة: السؤال، الإجابة، التصنيف، الصيغ الأخرى (مفصولة بـ |).</span></section>`;
+  return head + `${anKpis([['أسئلة مدرّبة', D.entries.length], ['مفعّلة', active], ['مرات الإجابة', uses], ['بانتظار التدريب', D.unanswered.length, D.unanswered.length ? 'bad' : 'good']])}
+    <div class="fd-grid"><div class="stack" style="gap:16px">${form}${test}${un}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
+    ${egNote('التدريب هنا قواعد مطابقة: نايوش يقارن سؤال المستخدم بالأسئلة وصيغها ويختار الأقرب، ولا يؤلف إجابات من عنده. عند ربط الذكاء الاصطناعي لاحقًا تصبح هذه الأسئلة والإجابات مرجعه الأول.')}`;
+};
+document.addEventListener('input', (e) => {
+  const k = e.target.dataset && e.target.dataset.qa; if (k) { (S.qaForm || (S.qaForm = {}))[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; delete QA_ERR[k]; }
+  if (e.target.id === 'qa-filter') { S.qaFilter = e.target.value; const pos = e.target.selectionStart; render(); const i = document.getElementById('qa-filter'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (x) {} } }
+});
+document.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.qa; if (k) (S.qaForm || (S.qaForm = {}))[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
+const qaFormToEntry = (f) => ({ question: String(f.question || '').trim(), variants: String(f.variants || '').split('\n').map(x => x.trim()).filter(Boolean), answer: String(f.answer || '').trim(), category: f.category || 'عام', keywords: f.keywords || '', link: f.link || '', active: f.active !== false });
+document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'qa-test') { e.preventDefault(); const q = (document.getElementById('qa-test-q') || {}).value || ''; if (!q.trim()) return; const m = qaMatch(q, qaData().entries); QA_TEST = { q: q.trim(), best: m.best }; render(); return; }
+  if (e.target.id !== 'qa-form') return; e.preventDefault();
+  const f = S.qaForm, x = qaFormToEntry(f); QA_ERR = {};
+  if (x.question.length < 3) QA_ERR.question = 'اكتب السؤال.'; if (x.answer.length < 3) QA_ERR.answer = 'اكتب الإجابة.';
+  if (Object.keys(QA_ERR).length) { render(); return; }
+  if (rdServer()) {
+    try {
+      if (f.id) await api('PATCH', '/api/qa/' + f.id, x);
+      else { const res = await fetch('/api/qa', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Naiosh': '1', 'X-From-Unanswered': String(f.fromUn || '') }, body: JSON.stringify(x) }); if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'تعذّر الحفظ'); } }
+      await qaLoad();
+    } catch (err) { toast(err.message); return; }
+  } else {
+    const D = qaData();
+    if (f.id) Object.assign(D.entries.find(y => y.id === f.id) || {}, x);
+    else { D.entries.unshift({ id: Math.max(0, ...D.entries.map(y => y.id)) + 1, uses: 0, ...x }); if (f.fromUn) S.qaUn = D.unanswered.filter(u => u.id !== f.fromUn); }
+    if (typeof log === 'function') log('د. عدنان', `درّب «اسأل نايوش»: ${x.question}`);
+  }
+  toast(f.id ? 'حُفظ التعديل' : 'تعلّم نايوش السؤال الجديد'); S.qaForm = null; QA_TEST = null; render();
+});
+document.addEventListener('change', async (e) => {
+  if (e.target.id !== 'qa-import' || !e.target.files[0]) return;
+  const text = await e.target.files[0].text(), rows = typeof anParseCSV === 'function' ? anParseCSV(text.replace(/^﻿/, '')) : text.split('\n').map(l => l.split(','));
+  const body = rows.filter(r => r && r[0] && r[1] && !/^(السؤال|question)$/i.test(String(r[0]).trim()));
+  let n = 0;
+  for (const r of body) {
+    const x = { question: String(r[0]).trim(), answer: String(r[1]).trim(), category: String(r[2] || 'عام').trim() || 'عام', variants: String(r[3] || '').split('|').map(v => v.trim()).filter(Boolean), keywords: '', link: '', active: true };
+    if (rdServer()) { try { await api('POST', '/api/qa', x); n++; } catch (err) {} }
+    else { const D = qaData(); D.entries.unshift({ id: Math.max(0, ...D.entries.map(y => y.id)) + 1, uses: 0, ...x }); n++; }
+  }
+  if (rdServer()) await qaLoad();
+  toast('استُورد ' + n + ' سؤال'); render();
+});
+function qaHandle(act, k) {
+  const D = qaData();
+  switch (act) {
+    case 'fd-tab': S.fdTab = k; render(); return true;
+    case 'qa-new': S.qaForm = null; QA_ERR = {}; render(); return true;
+    case 'qa-edit': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; S.qaForm = { id: x.id, question: x.question, variants: (x.variants || []).join('\n'), answer: x.answer, category: x.category || 'عام', keywords: x.keywords || '', link: x.link || '', active: x.active, fromUn: null }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+    case 'qa-toggle': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { active: !x.active }).then(qaLoad).then(render).catch(err => toast(err.message)); else { x.active = !x.active; render(); } return true; }
+    case 'qa-del': if (!confirm('حذف هذا السؤال المدرّب؟')) return true; if (rdServer()) api('DELETE', '/api/qa/' + k).then(qaLoad).then(() => { S.qaForm = null; render(); }).catch(err => toast(err.message)); else { S.qa = D.entries.filter(y => String(y.id) !== String(k)); S.qaForm = null; render(); } toast('حُذف السؤال'); return true;
+    case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
+    case 'qa-train-test': S.qaForm = { id: null, question: QA_TEST.q, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null }; QA_TEST = null; render(); { const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); } return true;
+    case 'qa-add-variant': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x || !QA_TEST) return true; const vs = [...(x.variants || []), QA_TEST.q]; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { variants: vs }).then(qaLoad).then(() => { QA_TEST = null; render(); toast('أُضيفت الصيغة'); }).catch(err => toast(err.message)); else { x.variants = vs; QA_TEST = null; toast('أُضيفت الصيغة'); render(); } return true; }
+    case 'qa-dismiss': if (rdServer()) api('DELETE', '/api/qa/unanswered/' + k).then(qaLoad).then(render); else { S.qaUn = D.unanswered.filter(u => String(u.id) !== String(k)); render(); } return true;
+    case 'qa-export': { const rows = [['السؤال', 'الإجابة', 'التصنيف', 'الصيغ الأخرى']].concat(D.entries.map(x => [x.question, x.answer, x.category || '', (x.variants || []).join(' | ')])); saveFile('NAIOSH_ask_training.csv', new Blob(['﻿' + anRowsToCSV(rows)], { type: 'text/csv;charset=utf-8' })); return true; }
+    case 'qa-ask-link': go(k); return true;
+    case 'qa-sug': { const x = D.entries.find(y => String(y.id) === String(k)); if (x) qaAsk(x.question); return true; }
+  }
+  return false;
+}
+
+/* ---------- «اسأل نايوش» answers from the trained questions ---------- */
+async function qaAsk(q) {
+  q = String(q || '').trim(); if (!q) return;
+  const H = S.qaChat || (S.qaChat = []); H.push({ me: true, t: q }); render(); qaScroll();
+  let r;
+  if (rdServer()) { try { r = await api('POST', '/api/qa/ask', { q }); } catch (e) { r = { found: false, err: e.message, suggestions: [] }; } }
+  else {
+    const D = qaData(), m = qaMatch(q, D.entries);
+    if (m.best && m.best.s >= QA_TH) { m.best.e.uses = (m.best.e.uses || 0) + 1; r = { found: true, answer: m.best.e.answer, question: m.best.e.question, score: Math.round(m.best.s * 100), link: m.best.e.link }; }
+    else { const n = qaNorm(q), u = D.unanswered.find(x => qaNorm(x.question) === n); if (u) u.count++; else D.unanswered.unshift({ id: Date.now(), question: q, count: 1, at: new Date().toISOString() }); r = { found: false, suggestions: m.top.filter(x => x.s >= QA_SUG).map(x => ({ id: x.e.id, question: x.e.question })) }; }
+  }
+  H.push({ me: false, r }); S.qaChat = H.slice(-30); render(); qaScroll();
+}
+function qaScroll() { setTimeout(() => { const c = document.getElementById('qa-chat'); if (c) c.scrollTop = c.scrollHeight; }, 20); }
+function qaChatCard() {
+  const H = S.qaChat || [];
+  const msg = (m) => m.me ? `<div class="qa-msg me">${esc(m.t)}</div>` : m.r.found
+    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}<span class="meta">من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%</span></div>`
+    : `<div class="qa-msg bot">${m.r.err ? esc(m.r.err) : 'لم أتعلّم إجابة هذا السؤال بعد. سجّلته ليُضاف إلى تدريبي.'}${(m.r.suggestions || []).length ? `<div class="stack" style="gap:4px;margin-top:8px"><span class="faint" style="font-size:12px">هل تقصد:</span>${m.r.suggestions.map(sg => `<button type="button" class="btn sm" style="justify-content:flex-start" data-act="qa-sug" data-k="${sg.id}">${esc(sg.question)}</button>`).join('')}</div>` : ''}</div>`;
+  const ideas = qaData().entries.filter(e => e.active).slice(0, 4).map(e => e.question);
+  return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div>${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</div>
+    <div class="qa-chat" id="qa-chat">${H.length ? H.map(msg).join('') : `<div class="qa-msg bot">مرحبًا، اسألني عن نايوش والطلبات والنقاط والتقارير.</div>`}</div>
+    ${!H.length && ideas.length ? `<div class="row" style="gap:6px">${ideas.map(t => `<button type="button" class="chip" data-act="qa-q" data-k="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
+    <form id="qa-ask" class="qa-in" novalidate><input type="text" id="qa-ask-q" placeholder="اكتب سؤالك…" autocomplete="off"><button type="submit" class="btn primary">${ic('ask', 16)}اسأل</button></form></section>`;
+}
+document.addEventListener('submit', (e) => { if (e.target.id !== 'qa-ask') return; e.preventDefault(); const i = document.getElementById('qa-ask-q'); const q = i ? i.value : ''; qaAsk(q).then(() => { const j = document.getElementById('qa-ask-q'); if (j) j.focus(); }); });
+const _qaAskView = VIEWS.ask;
+VIEWS.ask = () => qaChatCard() + `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`;
+const _qaH = analyticsHandle;
+analyticsHandle = function (act, k, el) { if (act === 'qa-q') { qaAsk(k); return true; } if (act && (act.startsWith('qa-') || act === 'fd-tab') && qaHandle(act, k)) return true; return _qaH(act, k, el); };
+</script>

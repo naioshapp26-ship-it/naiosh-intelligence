@@ -278,6 +278,7 @@ renderTop = function () {
     ? `<button type="button" class="tb-login" data-act="rd-signup">${ic('star', 16)}<span>إنشاء حساب</span></button><button type="button" class="btn sm" data-act="rd-login" style="height:40px">${ic('login', 16)}<span class="hide-sm">دخول</span></button>`
     : `<button type="button" class="tb-pts" data-act="rd-hub" data-k="wallet" title="نقاطك — المحفظة">${ic('wallet', 16)}<span class="tb-pts-l">نقاطك</span><b>${rdNum(rdWal().bal)}</b></button>
        <button type="button" class="tb-top" data-act="rd-topup">${ic('plus', 15)}<span>اشحن رصيدك</span></button>
+       ${admin && (!rdServer() || (typeof svCan === 'function' && svCan('config.edit'))) ? `<button type="button" class="icon-btn" data-go="feed" aria-label="تغذية البيانات" title="تغذية البيانات">${ic('feed', 18)}</button>` : ''}
        ${admin ? `<button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
        <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>` : ''}
        <span class="avatar" aria-hidden="true">${esc(admin ? (CFG.identity.userInitial || '') : String(me.name || '؟').trim()[0])}</span>

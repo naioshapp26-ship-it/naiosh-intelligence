@@ -231,6 +231,20 @@ test('sign-up: real name, unique email and phone, both codes verified, welcome p
   r = await v('POST', '/api/requests', { payload, summary: { suff: 50 }, uploads: [] }); assert.equal(r.status, 402);
 });
 
+test('تغذية البيانات: admin trains answers, users ask, unmatched questions are kept', async () => {
+  let r = await admin('GET', '/api/qa'); assert.equal(r.status, 200); assert.ok(r.body.entries.length >= 8);
+  assert.equal((await analyst('GET', '/api/qa')).status, 403);
+  r = await analyst('POST', '/api/qa/ask', { q: 'بدي اشحن رصيدي' }); assert.equal(r.status, 200); assert.equal(r.body.found, true); assert.match(r.body.answer, /اشحن رصيدك/);
+  r = await analyst('POST', '/api/qa/ask', { q: 'هل عندكم فرع في عمان؟' }); assert.equal(r.body.found, false);
+  r = await admin('GET', '/api/qa'); const u = r.body.unanswered.find(x => x.question.includes('فرع')); assert.ok(u);
+  r = await admin('POST', '/api/qa', { question: 'هل عندكم فرع في عمان؟', variants: ['وين مكانكم'], answer: 'مقرنا في عمّان.', category: 'عام' }, { 'X-From-Unanswered': String(u.id) });
+  assert.equal(r.status, 201);
+  r = await admin('GET', '/api/qa'); assert.ok(!r.body.unanswered.some(x => x.id === u.id));
+  r = await analyst('POST', '/api/qa/ask', { q: 'وين مكانكم؟' }); assert.equal(r.body.found, true); assert.equal(r.body.answer, 'مقرنا في عمّان.');
+  assert.equal((await analyst('POST', '/api/qa', { question: 'x x x', answer: 'y y y' })).status, 403);
+  assert.equal((await anon('POST', '/api/qa/ask', { q: 'سؤال' })).status, 401);
+});
+
 test('password change and login throttling', async () => {
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'nope', next: 'NewPassword2026' })).status, 400);
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'Password2026', next: 'short' })).status, 400);

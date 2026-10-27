@@ -16,6 +16,7 @@ require('./routes/users')(router);
 require('./routes/ledger')(router);
 require('./routes/messages')(router);
 require('./routes/accounts')(router);
+require('./routes/qa')(router);
 const requests = require('./routes/requests');
 requests(router);
 
