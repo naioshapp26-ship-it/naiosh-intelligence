@@ -3668,6 +3668,11 @@ async function anTablesFromPDF(buf) {
   const lines = [];
   clean.sort((a, b) => a.pg - b.pg || b.y - a.y || a.x - b.x).forEach(r => { const L = lines.find(l => l.pg === r.pg && Math.abs(l.y - r.y) < r.sz * 0.45); if (L) L.r.push(r); else lines.push({ pg: r.pg, y: r.y, r: [r] }); });
   const rtl = clean.filter(r => /[\u0600-\u06FF]/.test(r.t)).length > clean.length / 3;
+  { // plain text in reading order (for the «اسأل نايوش» importer): content-stream line order, explicit space runs kept
+    const TL = []; for (const r of runs) { const t = r.t.normalize('NFKC'); let L = TL.find(l => l.pg === r.pg && Math.abs(l.y - r.y) < r.sz * 0.45); if (!L) TL.push(L = { pg: r.pg, y: r.y, r: [] }); L.r.push({ x: r.x, t }); }
+    AN_LAST_PDF_TEXT = TL.map(l => { const ar = /[\u0600-\u06FF]/.test(l.r.map(r => r.t).join('')), nx = l.r.filter(r => r.t.trim()).map(r => r.x), inc = nx.every((x, i) => !i || x >= nx[i - 1] - 1), dec = nx.every((x, i) => !i || x <= nx[i - 1] + 1), rr = inc || dec ? ((ar ? inc : dec) ? [...l.r].reverse() : [...l.r]) : [...l.r].sort((a, b) => ar ? b.x - a.x : a.x - b.x), glyphs = rr.some(r => !r.t.trim()) || rr.reduce((a, r) => a + r.t.length, 0) / rr.length <= 2;
+      return rr.map(r => r.t).join(glyphs ? '' : ' ').replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  }
   const cellRows = lines.map(l => { const rr = l.r.sort((a, b) => a.x - b.x), cells = []; let last = null; for (const r of rr) { const w = r.t.length * r.sz * 0.5; if (last && r.x - (last.x + last.w) < r.sz * 0.9) { last.parts.push(r.t); last.w = r.x + w - last.x; } else { last = { x: r.x, w, parts: [r.t] }; cells.push(last); } } return cells; });
   const widths = {}; cellRows.forEach(c => { if (c.length >= 2) widths[c.length] = (widths[c.length] || 0) + 1; });
   const modal = Object.entries(widths).sort((a, b) => b[1] - a[1] || b[0] - a[0])[0];
@@ -8199,6 +8204,7 @@ VIEWS.feed = () => {
       <div class="grid g3"><label class="stack" style="gap:5px"><span class="lbl">التصنيف</span><select data-qa="category">${QA_CATS.map(c => `<option ${f.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
         <label class="stack" style="gap:5px"><span class="lbl">كلمات مفتاحية (بفاصلة)</span><input type="text" data-qa="keywords" value="${esc(f.keywords)}" placeholder="شحن، رصيد، باقة"></label>
         <label class="stack" style="gap:5px"><span class="lbl">زر داخل الإجابة يفتح</span><select data-qa="link">${QA_LINKS.map(([k, l]) => `<option value="${k}" ${f.link === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      ${typeof qaAttachField === 'function' ? qaAttachField(f) : ''}
       <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" data-qa="active" ${f.active ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13px">مفعّل — يستخدمه نايوش في الإجابة</span></label>
       <div class="row" style="gap:8px"><button type="submit" class="btn primary">${ic('check', 16)}${f.id ? 'حفظ التعديل' : 'حفظ وتدريب'}</button>${f.id ? `<button type="button" class="btn link sm" style="color:#FF6B81" data-act="qa-del" data-k="${f.id}">حذف السؤال</button>` : ''}</div>
     </form></section>`;
@@ -8208,13 +8214,13 @@ VIEWS.feed = () => {
       : `<div class="banner y" style="align-items:flex-start">${ic('warn', 16, 'style="color:var(--yellow);margin-top:3px"')}<div class="stack" style="gap:6px"><b>لا توجد إجابة مدرّبة لهذا السؤال${QA_TEST.best && QA_TEST.best.s > 0 ? ' (أقرب سؤال «' + esc(QA_TEST.best.e.question) + '» بتطابق ' + Math.round(QA_TEST.best.s * 100) + '%)' : ''}</b><span class="row" style="gap:6px"><button type="button" class="btn sm primary" data-act="qa-train-test">${ic('plus', 14)}درّبه الآن</button>${QA_TEST.best && QA_TEST.best.s > 0 ? `<button type="button" class="btn sm" data-act="qa-add-variant" data-k="${QA_TEST.best.e.id}">أضفه صيغةً للسؤال الأقرب</button>` : ''}</span></div></div>`) : '<span class="faint" style="font-size:12px">يُظهر الاختبار السؤال المدرّب الذي سيجيب منه نايوش ونسبة التطابق.</span>'}</section>`;
   const un = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">أسئلة لم يجد لها نايوش إجابة</h2><span class="tag ${D.unanswered.length ? 't-m' : 't-s'}">${D.unanswered.length}</span></div>
     ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">درّبه</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
-  const listHtml = `<section class="card" style="gap:10px"><div class="row between" style="gap:8px"><h2 class="h-sec">الأسئلة المدرّبة (${D.entries.length})</h2><span class="row nowrap" style="gap:6px"><button type="button" class="btn sm" data-act="qa-export">${ic('upload', 14)}تصدير</button><label class="btn sm" style="cursor:pointer">${ic('plus', 14)}استيراد CSV<input type="file" id="qa-import" accept=".csv,text/csv" hidden></label></span></div>
+  const listHtml = `<section class="card" style="gap:10px"><div class="row between" style="gap:8px"><h2 class="h-sec">الأسئلة المدرّبة (${D.entries.length})</h2><span class="row nowrap" style="gap:6px"><span class="fx-menu"><button type="button" class="btn sm" data-act="fx-menu" aria-expanded="${S.fxOpen ? 'true' : 'false'}">${ic('upload', 14)}تصدير ▾</button>${S.fxOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="qa-export-pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="qa-export-xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="qa-export">${ic('clip', 14)}CSV</button></span>` : ''}</span><label class="btn sm" style="cursor:pointer">${ic('plus', 14)}استيراد من ملف<input type="file" id="qa-import2" multiple hidden></label></span></div>
     <input type="search" id="qa-filter" placeholder="ابحث في الأسئلة والإجابات…" value="${esc(S.qaFilter || '')}">
     ${list.length ? list.map(e => `<div class="fd-row ${e.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><span class="q">${esc(e.question)}</span><span class="row nowrap" style="gap:6px"><span class="tag t-i">${esc(e.category || 'عام')}</span>${e.uses ? `<span class="faint" style="font-size:11px">استُخدم ${e.uses}</span>` : ''}</span></div>
       ${(e.variants || []).length ? `<div class="v">${e.variants.slice(0, 6).map(v => `<span>${esc(v)}</span>`).join('')}${e.variants.length > 6 ? `<span>+${e.variants.length - 6}</span>` : ''}</div>` : ''}
       <span class="a">${esc(e.answer)}</span>
       <div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="qa-edit" data-k="${e.id}">تعديل</button><button type="button" class="btn link sm" data-act="qa-toggle" data-k="${e.id}">${e.active ? 'إيقاف' : 'تفعيل'}</button></div></div>`).join('') : '<p class="faint" style="margin:0">لا نتائج.</p>'}
-    <span class="faint" style="font-size:11px">الاستيراد: ملف CSV بأعمدة: السؤال، الإجابة، التصنيف، الصيغ الأخرى (مفصولة بـ |).</span></section>`;
+    <span class="faint" style="font-size:11px">الاستيراد يقبل أي ملف: Excel وCSV وWord وPDF ونصوص وJSON (جدول بأعمدة السؤال والإجابة، أو نص بصيغة «س: … ج: …» أو سؤال ينتهي بـ ؟ وتحته إجابته)، والصور والفيديو تُرفق بإجابة. الأعمدة: السؤال، الإجابة، التصنيف، الصيغ الأخرى (مفصولة بـ |).</span></section>`;
   return head + `${anKpis([['أسئلة مدرّبة', D.entries.length], ['مفعّلة', active], ['مرات الإجابة', uses], ['بانتظار التدريب', D.unanswered.length, D.unanswered.length ? 'bad' : 'good']])}
     <div class="fd-grid"><div class="stack" style="gap:16px">${form}${test}${un}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
     ${egNote('التدريب هنا قواعد مطابقة: نايوش يقارن سؤال المستخدم بالأسئلة وصيغها ويختار الأقرب، ولا يؤلف إجابات من عنده. عند ربط الذكاء الاصطناعي لاحقًا تصبح هذه الأسئلة والإجابات مرجعه الأول.')}`;
@@ -8224,7 +8230,7 @@ document.addEventListener('input', (e) => {
   if (e.target.id === 'qa-filter') { S.qaFilter = e.target.value; const pos = e.target.selectionStart; render(); const i = document.getElementById('qa-filter'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (x) {} } }
 });
 document.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.qa; if (k) (S.qaForm || (S.qaForm = {}))[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
-const qaFormToEntry = (f) => ({ question: String(f.question || '').trim(), variants: String(f.variants || '').split('\n').map(x => x.trim()).filter(Boolean), answer: String(f.answer || '').trim(), category: f.category || 'عام', keywords: f.keywords || '', link: f.link || '', active: f.active !== false });
+const qaFormToEntry = (f) => ({ question: String(f.question || '').trim(), variants: String(f.variants || '').split('\n').map(x => x.trim()).filter(Boolean), answer: String(f.answer || '').trim(), category: f.category || 'عام', keywords: f.keywords || '', link: f.link || '', active: f.active !== false, attachments: (f.attachments || []).map(a => ({ ...a })) });
 document.addEventListener('submit', async (e) => {
   if (e.target.id === 'qa-test') { e.preventDefault(); const q = (document.getElementById('qa-test-q') || {}).value || ''; if (!q.trim()) return; const m = qaMatch(q, qaData().entries); QA_TEST = { q: q.trim(), best: m.best }; render(); return; }
   if (e.target.id !== 'qa-form') return; e.preventDefault();
@@ -8263,7 +8269,7 @@ function qaHandle(act, k) {
   switch (act) {
     case 'fd-tab': S.fdTab = k; render(); return true;
     case 'qa-new': S.qaForm = null; QA_ERR = {}; render(); return true;
-    case 'qa-edit': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; S.qaForm = { id: x.id, question: x.question, variants: (x.variants || []).join('\n'), answer: x.answer, category: x.category || 'عام', keywords: x.keywords || '', link: x.link || '', active: x.active, fromUn: null }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+    case 'qa-edit': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; S.qaForm = { id: x.id, question: x.question, variants: (x.variants || []).join('\n'), answer: x.answer, category: x.category || 'عام', keywords: x.keywords || '', link: x.link || '', active: x.active, fromUn: null, attachments: (x.attachments || []).map(a => ({ ...a })) }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     case 'qa-toggle': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { active: !x.active }).then(qaLoad).then(render).catch(err => toast(err.message)); else { x.active = !x.active; render(); } return true; }
     case 'qa-del': if (!confirm('حذف هذا السؤال المدرّب؟')) return true; if (rdServer()) api('DELETE', '/api/qa/' + k).then(qaLoad).then(() => { S.qaForm = null; render(); }).catch(err => toast(err.message)); else { S.qa = D.entries.filter(y => String(y.id) !== String(k)); S.qaForm = null; render(); } toast('حُذف السؤال'); return true;
     case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
@@ -8285,7 +8291,7 @@ async function qaAsk(q) {
   if (rdServer()) { try { r = await api('POST', '/api/qa/ask', { q }); } catch (e) { r = { found: false, err: e.message, suggestions: [] }; } }
   else {
     const D = qaData(), m = qaMatch(q, D.entries);
-    if (m.best && m.best.s >= QA_TH) { m.best.e.uses = (m.best.e.uses || 0) + 1; r = { found: true, answer: m.best.e.answer, question: m.best.e.question, score: Math.round(m.best.s * 100), link: m.best.e.link }; }
+    if (m.best && m.best.s >= QA_TH) { m.best.e.uses = (m.best.e.uses || 0) + 1; r = { found: true, answer: m.best.e.answer, question: m.best.e.question, score: Math.round(m.best.s * 100), link: m.best.e.link, attachments: m.best.e.attachments || [] }; }
     else { const n = qaNorm(q), u = D.unanswered.find(x => qaNorm(x.question) === n); if (u) u.count++; else D.unanswered.unshift({ id: Date.now(), question: q, count: 1, at: new Date().toISOString() }); r = { found: false, suggestions: m.top.filter(x => x.s >= QA_SUG).map(x => ({ id: x.e.id, question: x.e.question })) }; }
   }
   H.push({ me: false, r }); S.qaChat = H.slice(-30); render(); qaScroll();
@@ -8294,7 +8300,7 @@ function qaScroll() { setTimeout(() => { const c = document.getElementById('qa-c
 function qaChatCard() {
   const H = S.qaChat || [];
   const msg = (m) => m.me ? `<div class="qa-msg me">${esc(m.t)}</div>` : m.r.found
-    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}<span class="meta">من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%</span></div>`
+    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}${typeof qaAttachView === 'function' ? qaAttachView(m.r.attachments) : ''}<span class="meta">من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%</span></div>`
     : `<div class="qa-msg bot">${m.r.err ? esc(m.r.err) : 'لم أتعلّم إجابة هذا السؤال بعد. سجّلته ليُضاف إلى تدريبي.'}${(m.r.suggestions || []).length ? `<div class="stack" style="gap:4px;margin-top:8px"><span class="faint" style="font-size:12px">هل تقصد:</span>${m.r.suggestions.map(sg => `<button type="button" class="btn sm" style="justify-content:flex-start" data-act="qa-sug" data-k="${sg.id}">${esc(sg.question)}</button>`).join('')}</div>` : ''}</div>`;
   const ideas = qaData().entries.filter(e => e.active).slice(0, 4).map(e => e.question);
   return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div>${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</div>
@@ -8307,6 +8313,210 @@ const _qaAskView = VIEWS.ask;
 VIEWS.ask = () => qaChatCard() + `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`;
 const _qaH = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act === 'qa-q') { qaAsk(k); return true; } if (act && (act.startsWith('qa-') || act === 'fd-tab') && qaHandle(act, k)) return true; return _qaH(act, k, el); };
+</script>
+
+<style>
+.fx-menu{position:relative;display:inline-flex}
+.fx-pop{position:absolute;top:calc(100% + 4px);inset-inline-end:0;z-index:30;display:flex;flex-direction:column;min-width:140px;padding:4px;border-radius:10px;background:#141418;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.fx-pop button{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:7px;border:0;background:none;color:var(--fg);font-size:13px;text-align:right}
+.fx-pop button:hover{background:var(--raised)}
+.qa-att{display:flex;flex-wrap:wrap;gap:8px}
+.qa-att .f{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:6px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);font-size:12px;color:var(--fg)}
+.qa-att .f span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.qa-att .f small{color:var(--faint);font:600 10.5px var(--f-mono);direction:ltr}
+.qa-att .f button{border:0;background:none;color:var(--faint);padding:0 2px;cursor:pointer}
+.qa-att img{width:110px;height:80px;object-fit:cover;border-radius:9px;border:1px solid var(--line2);cursor:zoom-in;display:block}
+.qa-att video{max-width:260px;max-height:160px;border-radius:9px;background:#000}
+.qa-drop{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:10px;border:1px dashed var(--line3);background:var(--sunk);cursor:pointer}
+.qi-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto}
+.qi-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sunk)}
+.qi-row b{font-size:13px}.qi-row p{margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+<script data-app="">
+/* ================= تغذية البيانات — files =================
+   • Export the trained answers as PDF, Excel or CSV.
+   • Import from any file: Excel/CSV/ODS/JSON/HTML tables, Word, PDF and text (question–answer pairs are found
+     in tables or in «س: … ج: …» / «…؟» text), with a preview before anything is added.
+   • Attach files to an answer (PDF, images, Excel, Word, video, …); «اسأل نايوش» shows them with the answer. */
+let AN_LAST_PDF_TEXT = null;
+const QA_BLOBS = {};                 // attachment id → Blob/File (this session)
+const QA_INLINE_MAX = 900 * 1024;    // demo: files up to this size are kept in the browser between visits
+const qaSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const qaIsImg = (a) => /^image\/(png|jpe?g|gif|webp|bmp)$/i.test(a.mime || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(a.name || '');
+const qaIsVid = (a) => /^video\//i.test(a.mime || '') || /\.(mp4|webm|mov|m4v)$/i.test(a.name || '');
+function qaAttUrl(a) {
+  if (rdServer() && a.id && !String(a.id).startsWith('L')) return '/api/qa/file/' + encodeURIComponent(a.id);
+  if (QA_BLOBS[a.id]) return QA_BLOBS[a.id].__url || (QA_BLOBS[a.id].__url = URL.createObjectURL(QA_BLOBS[a.id]));
+  return a.data || '';
+}
+const qaFileIcon = (a) => qaIsImg(a) ? 'image' : qaIsVid(a) ? 'play' : /pdf$/i.test(a.name) ? 'reports' : /\.(xlsx?|csv|ods)$/i.test(a.name) ? 'chart' : 'clip';
+function qaAttachView(list) {
+  list = (list || []).filter(Boolean); if (!list.length) return '';
+  return `<div class="qa-att" style="margin-top:8px">${list.map(a => {
+    const u = qaAttUrl(a);
+    if (u && qaIsImg(a)) return `<a href="${esc(u)}" target="_blank" rel="noopener" title="${esc(a.name)}"><img src="${esc(u)}" alt="${esc(a.name)}" loading="lazy"></a>`;
+    if (u && qaIsVid(a)) return `<video src="${esc(u)}${rdServer() ? '?inline=1' : ''}" controls preload="metadata" playsinline></video>`;
+    return u ? `<a class="f" href="${esc(u)}" download="${esc(a.name)}" target="_blank" rel="noopener">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></a>`
+      : `<span class="f" title="الملف غير متاح في هذه الجلسة">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></span>`;
+  }).join('')}</div>`;
+}
+function qaAttachField(f) {
+  const L = f.attachments || [];
+  return `<div class="stack" style="gap:6px"><span class="lbl">مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)</span>
+    <label class="qa-drop">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="qa-att-in" multiple hidden></label>
+    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
+    ${!rdServer() && L.some(a => !a.data) ? '<span class="faint" style="font-size:11px">في نسخة العرض تبقى الملفات الأكبر من 900KB حتى إغلاق الصفحة؛ على الخادم تُحفظ دائمًا.</span>' : ''}</div>`;
+}
+async function qaAddFiles(files) {
+  const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
+  f.attachments = f.attachments || [];
+  for (const file of files) {
+    if (file.size > 50 * 1048576) { toast('«' + file.name + '» أكبر من 50MB'); continue; }
+    if (rdServer()) {
+      const tmp = { id: 'L' + Date.now() + Math.random().toString(36).slice(2, 6), name: file.name, mime: file.type, size: file.size, pending: true };
+      f.attachments.push(tmp); render();
+      try { const up = await uploadOne(file, /^video\//.test(file.type) || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(file.name) ? 'video' : 'file', () => {}); Object.assign(tmp, { id: up.id, pending: false }); }
+      catch (e) { f.attachments = f.attachments.filter(x => x !== tmp); toast(e.message); }
+      render(); continue;
+    }
+    const id = 'L' + Date.now() + Math.random().toString(36).slice(2, 6), a = { id, name: file.name, mime: file.type, size: file.size };
+    QA_BLOBS[id] = file;
+    if (file.size <= QA_INLINE_MAX) a.data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(''); fr.readAsDataURL(file); });
+    f.attachments.push(a);
+  }
+  render(); toast('أُرفقت الملفات — احفظ السؤال لتثبيتها');
+}
+document.addEventListener('change', (e) => { if (e.target.id === 'qa-att-in' && e.target.files.length) qaAddFiles([...e.target.files]); });
+document.addEventListener('dragover', (e) => { if (e.target.closest && e.target.closest('.qa-drop')) e.preventDefault(); });
+document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files]); });
+
+/* ---------- export ---------- */
+function qaReport(fmt) {
+  const D = qaData(), cats = [...new Set(D.entries.map(e => e.category || 'عام'))];
+  const sections = [{ h: 'ملخص', kv: [['عدد الأسئلة المدرّبة', String(D.entries.length)], ['المفعّلة', String(D.entries.filter(e => e.active).length)], ['مرات الإجابة', String(D.entries.reduce((a, e) => a + (e.uses || 0), 0))], ['أسئلة بانتظار التدريب', String(D.unanswered.length)], ['تاريخ التصدير', new Date().toISOString().slice(0, 10)]] }];
+  cats.forEach(c => sections.push({ h: 'التصنيف: ' + c, cols: ['السؤال', 'الإجابة', 'الصيغ الأخرى', 'الحالة', 'المرفقات'], rows: D.entries.filter(e => (e.category || 'عام') === c).map(e => [e.question, e.answer, (e.variants || []).join(' | '), e.active ? 'مفعّل' : 'موقوف', (e.attachments || []).map(a => a.name).join('، ') || '—']) }));
+  if (D.unanswered.length) sections.push({ h: 'أسئلة لم يجد لها نايوش إجابة', cols: ['السؤال', 'عدد المرات'], rows: D.unanswered.map(u => [u.question, String(u.count || 1)]) });
+  return { code: 'ASK_TRAINING', title: 'الإجابات المدرّبة — اسأل نايوش', audience: 'إدارة نايوش', ref: 'FEED', sections };
+}
+async function qaExport(fmt) {
+  S.fxOpen = false; render();
+  try {
+    toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+    const rep = qaReport(fmt), blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(`NAIOSH_ask_training_${new Date().toISOString().slice(0, 10)}.${fmt}`, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر التصدير'); }
+}
+document.addEventListener('click', (e) => { if (S.fxOpen && !(e.target.closest && e.target.closest('.fx-menu'))) { S.fxOpen = false; const p = document.querySelector('.fx-pop'); if (p) p.remove(); } }, true);
+
+/* ---------- import from any file ---------- */
+const QI_Q = /^(?:س|سؤال|السؤال|q|question)\s*\d*\s*[:：\-–—.)]\s*/i, QI_A = /^(?:ج|جواب|الجواب|الإجابة|الاجابة|إجابة|اجابة|a|answer)\s*\d*\s*[:：\-–—.)]\s*/i;
+function qaPairsFromRows(rows) {
+  rows = (rows || []).map(r => (r || []).map(c => String(c ?? '').trim())).filter(r => r.some(Boolean));
+  if (!rows.length) return [];
+  const h = rows[0].map(x => qaNorm(x));
+  const find = (re) => h.findIndex(x => re.test(x));
+  let qi = find(/سوال|سؤال|question|^q$/), ai = find(/اجابه|جواب|answer|^a$|رد/), ci = find(/تصنيف|category|فئه/), vi = find(/صيغ|variant|بدائل/), ki = find(/كلمات|keyword/);
+  let body = rows;
+  if (qi >= 0 && ai >= 0) body = rows.slice(1); else { qi = 0; ai = 1; ci = -1; vi = -1; ki = -1; }
+  return body.filter(r => (r[qi] || '').length > 2 && (r[ai] || '').length > 1).map(r => ({ question: r[qi], answer: r[ai], category: ci >= 0 && r[ci] ? r[ci] : '', variants: vi >= 0 && r[vi] ? r[vi].split(/[|؛;\n]/).map(x => x.trim()).filter(Boolean) : [], keywords: ki >= 0 ? r[ki] || '' : '' }));
+}
+function qaPairsFromText(text) {
+  const lines = String(text || '').split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const out = []; let cur = null;
+  const push = () => { if (cur && cur.question.length > 2 && cur.answer.trim().length > 1) out.push({ question: cur.question, answer: cur.answer.trim(), category: '', variants: [], keywords: '' }); cur = null; };
+  for (let l of lines) {
+    const n = l.replace(/^\s*(\d+|[٠-٩]+)\s*[.)\-–]\s*/, '');
+    if (QI_Q.test(n)) { push(); cur = { question: n.replace(QI_Q, ''), answer: '' }; continue; }
+    if (QI_A.test(n) && cur) { cur.answer += (cur.answer ? '\n' : '') + n.replace(QI_A, ''); continue; }
+    if (/[؟?]\s*$/.test(n) && n.length < 220) { push(); cur = { question: n, answer: '' }; continue; }
+    if (cur) cur.answer += (cur.answer ? '\n' : '') + n;
+  }
+  push();
+  return out;
+}
+async function qaDocxText(buf) {
+  const z = await anUnzip(buf), k = Object.keys(z).find(x => /^word\/document\.xml$/i.test(x)); if (!k) return '';
+  const doc = anXml(new TextDecoder().decode(await anInflate(z[k])));
+  return anEls(doc, 'p').map(p => anEls(p, 't').map(t => t.textContent).join('')).join('\n');
+}
+async function qaParseFile(file) {
+  const name = file.name || 'file', buf = await file.arrayBuffer(), u = new Uint8Array(buf), head = new TextDecoder('latin1').decode(u.subarray(0, 8));
+  if (/^image\//.test(file.type) || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(name) || /^video\//.test(file.type) || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(name)) return { media: true };
+  let pairs = [], note = '';
+  if (head.startsWith('PK') && /\.docx$/i.test(name)) {
+    try { const ts = await anTablesFromOOXMLDoc(await anUnzip(buf), 'docx'); for (const t of ts || []) pairs = pairs.concat(qaPairsFromRows(t)); } catch (e) {}
+    if (!pairs.length) pairs = qaPairsFromText(await qaDocxText(buf));
+    return { pairs };
+  }
+  if (head.startsWith('%PDF')) {
+    AN_LAST_PDF_TEXT = null; let rows = null;
+    try { rows = anBestTable(await anTablesFromPDF(buf)); } catch (e) { note = e && e.message; }
+    if (rows) pairs = qaPairsFromRows(rows);
+    if (!pairs.length && AN_LAST_PDF_TEXT) pairs = qaPairsFromText(AN_LAST_PDF_TEXT.join('\n'));
+    return { pairs, note: pairs.length ? '' : (note || 'لم يُعثر على نص قابل للقراءة في PDF (قد يكون مصوّرًا).') };
+  }
+  if (/\.(txt|md|text)$/i.test(name)) return { pairs: qaPairsFromText(anDecodeText(buf)) };
+  try { const rows = await anRowsFromBuffer(name, buf); pairs = qaPairsFromRows(rows); } catch (e) { note = e && e.message; }
+  if (!pairs.length && !/\0/.test(anDecodeText(buf).slice(0, 2000))) pairs = qaPairsFromText(anDecodeText(buf));
+  return { pairs, note };
+}
+let QI = null; // import preview { items: [{...pair, on}], media: [File], files: [names], notes: [] }
+async function qaImportFiles(files) {
+  QI = { items: [], media: [], files: files.map(f => f.name), notes: [] };
+  toast('جارٍ قراءة ' + files.length + ' ملف…');
+  for (const f of files) {
+    try { const r = await qaParseFile(f); if (r.media) QI.media.push(f); else { r.pairs.forEach(p => QI.items.push({ ...p, on: true, src: f.name })); if (!r.pairs.length) QI.notes.push(`«${f.name}»: ${r.note || 'لم يُعثر على أسئلة وإجابات'}`); } }
+    catch (e) { QI.notes.push(`«${f.name}»: ${e.message || 'تعذّرت القراءة'}`); }
+  }
+  qaImportDialog();
+}
+function qaImportDialog() {
+  let m = document.getElementById('rd-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'rd-modal'; m.setAttribute('dir', 'rtl'); document.body.appendChild(m); }
+  if (!QI) { m.innerHTML = ''; RD_MOD = null; return; }
+  RD_MOD = { kind: 'qa-import' };
+  const n = QI.items.filter(x => x.on).length;
+  m.innerHTML = `<div class="rd-ov"><div class="rd-dlg" role="dialog" aria-modal="true" aria-labelledby="qi-t" style="width:min(720px,100%)">
+    <div class="row between"><h2 id="qi-t" class="h-sec" style="font-size:19px">استيراد إلى «اسأل نايوش»</h2><button type="button" class="icon-btn" data-act="qi-close" aria-label="إغلاق">${ic('x', 18)}</button></div>
+    <span class="faint" style="font-size:12px">${QI.files.map(esc).join('، ')}</span>
+    ${QI.items.length ? `<div class="row between"><b style="font-size:13.5px">وُجد ${QI.items.length} سؤالًا وإجابة — راجعها قبل الإضافة</b><button type="button" class="btn link sm" data-act="qi-all">${QI.items.every(x => x.on) ? 'إلغاء الكل' : 'تحديد الكل'}</button></div>
+      <label class="row nowrap" style="gap:8px"><span class="lbl" style="white-space:nowrap">التصنيف للمستورد</span><select id="qi-cat">${QA_CATS.map(c => `<option>${c}</option>`).join('')}</select></label>
+      <div class="qi-list">${QI.items.map((x, i) => `<label class="qi-row"><input type="checkbox" data-qi="${i}" ${x.on ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px;accent-color:var(--action)"><span><b>${esc(x.question)}</b><p>${esc(x.answer)}</p></span></label>`).join('')}</div>` : '<div class="banner y" style="font-size:12.5px">لم يُعثر على أسئلة وإجابات في الملفات. استخدم جدولًا بعمودين (السؤال، الإجابة) أو نصًا بصيغة «س: … ج: …».</div>'}
+    ${QI.media.length ? `<div class="banner" style="background:#0d1a2b;border:1px solid #1d3b5c;font-size:12.5px;align-items:flex-start">${ic('image', 16, 'style="color:var(--blue);margin-top:2px"')}<span style="flex:1">${QI.media.length} صورة/فيديو: لا تُستخرج منها أسئلة تلقائيًا، لكن يمكن إرفاقها بإجابة. <button type="button" class="btn link sm" data-act="qi-media" style="display:inline;padding:0;min-height:0">إرفاقها بسؤال جديد ←</button></span></div>` : ''}
+    ${QI.notes.length ? `<div class="stack" style="gap:3px">${QI.notes.map(t => `<span class="faint" style="font-size:11.5px">• ${esc(t)}</span>`).join('')}</div>` : ''}
+    <div class="row" style="gap:8px">${QI.items.length ? `<button type="button" class="btn primary" data-act="qi-add" ${n ? '' : 'aria-disabled="true"'}>${ic('check', 16)}إضافة ${n} سؤال</button>` : ''}<button type="button" class="btn" data-act="qi-close">إلغاء</button></div></div></div>`;
+}
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'qa-import2' && e.target.files.length) { qaImportFiles([...e.target.files]); e.target.value = ''; return; }
+  const i = e.target.dataset && e.target.dataset.qi; if (i !== undefined && QI) { QI.items[+i].on = e.target.checked; qaImportDialog(); }
+});
+async function qaImportAdd() {
+  const cat = (document.getElementById('qi-cat') || {}).value || 'عام', items = QI.items.filter(x => x.on);
+  let n = 0;
+  for (const x of items) {
+    const e = { question: x.question.slice(0, 300), answer: x.answer.slice(0, 4000), category: x.category || cat, variants: x.variants || [], keywords: x.keywords || '', link: '', active: true, attachments: [] };
+    if (rdServer()) { try { await api('POST', '/api/qa', e); n++; } catch (err) {} }
+    else { const D = qaData(); D.entries.unshift({ id: Math.max(0, ...D.entries.map(y => y.id)) + 1, uses: 0, ...e }); n++; }
+  }
+  if (rdServer()) await qaLoad();
+  QI = null; qaImportDialog(); toast('أُضيف ' + n + ' سؤال إلى تدريب نايوش'); render();
+}
+function qaFeedHandle(act, k) {
+  switch (act) {
+    case 'fx-menu': S.fxOpen = !S.fxOpen; render(); return true;
+    case 'qa-export-pdf': qaExport('pdf'); return true;
+    case 'qa-export-xlsx': qaExport('xlsx'); return true;
+    case 'qa-att-rm': { const f = S.qaForm; if (f && f.attachments) f.attachments.splice(+k, 1); render(); return true; }
+    case 'qi-close': QI = null; qaImportDialog(); return true;
+    case 'qi-all': { const all = QI.items.every(x => x.on); QI.items.forEach(x => { x.on = !all; }); qaImportDialog(); return true; }
+    case 'qi-add': if (QI && QI.items.some(x => x.on)) qaImportAdd(); return true;
+    case 'qi-media': { const files = QI.media; QI = null; qaImportDialog(); S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null, attachments: [] }; S.fdTab = 'ask'; if (S.route !== 'feed') go('feed'); qaAddFiles(files); setTimeout(() => { const q = document.querySelector('[data-qa="question"]'); if (q) q.focus(); }, 60); return true; }
+  }
+  return false;
+}
+const _qaFH = analyticsHandle;
+analyticsHandle = function (act, k, el) { if (act && (act.startsWith('qa-') || act.startsWith('qi-') || act === 'fx-menu') && qaFeedHandle(act, k)) return true; return _qaFH(act, k, el); };
+Object.assign(P, { image: P.image || 'M4 5h16v14H4z M4 15l4-4 4 4 3-3 5 5 M15 9.5h.01' });
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================

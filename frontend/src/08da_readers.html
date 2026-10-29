@@ -250,6 +250,11 @@ async function anTablesFromPDF(buf) {
   const lines = [];
   clean.sort((a, b) => a.pg - b.pg || b.y - a.y || a.x - b.x).forEach(r => { const L = lines.find(l => l.pg === r.pg && Math.abs(l.y - r.y) < r.sz * 0.45); if (L) L.r.push(r); else lines.push({ pg: r.pg, y: r.y, r: [r] }); });
   const rtl = clean.filter(r => /[\u0600-\u06FF]/.test(r.t)).length > clean.length / 3;
+  { // plain text in reading order (for the «اسأل نايوش» importer): content-stream line order, explicit space runs kept
+    const TL = []; for (const r of runs) { const t = r.t.normalize('NFKC'); let L = TL.find(l => l.pg === r.pg && Math.abs(l.y - r.y) < r.sz * 0.45); if (!L) TL.push(L = { pg: r.pg, y: r.y, r: [] }); L.r.push({ x: r.x, t }); }
+    AN_LAST_PDF_TEXT = TL.map(l => { const ar = /[\u0600-\u06FF]/.test(l.r.map(r => r.t).join('')), nx = l.r.filter(r => r.t.trim()).map(r => r.x), inc = nx.every((x, i) => !i || x >= nx[i - 1] - 1), dec = nx.every((x, i) => !i || x <= nx[i - 1] + 1), rr = inc || dec ? ((ar ? inc : dec) ? [...l.r].reverse() : [...l.r]) : [...l.r].sort((a, b) => ar ? b.x - a.x : a.x - b.x), glyphs = rr.some(r => !r.t.trim()) || rr.reduce((a, r) => a + r.t.length, 0) / rr.length <= 2;
+      return rr.map(r => r.t).join(glyphs ? '' : ' ').replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  }
   const cellRows = lines.map(l => { const rr = l.r.sort((a, b) => a.x - b.x), cells = []; let last = null; for (const r of rr) { const w = r.t.length * r.sz * 0.5; if (last && r.x - (last.x + last.w) < r.sz * 0.9) { last.parts.push(r.t); last.w = r.x + w - last.x; } else { last = { x: r.x, w, parts: [r.t] }; cells.push(last); } } return cells; });
   const widths = {}; cellRows.forEach(c => { if (c.length >= 2) widths[c.length] = (widths[c.length] || 0) + 1; });
   const modal = Object.entries(widths).sort((a, b) => b[1] - a[1] || b[0] - a[0])[0];

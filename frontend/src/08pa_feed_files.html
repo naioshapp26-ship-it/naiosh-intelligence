@@ -1,0 +1,204 @@
+
+<style>
+.fx-menu{position:relative;display:inline-flex}
+.fx-pop{position:absolute;top:calc(100% + 4px);inset-inline-end:0;z-index:30;display:flex;flex-direction:column;min-width:140px;padding:4px;border-radius:10px;background:#141418;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.fx-pop button{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:7px;border:0;background:none;color:var(--fg);font-size:13px;text-align:right}
+.fx-pop button:hover{background:var(--raised)}
+.qa-att{display:flex;flex-wrap:wrap;gap:8px}
+.qa-att .f{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:6px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);font-size:12px;color:var(--fg)}
+.qa-att .f span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.qa-att .f small{color:var(--faint);font:600 10.5px var(--f-mono);direction:ltr}
+.qa-att .f button{border:0;background:none;color:var(--faint);padding:0 2px;cursor:pointer}
+.qa-att img{width:110px;height:80px;object-fit:cover;border-radius:9px;border:1px solid var(--line2);cursor:zoom-in;display:block}
+.qa-att video{max-width:260px;max-height:160px;border-radius:9px;background:#000}
+.qa-drop{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:10px;border:1px dashed var(--line3);background:var(--sunk);cursor:pointer}
+.qi-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto}
+.qi-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sunk)}
+.qi-row b{font-size:13px}.qi-row p{margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+<script data-app="">
+/* ================= تغذية البيانات — files =================
+   • Export the trained answers as PDF, Excel or CSV.
+   • Import from any file: Excel/CSV/ODS/JSON/HTML tables, Word, PDF and text (question–answer pairs are found
+     in tables or in «س: … ج: …» / «…؟» text), with a preview before anything is added.
+   • Attach files to an answer (PDF, images, Excel, Word, video, …); «اسأل نايوش» shows them with the answer. */
+let AN_LAST_PDF_TEXT = null;
+const QA_BLOBS = {};                 // attachment id → Blob/File (this session)
+const QA_INLINE_MAX = 900 * 1024;    // demo: files up to this size are kept in the browser between visits
+const qaSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const qaIsImg = (a) => /^image\/(png|jpe?g|gif|webp|bmp)$/i.test(a.mime || '') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(a.name || '');
+const qaIsVid = (a) => /^video\//i.test(a.mime || '') || /\.(mp4|webm|mov|m4v)$/i.test(a.name || '');
+function qaAttUrl(a) {
+  if (rdServer() && a.id && !String(a.id).startsWith('L')) return '/api/qa/file/' + encodeURIComponent(a.id);
+  if (QA_BLOBS[a.id]) return QA_BLOBS[a.id].__url || (QA_BLOBS[a.id].__url = URL.createObjectURL(QA_BLOBS[a.id]));
+  return a.data || '';
+}
+const qaFileIcon = (a) => qaIsImg(a) ? 'image' : qaIsVid(a) ? 'play' : /pdf$/i.test(a.name) ? 'reports' : /\.(xlsx?|csv|ods)$/i.test(a.name) ? 'chart' : 'clip';
+function qaAttachView(list) {
+  list = (list || []).filter(Boolean); if (!list.length) return '';
+  return `<div class="qa-att" style="margin-top:8px">${list.map(a => {
+    const u = qaAttUrl(a);
+    if (u && qaIsImg(a)) return `<a href="${esc(u)}" target="_blank" rel="noopener" title="${esc(a.name)}"><img src="${esc(u)}" alt="${esc(a.name)}" loading="lazy"></a>`;
+    if (u && qaIsVid(a)) return `<video src="${esc(u)}${rdServer() ? '?inline=1' : ''}" controls preload="metadata" playsinline></video>`;
+    return u ? `<a class="f" href="${esc(u)}" download="${esc(a.name)}" target="_blank" rel="noopener">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></a>`
+      : `<span class="f" title="الملف غير متاح في هذه الجلسة">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></span>`;
+  }).join('')}</div>`;
+}
+function qaAttachField(f) {
+  const L = f.attachments || [];
+  return `<div class="stack" style="gap:6px"><span class="lbl">مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)</span>
+    <label class="qa-drop">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="qa-att-in" multiple hidden></label>
+    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
+    ${!rdServer() && L.some(a => !a.data) ? '<span class="faint" style="font-size:11px">في نسخة العرض تبقى الملفات الأكبر من 900KB حتى إغلاق الصفحة؛ على الخادم تُحفظ دائمًا.</span>' : ''}</div>`;
+}
+async function qaAddFiles(files) {
+  const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
+  f.attachments = f.attachments || [];
+  for (const file of files) {
+    if (file.size > 50 * 1048576) { toast('«' + file.name + '» أكبر من 50MB'); continue; }
+    if (rdServer()) {
+      const tmp = { id: 'L' + Date.now() + Math.random().toString(36).slice(2, 6), name: file.name, mime: file.type, size: file.size, pending: true };
+      f.attachments.push(tmp); render();
+      try { const up = await uploadOne(file, /^video\//.test(file.type) || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(file.name) ? 'video' : 'file', () => {}); Object.assign(tmp, { id: up.id, pending: false }); }
+      catch (e) { f.attachments = f.attachments.filter(x => x !== tmp); toast(e.message); }
+      render(); continue;
+    }
+    const id = 'L' + Date.now() + Math.random().toString(36).slice(2, 6), a = { id, name: file.name, mime: file.type, size: file.size };
+    QA_BLOBS[id] = file;
+    if (file.size <= QA_INLINE_MAX) a.data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(''); fr.readAsDataURL(file); });
+    f.attachments.push(a);
+  }
+  render(); toast('أُرفقت الملفات — احفظ السؤال لتثبيتها');
+}
+document.addEventListener('change', (e) => { if (e.target.id === 'qa-att-in' && e.target.files.length) qaAddFiles([...e.target.files]); });
+document.addEventListener('dragover', (e) => { if (e.target.closest && e.target.closest('.qa-drop')) e.preventDefault(); });
+document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files]); });
+
+/* ---------- export ---------- */
+function qaReport(fmt) {
+  const D = qaData(), cats = [...new Set(D.entries.map(e => e.category || 'عام'))];
+  const sections = [{ h: 'ملخص', kv: [['عدد الأسئلة المدرّبة', String(D.entries.length)], ['المفعّلة', String(D.entries.filter(e => e.active).length)], ['مرات الإجابة', String(D.entries.reduce((a, e) => a + (e.uses || 0), 0))], ['أسئلة بانتظار التدريب', String(D.unanswered.length)], ['تاريخ التصدير', new Date().toISOString().slice(0, 10)]] }];
+  cats.forEach(c => sections.push({ h: 'التصنيف: ' + c, cols: ['السؤال', 'الإجابة', 'الصيغ الأخرى', 'الحالة', 'المرفقات'], rows: D.entries.filter(e => (e.category || 'عام') === c).map(e => [e.question, e.answer, (e.variants || []).join(' | '), e.active ? 'مفعّل' : 'موقوف', (e.attachments || []).map(a => a.name).join('، ') || '—']) }));
+  if (D.unanswered.length) sections.push({ h: 'أسئلة لم يجد لها نايوش إجابة', cols: ['السؤال', 'عدد المرات'], rows: D.unanswered.map(u => [u.question, String(u.count || 1)]) });
+  return { code: 'ASK_TRAINING', title: 'الإجابات المدرّبة — اسأل نايوش', audience: 'إدارة نايوش', ref: 'FEED', sections };
+}
+async function qaExport(fmt) {
+  S.fxOpen = false; render();
+  try {
+    toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+    const rep = qaReport(fmt), blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(`NAIOSH_ask_training_${new Date().toISOString().slice(0, 10)}.${fmt}`, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر التصدير'); }
+}
+document.addEventListener('click', (e) => { if (S.fxOpen && !(e.target.closest && e.target.closest('.fx-menu'))) { S.fxOpen = false; const p = document.querySelector('.fx-pop'); if (p) p.remove(); } }, true);
+
+/* ---------- import from any file ---------- */
+const QI_Q = /^(?:س|سؤال|السؤال|q|question)\s*\d*\s*[:：\-–—.)]\s*/i, QI_A = /^(?:ج|جواب|الجواب|الإجابة|الاجابة|إجابة|اجابة|a|answer)\s*\d*\s*[:：\-–—.)]\s*/i;
+function qaPairsFromRows(rows) {
+  rows = (rows || []).map(r => (r || []).map(c => String(c ?? '').trim())).filter(r => r.some(Boolean));
+  if (!rows.length) return [];
+  const h = rows[0].map(x => qaNorm(x));
+  const find = (re) => h.findIndex(x => re.test(x));
+  let qi = find(/سوال|سؤال|question|^q$/), ai = find(/اجابه|جواب|answer|^a$|رد/), ci = find(/تصنيف|category|فئه/), vi = find(/صيغ|variant|بدائل/), ki = find(/كلمات|keyword/);
+  let body = rows;
+  if (qi >= 0 && ai >= 0) body = rows.slice(1); else { qi = 0; ai = 1; ci = -1; vi = -1; ki = -1; }
+  return body.filter(r => (r[qi] || '').length > 2 && (r[ai] || '').length > 1).map(r => ({ question: r[qi], answer: r[ai], category: ci >= 0 && r[ci] ? r[ci] : '', variants: vi >= 0 && r[vi] ? r[vi].split(/[|؛;\n]/).map(x => x.trim()).filter(Boolean) : [], keywords: ki >= 0 ? r[ki] || '' : '' }));
+}
+function qaPairsFromText(text) {
+  const lines = String(text || '').split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const out = []; let cur = null;
+  const push = () => { if (cur && cur.question.length > 2 && cur.answer.trim().length > 1) out.push({ question: cur.question, answer: cur.answer.trim(), category: '', variants: [], keywords: '' }); cur = null; };
+  for (let l of lines) {
+    const n = l.replace(/^\s*(\d+|[٠-٩]+)\s*[.)\-–]\s*/, '');
+    if (QI_Q.test(n)) { push(); cur = { question: n.replace(QI_Q, ''), answer: '' }; continue; }
+    if (QI_A.test(n) && cur) { cur.answer += (cur.answer ? '\n' : '') + n.replace(QI_A, ''); continue; }
+    if (/[؟?]\s*$/.test(n) && n.length < 220) { push(); cur = { question: n, answer: '' }; continue; }
+    if (cur) cur.answer += (cur.answer ? '\n' : '') + n;
+  }
+  push();
+  return out;
+}
+async function qaDocxText(buf) {
+  const z = await anUnzip(buf), k = Object.keys(z).find(x => /^word\/document\.xml$/i.test(x)); if (!k) return '';
+  const doc = anXml(new TextDecoder().decode(await anInflate(z[k])));
+  return anEls(doc, 'p').map(p => anEls(p, 't').map(t => t.textContent).join('')).join('\n');
+}
+async function qaParseFile(file) {
+  const name = file.name || 'file', buf = await file.arrayBuffer(), u = new Uint8Array(buf), head = new TextDecoder('latin1').decode(u.subarray(0, 8));
+  if (/^image\//.test(file.type) || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(name) || /^video\//.test(file.type) || /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(name)) return { media: true };
+  let pairs = [], note = '';
+  if (head.startsWith('PK') && /\.docx$/i.test(name)) {
+    try { const ts = await anTablesFromOOXMLDoc(await anUnzip(buf), 'docx'); for (const t of ts || []) pairs = pairs.concat(qaPairsFromRows(t)); } catch (e) {}
+    if (!pairs.length) pairs = qaPairsFromText(await qaDocxText(buf));
+    return { pairs };
+  }
+  if (head.startsWith('%PDF')) {
+    AN_LAST_PDF_TEXT = null; let rows = null;
+    try { rows = anBestTable(await anTablesFromPDF(buf)); } catch (e) { note = e && e.message; }
+    if (rows) pairs = qaPairsFromRows(rows);
+    if (!pairs.length && AN_LAST_PDF_TEXT) pairs = qaPairsFromText(AN_LAST_PDF_TEXT.join('\n'));
+    return { pairs, note: pairs.length ? '' : (note || 'لم يُعثر على نص قابل للقراءة في PDF (قد يكون مصوّرًا).') };
+  }
+  if (/\.(txt|md|text)$/i.test(name)) return { pairs: qaPairsFromText(anDecodeText(buf)) };
+  try { const rows = await anRowsFromBuffer(name, buf); pairs = qaPairsFromRows(rows); } catch (e) { note = e && e.message; }
+  if (!pairs.length && !/\0/.test(anDecodeText(buf).slice(0, 2000))) pairs = qaPairsFromText(anDecodeText(buf));
+  return { pairs, note };
+}
+let QI = null; // import preview { items: [{...pair, on}], media: [File], files: [names], notes: [] }
+async function qaImportFiles(files) {
+  QI = { items: [], media: [], files: files.map(f => f.name), notes: [] };
+  toast('جارٍ قراءة ' + files.length + ' ملف…');
+  for (const f of files) {
+    try { const r = await qaParseFile(f); if (r.media) QI.media.push(f); else { r.pairs.forEach(p => QI.items.push({ ...p, on: true, src: f.name })); if (!r.pairs.length) QI.notes.push(`«${f.name}»: ${r.note || 'لم يُعثر على أسئلة وإجابات'}`); } }
+    catch (e) { QI.notes.push(`«${f.name}»: ${e.message || 'تعذّرت القراءة'}`); }
+  }
+  qaImportDialog();
+}
+function qaImportDialog() {
+  let m = document.getElementById('rd-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'rd-modal'; m.setAttribute('dir', 'rtl'); document.body.appendChild(m); }
+  if (!QI) { m.innerHTML = ''; RD_MOD = null; return; }
+  RD_MOD = { kind: 'qa-import' };
+  const n = QI.items.filter(x => x.on).length;
+  m.innerHTML = `<div class="rd-ov"><div class="rd-dlg" role="dialog" aria-modal="true" aria-labelledby="qi-t" style="width:min(720px,100%)">
+    <div class="row between"><h2 id="qi-t" class="h-sec" style="font-size:19px">استيراد إلى «اسأل نايوش»</h2><button type="button" class="icon-btn" data-act="qi-close" aria-label="إغلاق">${ic('x', 18)}</button></div>
+    <span class="faint" style="font-size:12px">${QI.files.map(esc).join('، ')}</span>
+    ${QI.items.length ? `<div class="row between"><b style="font-size:13.5px">وُجد ${QI.items.length} سؤالًا وإجابة — راجعها قبل الإضافة</b><button type="button" class="btn link sm" data-act="qi-all">${QI.items.every(x => x.on) ? 'إلغاء الكل' : 'تحديد الكل'}</button></div>
+      <label class="row nowrap" style="gap:8px"><span class="lbl" style="white-space:nowrap">التصنيف للمستورد</span><select id="qi-cat">${QA_CATS.map(c => `<option>${c}</option>`).join('')}</select></label>
+      <div class="qi-list">${QI.items.map((x, i) => `<label class="qi-row"><input type="checkbox" data-qi="${i}" ${x.on ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px;accent-color:var(--action)"><span><b>${esc(x.question)}</b><p>${esc(x.answer)}</p></span></label>`).join('')}</div>` : '<div class="banner y" style="font-size:12.5px">لم يُعثر على أسئلة وإجابات في الملفات. استخدم جدولًا بعمودين (السؤال، الإجابة) أو نصًا بصيغة «س: … ج: …».</div>'}
+    ${QI.media.length ? `<div class="banner" style="background:#0d1a2b;border:1px solid #1d3b5c;font-size:12.5px;align-items:flex-start">${ic('image', 16, 'style="color:var(--blue);margin-top:2px"')}<span style="flex:1">${QI.media.length} صورة/فيديو: لا تُستخرج منها أسئلة تلقائيًا، لكن يمكن إرفاقها بإجابة. <button type="button" class="btn link sm" data-act="qi-media" style="display:inline;padding:0;min-height:0">إرفاقها بسؤال جديد ←</button></span></div>` : ''}
+    ${QI.notes.length ? `<div class="stack" style="gap:3px">${QI.notes.map(t => `<span class="faint" style="font-size:11.5px">• ${esc(t)}</span>`).join('')}</div>` : ''}
+    <div class="row" style="gap:8px">${QI.items.length ? `<button type="button" class="btn primary" data-act="qi-add" ${n ? '' : 'aria-disabled="true"'}>${ic('check', 16)}إضافة ${n} سؤال</button>` : ''}<button type="button" class="btn" data-act="qi-close">إلغاء</button></div></div></div>`;
+}
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'qa-import2' && e.target.files.length) { qaImportFiles([...e.target.files]); e.target.value = ''; return; }
+  const i = e.target.dataset && e.target.dataset.qi; if (i !== undefined && QI) { QI.items[+i].on = e.target.checked; qaImportDialog(); }
+});
+async function qaImportAdd() {
+  const cat = (document.getElementById('qi-cat') || {}).value || 'عام', items = QI.items.filter(x => x.on);
+  let n = 0;
+  for (const x of items) {
+    const e = { question: x.question.slice(0, 300), answer: x.answer.slice(0, 4000), category: x.category || cat, variants: x.variants || [], keywords: x.keywords || '', link: '', active: true, attachments: [] };
+    if (rdServer()) { try { await api('POST', '/api/qa', e); n++; } catch (err) {} }
+    else { const D = qaData(); D.entries.unshift({ id: Math.max(0, ...D.entries.map(y => y.id)) + 1, uses: 0, ...e }); n++; }
+  }
+  if (rdServer()) await qaLoad();
+  QI = null; qaImportDialog(); toast('أُضيف ' + n + ' سؤال إلى تدريب نايوش'); render();
+}
+function qaFeedHandle(act, k) {
+  switch (act) {
+    case 'fx-menu': S.fxOpen = !S.fxOpen; render(); return true;
+    case 'qa-export-pdf': qaExport('pdf'); return true;
+    case 'qa-export-xlsx': qaExport('xlsx'); return true;
+    case 'qa-att-rm': { const f = S.qaForm; if (f && f.attachments) f.attachments.splice(+k, 1); render(); return true; }
+    case 'qi-close': QI = null; qaImportDialog(); return true;
+    case 'qi-all': { const all = QI.items.every(x => x.on); QI.items.forEach(x => { x.on = !all; }); qaImportDialog(); return true; }
+    case 'qi-add': if (QI && QI.items.some(x => x.on)) qaImportAdd(); return true;
+    case 'qi-media': { const files = QI.media; QI = null; qaImportDialog(); S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null, attachments: [] }; S.fdTab = 'ask'; if (S.route !== 'feed') go('feed'); qaAddFiles(files); setTimeout(() => { const q = document.querySelector('[data-qa="question"]'); if (q) q.focus(); }, 60); return true; }
+  }
+  return false;
+}
+const _qaFH = analyticsHandle;
+analyticsHandle = function (act, k, el) { if (act && (act.startsWith('qa-') || act.startsWith('qi-') || act === 'fx-menu') && qaFeedHandle(act, k)) return true; return _qaFH(act, k, el); };
+Object.assign(P, { image: P.image || 'M4 5h16v14H4z M4 15l4-4 4 4 3-3 5 5 M15 9.5h.01' });
+</script>

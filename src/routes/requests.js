@@ -23,7 +23,7 @@ const STATUSES = {
 const BLOCKED_EXT = new Set(['exe', 'msi', 'bat', 'cmd', 'com', 'scr', 'pif', 'ps1', 'vbs', 'vbe', 'js', 'mjs', 'jse', 'wsf', 'wsh', 'sh', 'bash', 'jar', 'apk', 'app', 'dll', 'sys', 'lnk', 'reg', 'hta', 'cpl', 'msp', 'gadget', 'php', 'asp', 'aspx', 'jsp', 'cgi', 'pl', 'py', 'rb', 'svg', 'html', 'htm', 'xhtml', 'shtml', 'swf']);
 const VIDEO_EXT = new Set(['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv']);
 const INLINE_VIDEO = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
-const MIME_BY_EXT = { xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv', pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
+const MIME_BY_EXT = { xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv', pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', txt: 'text/plain; charset=utf-8', json: 'application/json', ods: 'application/vnd.oasis.opendocument.spreadsheet', doc: 'application/msword', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', ppt: 'application/vnd.ms-powerpoint', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
 
 const uploadDir = () => path.join(config.dataDir, 'uploads');
 const extOf = (n) => (String(n).toLowerCase().match(/\.([a-z0-9]{1,5})$/) || [])[1] || '';
@@ -248,9 +248,15 @@ module.exports = (r) => {
     if (!u) throw new HttpError(404, 'not_found', 'File not found');
     const allowed = u.owner_id === me.id || (u.request_id && (u.created_by === me.id || can(me, 'requests.viewAll')));
     if (!allowed) throw new HttpError(404, 'not_found', 'File not found');
+    serveUpload(req, res, u, INLINE_VIDEO.has(u.mime) && new URL(req.url, 'http://x').searchParams.get('inline') === '1');
+  });
+};
+
+
+// Streams a stored upload (with Range support for video). Always nosniff; 'inline' only when the caller allows it.
+function serveUpload(req, res, u, inline) {
     const file = path.join(uploadDir(), u.stored_name);
     let stat; try { stat = fs.statSync(file); } catch (_) { throw new HttpError(404, 'not_found', 'File missing'); }
-    const inline = INLINE_VIDEO.has(u.mime) && new URL(req.url, 'http://x').searchParams.get('inline') === '1';
     const headers = {
       'Content-Type': u.mime, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store', 'Accept-Ranges': 'bytes',
       'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(u.original_name)}`
@@ -266,15 +272,17 @@ module.exports = (r) => {
     }
     res.writeHead(200, { ...headers, 'Content-Length': stat.size });
     fs.createReadStream(file).pipe(res);
-  });
-};
+}
 
 // Remove uploads that were never attached to a request (abandoned forms) after 24 hours.
 function cleanupOrphans() {
   const cutoff = new Date(Date.now() - 24 * 3600e3).toISOString();
-  const rows = db.all('SELECT id, stored_name FROM uploads WHERE request_id IS NULL AND created_at < ?', cutoff);
+  const rows = db.all('SELECT id, stored_name FROM uploads WHERE request_id IS NULL AND kind IN (\'file\', \'video\') AND created_at < ?', cutoff);
   for (const r of rows) { fs.rm(path.join(uploadDir(), r.stored_name), { force: true }, () => {}); db.run('DELETE FROM uploads WHERE id = ?', r.id); }
   if (rows.length) console.log('[uploads] removed', rows.length, 'orphan uploads');
 }
 module.exports.cleanupOrphans = cleanupOrphans;
+module.exports.serveUpload = serveUpload;
+module.exports.uploadDir = uploadDir;
+module.exports.INLINE_VIDEO = INLINE_VIDEO;
 module.exports.STATUSES = STATUSES;

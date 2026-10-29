@@ -245,6 +245,40 @@ test('تغذية البيانات: admin trains answers, users ask, unmatched qu
   assert.equal((await anon('POST', '/api/qa/ask', { q: 'سؤال' })).status, 401);
 });
 
+test('تغذية البيانات: answer attachments are stored, served with the answer, and cleaned up', async () => {
+  const png = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010806000000', 'hex');
+  let up = await admin('POST', '/api/uploads', png, { 'X-File-Name': encodeURIComponent('شعار.png'), 'X-Upload-Kind': 'file', 'Content-Type': 'application/octet-stream' });
+  assert.equal(up.status, 201); const img = up.body.id;
+  up = await admin('POST', '/api/uploads', Buffer.from('%PDF-1.4 test'), { 'X-File-Name': 'guide.pdf', 'X-Upload-Kind': 'file', 'Content-Type': 'application/octet-stream' });
+  const pdf = up.body.id;
+  // someone else's upload cannot be attached
+  const other = await clientA('POST', '/api/uploads', Buffer.from('x,y\n1,2'), { 'X-File-Name': 'a.csv', 'X-Upload-Kind': 'file', 'Content-Type': 'application/octet-stream' });
+  assert.equal((await admin('POST', '/api/qa', { question: 'سؤال بمرفق غريب', answer: 'إجابة', attachments: [other.body.id] })).status, 400);
+  assert.equal((await admin('POST', '/api/qa', { question: 'سؤال بمرفق ناقص', answer: 'إجابة', attachments: ['Lpending1'] })).status, 400);
+  let r = await admin('POST', '/api/qa', { question: 'أين أجد دليل الاستخدام؟', variants: ['دليل نايوش'], answer: 'تجد الدليل مرفقًا هنا.', category: 'عام', attachments: [{ id: img, name: 'ignored' }, pdf] });
+  assert.equal(r.status, 201); const id = r.body.entry.id;
+  assert.deepEqual(r.body.entry.attachments.map(a => a.name), ['شعار.png', 'guide.pdf']);
+  assert.equal(db.get('SELECT kind FROM uploads WHERE id = ?', img).kind, 'qa');
+  r = await analyst('POST', '/api/qa/ask', { q: 'وين دليل الاستخدام' }); assert.equal(r.body.found, true); assert.equal(r.body.attachments.length, 2);
+  let f = await analyst('GET', '/api/qa/file/' + img); assert.equal(f.status, 200); assert.equal(f.headers.get('content-type'), 'image/png'); assert.match(f.headers.get('content-disposition'), /^inline/); assert.equal(f.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal((await anon('GET', '/api/qa/file/' + img)).status, 401);
+  assert.equal((await analyst('GET', '/api/qa/file/' + other.body.id)).status, 404);
+  // the orphan cleanup leaves answer files alone
+  db.run(`UPDATE uploads SET created_at = '2000-01-01T00:00:00.000Z' WHERE id IN (?, ?)`, img, pdf);
+  require('../src/routes/requests').cleanupOrphans();
+  assert.ok(db.get('SELECT id FROM uploads WHERE id = ?', img));
+  // deactivated answer: hidden from users, still visible to admin
+  await admin('PATCH', '/api/qa/' + id, { active: false });
+  assert.equal((await analyst('GET', '/api/qa/file/' + pdf)).status, 404);
+  assert.equal((await admin('GET', '/api/qa/file/' + pdf)).status, 200);
+  // toggling without sending attachments keeps them; removing one deletes its file
+  r = await admin('GET', '/api/qa'); assert.equal(r.body.entries.find(e => e.id === id).attachments.length, 2);
+  r = await admin('PATCH', '/api/qa/' + id, { active: true, attachments: [pdf] }); assert.equal(r.body.entry.attachments.length, 1);
+  assert.equal(db.get('SELECT id FROM uploads WHERE id = ?', img), undefined);
+  await admin('DELETE', '/api/qa/' + id);
+  assert.equal(db.get('SELECT id FROM uploads WHERE id = ?', pdf), undefined);
+});
+
 test('password change and login throttling', async () => {
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'nope', next: 'NewPassword2026' })).status, 400);
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'Password2026', next: 'short' })).status, 400);
