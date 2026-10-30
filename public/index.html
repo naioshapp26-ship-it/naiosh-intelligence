@@ -579,7 +579,7 @@ const TITLES = {
   pmo: ['DIA-PMO · NAIOSH PMO 360', 'مكتب إدارة المشاريع الذكي'], tqg: ['DIA-TQG · Total Quality & Governance', 'الجودة الشاملة والحوكمة المؤسسية'], compete: ['DIA-CIB · Competitive Intelligence & Benchmarking', 'تحليل المنافسين والموقع التنافسي'],
   initiative: ['DIA-CII · Community Initiatives Intelligence 360', 'تحليل المبادرات المجتمعية ودراسة جدواها'], facility: ['NAIOSH-FHI · Facility & Hospitality Intelligence 360', 'تحليل المطاعم والفنادق والفعاليات والمرافق'],
   psf: ['DIA-PSF · Psycho-Social & Family Intelligence 360', 'عيادة نايوش للتحليل النفسي والأسري 360'],
-  legal: ['DIA-LEGAL · NAIOSH Legal Intelligence 360', 'التحليل القانوني والحوكمة وإدارة القضايا'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التحليل المؤسسي والقانوني والمالي وسوق العمل']
+  legal: ['DIA-LEGAL · NAIOSH Legal Analysis 360', 'التحليل القانوني والحوكمة والتحليل القضائي'], ebiz: ['DIA-EBI · E-Legal & Business Intelligence 360', 'التحليل المؤسسي والقانوني والمالي وسوق العمل']
 };
 function counts() {
   return { consult: '9', risks: '3', decision: S.decided ? '4' : '5' };
@@ -5651,12 +5651,12 @@ const lgToday = () => new Date().toISOString().slice(0, 10);
    DIA-LEGAL — NAIOSH LEGAL INTELLIGENCE 360
    ========================================================================================= */
 const LG_STAGE = ['استلام وفرز', 'فحص التضارب', 'التحليل', 'البحث القانوني', 'بناء الاستراتيجية', 'تفاوض / وساطة', 'تقاضٍ / تحكيم', 'التنفيذ', 'مغلقة'];
-const LG_TYPE = ['تجاري', 'عقود', 'عمالي', 'إداري', 'جزائي', 'جرائم معلوماتية', 'ملكية فكرية', 'عقاري', 'أحوال شخصية'];
+const LG_TYPE = ['تجاري', 'عقود', 'مدني', 'عمالي', 'إداري', 'جزائي', 'جرائم معلوماتية', 'نشر وتواصل اجتماعي', 'بيانات وخصوصية', 'ملكية فكرية', 'عقاري', 'أحوال شخصية', 'دولي وحقوق إنسان', 'دستوري'];
 const LG_CONF = [['done', 'تم الفحص — لا تضارب'], ['pending', 'لم يُفحص بعد'], ['flag', 'تضارب محتمل — للمراجعة']];
 const LG_FACT = [['proven', 'واقعة مثبتة بدليل'], ['claim', 'ادعاء طرف'], ['ai', 'استنتاج آلي']];
 const LG_SRC_ST = [['in', 'نافذ'], ['amend', 'معدّل'], ['repealed', 'ملغى'], ['draft', 'مشروع غير نافذ'], ['unk', 'غير مؤكد الحالة']];
 const LG_SRC_T = ['دستور', 'نظام / قانون', 'لائحة', 'حكم قضائي', 'معاهدة', 'معيار / إرشاد'];
-const LG_STEPS = [['استلام الملف', 'الوثائق، طلب الموكل، الأطراف، الدولة والتواريخ'], ['التحقق من البيانات', 'المصدر، الاكتمال، التناقضات'], ['تحديد الاختصاص', 'الدولة، الجهة، نوع القضية'], ['استخراج الوقائع والأدلة', 'فصل الوقائع المثبتة عن الادعاءات'], ['البحث القانوني', 'النصوص النافذة والأحكام والمصادر الرسمية'], ['التحليل والمقارنة', 'الحجج والأدلة المؤيدة والمعارضة والثغرات'], ['تقييم البدائل والمخاطر', 'الخيارات والآثار وعدم اليقين'], ['مراجعة واعتماد بشري', 'اعتماد المحامي المخول قبل المخرجات'], ['التنفيذ والمتابعة', 'المهام والمواعيد والنتائج الفعلية'], ['التعلم والتحسين', 'قياس جودة التحليل وتوثيق التصحيحات']];
+const LG_STEPS = [['استقبال الملف', 'نوع القضية، الدولة، المحكمة أو الجهة، الأطراف، التواريخ، الهدف'], ['التحقق من الاختصاص', 'القانون الواجب التطبيق، الاختصاص القضائي، أي عنصر دولي'], ['استخراج الوقائع', 'فصل الوقائع الموثقة عن الادعاءات والافتراضات والناقص'], ['فحص الأدلة', 'ربط كل واقعة بمصدرها وتسجيل التناقضات'], ['البحث القانوني', 'النصوص والأحكام الرسمية والتحقق من النفاذ والتعديلات'], ['التحليل والمقارنة', 'مقارنة عناصر الواقعة بشروط القاعدة والأحكام'], ['تحليل السيناريوهات', 'التفسيرات والدفوع والبدائل دون نتيجة مضمونة'], ['التقرير القانوني', 'المسائل والأسانيد والأدلة والفجوات والمخاطر والتوصيات'], ['المراجعة والاعتماد', 'مراجعة المحامي المخوّل ثم الاعتماد أو الإعادة'], ['التوثيق والمتابعة', 'تسجيل الإصدار والمصادر والمراجعات والنتيجة الفعلية']];
 const LG_CENTERS = [['01', 'المركز السيادي والقيادة', 'المؤشرات، القضايا الحرجة، المواعيد، التنبيهات، القرارات المعلقة'], ['02', 'إدارة القضايا والملفات', 'القضايا، الأطراف، الموكلون، الخصوم، المهام، المستندات'], ['03', 'محرك التحليل القانوني', 'الوقائع، المسائل، التشريعات والأحكام، الحجج والبدائل'], ['04', 'الأدلة والتحقيقات الرقمية', 'المصدر، السلامة، سلسلة الحيازة، الاحتيال والاختراق'], ['05', 'المكتبة والتشريعات العالمية', 'الدساتير، القوانين، الأحكام، المعاهدات، تاريخ النفاذ'], ['06', 'العقود وتسوية النزاعات', 'الصياغة، التفاوض، الوساطة، التحكيم، التسويات'], ['07', 'المالية والربحية', 'الأتعاب، الفواتير، الوقت، الميزانية مقابل الفعلي'], ['08', 'الحوكمة والامتثال والتوقيع', 'الصلاحيات، تضارب المصالح، السرية، التدقيق، التوقيع'], ['09', 'التحليلات والتنبؤ والاستشارات', 'الأداء، أسباب التأخير، الأنماط، توقع العبء والتكلفة'], ['10', 'إدارة المنظومة والتكاملات', 'المستخدمون والفروع، الربط، المراقبة، النسخ الاحتياطي']];
 const LG_CTRL = [['idp', 'هوية وصلاحيات مطبقة على الخادم لكل قضية'], ['conf', 'فحص السرية وتضارب المصالح قبل فتح الملف'], ['src', 'مصدر موثق لكل استنتاج قانوني (النص، النسخة، تاريخ التحقق)'], ['human', 'مراجعة بشرية إلزامية قبل اعتماد أي رأي أو إيداع'], ['audit', 'سجل تدقيق غير صامت لكل فتح وتعديل واعتماد'], ['upd', 'تحقق من التشريع الجديد ونفاذه قبل اعتماده في الإنتاج'], ['test', 'اختبارات دورية للمراجع والنصوص الملغاة والتعليمات الخبيثة']];
 const LG_TESTS = ['تحليل قضية مع إظهار المصدر الداعم لكل استنتاج', 'اكتشاف مرجع قانوني قديم أو غير مؤكد الحالة', 'التمييز بين ادعاء الطرف والواقعة المدعومة والاستنتاج الآلي', 'رفض الوصول إلى قضية دون صلاحية', 'تسجيل إصدار التحليل والمراجع والموافقات', 'إظهار نقص الأدلة أو تعارض المصادر بدل نتيجة جازمة', 'منع الإرسال أو الإيداع دون صلاحية وموافقة', 'عدم ظهور بيانات موكل لموكل آخر'];
@@ -5719,6 +5719,8 @@ function lgModel() {
 const lgLvl = { c: ['t-c', 'حرج'], h: ['t-h', 'مرتفع'], m: ['t-m', 'متوسط'] };
 EG_OUT.legal = () => {
   const m = lgModel(), s = m.s, cur = s.cur || '';
+  if (s.tab === 'flow') return lgFlowOut(m);
+  if (s.tab === 'final') return lgFinalOut(m);
   if (s.tab === 'command') return egCard('مركز القيادة القانوني — NAIOSH LEGAL COMMAND CENTER', 'LEGAL-01', `${anKpis([['القضايا النشطة', m.k.active], ['استحقاقات خلال 7 أيام', m.k.soon, m.k.soon ? 'bad' : 'good'], ['مواعيد فائتة', m.k.late, m.k.late ? 'bad' : 'good'], ['ملفات تنتظر إجراءً', m.k.wait], ['تنبيهات حرجة', m.k.crit, m.k.crit ? 'bad' : 'good'], ['المصروف من الميزانية', m.k.budget ? fmtN(m.k.spent / m.k.budget * 100, 0) + '%' : '—']])}
     ${anTbl({ h: 'قائمة الإجراءات ذات الأولوية — كل تنبيه يقود إلى سجل وإجراء ومسؤول وموعد', cols: ['المستوى', 'القضية', 'الإشارة', 'الدليل', 'الإجراء المطلوب', 'المسؤول', 'الموعد'], rows: m.alerts.map(a => [lgLvl[a.lvl][1], a.x.c.ref + ' · ' + a.x.c.t, a.what, a.ev, a.todo, a.x.c.owner || '—', a.x.c.due || '—']) })}
     ${anTbl({ h: 'جلسات ومواعيد قريبة', cols: ['الموعد', 'المتبقي', 'القضية', 'الإجراء', 'المسؤول'], rows: m.C.filter(x => x.active && x.c.due).sort((a, b) => a.days - b.days).map(x => [x.c.due, isFinite(x.days) ? (x.days < 0 ? 'متأخر ' + -x.days + ' يوم' : x.days + ' يوم') : '—', x.c.ref + ' · ' + x.c.t, x.c.next || '—', x.c.owner || '—']) })}
@@ -5732,7 +5734,7 @@ EG_OUT.legal = () => {
       <div class="stack" style="gap:6px"><span class="lbl">دورة التحليل — 10 مراحل</span>${egGrid(150, LG_STEPS.map(([n, d], i) => `<div class="sub" style="gap:2px;padding:9px 11px;border-color:${m.steps[i] ? 'var(--greenline)' : 'var(--line)'}"><span class="row nowrap" style="gap:6px"><span class="mono" style="font-size:11px;color:${m.steps[i] ? 'var(--greenfg)' : 'var(--faint)'}">${m.steps[i] ? '✓' : String(i + 1).padStart(2, '0')}</span><b style="font-size:12px">${n}</b></span><span class="faint" style="font-size:10.5px">${d}</span></div>`).join(''))}</div>
       ${anTbl({ h: 'الوقائع — فصل الثابت عن الادعاء والاستنتاج', cols: ['البيان', 'التصنيف', 'المصدر', 'الحالة'], rows: c.facts.map(f => [f.x, (LG_FACT.find(q => q[0] === f.k) || [, ''])[1], f.s || '—', f.k === 'proven' ? 'مدعوم بدليل' : f.k === 'claim' ? 'يحتاج إثباتًا' : (String(f.s || '').trim() ? 'استنتاج مرتبط بمصدر' : 'غير متحقق — لا يُعتمد')]) })}
       ${anTbl({ h: 'المصادر القانونية — النفاذ وتاريخ آخر تحقق', cols: ['المصدر', 'النوع', 'الدولة', 'الحالة', 'آخر تحقق', 'رابط رسمي', 'التقييم'], rows: c.srcs.map(x => { const age = lgDays(s.today, x.v); return [x.n, x.t, x.c, (LG_SRC_ST.find(q => q[0] === x.st) || [, ''])[1], x.v || '—', x.link === 'yes' ? 'نعم' : 'لا', x.st !== 'in' ? 'لا يُستند إليه قبل التحقق' : !(age <= 180) ? 'يحتاج إعادة تحقق' : 'صالح للاستناد']; }) })}
-      ${anTbl({ h: 'الأدلة الرقمية — السلامة وسلسلة الحيازة', cols: ['الدليل', 'المصدر', 'بصمة السلامة', 'سلسلة الحيازة', 'الحالة'], rows: c.evid.map(e => [e.n, e.s || '—', e.hash === 'yes' ? 'موثقة' : 'غير موثقة', e.chain === 'yes' ? 'مكتملة' : 'ناقصة', e.hash === 'yes' && e.chain === 'yes' ? 'قابل للتقديم' : 'يحتاج استكمالًا قبل الاعتماد عليه']) })}
+      ${anTbl({ h: 'الأدلة الرقمية — السلامة وسلسلة الحيازة', cols: ['الدليل', 'المصدر', 'وقت الحصول', 'جمعه', 'الأساس القانوني', 'بصمة السلامة', 'سلسلة الحيازة', 'الحالة'], rows: c.evid.map(e => [e.n, e.s || '—', e.at || '—', e.by || '—', e.basis || '—', e.hash === 'yes' ? (e.sha ? 'موثقة · ' + String(e.sha).slice(0, 12) + '…' : 'موثقة') : 'غير موثقة', e.chain === 'yes' ? 'مكتملة' : 'ناقصة', e.hash === 'yes' && e.chain === 'yes' ? 'قابل للتقديم' : 'يحتاج استكمالًا قبل الاعتماد عليه']) })}
       <div class="stack" style="gap:6px"><span class="lbl">المخرج الموحد للقضية — 12 عنصرًا</span>${egGrid(230, m.report.map(([n, ok], i) => `<span class="row nowrap" style="gap:7px;font-size:12.5px"><span style="color:${ok ? 'var(--greenfg)' : 'var(--orange)'}">${ok ? '✓' : '○'}</span>${i + 1}. ${n}</span>`).join(''))}</div>
       ${egNote('ضابط لا تنازل عنه: لا يختلق المحرك مادة قانونية أو حكمًا أو رقم قضية أو اقتباسًا. إذا لم يُعثر على مصدر موثوق يُصرَّح بأن المعلومة لم تُتحقق. مستوى الثقة = نسبة الوقائع المثبتة 35% + المصادر النافذة المتحقق منها 35% + سلامة الأدلة 20% + الاعتماد البشري 10%.')}`);
   }
@@ -5744,6 +5746,7 @@ EG_OUT.legal = () => {
       ${egNote('الاحتمالات تقديرات بشرية من المحامي المختص وليست تنبؤًا آليًا. يُعرض كل بديل بأدلته ومخاطره وافتراضاته، ولا يُعتمد أي مسار دون قرار صاحب الصلاحية.')}`);
   }
   return egCard('الحوكمة والسيادة القانونية وجاهزية الإطلاق', 'LEGAL-08', `${anKpis([['الضوابط المطبقة', m.ctrlOk + ' من ' + LG_CTRL.length, m.ctrlOk === LG_CTRL.length ? 'good' : 'bad'], ['اختبارات القبول الناجحة', m.testOk + ' من ' + LG_TESTS.length, m.testOk === LG_TESTS.length ? 'good' : 'bad'], ['المرحلة الحالية', s.phase], ['جاهزية النسخة الأولى', m.testOk === LG_TESTS.length && m.ctrlOk === LG_CTRL.length ? 'جاهزة' : 'غير جاهزة', m.testOk === LG_TESTS.length && m.ctrlOk === LG_CTRL.length ? 'good' : 'bad']])}
+    ${lgQualityHtml(m)}
     ${egBar('الضوابط', m.ctrlOk / LG_CTRL.length * 100, '%')}${egBar('اختبارات القبول', m.testOk / LG_TESTS.length * 100, '%')}
     ${anTbl({ h: 'ما ينقص قبل الإطلاق', cols: ['البند', 'النوع'], rows: LG_CTRL.filter(([q]) => !(s.ctrl || {})[q]).map(([, n]) => [n, 'ضابط حوكمة']).concat(LG_TESTS.filter((_, i) => !(s.tests || {})[i]).map(n => [n, 'اختبار قبول'])) })}
     <div class="sub" style="gap:3px"><b style="font-size:13px">البطاقة الهندسية — DIA-LEGAL</b><span class="faint" style="font-size:12px">رمز الإعداد CFG-DIA-LEGAL-01 · الإصدار 1.0 — مقترح هندسي · النظام الأب NAIOSH HUB 360 + Data Intelligence & Analysis</span><span class="mono" style="font-size:10.5px;color:var(--muted)">LEGAL DATA → VERIFIED SOURCES → CASE CONTEXT → ANALYSIS → OPTIONS → HUMAN REVIEW → AUTHORIZED ACTION → AUDIT → LEARNING</span></div>
@@ -5753,21 +5756,23 @@ VIEWS.legal = () => {
   const s = egS('legal'); lgEnsure(s);
   let inputs = '';
   if (s.tab === 'command') inputs = egCard('القضايا والملفات', 'LEGAL-02', `<div style="max-width:260px;margin-bottom:6px">${egTxt('legal', 'today', 'تاريخ اليوم للمواعيد (YYYY-MM-DD)')}</div>` + s.cases.map((c, i) => `<details data-lg-case="${i}" ${i === (s.open ?? 0) ? 'open' : ''} style="border-bottom:1px solid var(--line);padding:6px 0"><summary style="cursor:pointer;font-size:13.5px;padding:6px 0"><span class="pmo-code">${esc(c.ref)}</span> <b>${esc(c.t)}</b> <span class="faint" style="font-size:11.5px">— ${esc(c.stage)} · ${esc(c.country)} · ${esc(c.due || 'بلا موعد')}</span></summary>
-      ${egGrid(160, egTxt('legal', `cases.${i}.t`, 'موضوع القضية') + egTxt('legal', `cases.${i}.client`, 'الموكل') + egTxt('legal', `cases.${i}.party`, 'الطرف الآخر') + egTxt('legal', `cases.${i}.country`, 'الدولة / الاختصاص') + egSel('legal', `cases.${i}.type`, 'نوع القضية', LG_TYPE.map(t => [t, t])) + egSel('legal', `cases.${i}.stage`, 'المرحلة', LG_STAGE.map(t => [t, t])) + egTxt('legal', `cases.${i}.due`, 'الموعد القادم (YYYY-MM-DD)') + egTxt('legal', `cases.${i}.next`, 'الإجراء المطلوب') + egTxt('legal', `cases.${i}.owner`, 'المسؤول') + egNum('legal', `cases.${i}.budget`, 'الميزانية') + egNum('legal', `cases.${i}.spent`, 'المصروف الفعلي') + egNum('legal', `cases.${i}.pend`, 'موافقات/مستندات معلقة') + egSel('legal', `cases.${i}.conflict`, 'فحص تضارب المصالح', LG_CONF))}
+      ${egGrid(160, egTxt('legal', `cases.${i}.t`, 'موضوع القضية') + egTxt('legal', `cases.${i}.client`, 'الموكل') + egTxt('legal', `cases.${i}.party`, 'الطرف الآخر') + egTxt('legal', `cases.${i}.country`, 'الدولة') + egTxt('legal', `cases.${i}.court`, 'المحكمة أو الجهة المختصة') + egTxt('legal', `cases.${i}.law`, 'القانون الواجب التطبيق') + egSel('legal', `cases.${i}.intl`, 'عنصر دولي / تنازع قوانين', [['no', 'لا'], ['yes', 'نعم']]) + egSel('legal', `cases.${i}.type`, 'نوع القضية', LG_TYPE.map(t => [t, t])) + egSel('legal', `cases.${i}.stage`, 'المرحلة', LG_STAGE.map(t => [t, t])) + egTxt('legal', `cases.${i}.due`, 'الموعد القادم (YYYY-MM-DD)') + egTxt('legal', `cases.${i}.next`, 'الإجراء المطلوب') + egTxt('legal', `cases.${i}.owner`, 'المسؤول') + egNum('legal', `cases.${i}.budget`, 'الميزانية') + egNum('legal', `cases.${i}.spent`, 'المصروف الفعلي') + egNum('legal', `cases.${i}.pend`, 'موافقات/مستندات معلقة') + egSel('legal', `cases.${i}.conflict`, 'فحص تضارب المصالح', LG_CONF))}
       <div class="row between" style="margin-top:6px"><button type="button" class="btn sm" data-act="lg-open" data-k="${i}">${ic('analysis', 14)}افتح في مختبر التحليل</button>${egDel('legal', 'cases', i)}</div></details>`).join('') + `<div class="row" style="gap:8px;margin-top:8px">${egAdd('legal', 'cases', 'إضافة قضية')}${egSel('legal', 'cur', 'العملة', [['SAR', 'ريال سعودي'], ['JOD', 'دينار أردني'], ['AED', 'درهم إماراتي'], ['USD', 'دولار أمريكي'], ['CAD', 'دولار كندي']])}</div>`);
   if (s.tab === 'lab' || s.tab === 'paths') {
     const c = s.cases[s.sel], i = s.sel, pick = egSel('legal', 'sel', 'القضية', s.cases.map((x, j) => [j, x.ref + ' · ' + x.t]));
     if (s.tab === 'lab') inputs = egCard('مدخلات التحليل', esc(c.ref), `<div style="max-width:420px">${pick}</div>
       ${egQ(1, 'الوقائع والادعاءات', c.facts.map((f, j) => `<div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:end">${egTxt('legal', `cases.${i}.facts.${j}.x`, 'البيان')}${egSel('legal', `cases.${i}.facts.${j}.k`, 'التصنيف', LG_FACT)}${egTxt('legal', `cases.${i}.facts.${j}.s`, 'المصدر / الدليل')}<button type="button" class="btn link sm" data-act="lg-del" data-k="facts|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="facts">${ic('plus', 14)}إضافة واقعة</button>`)}
       ${egQ(2, 'المصادر القانونية', c.srcs.map((x, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.srcs.${j}.n`, 'المصدر')}${egSel('legal', `cases.${i}.srcs.${j}.t`, 'النوع', LG_SRC_T.map(t => [t, t]))}${egTxt('legal', `cases.${i}.srcs.${j}.c`, 'الدولة')}${egSel('legal', `cases.${i}.srcs.${j}.st`, 'حالة النفاذ', LG_SRC_ST)}${egTxt('legal', `cases.${i}.srcs.${j}.v`, 'آخر تحقق (تاريخ)')}${egSel('legal', `cases.${i}.srcs.${j}.link`, 'رابط رسمي', [['yes', 'نعم'], ['no', 'لا']])}<button type="button" class="btn link sm" data-act="lg-del" data-k="srcs|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="srcs">${ic('plus', 14)}إضافة مصدر</button>`)}
-      ${egQ(3, 'الأدلة الرقمية', c.evid.map((e, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.evid.${j}.n`, 'الدليل')}${egTxt('legal', `cases.${i}.evid.${j}.s`, 'المصدر')}${egSel('legal', `cases.${i}.evid.${j}.hash`, 'بصمة السلامة', [['yes', 'موثقة'], ['no', 'غير موثقة']])}${egSel('legal', `cases.${i}.evid.${j}.chain`, 'سلسلة الحيازة', [['yes', 'مكتملة'], ['no', 'ناقصة']])}<button type="button" class="btn link sm" data-act="lg-del" data-k="evid|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="evid">${ic('plus', 14)}إضافة دليل</button>`)}
-      ${egQ(4, 'المراجعة والاعتماد البشري', egGrid(200, egTxt('legal', `cases.${i}.review.by`, 'المحامي المراجع المخول') + egSel('legal', `cases.${i}.review.ok`, 'قرار المراجعة', [['no', 'لم يُعتمد بعد'], ['yes', 'اعتُمد بعد المراجعة']])))}`);
+      ${egQ(3, 'الأدلة الرقمية', c.evid.map((e, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.evid.${j}.n`, 'الدليل')}${egTxt('legal', `cases.${i}.evid.${j}.s`, 'المصدر')}${egTxt('legal', `cases.${i}.evid.${j}.at`, 'تاريخ ووقت الحصول + المنطقة الزمنية')}${egTxt('legal', `cases.${i}.evid.${j}.by`, 'الجهة التي جمعته')}${egTxt('legal', `cases.${i}.evid.${j}.basis`, 'الأساس القانوني للجمع')}${egTxt('legal', `cases.${i}.evid.${j}.sha`, 'بصمة SHA-256 (إن وُجدت)')}${egSel('legal', `cases.${i}.evid.${j}.hash`, 'بصمة السلامة', [['yes', 'موثقة'], ['no', 'غير موثقة']])}${egSel('legal', `cases.${i}.evid.${j}.chain`, 'سلسلة الحيازة', [['yes', 'مكتملة'], ['no', 'ناقصة']])}<button type="button" class="btn link sm" data-act="lg-del" data-k="evid|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="evid">${ic('plus', 14)}إضافة دليل</button>`)}
+      ${egQ(4, 'المسائل القانونية — تطبيق القاعدة على الوقائع', c.issues.map((x, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-items:end">${egTxt('legal', `cases.${i}.issues.${j}.q`, 'المسألة المطلوب حسمها')}${egTxt('legal', `cases.${i}.issues.${j}.src`, 'النص / الحكم المنطبق')}${egTxt('legal', `cases.${i}.issues.${j}.pro`, 'ما يؤيد موقف الموكل')}${egTxt('legal', `cases.${i}.issues.${j}.con`, 'ما يعارضه / التفسير البديل')}<button type="button" class="btn link sm" data-act="lg-del" data-k="issues|${j}">حذف</button></div>`).join('') + `<button type="button" class="btn sm" style="align-self:flex-start" data-act="lg-add" data-k="issues">${ic('plus', 14)}إضافة مسألة</button>`)}
+      ${egQ(5, 'المراجعة والاعتماد البشري', egGrid(200, egTxt('legal', `cases.${i}.review.by`, 'المحامي المراجع المخول') + egTxt('legal', `cases.${i}.review.at`, 'تاريخ المراجعة') + egSel('legal', `cases.${i}.review.ok`, 'قرار المراجعة', [['no', 'لم يُعتمد بعد'], ['yes', 'اعتُمد بعد المراجعة']])))}`);
     else inputs = egCard('تقديرات المسارات', esc(c.ref), `<div style="max-width:420px">${pick}</div>${egGrid(180, egNum('legal', `cases.${i}.stake`, 'قيمة النزاع') + egNum('legal', `cases.${i}.rec`, 'نسبة الاسترداد المتوقعة عند النجاح %'))}
       ${LG_PATHS.map(([p, n]) => egQ(0, n, egGrid(160, egNum('legal', `cases.${i}.paths.${p}.p`, 'احتمال النجاح %') + egNum('legal', `cases.${i}.paths.${p}.cost`, 'التكلفة') + egNum('legal', `cases.${i}.paths.${p}.m`, 'المدة بالأشهر')))).join('')}${egNote('اترك احتمال النجاح فارغًا إذا كان المسار غير متاح أو غير مناسب قانونيًا لهذه القضية.')}`);
   }
-  if (s.tab === 'gov') inputs = egCard('مراكز العمل العشرة', 'LEGAL-NAV', egGrid(200, LG_CENTERS.map(([n, t, d]) => `<div class="sub" style="gap:3px"><span class="row nowrap" style="gap:7px"><span class="mono" style="color:var(--yellow);font-size:11px">${n}</span><b style="font-size:12.5px">${t}</b></span><span class="faint" style="font-size:11px">${d}</span></div>`).join(''))) + egCard('الضوابط واختبارات القبول', 'LEGAL-08', egQ(1, 'ضوابط الحوكمة المطبقة', `<div class="row" style="gap:6px">${LG_CTRL.map(([q, n]) => choice('eg-set', `legal.ctrl.${q}`, (s.ctrl || {})[q] ? '' : '1', !!(s.ctrl || {})[q], n)).join('')}</div>`) + egQ(2, 'اختبارات قبول النسخة الأولى (اجتازت)', `<div class="row" style="gap:6px">${LG_TESTS.map((n, j) => choice('eg-set', `legal.tests.${j}`, (s.tests || {})[j] ? '' : '1', !!(s.tests || {})[j], n)).join('')}</div>`) + egQ(3, 'مرحلة التنفيذ الحالية', egCh('legal', 'phase', LG_PHASE.map(([k, n]) => [k, k + ' · ' + n]))));
-  return `${engHead('NAIOSH LEGAL INTELLIGENCE 360 · DIA-LEGAL', 'التحليل القانوني — مركز التحليل والحوكمة وإدارة القضايا', 'من استلام القضية إلى تحليلها وبناء الاستراتيجية ومتابعة المواعيد وإدارة الأدلة ومراقبة النتائج — من مكان واحد. كل استنتاج مرتبط بمصدر موثق، ولا يُعتمد أي رأي دون مراجعة المحامي المخول.', engExport('LEGAL'))}
-  ${egTabs('legal', [['command', 'مركز القيادة والقضايا'], ['lab', 'مختبر تحليل القضية'], ['paths', 'البدائل وتسوية النزاع'], ['gov', 'الحوكمة والجاهزية']])}
+  if (s.tab === 'flow' || s.tab === 'final') inputs = lgExtraInputs(s);
+  if (s.tab === 'gov') inputs = lgEnginesCard() + egCard('مراكز العمل العشرة', 'LEGAL-NAV', egGrid(200, LG_CENTERS.map(([n, t, d]) => `<div class="sub" style="gap:3px"><span class="row nowrap" style="gap:7px"><span class="mono" style="color:var(--yellow);font-size:11px">${n}</span><b style="font-size:12.5px">${t}</b></span><span class="faint" style="font-size:11px">${d}</span></div>`).join(''))) + egCard('الضوابط واختبارات القبول', 'LEGAL-08', egQ(1, 'ضوابط الحوكمة المطبقة', `<div class="row" style="gap:6px">${LG_CTRL.map(([q, n]) => choice('eg-set', `legal.ctrl.${q}`, (s.ctrl || {})[q] ? '' : '1', !!(s.ctrl || {})[q], n)).join('')}</div>`) + egQ(2, 'اختبارات قبول النسخة الأولى (اجتازت)', `<div class="row" style="gap:6px">${LG_TESTS.map((n, j) => choice('eg-set', `legal.tests.${j}`, (s.tests || {})[j] ? '' : '1', !!(s.tests || {})[j], n)).join('')}</div>`) + egQ(3, 'مرحلة التنفيذ الحالية', egCh('legal', 'phase', LG_PHASE.map(([k, n]) => [k, k + ' · ' + n]))));
+  return `${engHead('NAIOSH LEGAL ANALYSIS 360 · DIA-LEGAL', 'التحليل القانوني والحوكمة والتحليل القضائي', 'من استقبال القضية إلى تحليلها وفق دستور الدولة وتشريعاتها وأحكامها: سير العملية خطوة بخطوة، وسجل حركات لكل قضية، ومخطط لمسارها، ثم تقرير نهائي بكل ما يخص القضية. كل استنتاج مرتبط بمصدر موثق، ولا يُعتمد أي رأي دون مراجعة المحامي المخول.', engExport('LEGAL'))}
+  ${egTabs('legal', [['command', 'مركز القيادة والقضايا'], ['flow', 'سير القضية والحركات'], ['lab', 'مختبر تحليل القضية'], ['paths', 'البدائل وتسوية النزاع'], ['final', 'التقرير النهائي'], ['gov', 'الحوكمة والجاهزية']])}
   ${inputs}${egOut('legal')}`;
 };
 
@@ -5881,7 +5886,8 @@ function engine4Handle(act, k, el) {
   if (act === 'lg-open') { const s = egS('legal'); s.sel = +k; s.tab = 'lab'; render(); window.scrollTo(0, 0); return true; }
   if (act === 'lg-add' || act === 'lg-del') {
     const s = egS('legal'); lgEnsure(s); const c = s.cases[s.sel], [key, j] = String(k).split('|');
-    if (act === 'lg-add') c[key].push(key === 'facts' ? { x: '', k: 'claim', s: '' } : key === 'srcs' ? { n: '', t: 'نظام / قانون', c: c.country || '', st: 'unk', v: '', link: 'no' } : { n: '', s: '', hash: 'no', chain: 'no' });
+    if (act === 'lg-add') c[key].push(key === 'facts' ? { x: '', k: 'claim', s: '' } : key === 'srcs' ? { n: '', t: 'نظام / قانون', c: c.country || '', st: 'unk', v: '', link: 'no' } : key === 'issues' ? { q: '', src: '', pro: '', con: '' } : key === 'tx' ? lgNewTx(c) : { n: '', s: '', at: '', by: '', basis: '', sha: '', hash: 'no', chain: 'no' });
+    else if (key === 'tx') { const t = c.tx[+j]; if (t) { t.void = !t.void; toast(t.void ? 'أُلغيت الحركة — تبقى ظاهرة في السجل' : 'أُعيدت الحركة'); } }
     else c[key].splice(+j, 1);
     save(); render(); return true;
   }
@@ -5905,7 +5911,7 @@ const _es4 = engSections3;
 engSections3 = function (code) {
   if (code === 'LEGAL') {
     const m = lgModel(), c = m.c;
-    return { title: 'تقرير التحليل القانوني — LEGAL INTELLIGENCE 360', audience: 'الإدارة القانونية والمحامي المسؤول', ref: 'DIA-LEGAL', sections: [
+    return { title: 'تقرير التحليل القانوني — LEGAL ANALYSIS 360', audience: 'الإدارة القانونية والمحامي المسؤول', ref: 'DIA-LEGAL', sections: [
       { h: 'مركز القيادة', kv: kvx([['القضايا النشطة', m.k.active], ['استحقاقات خلال 7 أيام', m.k.soon], ['مواعيد فائتة', m.k.late], ['ملفات تنتظر إجراءً', m.k.wait], ['تنبيهات حرجة', m.k.crit], ['الميزانية / المصروف', fmtN(m.k.budget, 0) + ' / ' + fmtN(m.k.spent, 0)]]) },
       { h: 'القضايا', cols: ['الرمز', 'القضية', 'الموكل', 'الدولة', 'النوع', 'المرحلة', 'الموعد', 'المسؤول', 'تضارب المصالح'], rows: m.C.map(x => [x.c.ref, x.c.t, x.c.client, x.c.country, x.c.type, x.c.stage, x.c.due || '—', x.c.owner || '—', (LG_CONF.find(q => q[0] === x.c.conflict) || [, ''])[1]]) },
       { h: 'الإجراءات ذات الأولوية', cols: ['المستوى', 'القضية', 'الإشارة', 'الدليل', 'الإجراء', 'المسؤول', 'الموعد'], rows: m.alerts.map(a => [lgLvl[a.lvl][1], a.x.c.ref, a.what, a.ev, a.todo, a.x.c.owner || '—', a.x.c.due || '—']) },
@@ -5927,6 +5933,228 @@ engSections3 = function (code) {
   }
   return _es4(code);
 };
+</script>
+<style>
+.lg-flow{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
+.lg-flow svg{width:100%;height:auto;display:block}
+.lg-tx-void td{text-decoration:line-through;color:var(--faint)}
+.lg-rule{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line)}
+@media (max-width:760px){.lg-flow{grid-template-columns:minmax(0,1fr)}}
+</style>
+<script data-app="">
+/* ================= DIA-LEGAL — case operations (v39) =================
+   «منظومة نايوش للتحليل القانوني والحوكمة والتحليل القضائي»
+   • سير القضية والحركات: a transaction log for every case (actions, hearings, documents, evidence, fees, expenses,
+     payments, decisions, approvals) tied to the 10-step case workflow, plus a flowchart of where the case stands.
+   • التقرير النهائي: the 12-section legal report, gated by the 9 mandatory governance rules — the system refuses a
+     decisive result when sources are missing, outdated or conflicting, and nothing is final before human approval.
+   • The 15 legal engines, the 4 jurisdiction layers and quality indicators (gov tab). */
+const LG_TX = ['استلام', 'إجراء', 'جلسة', 'مستند', 'دليل', 'مراسلة', 'بحث قانوني', 'قرار', 'اعتماد', 'أتعاب', 'مصروف', 'دفعة'];
+const LG_MONEY = { 'أتعاب': 1, 'مصروف': 1, 'دفعة': -1 };
+const LG_ENG = [
+  ['01', 'محرك المعرفة القانونية', 'LEGAL KNOWLEDGE', 'فهرسة التشريعات والأحكام واللوائح حسب الدولة والموضوع والمحكمة وتاريخ النفاذ', /./],
+  ['02', 'محرك الدستور والتشريعات', 'CONSTITUTION & LEGISLATION', 'تحليل النصوص الدستورية والتشريعية وتعارضها وما يتطلب تفسيرًا متخصصًا', /دستور|إداري|دولي/],
+  ['03', 'محرك القضايا والأحكام', 'CASE & PRECEDENT', 'استخراج الوقائع والمسائل والأسباب والمنطوق ومدى حجية الحكم', /./],
+  ['04', 'محرك تحليل البيانات القانونية', 'LEGAL DATA ANALYTICS', 'تحليل الملفات والعقود والمراسلات والجداول واكتشاف التناقضات والفجوات', /./],
+  ['05', 'محرك الجرائم الإلكترونية', 'CYBERCRIME', 'الاحتيال والابتزاز والتصيد والوصول غير المصرح به وانتحال الهوية', /معلومات|إلكترون|بيانات/],
+  ['06', 'محرك الأدلة الرقمية', 'DIGITAL EVIDENCE', 'سلامة الدليل وسلسلة الحيازة والبيانات الوصفية ضمن الصلاحيات', /معلومات|إلكترون|نشر|بيانات/],
+  ['07', 'محرك النشر والتواصل الاجتماعي', 'PUBLICATION & SOCIAL MEDIA', 'التشهير والخصوصية والملكية الفكرية والتحريض مع مراعاة حرية التعبير', /نشر|ملكية/],
+  ['08', 'محرك القانون المدني والتجاري', 'CIVIL & COMMERCIAL', 'الالتزامات والعقود والتعويض والمسؤولية والمطالبات', /تجاري|عقود|مدني|عقاري|عمالي/],
+  ['09', 'محرك فض النزاعات', 'DISPUTE RESOLUTION', 'التفاوض والوساطة والتسوية والتحكيم والتقاضي', /تجاري|عقود|مدني|عمالي|عقاري|أحوال/],
+  ['10', 'محرك القانون الدولي وحقوق الإنسان', 'INTERNATIONAL & HUMAN RIGHTS', 'الاتفاقيات والمعايير الدولية ونطاق انطباقها على الدولة والواقعة', /دولي/],
+  ['11', 'محرك السياسات والإجراءات', 'POLICY & PROCEDURE', 'مراجعة السياسات المؤسسية وكشف الثغرات واقتراح ضوابط الامتثال', /إداري|بيانات|عمالي/],
+  ['12', 'محرك المخاطر والامتثال', 'LEGAL RISK & COMPLIANCE', 'المخاطر القانونية ومواعيد التقادم والطعن والإشعارات', /./],
+  ['13', 'محرك الحلول والتوصيات', 'SOLUTIONS & RECOMMENDATIONS', 'بدائل قانونية بمزاياها ومخاطرها وتكاليفها وأدلتها', /./],
+  ['14', 'محرك السيناريوهات والتوقعات', 'FORECAST & SCENARIOS', 'سيناريوهات عند توافر بيانات مناسبة مع بيان حدود التنبؤ', /./],
+  ['15', 'محرك الحوكمة والتدقيق والجودة', 'GOVERNANCE, AUDIT & QUALITY', 'المصادر والصلاحيات والتغييرات ومراجعات المحامين وسجل كل إصدار', /./]];
+const LG_LAYERS = [['1', 'النواة القانونية العالمية', 'المصادر، الأدلة، التحليل، إدارة القضايا، التحقق، المخاطر، التدقيق'], ['2', 'الولاية القضائية', 'الدولة، الدستور، التشريعات، اللوائح، السوابق والأحكام، الاختصاص'], ['3', 'السياق القانوني للقضية', 'مدني، جنائي، إلكتروني، تجاري، عمالي، نشر، بيانات، حقوق إنسان، فض نزاعات'], ['4', 'محرك القرار المنضبط', 'الوقائع والأدلة، النصوص المنطبقة، مقارنة التفسيرات، المخاطر والتوصيات']];
+
+/* ---------- data: seed + migrate ---------- */
+const _lgInit = EG_INIT.legal;
+EG_INIT.legal = () => {
+  const s = _lgInit(), d = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10), c = s.cases[0];
+  Object.assign(c, { court: 'المحكمة التجارية بالرياض', law: 'نظام المعاملات المدنية + بنود العقد', intl: 'no',
+    issues: [{ q: 'هل يحق للموكل المطالبة بكامل المستحقات رغم ادعاء العيوب؟', src: 'نظام المعاملات المدنية', pro: 'محضر استلام موقع دون تحفظ', con: 'خطاب الخصم بادعاء عيوب في الدفعة الثانية' }, { q: 'هل يستحق الموكل تعويضًا عن التأخير في السداد؟', src: 'بند الغرامات في العقد', pro: 'كشف الحساب يثبت تأخيرًا يتجاوز 90 يومًا', con: 'لم يُرسل إخطار رسمي بالتأخير في حينه' }],
+    tx: [[-60, 'استلام', 1, 'فتح الملف واستلام العقد وطلب الموكل', 'أ. سارة', 0], [-59, 'أتعاب', 1, 'أتعاب المرحلة الأولى', 'الإدارة المالية', 20000], [-58, 'دفعة', 1, 'سداد الموكل للدفعة الأولى', 'شركة النخبة للتجارة', 20000], [-57, 'قرار', 2, 'فحص تضارب المصالح — لا تضارب', 'لجنة التضارب', 0], [-55, 'إجراء', 2, 'تحديد الاختصاص: المحكمة التجارية، والقانون الواجب التطبيق', 'أ. سارة', 0], [-50, 'دليل', 4, 'استلام محضر الاستلام وكشف الحساب وتوثيق البصمة الرقمية', 'أ. سارة', 0], [-45, 'مراسلة', 3, 'خطاب من الخصم يدعي عيوبًا في الدفعة الثانية', 'مؤسسة الأفق', 0], [-40, 'بحث قانوني', 5, 'التحقق من نفاذ نظام المعاملات المدنية والنسخة السارية', 'أ. سارة', 0], [-30, 'مصروف', 4, 'ترجمة وتصديق مستندات', 'أ. سارة', 3500], [-20, 'إجراء', 7, 'تقدير مسارات التفاوض والوساطة والتحكيم والتقاضي', 'أ. سارة', 0], [-10, 'جلسة', 7, 'جلسة تفاوض أولى — لم يُتفق على التسوية', 'أ. سارة', 0], [-5, 'أتعاب', 7, 'أتعاب مرحلة الوساطة', 'الإدارة المالية', 21000]]
+      .map(([n, k, st, x, by, amt]) => ({ d: d(n), k, st, x, by, amt, void: false })) });
+  c.evid.forEach((e, i) => Object.assign(e, i ? { at: d(-48) + ' 11:20 (GMT+3)', by: 'فريق تقنية الموكل', basis: 'موافقة الموكل على مراسلاته', sha: '' } : { at: d(-50) + ' 09:40 (GMT+3)', by: 'أ. سارة', basis: 'مستند مقدم من الموكل', sha: '9f2c41ab07de55e1c3b8a6f0d2e47c19b5a8e3f6d1c0b9a8e7f6d5c4b3a2918' }));
+  const c4 = s.cases[3]; if (c4) c4.tx = [[-2, 'استلام', 1, 'بلاغ الموكل باختراق المتجر ورسالة ابتزاز', 'أ. محمد', 0], [-1, 'دليل', 4, 'طلب حفظ سجلات الخادم ورسائل الابتزاز قبل أي تعديل', 'أ. محمد', 0]].map(([n, k, st, x, by, amt]) => ({ d: d(n), k, st, x, by, amt, void: false }));
+  return s;
+};
+const _lgEnsure = lgEnsure;
+lgEnsure = function (s) {
+  _lgEnsure(s);
+  s.cases.forEach(c => {
+    if (!Array.isArray(c.tx)) c.tx = []; if (!Array.isArray(c.issues)) c.issues = [];
+    ['court', 'law'].forEach(k => { if (c[k] == null) c[k] = ''; }); if (!c.intl) c.intl = 'no'; if (!c.ver) c.ver = 0;
+    c.evid.forEach(e => ['at', 'by', 'basis', 'sha'].forEach(k => { if (e[k] == null) e[k] = ''; }));
+  });
+};
+function lgNewTx(c) { return { d: lgToday(), k: 'إجراء', st: Math.max(1, lgModel().steps.findIndex(x => !x) + 1) || 10, x: '', by: c.owner || '', amt: 0, void: false }; }
+
+/* ---------- model ---------- */
+const _lgModel = lgModel;
+lgModel = function () {
+  const m = _lgModel(), s = m.s, c = m.c;
+  const srcs = c.srcs, rulings = srcs.filter(x => x.t === 'حكم قضائي'), juris = !!(c.country && c.court && c.law);
+  const issuesOk = c.issues.filter(x => x.q && x.src).length;
+  const pathsOn = m.paths.length, live = c.tx.filter(t => !t.void);
+  m.steps = [!!(c.client && c.type && c.country && c.t), juris, m.nF > 0 && m.aiNoSrc === undefined ? true : m.nF > 0, c.evid.length > 0 && m.evOk === c.evid.length, srcs.length > 0, srcs.length > 0 && m.srcOk === srcs.length && issuesOk > 0, pathsOn > 0, false, !!m.reviewed, false];
+  m.steps[2] = m.nF > 0 && c.facts.every(f => f.k !== 'ai' || String(f.s || '').trim());
+  m.steps[7] = m.steps.slice(0, 7).every(Boolean);
+  m.steps[9] = !!m.reviewed && c.ver > 0 && !!c.owner;
+  m.curStep = m.steps.findIndex(x => !x);
+  // transactions
+  const sum = (k) => live.filter(t => t.k === k).reduce((a, t) => a + egN(t.amt), 0);
+  m.tx = { live, n: live.length, fees: sum('أتعاب'), exp: sum('مصروف'), paid: sum('دفعة'), last: [...live].sort((a, b) => String(b.d).localeCompare(String(a.d)))[0], perStep: LG_STEPS.map((_, i) => live.filter(t => +t.st === i + 1).length) };
+  m.tx.due = m.tx.fees + m.tx.exp - m.tx.paid;
+  // governance rules (doc §7) — each: [rule, pass, evidence]
+  const weakEv = c.evid.filter(e => e.hash !== 'yes' || e.chain !== 'yes'), aiNoSrc = c.facts.filter(f => f.k === 'ai' && !String(f.s || '').trim());
+  const unverRul = rulings.filter(x => x.st !== 'in' || x.link !== 'yes');
+  m.rules = [
+    ['لا رأي قانوني جوهري بلا مصادر قابلة للتحقق', srcs.length > 0 && m.srcOk > 0, srcs.length ? `${m.srcOk} من ${srcs.length} مصدر نافذ ومتحقق منه` : 'لا مصادر مسجلة'],
+    ['لا استشهاد بحكم دون التحقق من هويته ومصدره وسياقه', !unverRul.length, rulings.length ? (unverRul.length ? `${unverRul.length} حكم غير متحقق منه` : 'كل الأحكام متحقق منها') : 'لا أحكام مستشهد بها'],
+    ['لا تطبيق لقانون دولة قبل تحديد الاختصاص والقانون الواجب التطبيق', juris, juris ? `${c.country} · ${c.court} · ${c.law}` : 'الدولة أو المحكمة أو القانون الواجب التطبيق غير محدد'],
+    ['لا خلط بين الادعاء والواقعة المثبتة والاستنتاج التحليلي', !aiNoSrc.length && m.nF > 0, m.nF ? `${m.nP} مثبتة · ${m.nC} ادعاء · ${m.nA} استنتاج${aiNoSrc.length ? ` (${aiNoSrc.length} بلا مصدر)` : ''}` : 'لا وقائع مسجلة'],
+    ['لا اختلاق لنصوص أو أرقام مواد أو أحكام — لكل مصدر اسم ورابط رسمي', srcs.length > 0 && srcs.every(x => String(x.n || '').trim() && x.link === 'yes'), `${srcs.filter(x => x.link === 'yes').length} من ${srcs.length} برابط رسمي`],
+    ['لا قرار أو حكم نهائي يصدره النظام بصورة مستقلة — اعتماد بشري', !!m.reviewed, m.reviewed ? 'اعتمده ' + c.review.by : 'بانتظار مراجعة المحامي المخوّل'],
+    ['لا استخدام لبيانات سرية خارج الصلاحيات — فحص التضارب والسرية', c.conflict === 'done', (LG_CONF.find(q => q[0] === c.conflict) || [, ''])[1]],
+    ['لا تعديل أو حذف صامت للأدلة أو السجلات', weakEv.length === 0, weakEv.length ? `${weakEv.length} دليل بلا بصمة أو سلسلة حيازة مكتملة` : 'الأدلة موثقة · الحركات الملغاة تبقى ظاهرة'],
+    ['لا توصية عالية المخاطر دون أدلة وقيود ومراجعة', !pathsOn || (!!m.reviewed && weakEv.length === 0), pathsOn ? `${pathsOn} مسار مقيّم` : 'لا توصية بعد']];
+  m.rulesOk = m.rules.filter(r => r[1]).length;
+  const conflicting = srcs.some(x => x.st === 'repealed' || x.st === 'draft') || (srcs.length && m.srcOk < srcs.length / 2);
+  m.refuse = !srcs.length ? 'لا توجد مصادر قانونية مسجلة' : conflicting ? 'المصادر متضاربة أو قديمة أو غير مؤكدة الحالة' : !juris ? 'الاختصاص والقانون الواجب التطبيق غير محددين' : '';
+  m.final = m.rulesOk === m.rules.length && !m.refuse;
+  // strengths & weaknesses
+  m.strong = [...c.facts.filter(f => f.k === 'proven').map(f => `واقعة مثبتة: ${f.x} (${f.s || 'دليل'})`), ...c.issues.filter(x => x.pro).map(x => `${x.q} — ${x.pro}`), ...c.evid.filter(e => e.hash === 'yes' && e.chain === 'yes').map(e => `دليل سليم السلسلة: ${e.n}`)];
+  m.weak = [...c.facts.filter(f => f.k === 'claim').map(f => `ادعاء يحتاج إثباتًا: ${f.x}`), ...c.issues.filter(x => x.con).map(x => `${x.q} — ${x.con}`), ...weakEv.map(e => `دليل ناقص: ${e.n} (${e.hash !== 'yes' ? 'بلا بصمة' : ''}${e.hash !== 'yes' && e.chain !== 'yes' ? '، ' : ''}${e.chain !== 'yes' ? 'سلسلة حيازة ناقصة' : ''})`), ...srcs.filter(x => x.st !== 'in').map(x => `مصدر ${(LG_SRC_ST.find(q => q[0] === x.st) || [, ''])[1]}: ${x.n}`), ...aiNoSrc.map(f => `استنتاج آلي بلا مصدر: ${f.x}`)];
+  m.engines = LG_ENG.filter(e => e[4].test(c.type) || (e[0] === '10' && c.intl === 'yes') || (e[0] === '06' && c.evid.length));
+  return m;
+};
+
+/* ---------- flowchart (SVG) ---------- */
+function lgFlowSvg(m) {
+  const W = 360, X = 70, NW = 220, NH = 36, GAP = 16, st = m.steps, cur = m.curStep, c = m.c;
+  const rows = []; LG_STEPS.forEach(([n], i) => { rows.push({ t: 'n', i, n }); if (i === 4) rows.push({ t: 'd', n: 'المصادر نافذة ومتحقق منها؟', ok: c.srcs.length > 0 && m.srcOk === c.srcs.length, back: 4 }); if (i === 8) rows.push({ t: 'd', n: 'اعتُمد التقرير؟', ok: !!m.reviewed, back: 5 }); });
+  let y = 14; rows.forEach(r => { r.h = r.t === 'd' ? 44 : NH; r.y = y; y += r.h + GAP; });
+  const H = y + 4, mid = X + NW / 2;
+  const col = (i) => st[i] ? ['var(--greenfg)', 'rgba(52,199,89,.12)'] : i === cur ? ['var(--yellow)', 'rgba(255,205,17,.12)'] : ['var(--line3)', 'transparent'];
+  const nodeY = (i) => rows.find(r => r.t === 'n' && r.i === i);
+  let g = `<defs><marker id="lgA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--faint)"/></marker><marker id="lgR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--redsoft)"/></marker></defs>`;
+  rows.forEach((r, k) => {
+    const nx = rows[k + 1];
+    if (nx) g += `<line x1="${mid}" y1="${r.y + r.h}" x2="${mid}" y2="${nx.y - 1}" stroke="var(--faint)" stroke-width="1.3" marker-end="url(#lgA)"/>`;
+    if (r.t === 'n') {
+      const [s, f] = col(r.i), n = m.tx.perStep[r.i];
+      g += `<rect x="${X}" y="${r.y}" width="${NW}" height="${NH}" rx="9" fill="${f}" stroke="${s}" stroke-width="${r.i === cur ? 2 : 1.3}"/>`;
+      g += `<text x="${X + NW - 12}" y="${r.y + NH / 2 + 4.5}" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--fg)">${String(r.i + 1).padStart(2, '0')} · ${esc(r.n)}</text>`;
+      g += `<text x="${X + 14}" y="${r.y + NH / 2 + 4}" text-anchor="middle" font-size="12" fill="${s}">${st[r.i] ? '✓' : r.i === cur ? '●' : '○'}</text>`;
+      if (n) g += `<circle cx="${X + NW + 18}" cy="${r.y + NH / 2}" r="11" fill="var(--raised)" stroke="var(--line2)"/><text x="${X + NW + 18}" y="${r.y + NH / 2 + 4}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)">${n}</text>`;
+    } else {
+      const cx = mid, cy = r.y + r.h / 2, w = 118, h = r.h / 2, s = r.ok ? 'var(--greenfg)' : 'var(--orange)';
+      g += `<path d="M${cx} ${cy - h}L${cx + w} ${cy}L${cx} ${cy + h}L${cx - w} ${cy}z" fill="var(--sunk)" stroke="${s}" stroke-width="1.3"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11.5" fill="var(--fg)">${esc(r.n)}</text>`;
+      const tgt = nodeY(r.back), lx = 22;
+      g += `<path d="M${cx - w} ${cy} H${lx} V${tgt.y + NH / 2} H${X - 2}" fill="none" stroke="var(--redsoft)" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#lgR)"/><text x="${lx + 6}" y="${cy - 5}" font-size="10" fill="var(--redsoft)">لا</text><text x="${cx + 6}" y="${cy + h + 12}" font-size="10" fill="var(--greenfg)">نعم</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="direction:ltr" role="img" aria-label="مخطط سير القضية ${esc(c.ref)}">${g}</svg>`;
+}
+
+/* ---------- tab: سير القضية والحركات ---------- */
+function lgFlowOut(m) {
+  const c = m.c, cur = m.s.cur || '', T = m.tx, step = m.curStep >= 0 ? LG_STEPS[m.curStep][0] : 'مكتملة';
+  const byKind = LG_TX.map(k => [k, T.live.filter(t => t.k === k)]).filter(([, l]) => l.length);
+  const list = c.tx.map((t, j) => ({ t, j })).sort((a, b) => String(b.t.d).localeCompare(String(a.t.d)));
+  return egCard(`سير القضية والحركات — ${esc(c.ref)} · ${esc(c.t)}`, 'LEGAL-FLOW', `${anKpis([['المرحلة الحالية', step, m.curStep < 0 ? 'good' : ''], ['مراحل مكتملة', m.steps.filter(Boolean).length + ' من 10'], ['عدد الحركات', T.n], ['آخر حركة', T.last ? T.last.d : '—'], ['الأتعاب والمصروفات', fmtN(T.fees + T.exp, 0) + ' ' + cur], ['المدفوع', fmtN(T.paid, 0) + ' ' + cur], ['المستحق على الموكل', fmtN(T.due, 0) + ' ' + cur, T.due > 0 ? 'bad' : 'good']])}
+    <div class="lg-flow"><div class="sub" style="padding:10px">${lgFlowSvg(m)}<span class="faint" style="font-size:11px;display:block;margin-top:6px">✓ مكتملة · ● المرحلة الحالية · ○ لم تبدأ · الرقم الجانبي = حركات المرحلة · الخط الأحمر = العودة عند عدم تحقق الشرط</span></div>
+    <div class="stack" style="gap:14px">${anTbl({ h: 'المراحل العشر — ما يُكملها وعدد حركاتها', cols: ['المرحلة', 'الحالة', 'الحركات', 'متطلب الإكمال'], rows: LG_STEPS.map(([n, d], i) => [String(i + 1).padStart(2, '0') + ' ' + n, m.steps[i] ? 'مكتملة' : i === m.curStep ? 'جارية' : 'لم تبدأ', String(T.perStep[i]), d]) })}
+    ${anTbl({ h: 'ملخص الحركات حسب النوع', cols: ['النوع', 'العدد', 'المبلغ'], rows: byKind.map(([k, l]) => [k, String(l.length), LG_MONEY[k] ? fmtN(l.reduce((a, t) => a + egN(t.amt), 0), 0) + ' ' + cur : '—']) })}</div></div>
+    <div class="stack" style="gap:6px"><span class="lbl">سجل حركات القضية (الأحدث أولًا)</span>${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>التاريخ</th><th>النوع</th><th>المرحلة</th><th>البيان</th><th>بواسطة</th><th>المبلغ</th></tr></thead><tbody>${list.map(({ t }) => `<tr class="${t.void ? 'lg-tx-void' : ''}"><td class="mono">${esc(t.d || '—')}</td><td>${esc(t.k)}</td><td>${esc((LG_STEPS[+t.st - 1] || ['—'])[0])}</td><td>${esc(t.x || '—')}${t.void ? ' <span class="tag t-c">ملغاة</span>' : ''}</td><td>${esc(t.by || '—')}</td><td class="mono">${LG_MONEY[t.k] ? (t.k === 'دفعة' ? '−' : '') + fmtN(egN(t.amt), 0) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="banner y">لا حركات بعد — أضف أول حركة (استلام الملف).</div>'}</div>
+    ${egNote('كل حركة مرتبطة بمرحلة من المراحل العشر، فيظهر في المخطط أين وصلت القضية وما الذي تم في كل مرحلة. الحركة لا تُحذف: الإلغاء يُبقيها ظاهرة مشطوبة في السجل (لا تعديل أو حذف صامت). المستحق = الأتعاب + المصروفات − الدفعات.')}`);
+}
+function lgExtraInputs(s) {
+  const i = s.sel, c = s.cases[i], pick = `<div style="max-width:420px">${egSel('legal', 'sel', 'القضية', s.cases.map((x, j) => [j, x.ref + ' · ' + x.t]))}</div>`;
+  if (s.tab === 'final') return egCard('إصدار التقرير النهائي', esc(c.ref), `${pick}<div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="lg-final" data-k="pdf">${ic('reports', 16)}إصدار التقرير PDF</button><button type="button" class="btn" data-act="lg-final" data-k="xlsx">${ic('chart', 16)}Excel</button><span class="faint" style="font-size:12px">الإصدارات السابقة: ${c.ver || 0}</span></div>${egNote('يُسجَّل كل إصدار تلقائيًا في سجل حركات القضية. لاستكمال التقرير: الوقائع والمصادر والأدلة والمسائل والاعتماد من «مختبر تحليل القضية»، والمسارات من «البدائل وتسوية النزاع».')}`);
+  const last = c.tx.length - 1;
+  return egCard('حركات القضية', esc(c.ref), `${pick}<details ${S.lgTxOpen ? 'open' : ''} data-lg-tx="1" style="border-top:1px solid var(--line);padding-top:6px"><summary style="cursor:pointer;font-size:13px;padding:6px 0">تعديل الحركات المسجلة (${c.tx.length}) <span class="faint" style="font-size:11.5px">— التاريخ والنوع والمرحلة والبيان والمبلغ</span></summary>${c.tx.map((t, j) => `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;align-items:end;padding:6px 0;border-bottom:1px solid var(--line);${t.void ? 'opacity:.5' : ''}">${egTxt('legal', `cases.${i}.tx.${j}.d`, 'التاريخ')}${egSel('legal', `cases.${i}.tx.${j}.k`, 'النوع', LG_TX.map(k => [k, k]))}${egSel('legal', `cases.${i}.tx.${j}.st`, 'المرحلة', LG_STEPS.map(([n], q) => [q + 1, (q + 1) + ' · ' + n]))}${egTxt('legal', `cases.${i}.tx.${j}.x`, 'البيان')}${egTxt('legal', `cases.${i}.tx.${j}.by`, 'بواسطة')}${egNum('legal', `cases.${i}.tx.${j}.amt`, 'المبلغ')}<button type="button" class="btn link sm" data-act="lg-del" data-k="tx|${j}">${t.void ? 'إعادة' : 'إلغاء'}</button></div>`).join('')}</details><button type="button" class="btn sm" style="align-self:flex-start;margin-top:8px" data-act="lg-add" data-k="tx">${ic('plus', 14)}إضافة حركة</button><span class="faint" style="font-size:11.5px">الحركة الجديدة تُضاف بتاريخ اليوم وعلى المرحلة الجارية، وتفتح القائمة لتعديلها.</span>`);
+}
+
+/* ---------- tab: التقرير النهائي ---------- */
+function lgReportSections(m) {
+  const c = m.c, s = m.s, cur = s.cur || '', best = m.paths[0], T = m.tx;
+  const SRC = (x) => (LG_SRC_ST.find(q => q[0] === x.st) || [, ''])[1];
+  return [
+    { h: '1. ملخص القضية', kv: kvx([['القضية', c.ref + ' · ' + c.t], ['الموكل', c.client || '—'], ['الطرف الآخر', c.party || '—'], ['نوع القضية', c.type], ['المرحلة', c.stage], ['طلب الموكل', c.t], ['المسؤول', c.owner || '—']]) },
+    { h: '2. الولاية القضائية', kv: kvx([['الدولة', c.country || '—'], ['المحكمة أو الجهة', c.court || 'غير محددة'], ['القانون الواجب التطبيق', c.law || 'غير محدد'], ['عنصر دولي / تنازع قوانين', c.intl === 'yes' ? 'نعم — يحتاج تحليل تنازع القوانين' : 'لا']]) },
+    { h: '3. الوقائع والأدلة — ما ثبت وما ادُّعي وما لم يُتحقق منه', cols: ['البيان', 'التصنيف', 'المصدر / الدليل'], rows: c.facts.map(f => [f.x, (LG_FACT.find(q => q[0] === f.k) || [, ''])[1], f.s || 'غير متحقق']) },
+    { h: 'سجل الأدلة', cols: ['الدليل', 'المصدر', 'وقت الحصول', 'جمعه', 'الأساس القانوني', 'البصمة', 'سلسلة الحيازة'], rows: c.evid.map(e => [e.n, e.s || '—', e.at || '—', e.by || '—', e.basis || '—', e.hash === 'yes' ? (e.sha ? String(e.sha).slice(0, 16) + '…' : 'موثقة') : 'غير موثقة', e.chain === 'yes' ? 'مكتملة' : 'ناقصة']) },
+    { h: '4. الأساس القانوني', cols: ['النص', 'النوع', 'الدولة', 'حالة النفاذ', 'آخر تحقق', 'رابط رسمي'], rows: c.srcs.filter(x => x.t !== 'حكم قضائي').map(x => [x.n, x.t, x.c, SRC(x), x.v || '—', x.link === 'yes' ? 'نعم' : 'لا']) },
+    { h: '5. الأحكام المقارنة', cols: ['الحكم', 'الدولة', 'الحالة', 'آخر تحقق', 'الصلة بالقضية'], rows: c.srcs.filter(x => x.t === 'حكم قضائي').map(x => [x.n, x.c, SRC(x), x.v || '—', x.st === 'in' && x.link === 'yes' ? 'صالح للاستشهاد' : 'لا يُستشهد به قبل التحقق من هويته ومصدره وسياقه']) },
+    { h: '6. التحليل — تطبيق القواعد على الوقائع', cols: ['المسألة', 'النص المنطبق', 'ما يؤيد', 'التفسير البديل / ما يعارض'], rows: c.issues.map(x => [x.q || '—', x.src || 'غير محدد', x.pro || '—', x.con || '—']) },
+    { h: '7. نقاط القوة والضعف', cols: ['النوع', 'البيان'], rows: [...m.strong.map(x => ['قوة', x]), ...m.weak.map(x => ['ضعف / فجوة', x])] },
+    { h: '8. المخاطر والمواعيد', cols: ['المستوى', 'الإشارة', 'الدليل', 'الإجراء'], rows: m.alerts.filter(a => a.x.c === c).map(a => [lgLvl[a.lvl][1], a.what, a.ev, a.todo]).concat(c.due ? [['—', 'الموعد القادم', c.due + ' · ' + (c.next || ''), 'يحتاج تأكيدًا محليًا وفق قواعد الإجراءات']] : []) },
+    { h: '9. البدائل', cols: ['المسار', 'احتمال النجاح (تقدير المحامي)', 'التكلفة', 'المدة (شهر)', 'القيمة الصافية المتوقعة'], rows: m.paths.map(x => [x.n, fmtN(x.pr * 100, 0) + '%', fmtN(x.cost, 0) + ' ' + cur, fmtN(x.m, 0), fmtN(x.ev, 0) + ' ' + cur]) },
+    { h: '10. التوصيات', bullets: m.refuse ? [`يمتنع النظام عن نتيجة حاسمة: ${m.refuse}. المطلوب استكمال المصادر والتحقق منها قبل أي توصية.`] : best ? [`المسار المقترح: ${best.n} — صافي متوقع ${fmtN(best.ev, 0)} ${cur} خلال ${fmtN(best.m, 0)} شهر.`, `المبررات: أعلى قيمة متوقعة بين ${m.paths.length} مسار مقيّم، بشرط صحة تقديرات الاحتمال والتكلفة ونفاذ المصادر (${m.srcOk} من ${c.srcs.length}).`, `الجهة المخوّلة بالاعتماد: ${c.review.by || 'المحامي المسؤول — لم يُعتمد بعد'}.`] : ['لم تُقيَّم مسارات بعد — أدخل تقديرات المسارات في «البدائل وتسوية النزاع».'] },
+    { h: '11. مستوى الثقة', kv: kvx([['مستوى الثقة', m.conf + '%'], ['وقائع مثبتة', m.nP + ' من ' + m.nF], ['مصادر نافذة متحقق منها', m.srcOk + ' من ' + c.srcs.length], ['أدلة سليمة السلسلة', m.evOk + ' من ' + c.evid.length], ['القيود', 'الاحتمالات تقديرات بشرية؛ لا يختلق النظام نصًا أو حكمًا؛ المواعيد تحتاج تأكيدًا محليًا']]) },
+    { h: '12. المراجعة والاعتماد', kv: kvx([['المراجع المخوّل', c.review.by || '—'], ['تاريخ المراجعة', c.review.at || '—'], ['القرار', m.reviewed ? 'اعتُمد بعد المراجعة' : 'لم يُعتمد بعد'], ['الإصدار', 'v' + ((c.ver || 0) + 1)], ['حالة التقرير', m.final ? 'تقرير نهائي معتمد' : 'مسودة — لا يُعتمد عليه']]) },
+    { h: 'ملحق أ — سجل حركات القضية', cols: ['التاريخ', 'النوع', 'المرحلة', 'البيان', 'بواسطة', 'المبلغ'], rows: [...c.tx].sort((a, b) => String(a.d).localeCompare(String(b.d))).map(t => [t.d || '—', t.k + (t.void ? ' (ملغاة)' : ''), (LG_STEPS[+t.st - 1] || ['—'])[0], t.x || '—', t.by || '—', LG_MONEY[t.k] ? fmtN(egN(t.amt), 0) : '—']) },
+    { h: 'ملحق ب — سير القضية', cols: ['المرحلة', 'الحالة', 'الحركات'], rows: LG_STEPS.map(([n], i) => [String(i + 1).padStart(2, '0') + ' ' + n, m.steps[i] ? 'مكتملة' : i === m.curStep ? 'جارية' : 'لم تبدأ', String(T.perStep[i])]) },
+    { h: 'ملحق ج — الضوابط الحاكمة الإلزامية', cols: ['القاعدة', 'النتيجة', 'الدليل'], rows: m.rules.map(r => [r[0], r[1] ? 'مستوفاة' : 'غير مستوفاة', r[2]]) },
+    { h: 'ملحق د — المحركات المستخدمة', cols: ['المحرك', 'النطاق'], rows: m.engines.map(e => [e[0] + ' ' + e[1], e[3]]) }];
+}
+function lgFinalOut(m) {
+  const c = m.c, secs = lgReportSections(m);
+  const head = m.final ? `<div class="banner g" style="font-size:13px">${ic('check', 16)}<span>تقرير نهائي — استوفى الضوابط التسع واعتمده ${esc(c.review.by)}. جاهز للإصدار.</span></div>`
+    : m.refuse ? `<div class="banner" style="font-size:13px;background:rgba(255,46,77,.08);border:1px solid rgba(255,46,77,.3)">${ic('warn', 16, 'style="color:var(--redsoft)"')}<span><b>يمتنع النظام عن نتيجة حاسمة:</b> ${esc(m.refuse)}. يمكن إصدار مسودة فقط.</span></div>`
+    : `<div class="banner y" style="font-size:13px">${ic('warn', 16)}<span>مسودة — ${m.rules.length - m.rulesOk} من الضوابط الحاكمة غير مستوفاة. التقرير يصدر بعلامة «مسودة» حتى استيفائها.</span></div>`;
+  const view = (x) => x.kv ? `<div class="stack" style="gap:6px"><span class="lbl">${esc(x.h)}</span>${egGrid(200, x.kv.map(([a, b]) => `<div class="sub" style="gap:2px;padding:8px 11px"><span class="faint" style="font-size:11px">${esc(a)}</span><b style="font-size:13px">${esc(b)}</b></div>`).join(''))}</div>`
+    : x.bullets ? `<div class="stack" style="gap:6px"><span class="lbl">${esc(x.h)}</span>${x.bullets.map(b => `<p style="margin:0;font-size:13px;line-height:1.8">• ${esc(b)}</p>`).join('')}</div>` : anTbl(x);
+  return egCard(`التقرير النهائي — ${esc(c.ref)} · ${esc(c.t)}`, 'LEGAL-REPORT', `${anKpis([['حالة التقرير', m.final ? 'نهائي' : 'مسودة', m.final ? 'good' : 'bad'], ['الضوابط الحاكمة', m.rulesOk + ' من ' + m.rules.length, m.rulesOk === m.rules.length ? 'good' : 'bad'], ['مستوى الثقة', m.conf + '%', m.conf >= 70 ? 'good' : 'bad'], ['المراحل المكتملة', m.steps.filter(Boolean).length + ' من 10'], ['المحركات المستخدمة', m.engines.length + ' من 15']])}
+    ${head}
+    <div class="stack" style="gap:2px"><span class="lbl">الضوابط الحاكمة الإلزامية</span>${m.rules.map(r => `<div class="lg-rule"><span style="color:${r[1] ? 'var(--greenfg)' : 'var(--orange)'};font-weight:700">${r[1] ? '✓' : '✗'}</span><span><b>${esc(r[0])}</b><span class="faint" style="display:block;font-size:11.5px">${esc(r[2])}</span></span></div>`).join('')}</div>
+    ${secs.slice(0, 13).map(view).join('')}
+    ${egNote('القاعدة الحاكمة: النظام يحلل ويقترح ويجهّز؛ والجهة المخوّلة تعتمد؛ والنظام يوثّق؛ والمراجع يتحقق من النتيجة. ملحقات سجل الحركات وسير القضية والضوابط والمحركات تُضاف إلى ملف PDF وExcel.')}`);
+}
+async function lgIssue(fmt) {
+  const m = lgModel(), c = m.c, s = m.s;
+  const rep = { code: 'LEGAL_' + c.ref, title: `التقرير القانوني النهائي — ${c.ref}${m.final ? '' : ' (مسودة)'}`, audience: (c.client || 'الموكل') + ' — المحامي المسؤول', ref: c.ref, sections: lgReportSections(m) };
+  toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+  try {
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    c.ver = (c.ver || 0) + 1;
+    c.tx.push({ d: lgToday(), k: 'مستند', st: m.final ? 10 : 8, x: `إصدار التقرير ${m.final ? 'النهائي' : 'المسودة'} v${c.ver} (${fmt === 'pdf' ? 'PDF' : 'Excel'})`, by: (typeof expUser === 'function' ? expUser() : '') || 'د. عدنان', amt: 0, void: false });
+    save(); render();
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(`NAIOSH_${c.ref}_report_v${c.ver}.${fmt}`, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر إنشاء الملف'); }
+}
+
+/* ---------- gov tab: engines, layers, quality ---------- */
+function lgEnginesCard() {
+  const m = lgModel(), on = new Set(m.engines.map(e => e[0]));
+  return egCard('المحركات القانونية والتحليلية الخمسة عشر', 'LEGAL-ENG', `<span class="faint" style="font-size:12px">المضاءة مستخدمة في القضية المختارة (${esc(m.c.ref)} · ${esc(m.c.type)})</span>${egGrid(210, LG_ENG.map(([n, t, en, d]) => `<div class="sub" style="gap:3px;${on.has(n) ? 'border-color:var(--greenline)' : 'opacity:.7'}"><span class="row nowrap" style="gap:7px"><span class="mono" style="color:${on.has(n) ? 'var(--greenfg)' : 'var(--yellow)'};font-size:11px">${n}</span><b style="font-size:12.5px">${t}</b></span><span class="mono faint" style="font-size:9.5px">${en}</span><span class="faint" style="font-size:11px">${d}</span></div>`).join(''))}
+    <span class="lbl" style="margin-top:6px">طبقات التعامل مع قوانين الدول</span>${egGrid(210, LG_LAYERS.map(([n, t, d]) => `<div class="sub" style="gap:3px"><b style="font-size:12.5px"><span class="mono" style="color:var(--yellow)">${n}</span> · ${t}</b><span class="faint" style="font-size:11px">${d}</span></div>`).join(''))}
+    ${egNote('لا توضع قوانين كل الدول في قاعدة واحدة: نواة عالمية مشتركة، وطبقة مستقلة لكل دولة، وطبقات بحسب المحكمة والقطاع ونوع القضية. ولا يُخلط بين قانون نافذ ومشروع قانون وحكم ابتدائي ونهائي ومبدأ ملزم ورأي فقهي.')}`);
+}
+function lgQualityHtml(m) {
+  const all = m.s.cases, srcs = all.flatMap(c => c.srcs), ev = all.flatMap(c => c.evid), pct = (a, b) => b ? fmtN(a / b * 100, 0) + '%' : '—';
+  const verified = srcs.filter(x => x.st === 'in' && x.link === 'yes').length, stale = srcs.filter(x => x.st === 'repealed' || x.st === 'amend' || x.st === 'unk').length;
+  const reviewed = all.filter(c => c.review && c.review.ok === 'yes' && String(c.review.by || '').trim()).length, evFull = ev.filter(e => e.hash === 'yes' && e.chain === 'yes').length;
+  return `<div class="stack" style="gap:6px"><span class="lbl">مؤشرات الجودة الفعلية — لا عدد التقارير</span>${anKpis([['استشهادات متحقق منها', pct(verified, srcs.length), verified === srcs.length ? 'good' : 'bad'], ['نصوص ملغاة/قديمة اكتُشفت', stale, stale ? 'bad' : 'good'], ['تحليلات اجتازت مراجعة المحامي', pct(reviewed, all.length)], ['أدلة بسجل حيازة مكتمل', pct(evFull, ev.length), evFull === ev.length ? 'good' : 'bad'], ['حركات موثقة', all.reduce((a, c) => a + (c.tx || []).filter(t => !t.void).length, 0)]])}</div>`;
+}
+
+/* ---------- events ---------- */
+const _lgH = engine4Handle;
+engine4Handle = function (act, k, el) {
+  if (act === 'lg-add' && k === 'tx') S.lgTxOpen = true;
+  if (act === 'lg-final') { lgIssue(k === 'xlsx' ? 'xlsx' : 'pdf'); return true; }
+  return _lgH(act, k, el);
+};
+document.addEventListener('toggle', (e) => { if (e.target && e.target.dataset && e.target.dataset.lgTx) S.lgTxOpen = e.target.open; }, true);
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el.dataset || el.dataset.eg !== 'legal') return;
+  if (/\.tx\.\d+\.st$/.test(el.dataset.p)) { egSet(egS('legal'), el.dataset.p, +el.value); save(); render(); }
+  else if (/\.tx\.\d+\.k$/.test(el.dataset.p) || /\.(intl)$/.test(el.dataset.p)) render();
+});
 </script>
 <script data-app="">
 /* ================= Engines wave 5 =================
