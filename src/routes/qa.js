@@ -6,6 +6,7 @@ const { requireUser, requirePerm } = require('../auth');
 const { can } = require('../roles');
 const { send, readJson, clientIp, bad, str, arr, HttpError } = require('../http');
 const QA = require('../qa');
+const ai = require('../ai');
 const fs = require('node:fs');
 const path = require('node:path');
 const { serveUpload, uploadDir } = require('./requests');
@@ -43,12 +44,13 @@ function body(b) {
   if (Object.keys(errors).length) throw bad('validation', 'تحقق من الحقول.', { errors });
   return e;
 }
+const logQ = (uid, q, source, entryId, score, answer) => db.run('INSERT INTO qa_log (at, user_id, question, source, entry_id, score, answer) VALUES (?,?,?,?,?,?,?)', db.nowIso(), uid, q, source, entryId || null, score ?? null, answer ? String(answer).slice(0, 4000) : null);
 const ASK = new Map(); // user → timestamps (60 per 10 min)
 
 module.exports = (r) => {
   r.add('GET', '/api/qa', async (req, res) => {
     requirePerm(req, 'config.edit');
-    send(res, 200, { entries: db.all('SELECT * FROM qa_entries ORDER BY id DESC').map(row), unanswered: db.all('SELECT id, question, count, last_at FROM qa_unanswered ORDER BY last_at DESC LIMIT 200') });
+    send(res, 200, { entries: db.all('SELECT * FROM qa_entries ORDER BY id DESC').map(row), unanswered: db.all('SELECT id, question, count, last_at, ai_answer FROM qa_unanswered ORDER BY last_at DESC LIMIT 200').map(u => ({ ...u, aiAnswer: u.ai_answer || null })) });
   });
   r.add('POST', '/api/qa', async (req, res) => {
     const me = requirePerm(req, 'config.edit'), b = await readJson(req, 64 * 1024), e = body(b), at = db.nowIso(), atts = takeAttachments(b.attachments, me);
@@ -86,6 +88,17 @@ module.exports = (r) => {
     serveUpload(req, res, u, INLINE.has(u.mime));
   });
 
+  // All questions asked (admin): newest first; ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=
+  r.add('GET', '/api/qa/log', async (req, res) => {
+    requirePerm(req, 'config.edit');
+    const u = new URL(req.url, 'http://x'), from = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('from') || '') ? u.searchParams.get('from') : '0000', to = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('to') || '') ? u.searchParams.get('to') + 'T99' : '9999';
+    const limit = Math.min(50000, Math.max(1, parseInt(u.searchParams.get('limit') || '20000', 10) || 20000));
+    const rows = db.all(`SELECT l.id, l.at, l.question, l.source, l.score, l.answer, e.question AS matched, us.name AS user_name, us.email AS user_email, us.role AS user_role
+      FROM qa_log l LEFT JOIN qa_entries e ON e.id = l.entry_id LEFT JOIN users us ON us.id = l.user_id WHERE l.at >= ? AND l.at <= ? ORDER BY l.id DESC LIMIT ?`, from, to, limit);
+    const t = db.get('SELECT COUNT(*) AS n, SUM(source = \'trained\') AS trained, SUM(source = \'ai\') AS ai, SUM(source = \'none\') AS none FROM qa_log');
+    send(res, 200, { log: rows, totals: { n: t.n || 0, trained: t.trained || 0, ai: t.ai || 0, none: t.none || 0 } });
+  });
+
   r.add('POST', '/api/qa/ask', async (req, res) => {
     const me = requireUser(req), now = Date.now();
     const a = (ASK.get(me.id) || []).filter(t => now - t < 600e3); if (a.length >= 60) throw new HttpError(429, 'too_many', 'أسئلة كثيرة — انتظر قليلًا.'); a.push(now); ASK.set(me.id, a);
@@ -94,12 +107,17 @@ module.exports = (r) => {
     const entries = db.all('SELECT * FROM qa_entries WHERE active = 1').map(row);
     const { best, top } = QA.match(q, entries);
     if (best && best.s >= QA.THRESHOLD) {
-      db.run('UPDATE qa_entries SET uses = uses + 1 WHERE id = ?', best.e.id);
+      db.run('UPDATE qa_entries SET uses = uses + 1 WHERE id = ?', best.e.id); logQ(me.id, q, 'trained', best.e.id, Math.round(best.s * 100), best.e.answer);
       send(res, 200, { found: true, score: Math.round(best.s * 100), answer: best.e.answer, question: best.e.question, link: best.e.link, category: best.e.category, attachments: best.e.attachments });
       return;
     }
-    const n = QA.norm(q), at = db.nowIso();
-    db.run(`INSERT INTO qa_unanswered (norm, question, user_id, first_at, last_at) VALUES (?,?,?,?,?) ON CONFLICT(norm) DO UPDATE SET count = count + 1, last_at = excluded.last_at`, n, q, me.id, at, at);
-    send(res, 200, { found: false, suggestions: top.filter(x => x.s >= QA.SUGGEST).map(x => ({ id: x.e.id, question: x.e.question })) });
+    const n = QA.norm(q), at = db.nowIso(), suggestions = top.filter(x => x.s >= QA.SUGGEST).map(x => ({ id: x.e.id, question: x.e.question }));
+    // Phase 1 AI: answer from the trained answers only; the question still goes to the admin with the AI's answer for review.
+    let aiAnswer = null;
+    if (!ai.blocked('ask', me.id)) { try { aiAnswer = await ai.askNaiosh(q, entries, me.id); } catch (e) { console.warn('[ai] ask failed:', e.message); } }
+    db.run(`INSERT INTO qa_unanswered (norm, question, user_id, first_at, last_at, ai_answer) VALUES (?,?,?,?,?,?) ON CONFLICT(norm) DO UPDATE SET count = count + 1, last_at = excluded.last_at, ai_answer = COALESCE(excluded.ai_answer, qa_unanswered.ai_answer)`, n, q, me.id, at, at, aiAnswer);
+    logQ(me.id, q, aiAnswer ? 'ai' : 'none', null, null, aiAnswer);
+    if (aiAnswer) return send(res, 200, { found: true, ai: true, answer: aiAnswer, question: q, suggestions });
+    send(res, 200, { found: false, suggestions });
   });
 };

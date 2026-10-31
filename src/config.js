@@ -10,7 +10,24 @@ const config = {
   root: ROOT,
   port: parseInt(env.PORT || '3000', 10),
   host: env.HOST || '0.0.0.0',
-  dataDir: path.resolve(env.DATA_DIR || path.join(ROOT, 'data')),
+  // Where the database and uploads live. On Railway this must be a mounted volume, or data is lost on every deploy:
+  // when a volume is attached and DATA_DIR is not inside it, the volume's mount path is used.
+  dataDir: path.resolve((() => { const d = path.resolve(env.DATA_DIR || path.join(ROOT, 'data')), m = env.RAILWAY_VOLUME_MOUNT_PATH; return m && !(d + path.sep).startsWith(path.resolve(m) + path.sep) ? m : d; })()),
+  // true when the data folder is known to survive redeploys (a Railway volume, or DATA_PERSISTENT=1 on your own server)
+  dataPersistent: (() => { const m = env.RAILWAY_VOLUME_MOUNT_PATH; if (env.DATA_PERSISTENT === '1') return true; if (!m) return env.RAILWAY_ENVIRONMENT ? false : null; return true; })(),
+  onRailway: !!(env.RAILWAY_ENVIRONMENT || env.RAILWAY_PROJECT_ID),
+  // Automatic database backups inside the data folder: hours between backups and how many to keep (0 = off).
+  backupEveryHours: parseFloat(env.BACKUP_EVERY_HOURS || '24'),
+  backupKeep: parseInt(env.BACKUP_KEEP || '14', 10),
+  // Claude (Anthropic API). AI_MODE: off | ask (اسأل نايوش يجيب عن الأسئلة الجديدة). Nothing is sent while off.
+  ai: {
+    key: env.ANTHROPIC_API_KEY || '',
+    mode: (env.AI_MODE || 'off').toLowerCase(),
+    baseUrl: (env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, ''),
+    monthlyUsd: parseFloat(env.AI_MONTHLY_USD || '50'),
+    userDaily: parseInt(env.AI_USER_DAILY || '30', 10),
+    models: { fast: env.AI_MODEL_FAST || 'claude-haiku-5-5', main: env.AI_MODEL_MAIN || 'claude-sonnet-5-5', deep: env.AI_MODEL_DEEP || 'claude-opus-5-5' }
+  },
   publicDir: path.join(ROOT, 'public'),
   // Behind Caddy/Nginx the real client IP arrives in X-Forwarded-For.
   trustProxy: env.TRUST_PROXY === '1' || env.TRUST_PROXY === 'true',

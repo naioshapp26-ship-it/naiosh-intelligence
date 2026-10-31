@@ -94,7 +94,7 @@ function freshState() {
     choice: null, why: '', decided: false, req: null, reqDone: null, requests: [],
     measured: false, lessonApproved: false,
     consultTab: 'all', setTab: 'identity', kq: '', reports: [], govTab: 'rules', archTab: 'map',
-    tour: { on: CFG.identity.tourDefault !== false, i: 0 },
+    tour: { on: CFG.identity.tourDefault !== false && !(window.innerWidth < 700), i: 0 },
     audit: [
       { t: '18:42', who: 'محرك الشذوذ', what: 'اكتشف انحرافًا غير طبيعي في مؤشر أداء الفرع الشمالي (−17%)', kind: 'sys' },
       { t: '18:43', who: 'نظام الإنذار المبكر', what: 'أصدر تنبيهًا حرجًا وفتح استشارة استباقية CNS-001', kind: 'sys' },
@@ -195,7 +195,7 @@ function renderTop() {
     <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
     <label class="search">${ic('search', 16, 'style="color:var(--faint)"')}<input id="global-search" type="search" aria-label="البحث الموحّد" placeholder="ابحث في الاستشارات، البيانات، المخاطر، الحلول، المعرفة…"></label>
     <div class="top-end">
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
       <button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>
       <button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
@@ -230,6 +230,8 @@ const TOUR = [
 ];
 function renderTour() {
   const el = document.getElementById('tour');
+  // live server: the presenter guide (CNS-001 demo story) is for the system owner only — never for clients or visitors
+  if (window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) { S.tour.on = false; el.innerHTML = ''; document.getElementById('app').classList.remove('touring'); return; }
   if (!S.tour.on) { el.innerHTML = (window.NAIOSH_SERVER && typeof svCan === 'function' && !svCan('config.edit')) ? '' : `<button type="button" class="btn sm y tour-min" data-act="tour-open" aria-label="العرض الموجّه" title="العرض الموجّه">${ic('play', 14)}<span class="tour-lbl">العرض الموجّه</span></button>`; return; }
   const i = S.tour.i, st = TOUR[i];
   el.innerHTML = `<section class="tour" aria-label="العرض الموجّه">

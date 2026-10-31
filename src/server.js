@@ -17,6 +17,8 @@ require('./routes/ledger')(router);
 require('./routes/messages')(router);
 require('./routes/accounts')(router);
 require('./routes/qa')(router);
+require('./routes/admin')(router);
+const system = require('./system');
 const requests = require('./routes/requests');
 requests(router);
 
@@ -124,10 +126,12 @@ function seedAdmin() {
   console.log('[setup] Created first admin:', email);
 }
 
-function start({ port = config.port, host = config.host } = {}) {
+function start({ port = config.port, host = config.host, ...opts } = {}) {
   db.open();
   seedAdmin();
   requests.cleanupOrphans();
+  system.startupWarnings();
+  if (!opts.noBackups) system.scheduleBackups();
   const t = setInterval(requests.cleanupOrphans, 6 * 3600e3); t.unref();
   const server = http.createServer(handler);
   server.requestTimeout = 0;          // large video uploads may take a while

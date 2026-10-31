@@ -12,13 +12,31 @@ process.env.ADMIN_EMAIL = 'admin@test.local';
 process.env.ADMIN_PASSWORD = 'AdminPass2026';
 process.env.ADMIN_NAME = 'د. عدنان';
 process.env.MAX_FILE_MB = '1';
+process.env.ANTHROPIC_API_KEY = 'test-key';
+process.env.AI_MODE = 'ask';
+process.env.AI_USER_DAILY = '3';
 
 const { start } = require('../src/server');
 const db = require('../src/db');
 let server, base;
 
-before(async () => { server = await start({ port: 0, host: '127.0.0.1' }); base = `http://127.0.0.1:${server.address().port}`; });
-after(() => { server.close(); db.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
+// A stand-in for the Anthropic Messages API: answers only what its knowledge block covers.
+const http = require('node:http');
+let fake, fakeCalls = [];
+before(async () => {
+  fake = http.createServer((req, res) => { let b = ''; req.on('data', c => b += c); req.on('end', () => {
+    const j = JSON.parse(b); fakeCalls.push({ headers: req.headers, body: j });
+    if (req.headers['x-api-key'] !== 'test-key') { res.writeHead(401, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } })); }
+    const q = JSON.stringify(j.messages), kb = JSON.stringify(j.system);
+    const text = /اختبار الاتصال/.test(q) ? 'جاهز' : /ساعات الدوام/.test(q) && /ساعات العمل/.test(kb) ? 'نعمل من الأحد إلى الخميس.' : 'NO_ANSWER';
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ id: 'msg_1', type: 'message', role: 'assistant', model: j.model, content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: 1200, output_tokens: 40 } }));
+  }); });
+  await new Promise(r => fake.listen(0, '127.0.0.1', r));
+  require('../src/config').ai.baseUrl = `http://127.0.0.1:${fake.address().port}`;
+  server = await start({ port: 0, host: '127.0.0.1', noBackups: true }); base = `http://127.0.0.1:${server.address().port}`;
+});
+after(() => { fake.close(); server.close(); db.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
 
 function client() {
   let jar = '';
@@ -277,6 +295,58 @@ test('تغذية البيانات: answer attachments are stored, served with th
   assert.equal(db.get('SELECT id FROM uploads WHERE id = ?', img), undefined);
   await admin('DELETE', '/api/qa/' + id);
   assert.equal(db.get('SELECT id FROM uploads WHERE id = ?', pdf), undefined);
+});
+
+test('AI phase 1: «اسأل نايوش» answers new questions from trained answers only, logs cost, respects pause and limits', async () => {
+  // a trained answer the model may use
+  await admin('POST', '/api/qa', { question: 'ما هي ساعات العمل؟', answer: 'من الأحد إلى الخميس، 9 صباحًا حتى 5 مساءً.', category: 'عام' });
+  fakeCalls = [];
+  let r = await clientA('POST', '/api/qa/ask', { q: 'متى ساعات الدوام عندكم بالضبط يا جماعة' });
+  assert.equal(r.status, 200); assert.equal(r.body.found, true); assert.equal(r.body.ai, true); assert.match(r.body.answer, /الأحد/);
+  assert.equal(fakeCalls.length, 1); const c = fakeCalls[0];
+  assert.equal(c.headers['anthropic-version'], '2023-06-01'); assert.equal(c.body.model, 'claude-haiku-5-5'); assert.equal(c.body.temperature, undefined);
+  assert.match(JSON.stringify(c.body.system), /ساعات العمل/); assert.match(JSON.stringify(c.body.messages), /<question>/);
+  // the question still reaches the admin, with the AI answer to review
+  r = await admin('GET', '/api/qa'); const u = r.body.unanswered.find(x => /الدوام/.test(x.question)); assert.ok(u); assert.match(u.aiAnswer, /الأحد/);
+  // outside the knowledge → the model declines, normal "not found"
+  r = await clientA('POST', '/api/qa/ask', { q: 'هل تبيعون سيارات مستعملة؟' }); assert.equal(r.body.found, false); assert.equal(r.body.ai, undefined);
+  // per-user daily limit (AI_USER_DAILY=3): third call allowed, fourth answered without AI
+  await clientA('POST', '/api/qa/ask', { q: 'سؤال ثالث عن ساعات الدوام' });
+  const before = fakeCalls.length; r = await clientA('POST', '/api/qa/ask', { q: 'سؤال رابع عن ساعات الدوام' }); assert.equal(fakeCalls.length, before); assert.equal(r.body.found, false);
+  // admin panel: cost logged, pause stops calls, test button works, clients blocked
+  r = await admin('GET', '/api/admin/system'); assert.equal(r.status, 200); assert.equal(r.body.ai.keySet, true); assert.ok(r.body.ai.monthCalls >= 3); assert.ok(r.body.ai.monthUsd > 0); assert.equal(r.body.ai.available, true);
+  assert.equal((await clientA('GET', '/api/admin/system')).status, 403);
+  assert.equal((await analyst('PATCH', '/api/admin/ai', { paused: true })).status, 403);
+  r = await admin('PATCH', '/api/admin/ai', { paused: true }); assert.equal(r.body.ai.paused, true); assert.equal(r.body.ai.reason, 'paused');
+  const n0 = fakeCalls.length; r = await analyst('POST', '/api/qa/ask', { q: 'متى ساعات الدوام' }); assert.equal(fakeCalls.length, n0); assert.equal(r.body.found, false, JSON.stringify(r.body));
+  await admin('PATCH', '/api/admin/ai', { paused: false });
+  r = await admin('POST', '/api/admin/ai/test'); assert.equal(r.body.ok, true); assert.equal(r.body.reply, 'جاهز');
+  // a wrong key is reported clearly
+  const cfg = require('../src/config'); cfg.ai.key = 'wrong'; r = await admin('POST', '/api/admin/ai/test'); assert.equal(r.body.ok, false); assert.match(r.body.message, /401/); cfg.ai.key = 'test-key';
+  // monthly cap
+  cfg.ai.monthlyUsd = 0; r = await admin('GET', '/api/admin/system'); assert.equal(r.body.ai.reason, 'cap'); cfg.ai.monthlyUsd = 50;
+});
+
+test('backups: admin creates and downloads a consistent database copy; others cannot', async () => {
+  let r = await admin('POST', '/api/admin/backup'); assert.equal(r.status, 201); const name = r.body.backup.name; assert.match(name, /^naiosh-.+\.db$/); assert.ok(r.body.backup.size > 10000);
+  r = await admin('GET', '/api/admin/system'); assert.ok(r.body.backups.some(b => b.name === name)); assert.ok(r.body.storage.dbBytes > 0);
+  const d = await fetch(base + '/api/admin/backup/' + name, { headers: { Cookie: (await (async () => { const x = await fetch(base + '/api/auth/login', { method: 'POST', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@test.local', password: 'AdminPass2026' }) }); return x.headers.get('set-cookie').split(';')[0]; })()) } });
+  assert.equal(d.status, 200); const buf = Buffer.from(await d.arrayBuffer()); assert.equal(buf.subarray(0, 15).toString(), 'SQLite format 3');
+  assert.equal((await admin('GET', '/api/admin/backup/..%2Fnaiosh.db')).status, 404);
+  assert.equal((await clientA('POST', '/api/admin/backup')).status, 403);
+  assert.equal((await anon('GET', '/api/admin/backup/' + name)).status, 401);
+});
+
+test('«اسأل نايوش»: every question is logged and only the admin can download the log', async () => {
+  await clientA('POST', '/api/qa/ask', { q: 'كيف اشحن نقاط' });
+  await clientA('POST', '/api/qa/ask', { q: 'هل لديكم فرع في القمر؟' });
+  let r = await admin('GET', '/api/qa/log'); assert.equal(r.status, 200);
+  const a = r.body.log.find(x => x.question === 'كيف اشحن نقاط'); assert.ok(a); assert.equal(a.source, 'trained'); assert.ok(a.matched); assert.ok(a.user_email);
+  const b = r.body.log.find(x => /القمر/.test(x.question)); assert.equal(b.source, 'none');
+  assert.ok(r.body.totals.n >= 2); assert.ok(r.body.log[0].id > r.body.log.at(-1).id);
+  r = await admin('GET', '/api/qa/log?from=2000-01-01&to=2000-12-31'); assert.equal(r.body.log.length, 0);
+  assert.equal((await clientA('GET', '/api/qa/log')).status, 403);
+  assert.equal((await anon('GET', '/api/qa/log')).status, 401);
 });
 
 test('password change and login throttling', async () => {

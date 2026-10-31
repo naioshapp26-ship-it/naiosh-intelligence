@@ -288,8 +288,8 @@ renderTop = function () {
       ${(R !== 'home' || (S.hist || []).length) ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back', 16)}<span>رجوع</span></button>` : ''}
       <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
       ${rdSearchBox('global-search', 'ابحث في المحاور، الاستشارات، المخاطر…')}
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
-      ${guest || !admin ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${guest ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
     </div>`;
   document.getElementById('top').innerHTML = `${rdTicker()}
     <div class="tb-row">
@@ -308,7 +308,7 @@ renderSide = function () {
 };
 function rdBot() {
   let b = document.getElementById('rd-bot');
-  const show = !S.tour.on && effRoute() !== 'ask' && (typeof rdIsAdmin !== 'function' || rdIsAdmin());
+  const show = !S.tour.on && effRoute() !== 'ask' && !rdGuest();
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'rd-bot'; b.className = 'hm-bot'; b.setAttribute('aria-label', 'اسأل نايوش'); b.title = 'اسأل نايوش'; b.dataset.act = 'rd-bot'; document.body.appendChild(b); }
   b.innerHTML = ic('bot', 26);

@@ -1,0 +1,68 @@
+<script data-app="">
+/* ================= «اسأل نايوش»: new conversation + log of every question (admin) =================
+   • Pressing «اسأل نايوش» (top bar, floating button, menu, home) always opens a fresh conversation;
+     «محادثة جديدة» inside the chat does the same.
+   • تغذية البيانات → «سجل كل الأسئلة»: every question asked, who asked, how it was answered (trained / AI / no answer),
+     filtered by period and downloadable as PDF, Excel or CSV. */
+function qaNewChat() { S.qaChat = []; const i = document.getElementById('qa-ask-q'); if (i) i.value = ''; }
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-go="ask"],[data-act="rd-bot"],[data-act="qa-new-chat"]');
+  if (!t) return;
+  qaNewChat();
+  if (t.dataset.act === 'qa-new-chat') { e.preventDefault(); e.stopPropagation(); render(); setTimeout(() => { const i = document.getElementById('qa-ask-q'); if (i) i.focus(); }, 30); }
+}, true);
+
+let QA_LOG = null, QA_LOG_LOADING = false;
+const QA_SRC = { trained: 'إجابة مدرّبة', ai: 'ذكاء اصطناعي', none: 'بدون إجابة' };
+async function qaLogLoad() {
+  if (QA_LOG_LOADING) return; QA_LOG_LOADING = true;
+  try {
+    if (rdServer()) { const p = new URLSearchParams(); if (S.qlFrom) p.set('from', S.qlFrom); if (S.qlTo) p.set('to', S.qlTo); QA_LOG = await api('GET', '/api/qa/log' + (p.toString() ? '?' + p : '')); }
+    else { const L = (S.qaLog || []).filter(x => (!S.qlFrom || x.at.slice(0, 10) >= S.qlFrom) && (!S.qlTo || x.at.slice(0, 10) <= S.qlTo)), all = S.qaLog || []; QA_LOG = { log: L, totals: { n: all.length, trained: all.filter(x => x.source === 'trained').length, ai: all.filter(x => x.source === 'ai').length, none: all.filter(x => x.source === 'none').length } }; }
+  } catch (e) { QA_LOG = { log: [], totals: { n: 0, trained: 0, ai: 0, none: 0 }, err: e.message }; }
+  QA_LOG_LOADING = false; if (S.route === 'feed') render();
+}
+const qlWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+function qaLogCard() {
+  if (!QA_LOG) { setTimeout(qaLogLoad, 0); return `<section class="card"><h2 class="h-sec">سجل كل الأسئلة</h2><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  const T = QA_LOG.totals, L = QA_LOG.log, shown = L.slice(0, 25);
+  return `<section class="card" style="gap:12px" id="qa-log-card"><div class="row between" style="gap:8px"><div class="stack" style="gap:2px"><h2 class="h-sec">سجل كل الأسئلة</h2><span class="faint" style="font-size:12px">كل ما سُئل لنايوش، من سأله، وكيف أُجيب — للإدارة فقط</span></div>
+      <span class="fx-menu"><button type="button" class="btn sm" data-act="ql-menu" aria-expanded="${S.qlOpen ? 'true' : 'false'}">${ic('down', 14)}تنزيل السجل ▾</button>${S.qlOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="ql-export" data-k="pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="ql-export" data-k="xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="ql-export" data-k="csv">${ic('clip', 14)}CSV</button></span>` : ''}</span></div>
+    ${anKpis([['كل الأسئلة', T.n], ['أجاب من التدريب', T.trained, 'good'], ['أجاب بالذكاء الاصطناعي', T.ai], ['بدون إجابة', T.none, T.none ? 'bad' : 'good']])}
+    <div class="row" style="gap:8px;align-items:end"><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">من تاريخ</span><input type="date" id="ql-from" dir="ltr" value="${esc(S.qlFrom || '')}"></label><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">إلى تاريخ</span><input type="date" id="ql-to" dir="ltr" value="${esc(S.qlTo || '')}"></label>${S.qlFrom || S.qlTo ? `<button type="button" class="btn link sm" data-act="ql-clear">كل الفترات</button>` : ''}<span class="faint" style="font-size:12px;margin-inline-start:auto">${L.length} سؤال في الفترة${L.length > shown.length ? ' · يظهر آخر ' + shown.length + ' والتنزيل يشمل الكل' : ''}</span></div>
+    ${shown.length ? `<div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>السائل</th><th>السؤال</th><th>كيف أُجيب</th><th>الإجابة</th></tr></thead><tbody>${shown.map(x => `<tr><td style="font-size:12px;white-space:nowrap">${qlWhen(x.at)}</td><td style="font-size:12.5px">${esc(x.user_name || '—')}${x.user_email ? `<span class="faint" style="display:block;font-size:11px;direction:ltr;text-align:right">${esc(x.user_email)}</span>` : ''}</td><td style="font-size:12.5px">${esc(x.question)}</td><td style="font-size:12px;white-space:nowrap"><span class="tag ${x.source === 'trained' ? 't-s' : x.source === 'ai' ? 't-i' : 't-m'}">${QA_SRC[x.source] || x.source}</span>${x.score != null ? ` <span class="faint mono">${x.score}%</span>` : ''}</td><td style="font-size:12px;max-width:320px">${x.answer ? esc(String(x.answer).slice(0, 140)) + (String(x.answer).length > 140 ? '…' : '') : '<span class="faint">—</span>'}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted" style="margin:0;font-size:13px">${QA_LOG.err ? esc(QA_LOG.err) : 'لا أسئلة في هذه الفترة بعد.'}</p>`}
+  </section>`;
+}
+const qlLocal = (iso) => { const d = new Date(iso), z = (n) => String(n).padStart(2, '0'); return isNaN(d) ? iso : `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+function qlRows() { return (QA_LOG ? QA_LOG.log : []).map(x => [qlLocal(x.at), x.user_name || '', x.user_email || '', x.question, QA_SRC[x.source] || x.source, x.score != null ? String(x.score) + '%' : '', x.matched || '', x.answer || '']); }
+const QL_COLS = ['الوقت', 'السائل', 'البريد', 'السؤال', 'كيف أُجيب', 'التطابق', 'السؤال المدرّب المطابق', 'الإجابة'];
+async function qlExport(fmt) {
+  S.qlOpen = false; render();
+  if (!QA_LOG || !QA_LOG.log.length) { toast('لا أسئلة في السجل لهذه الفترة'); return; }
+  const period = (S.qlFrom || S.qlTo) ? `${S.qlFrom || 'البداية'} → ${S.qlTo || 'اليوم'}` : 'كل الفترات', stamp = new Date().toISOString().slice(0, 10), name = `NAIOSH_ask_questions_${stamp}.${fmt}`;
+  try {
+    if (fmt === 'csv') { await saveFile(name, new Blob(['﻿' + anRowsToCSV([QL_COLS].concat(qlRows()))], { type: 'text/csv;charset=utf-8' })); return; }
+    toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+    const T = QA_LOG.totals, L = QA_LOG.log;
+    const rep = { code: 'ASK_LOG', title: 'سجل أسئلة «اسأل نايوش»', audience: 'إدارة نايوش', ref: 'ASK-LOG', sections: [
+      { h: 'ملخص', kv: [['الفترة', period], ['أسئلة الفترة', String(L.length)], ['أجاب من التدريب', String(L.filter(x => x.source === 'trained').length)], ['أجاب بالذكاء الاصطناعي', String(L.filter(x => x.source === 'ai').length)], ['بدون إجابة', String(L.filter(x => x.source === 'none').length)], ['إجمالي السجل', String(T.n)], ['تاريخ التنزيل', stamp]] },
+      { h: 'الأسئلة', cols: fmt === 'pdf' ? ['الوقت', 'السائل', 'السؤال', 'كيف أُجيب', 'الإجابة'] : QL_COLS, rows: fmt === 'pdf' ? qlRows().map(r => [r[0], r[1], r[3], r[4] + (r[5] ? ' ' + r[5] : ''), String(r[7]).slice(0, 220)]) : qlRows() }] };
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(name, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر التنزيل'); }
+}
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'ql-from' || e.target.id === 'ql-to') { S[e.target.id === 'ql-from' ? 'qlFrom' : 'qlTo'] = e.target.value; QA_LOG = null; render(); }
+});
+document.addEventListener('click', (e) => { if (S.qlOpen && !(e.target.closest && e.target.closest('#qa-log-card .fx-menu'))) { S.qlOpen = false; const p = document.querySelector('#qa-log-card .fx-pop'); if (p) p.remove(); } }, true);
+const _qlH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'qa-new-chat') { qaNewChat(); render(); return true; }
+  if (act === 'ql-menu') { S.qlOpen = !S.qlOpen; render(); return true; }
+  if (act === 'ql-export') { qlExport(k); return true; }
+  if (act === 'ql-clear') { S.qlFrom = ''; S.qlTo = ''; QA_LOG = null; render(); return true; }
+  return _qlH(act, k, el);
+};
+// refresh the log whenever the admin opens تغذية البيانات
+document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-go="feed"]'); if (t) QA_LOG = null; }, true);
+</script>

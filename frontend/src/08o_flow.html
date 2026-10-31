@@ -676,7 +676,7 @@ const _rd2H = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && rd2Handle(act, k, el)) return true; return _rd2H(act, k, el); };
 
 /* ---------- side menu: hidden for everyone, opened from the menu icon by the NAIOSH team only ---------- */
-const RD_CLIENT_OK = ['home', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
+const RD_CLIENT_OK = ['home', 'ask', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
 function rdIsAdmin() {
   if (rdGuest()) return false;
   if (rdServer()) return typeof ME !== 'undefined' && !!ME && ME.role !== 'client';

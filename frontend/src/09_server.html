@@ -334,7 +334,7 @@ async function serverBoot() {
   try {
     const st = await api('GET', '/api/state');
     S = Object.assign(freshState(), st.state || {}, { menu: false });
-    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false;
+    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false && !(window.innerWidth < 700);
     if (S.askStage === 1) S.askShown = ASK_STEPS.length;
   } catch (e) { S = freshState(); }
   if (S.req) { S.req.files = []; S.req.videos = []; }

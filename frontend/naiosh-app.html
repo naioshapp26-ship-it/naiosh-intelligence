@@ -499,7 +499,7 @@ function freshState() {
     choice: null, why: '', decided: false, req: null, reqDone: null, requests: [],
     measured: false, lessonApproved: false,
     consultTab: 'all', setTab: 'identity', kq: '', reports: [], govTab: 'rules', archTab: 'map',
-    tour: { on: CFG.identity.tourDefault !== false, i: 0 },
+    tour: { on: CFG.identity.tourDefault !== false && !(window.innerWidth < 700), i: 0 },
     audit: [
       { t: '18:42', who: 'محرك الشذوذ', what: 'اكتشف انحرافًا غير طبيعي في مؤشر أداء الفرع الشمالي (−17%)', kind: 'sys' },
       { t: '18:43', who: 'نظام الإنذار المبكر', what: 'أصدر تنبيهًا حرجًا وفتح استشارة استباقية CNS-001', kind: 'sys' },
@@ -600,7 +600,7 @@ function renderTop() {
     <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
     <label class="search">${ic('search', 16, 'style="color:var(--faint)"')}<input id="global-search" type="search" aria-label="البحث الموحّد" placeholder="ابحث في الاستشارات، البيانات، المخاطر، الحلول، المعرفة…"></label>
     <div class="top-end">
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
       <button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>
       <button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
@@ -635,6 +635,8 @@ const TOUR = [
 ];
 function renderTour() {
   const el = document.getElementById('tour');
+  // live server: the presenter guide (CNS-001 demo story) is for the system owner only — never for clients or visitors
+  if (window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) { S.tour.on = false; el.innerHTML = ''; document.getElementById('app').classList.remove('touring'); return; }
   if (!S.tour.on) { el.innerHTML = (window.NAIOSH_SERVER && typeof svCan === 'function' && !svCan('config.edit')) ? '' : `<button type="button" class="btn sm y tour-min" data-act="tour-open" aria-label="العرض الموجّه" title="العرض الموجّه">${ic('play', 14)}<span class="tour-lbl">العرض الموجّه</span></button>`; return; }
   const i = S.tour.i, st = TOUR[i];
   el.innerHTML = `<section class="tour" aria-label="العرض الموجّه">
@@ -2659,9 +2661,9 @@ VIEWS.safety = () => {
     <div class="card" style="gap:4px"><div class="row between"><h2 class="h-sec">الاستبيان الذكي — SAF-02</h2><span class="tag ${m.maturity[1]}">نضج الإدارة: ${m.maturity[0]}</span></div>${qs}
       <div class="stack" style="gap:8px;padding-top:12px"><div class="row between"><h3 class="h-sec" style="font-size:14px">أسئلة تكميلية ولّدها النظام من إجاباتك</h3><span class="chip">${m.rows.length + m.extra.length} سؤال</span></div>${follow || '<p class="muted" style="font-size:13px">اختر المخاطر المعروفة لتظهر الأسئلة التكميلية.</p>'}
       <p class="faint" style="font-size:11.5px;line-height:1.7">اختيار إجابة لا يثبت الامتثال؛ يُسجَّل كإقرار أولي حتى تقديم الأدلة. «غير منطبق» ≠ «غير معروف» ≠ «غير ممتثل».</p></div></div>
-    <div class="stack" style="gap:16px">
+    <div class="stack" style="gap:16px;min-width:0">
       <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">مصفوفة المخاطر 5×5</h2><div class="tabs" role="tablist" style="margin:0"><button type="button" role="tab" aria-selected="${key === 'inh'}" data-act="saf-view" data-k="inh">قبل الضوابط</button><button type="button" role="tab" aria-selected="${key === 'res'}" data-act="saf-view" data-k="res">المتبقي</button></div></div>
-        <div class="row nowrap" style="gap:6px;align-items:stretch"><span class="faint" style="writing-mode:vertical-rl;font-size:11px;text-align:center">الاحتمال ←</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;max-width:360px">${matrix}</div></div>
+        <div class="row nowrap" style="gap:6px;align-items:stretch"><span class="faint" style="writing-mode:vertical-rl;font-size:11px;text-align:center">الاحتمال ←</span><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;flex:1;min-width:0;max-width:360px">${matrix}</div></div>
         <span class="faint" style="font-size:11px;text-align:center">الشدة ←</span>
         <div class="sub" style="border-color:var(--redline)"><span style="font-size:12px;line-height:1.7"><b style="color:var(--red)">قاعدة حاكمة:</b> الأخطار التي قد تسبب وفاة أو انهيارًا أو تعرضًا غير مسيطر عليه لطاقة خطرة تستدعي ضوابط إلزامية أو إيقاف العمل حتى لو كانت درجتها منخفضة. النقطة الحمراء = يتطلب إيقافًا أو تصعيدًا.</span></div></div>
       ${sel ? `<div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">${sel.n}</h2><span class="tag ${PR[sel.pr][1]}">${PR[sel.pr][0]}</span></div>
@@ -3629,7 +3631,9 @@ async function anTablesFromPDF(buf) {
     const cr = pg.dict.match(/\/Contents\s*(\[([^\]]*)\]|(\d+)\s+0\s+R)/); if (!cr) continue;
     const ids = cr[2] ? [...cr[2].matchAll(/(\d+)\s+0\s+R/g)].map(x => x[1]) : [cr[3]];
     let content = ''; for (const id of ids) { const b = await streamOf(objs[id]); if (b) content += new TextDecoder('latin1').decode(b) + '\n'; }
-    let font = null, size = 10, tms = 1, tx = 0, ty = 0, lx = 0, ly = 0, lead = 0; const ctm = [1, 0, 0, 1, 0, 0];
+    let font = null, size = 10, tms = 1, tx = 0, ty = 0, lx = 0, ly = 0, lead = 0; let ctm = [1, 0, 0, 1, 0, 0]; const gs = [];
+    // full current transformation matrix (q/Q save-restore, cm composed) so positions and sizes share one scale
+    const P = (x, y) => [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]], K = () => Math.hypot(ctm[2], ctm[3]) || 1;
     const toks = content.match(/\((?:\\.|[^\\)])*\)|<[0-9a-fA-F\s]*>|\[|\]|\/[^\s/<>\[\]()]+|-?\d*\.?\d+|[A-Za-z'"*]+/g) || [];
     const stack = [];
     const decodeStr = async (t) => {
@@ -3655,9 +3659,11 @@ async function anTablesFromPDF(buf) {
       else if (t === 'TL') { lead = +stack.pop(); stack.length = 0; }
       else if (t === 'T*') { ly -= lead; tx = lx; ty = ly; }
       else if (t === 'BT') { tx = lx = 0; ty = ly = 0; stack.length = 0; }
-      else if (t === 'cm') { const v = stack.splice(-6).map(Number); ctm.splice(0, 6, ...v); stack.length = 0; }
-      else if (t === 'Tj' || t === "'" || t === '"') { if (t !== 'Tj') { ly -= lead; tx = lx; ty = ly; } const s = stack.pop(); if (s) { const txt = fixOrder(await decodeStr(s)); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; } stack.length = 0; }
-      else if (t === 'TJ') { let i = stack.lastIndexOf('['), arr = stack.splice(i); let gl = []; for (const a of arr.slice(1)) { if (a[0] === '(' || a[0] === '<') gl.push(...await decodeStr(a)); else if (+a < -180) gl.push(' '); } const txt = fixOrder(gl); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; stack.length = 0; }
+      else if (t === 'cm') { const [a, b, c, d, e, f] = stack.splice(-6).map(Number), m = ctm; ctm = [a * m[0] + b * m[2], a * m[1] + b * m[3], c * m[0] + d * m[2], c * m[1] + d * m[3], e * m[0] + f * m[2] + m[4], e * m[1] + f * m[3] + m[5]]; stack.length = 0; }
+      else if (t === 'q') { gs.push(ctm.slice()); stack.length = 0; }
+      else if (t === 'Q') { if (gs.length) ctm = gs.pop(); stack.length = 0; }
+      else if (t === 'Tj' || t === "'" || t === '"') { if (t !== 'Tj') { ly -= lead; tx = lx; ty = ly; } const s = stack.pop(); if (s) { const txt = fixOrder(await decodeStr(s)); runs.push({ pg: pi, x: P(tx, ty)[0], y: P(tx, ty)[1], t: txt, sz: size * tms * K() }); tx += txt.length * size * 0.5; } stack.length = 0; }
+      else if (t === 'TJ') { let i = stack.lastIndexOf('['), arr = stack.splice(i); let gl = []; for (const a of arr.slice(1)) { if (a[0] === '(' || a[0] === '<') gl.push(...await decodeStr(a)); else if (+a < -180) gl.push(' '); } const txt = fixOrder(gl); runs.push({ pg: pi, x: P(tx, ty)[0], y: P(tx, ty)[1], t: txt, sz: size * tms * K() }); tx += txt.length * size * 0.5; stack.length = 0; }
       else if (/^[A-Za-z'"*]+$/.test(t) && t !== 'true' && t !== 'false' && t !== 'null') stack.length = 0;
       else stack.push(t);
     }
@@ -7073,8 +7079,8 @@ renderTop = function () {
       ${(R !== 'home' || (S.hist || []).length) ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back', 16)}<span>رجوع</span></button>` : ''}
       <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
       ${rdSearchBox('global-search', 'ابحث في المحاور، الاستشارات، المخاطر…')}
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
-      ${guest || !admin ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${guest ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
     </div>`;
   document.getElementById('top').innerHTML = `${rdTicker()}
     <div class="tb-row">
@@ -7093,7 +7099,7 @@ renderSide = function () {
 };
 function rdBot() {
   let b = document.getElementById('rd-bot');
-  const show = !S.tour.on && effRoute() !== 'ask' && (typeof rdIsAdmin !== 'function' || rdIsAdmin());
+  const show = !S.tour.on && effRoute() !== 'ask' && !rdGuest();
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'rd-bot'; b.className = 'hm-bot'; b.setAttribute('aria-label', 'اسأل نايوش'); b.title = 'اسأل نايوش'; b.dataset.act = 'rd-bot'; document.body.appendChild(b); }
   b.innerHTML = ic('bot', 26);
@@ -8149,7 +8155,7 @@ const _rd2H = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && rd2Handle(act, k, el)) return true; return _rd2H(act, k, el); };
 
 /* ---------- side menu: hidden for everyone, opened from the menu icon by the NAIOSH team only ---------- */
-const RD_CLIENT_OK = ['home', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
+const RD_CLIENT_OK = ['home', 'ask', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
 function rdIsAdmin() {
   if (rdGuest()) return false;
   if (rdServer()) return typeof ME !== 'undefined' && !!ME && ME.role !== 'client';
@@ -8441,7 +8447,7 @@ VIEWS.feed = () => {
     ${QA_TEST ? (QA_TEST.best && QA_TEST.best.s >= QA_TH ? `<div class="banner g" style="align-items:flex-start">${ic('check', 16, 'style="color:var(--green);margin-top:3px"')}<div class="stack" style="gap:4px"><b>يجيب من: «${esc(QA_TEST.best.e.question)}» · تطابق ${Math.round(QA_TEST.best.s * 100)}%</b><span class="soft" style="font-size:12.5px;white-space:pre-wrap">${esc(QA_TEST.best.e.answer)}</span></div></div>`
       : `<div class="banner y" style="align-items:flex-start">${ic('warn', 16, 'style="color:var(--yellow);margin-top:3px"')}<div class="stack" style="gap:6px"><b>لا توجد إجابة مدرّبة لهذا السؤال${QA_TEST.best && QA_TEST.best.s > 0 ? ' (أقرب سؤال «' + esc(QA_TEST.best.e.question) + '» بتطابق ' + Math.round(QA_TEST.best.s * 100) + '%)' : ''}</b><span class="row" style="gap:6px"><button type="button" class="btn sm primary" data-act="qa-train-test">${ic('plus', 14)}درّبه الآن</button>${QA_TEST.best && QA_TEST.best.s > 0 ? `<button type="button" class="btn sm" data-act="qa-add-variant" data-k="${QA_TEST.best.e.id}">أضفه صيغةً للسؤال الأقرب</button>` : ''}</span></div></div>`) : '<span class="faint" style="font-size:12px">يُظهر الاختبار السؤال المدرّب الذي سيجيب منه نايوش ونسبة التطابق.</span>'}</section>`;
   const un = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">أسئلة لم يجد لها نايوش إجابة</h2><span class="tag ${D.unanswered.length ? 't-m' : 't-s'}">${D.unanswered.length}</span></div>
-    ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">درّبه</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
+    ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}${u.aiAnswer ? `<span style="display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:4px">${ic('ask', 12)} إجابة الذكاء الاصطناعي: ${esc(u.aiAnswer)}</span>` : ''}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">${u.aiAnswer ? 'راجعها واعتمدها' : 'درّبه'}</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
   const listHtml = `<section class="card" style="gap:10px"><div class="row between" style="gap:8px"><h2 class="h-sec">الأسئلة المدرّبة (${D.entries.length})</h2><span class="row nowrap" style="gap:6px"><span class="fx-menu"><button type="button" class="btn sm" data-act="fx-menu" aria-expanded="${S.fxOpen ? 'true' : 'false'}">${ic('upload', 14)}تصدير ▾</button>${S.fxOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="qa-export-pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="qa-export-xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="qa-export">${ic('clip', 14)}CSV</button></span>` : ''}</span><label class="btn sm" style="cursor:pointer">${ic('plus', 14)}استيراد من ملف<input type="file" id="qa-import2" multiple hidden></label></span></div>
     <input type="search" id="qa-filter" placeholder="ابحث في الأسئلة والإجابات…" value="${esc(S.qaFilter || '')}">
     ${list.length ? list.map(e => `<div class="fd-row ${e.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><span class="q">${esc(e.question)}</span><span class="row nowrap" style="gap:6px"><span class="tag t-i">${esc(e.category || 'عام')}</span>${e.uses ? `<span class="faint" style="font-size:11px">استُخدم ${e.uses}</span>` : ''}</span></div>
@@ -8451,6 +8457,7 @@ VIEWS.feed = () => {
     <span class="faint" style="font-size:11px">الاستيراد يقبل أي ملف: Excel وCSV وWord وPDF ونصوص وJSON (جدول بأعمدة السؤال والإجابة، أو نص بصيغة «س: … ج: …» أو سؤال ينتهي بـ ؟ وتحته إجابته)، والصور والفيديو تُرفق بإجابة. الأعمدة: السؤال، الإجابة، التصنيف، الصيغ الأخرى (مفصولة بـ |).</span></section>`;
   return head + `${anKpis([['أسئلة مدرّبة', D.entries.length], ['مفعّلة', active], ['مرات الإجابة', uses], ['بانتظار التدريب', D.unanswered.length, D.unanswered.length ? 'bad' : 'good']])}
     <div class="fd-grid"><div class="stack" style="gap:16px">${form}${test}${un}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
+    ${typeof qaLogCard === 'function' ? qaLogCard() : ''}
     ${egNote('التدريب هنا قواعد مطابقة: نايوش يقارن سؤال المستخدم بالأسئلة وصيغها ويختار الأقرب، ولا يؤلف إجابات من عنده. عند ربط الذكاء الاصطناعي لاحقًا تصبح هذه الأسئلة والإجابات مرجعه الأول.')}`;
 };
 document.addEventListener('input', (e) => {
@@ -8500,7 +8507,7 @@ function qaHandle(act, k) {
     case 'qa-edit': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; S.qaForm = { id: x.id, question: x.question, variants: (x.variants || []).join('\n'), answer: x.answer, category: x.category || 'عام', keywords: x.keywords || '', link: x.link || '', active: x.active, fromUn: null, attachments: (x.attachments || []).map(a => ({ ...a })) }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     case 'qa-toggle': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { active: !x.active }).then(qaLoad).then(render).catch(err => toast(err.message)); else { x.active = !x.active; render(); } return true; }
     case 'qa-del': if (!confirm('حذف هذا السؤال المدرّب؟')) return true; if (rdServer()) api('DELETE', '/api/qa/' + k).then(qaLoad).then(() => { S.qaForm = null; render(); }).catch(err => toast(err.message)); else { S.qa = D.entries.filter(y => String(y.id) !== String(k)); S.qaForm = null; render(); } toast('حُذف السؤال'); return true;
-    case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
+    case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: u.aiAnswer || '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
     case 'qa-train-test': S.qaForm = { id: null, question: QA_TEST.q, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null }; QA_TEST = null; render(); { const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); } return true;
     case 'qa-add-variant': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x || !QA_TEST) return true; const vs = [...(x.variants || []), QA_TEST.q]; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { variants: vs }).then(qaLoad).then(() => { QA_TEST = null; render(); toast('أُضيفت الصيغة'); }).catch(err => toast(err.message)); else { x.variants = vs; QA_TEST = null; toast('أُضيفت الصيغة'); render(); } return true; }
     case 'qa-dismiss': if (rdServer()) api('DELETE', '/api/qa/unanswered/' + k).then(qaLoad).then(render); else { S.qaUn = D.unanswered.filter(u => String(u.id) !== String(k)); render(); } return true;
@@ -8522,23 +8529,25 @@ async function qaAsk(q) {
     if (m.best && m.best.s >= QA_TH) { m.best.e.uses = (m.best.e.uses || 0) + 1; r = { found: true, answer: m.best.e.answer, question: m.best.e.question, score: Math.round(m.best.s * 100), link: m.best.e.link, attachments: m.best.e.attachments || [] }; }
     else { const n = qaNorm(q), u = D.unanswered.find(x => qaNorm(x.question) === n); if (u) u.count++; else D.unanswered.unshift({ id: Date.now(), question: q, count: 1, at: new Date().toISOString() }); r = { found: false, suggestions: m.top.filter(x => x.s >= QA_SUG).map(x => ({ id: x.e.id, question: x.e.question })) }; }
   }
+  if (!rdServer()) { S.qaLog = S.qaLog || []; S.qaLog.unshift({ id: Date.now(), at: new Date().toISOString(), question: q, source: r.found ? (r.ai ? 'ai' : 'trained') : 'none', score: r.score ?? null, answer: r.found ? r.answer : null, matched: r.found ? r.question : null, user_name: (S.acct && S.acct.name) || (typeof CFG !== 'undefined' ? CFG.identity.user : ''), user_email: (S.acct && S.acct.email) || '' }); S.qaLog = S.qaLog.slice(0, 2000); }
+  if (typeof QA_LOG !== 'undefined') QA_LOG = null;
   H.push({ me: false, r }); S.qaChat = H.slice(-30); render(); qaScroll();
 }
 function qaScroll() { setTimeout(() => { const c = document.getElementById('qa-chat'); if (c) c.scrollTop = c.scrollHeight; }, 20); }
 function qaChatCard() {
   const H = S.qaChat || [];
   const msg = (m) => m.me ? `<div class="qa-msg me">${esc(m.t)}</div>` : m.r.found
-    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}${typeof qaAttachView === 'function' ? qaAttachView(m.r.attachments) : ''}<span class="meta">من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%</span></div>`
+    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}${typeof qaAttachView === 'function' ? qaAttachView(m.r.attachments) : ''}<span class="meta">${m.r.ai ? 'إجابة مولّدة بالذكاء الاصطناعي من معلومات نايوش المعتمدة — تراجعها الإدارة' : `من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%`}</span></div>`
     : `<div class="qa-msg bot">${m.r.err ? esc(m.r.err) : 'لم أتعلّم إجابة هذا السؤال بعد. سجّلته ليُضاف إلى تدريبي.'}${(m.r.suggestions || []).length ? `<div class="stack" style="gap:4px;margin-top:8px"><span class="faint" style="font-size:12px">هل تقصد:</span>${m.r.suggestions.map(sg => `<button type="button" class="btn sm" style="justify-content:flex-start" data-act="qa-sug" data-k="${sg.id}">${esc(sg.question)}</button>`).join('')}</div>` : ''}</div>`;
   const ideas = qaData().entries.filter(e => e.active).slice(0, 4).map(e => e.question);
-  return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div>${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</div>
+  return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div><span class="row nowrap" style="gap:6px">${H.length ? `<button type="button" class="btn sm" data-act="qa-new-chat">${ic('plus', 15)}محادثة جديدة</button>` : ''}${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</span></div>
     <div class="qa-chat" id="qa-chat">${H.length ? H.map(msg).join('') : `<div class="qa-msg bot">مرحبًا، اسألني عن نايوش والطلبات والنقاط والتقارير.</div>`}</div>
     ${!H.length && ideas.length ? `<div class="row" style="gap:6px">${ideas.map(t => `<button type="button" class="chip" data-act="qa-q" data-k="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
     <form id="qa-ask" class="qa-in" novalidate><input type="text" id="qa-ask-q" placeholder="اكتب سؤالك…" autocomplete="off"><button type="submit" class="btn primary">${ic('ask', 16)}اسأل</button></form></section>`;
 }
 document.addEventListener('submit', (e) => { if (e.target.id !== 'qa-ask') return; e.preventDefault(); const i = document.getElementById('qa-ask-q'); const q = i ? i.value : ''; qaAsk(q).then(() => { const j = document.getElementById('qa-ask-q'); if (j) j.focus(); }); });
 const _qaAskView = VIEWS.ask;
-VIEWS.ask = () => qaChatCard() + `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`;
+VIEWS.ask = () => qaChatCard() + (!rdIsAdmin() ? '' : `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`);
 const _qaH = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act === 'qa-q') { qaAsk(k); return true; } if (act && (act.startsWith('qa-') || act === 'fd-tab') && qaHandle(act, k)) return true; return _qaH(act, k, el); };
 </script>
@@ -8745,6 +8754,123 @@ function qaFeedHandle(act, k) {
 const _qaFH = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && (act.startsWith('qa-') || act.startsWith('qi-') || act === 'fx-menu') && qaFeedHandle(act, k)) return true; return _qaFH(act, k, el); };
 Object.assign(P, { image: P.image || 'M4 5h16v14H4z M4 15l4-4 4 4 3-3 5 5 M15 9.5h.01' });
+</script>
+<script data-app="">
+/* ================= حالة النظام (admin) =================
+   Storage (is the data on a persistent volume?), automatic backups + download, verification/payment modes,
+   and the AI switch: key present, mode, monthly spend against the cap, pause/resume, connection test. */
+(function () { const g = NAV.find(x => x.items.some(([id]) => id === 'feed')) || NAV[NAV.length - 1]; if (!g.items.some(([id]) => id === 'system')) g.items.splice(1, 0, ['system', 'حالة النظام', 'SYS']); })();
+TITLES.system = ['للإدارة فقط · التخزين والنسخ والذكاء الاصطناعي', 'حالة النظام'];
+Object.assign(P, { system: P.system || 'M4 5h16v10H4z M8 19h8 M12 15v4 M7 9l2 2 3-3 2 2 3-3' });
+let SYS = null, SYS_BUSY = '';
+const sysSize = (b) => b == null ? '—' : b > 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const sysDate = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+async function sysLoad() { try { SYS = await api('GET', '/api/admin/system'); } catch (e) { SYS = { error: e.message }; } if (S.route === 'system') render(); }
+const AI_REASON = { no_key: 'لم يُضف مفتاح ANTHROPIC_API_KEY في متغيرات Railway.', off: 'المفتاح موجود لكن AI_MODE=off — غيّره إلى ask لتشغيل المرحلة الأولى.', paused: 'موقوف مؤقتًا من هذه الصفحة.', cap: 'وصل إنفاق هذا الشهر إلى السقف AI_MONTHLY_USD — يعود مع بداية الشهر أو برفع السقف.' };
+function sysCard(title, tag, body) { return `<section class="card" style="gap:12px"><div class="row between nowrap" style="gap:10px"><h2 class="h-sec">${title}</h2><span class="tag t-i">${tag}</span></div>${body}</section>`; }
+VIEWS.system = () => {
+  const head = `<section class="stack" style="gap:6px"><h2 class="pg-title">حالة النظام</h2><p class="lead" style="margin:0">هل البيانات محفوظة بأمان؟ متى آخر نسخة احتياطية؟ هل الذكاء الاصطناعي يعمل وكم أنفق هذا الشهر؟ للإدارة فقط.</p></section>`;
+  if (!rdServer()) return head + `<section class="card" style="gap:10px"><div class="banner y" style="font-size:13px">${ic('info', 16)}<span>هذه نسخة العرض التجريبي: لا يوجد خادم ولا قاعدة بيانات ولا ذكاء اصطناعي هنا. على الموقع الحقيقي تعرض هذه الصفحة حالة التخزين والنسخ الاحتياطية واستهلاك الذكاء الاصطناعي، مع أزرار «نسخة احتياطية الآن» و«اختبار الاتصال» و«إيقاف مؤقت».</span></div></section>`;
+  if (typeof svCan === 'function' && !svCan('config.edit')) return head + `<section class="card"><p class="muted">هذه الصفحة لمدير النظام فقط.</p></section>`;
+  if (!SYS) { sysLoad(); return head + `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`; }
+  if (SYS.error) return head + `<section class="card"><div class="banner y">${esc(SYS.error)}</div><button type="button" class="btn" data-act="sys-reload">إعادة المحاولة</button></section>`;
+  const st = SYS.storage, a = SYS.ai, last = SYS.backups[0];
+  const persist = st.persistent === true ? `<div class="banner g" style="font-size:13px">${ic('check', 16)}<span><b>البيانات على تخزين دائم${st.volume ? ' (Volume: ' + esc(st.volume) + ')' : ''}.</b> قاعدة البيانات والملفات تبقى بعد كل نشر جديد.</span></div>`
+    : st.persistent === false ? `<div class="banner" style="font-size:13px;background:rgba(255,46,77,.08);border:1px solid rgba(255,46,77,.35);align-items:flex-start">${ic('warn', 16, 'style="color:var(--redsoft);margin-top:2px"')}<span><b>خطر: لا يوجد تخزين دائم.</b> عند أي نشر جديد على Railway تُحذف قاعدة البيانات وكل الملفات المرفوعة. الحل: في Railway أنشئ Volume واربطه بالخدمة على المسار <code>/data</code>، وأضف المتغير <code>RAILWAY_RUN_UID=0</code>، ثم أعد النشر.</span></div>`
+    : `<div class="banner y" style="font-size:13px">${ic('info', 16)}<span>لا يمكن التأكد من أن المجلد دائم (خادم خاص). إذا كان على قرص دائم أضف المتغير <code>DATA_PERSISTENT=1</code>.</span></div>`;
+  const aiState = a.available ? `<div class="banner g" style="font-size:13px">${ic('check', 16)}<span><b>الذكاء الاصطناعي يعمل</b> — «اسأل نايوش» يجيب عن الأسئلة الجديدة من الإجابات المدرّبة فقط، وكل إجابة تصل إليك هنا للمراجعة.</span></div>`
+    : `<div class="banner y" style="font-size:13px">${ic('info', 16)}<span><b>الذكاء الاصطناعي غير مفعّل:</b> ${esc(AI_REASON[a.reason] || a.reason || '')}</span></div>`;
+  const pct = a.capUsd > 0 ? Math.min(100, a.monthUsd / a.capUsd * 100) : 100;
+  return head
+  + sysCard('التخزين وقاعدة البيانات', 'STORAGE', `${persist}${anKpis([['قاعدة البيانات', sysSize(st.dbBytes)], ['الملفات المرفوعة', sysSize(st.uploads.bytes) + ' · ' + st.uploads.files + ' ملف'], ['المساحة المتاحة', sysSize(st.freeBytes)], ['مدة التشغيل', Math.floor(SYS.uptimeSec / 3600) + ' ساعة']])}<span class="faint mono" style="font-size:11px;direction:ltr;text-align:left">${esc(st.dataDir)} · Node ${esc(SYS.node)}</span>`)
+  + sysCard('النسخ الاحتياطية', 'BACKUP', `${anKpis([['آخر نسخة', last ? sysDate(last.at) : 'لا يوجد بعد', last && Date.now() - Date.parse(last.at) < 26 * 3600e3 ? 'good' : 'bad'], ['عدد النسخ المحفوظة', SYS.backups.length + ' من ' + SYS.backupKeep], ['الجدولة', SYS.backupEveryHours > 0 ? 'كل ' + SYS.backupEveryHours + ' ساعة' : 'متوقفة']])}
+      <div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="sys-backup" ${SYS_BUSY === 'backup' ? 'aria-disabled="true"' : ''}>${ic('reports', 16)}${SYS_BUSY === 'backup' ? 'جارٍ النسخ…' : 'نسخة احتياطية الآن'}</button></div>
+      ${SYS.backups.length ? `<div class="tbl-wrap"><table><thead><tr><th>التاريخ</th><th>الحجم</th><th></th></tr></thead><tbody>${SYS.backups.map(b => `<tr><td>${sysDate(b.at)}</td><td class="mono" dir="ltr" style="text-align:right">${sysSize(b.size)}</td><td><a class="btn sm" href="/api/admin/backup/${encodeURIComponent(b.name)}" download="${esc(b.name)}">${ic('down', 14)}تنزيل</a></td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${egNote('النسخة هنا لقاعدة البيانات (المستخدمون، الطلبات، التقارير المختومة، النقاط، الأسئلة المدرّبة) وتُحفظ داخل نفس التخزين. للحماية من فقدان التخزين نفسه: فعّل «Backups» على الـVolume في Railway (يومي وأسبوعي)، ونزّل نسخة أسبوعيًا واحفظها خارج Railway.')}`)
+  + sysCard('الذكاء الاصطناعي (Claude)', 'AI', `${aiState}${anKpis([['المفتاح', a.keySet ? 'مضاف' : 'غير مضاف', a.keySet ? 'good' : 'bad'], ['الوضع AI_MODE', a.mode], ['إنفاق هذا الشهر (دولار)', a.monthUsd.toFixed(2) + ' / ' + a.capUsd, pct >= 90 ? 'bad' : 'good'], ['عدد الاستدعاءات', a.monthCalls], ['حد العميل اليومي', a.userDaily + ' سؤال'], ['النموذج', a.models.fast]])}
+      <div class="stack" style="gap:4px"><div class="row between" style="font-size:12px"><span class="faint">الإنفاق من السقف الشهري</span><b class="mono">${pct.toFixed(0)}%</b></div><div style="height:8px;border-radius:99px;background:var(--sunk);overflow:hidden"><div style="height:100%;width:${Math.max(1, pct)}%;background:${pct >= 90 ? 'var(--redsoft)' : pct >= 70 ? 'var(--yellow)' : 'var(--greenfg)'}"></div></div></div>
+      <div class="row" style="gap:8px"><button type="button" class="btn" data-act="sys-ai-test" ${a.keySet ? '' : 'aria-disabled="true"'}>${ic('play', 16)}${SYS_BUSY === 'test' ? 'جارٍ الاختبار…' : 'اختبار الاتصال'}</button>${a.keySet ? `<button type="button" class="btn ${a.paused ? 'primary' : ''}" data-act="sys-ai-pause" data-k="${a.paused ? '0' : '1'}">${a.paused ? 'استئناف الذكاء الاصطناعي' : 'إيقاف مؤقت فوري'}</button>` : ''}</div>
+      ${SYS.aiTest ? `<div class="banner ${SYS.aiTest.ok ? 'g' : 'y'}" style="font-size:12.5px">${SYS.aiTest.ok ? `الاتصال يعمل — ردّ النموذج «${esc(SYS.aiTest.reply)}» بتكلفة $${(SYS.aiTest.usd || 0).toFixed(5)}` : esc(SYS.aiTest.message || 'تعذّر الاتصال')}</div>` : ''}
+      ${a.recent.length ? anTbl({ h: 'آخر الاستدعاءات', cols: ['الوقت', 'الاستخدام', 'النموذج', 'رموز الدخل', 'رموز الخرج', 'التكلفة', 'الحالة'], rows: a.recent.map(x => [sysDate(x.at), x.feature === 'ask' ? 'اسأل نايوش' : x.feature === 'test' ? 'اختبار' : x.feature, x.model, String(x.in_tokens), String(x.out_tokens), '$' + Number(x.cost_usd).toFixed(5), x.ok ? 'نجح' : 'فشل: ' + (x.error || '')]) }) : ''}
+      ${egNote('المفتاح يبقى على الخادم ولا يصل للمتصفح. «اسأل نايوش» يجيب فقط من الإجابات المدرّبة، وإذا لم يجد الجواب يقول ذلك ولا يخترع. السقف الشهري والحد اليومي يُضبطان من متغيرات Railway: AI_MONTHLY_USD و AI_USER_DAILY.')}`)
+  + sysCard('الخدمات المرتبطة', 'SERVICES', anTbl({ h: 'الوضع الحالي', cols: ['الخدمة', 'الوضع', 'للتشغيل الحقيقي'], rows: [['رموز التحقق (بريد وجوال)', SYS.verifyMode === 'live' ? 'حقيقي' : 'عرض — الرمز يظهر على الشاشة', 'RESEND_API_KEY و MAIL_FROM و TWILIO_SID و TWILIO_TOKEN و TWILIO_FROM ثم VERIFY_MODE=live'], ['الدفع وشحن النقاط', SYS.paymentMode === 'live' ? 'حقيقي' : 'عرض — بدون دفع فعلي', 'يحتاج اختيار بوابة الدفع وربطها'], ['عنوان الموقع APP_ORIGIN', SYS.appOrigin || 'غير مضبوط', 'https://النطاق-الخاص-بكم']] }));
+};
+const _sysH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'sys-reload') { SYS = null; render(); return true; }
+  if (act === 'sys-backup') { if (SYS_BUSY) return true; SYS_BUSY = 'backup'; render(); api('POST', '/api/admin/backup').then(r => { toast('تمت النسخة الاحتياطية · ' + sysSize(r.backup.size)); }).catch(e => toast(e.message)).finally(() => { SYS_BUSY = ''; sysLoad(); }); return true; }
+  if (act === 'sys-ai-test') { if (SYS_BUSY || !SYS.ai.keySet) return true; SYS_BUSY = 'test'; render(); api('POST', '/api/admin/ai/test').then(r => { SYS.aiTest = r; }).catch(e => { SYS.aiTest = { ok: false, message: e.message }; }).finally(() => { SYS_BUSY = ''; const keep = SYS.aiTest; sysLoad().then(() => { if (SYS) SYS.aiTest = keep; render(); }); }); return true; }
+  if (act === 'sys-ai-pause') { api('PATCH', '/api/admin/ai', { paused: k === '1' }).then(r => { SYS.ai = r.ai; toast(k === '1' ? 'أُوقف الذكاء الاصطناعي' : 'عاد الذكاء الاصطناعي للعمل'); render(); }).catch(e => toast(e.message)); return true; }
+  return _sysH(act, k, el);
+};
+</script>
+<script data-app="">
+/* ================= «اسأل نايوش»: new conversation + log of every question (admin) =================
+   • Pressing «اسأل نايوش» (top bar, floating button, menu, home) always opens a fresh conversation;
+     «محادثة جديدة» inside the chat does the same.
+   • تغذية البيانات → «سجل كل الأسئلة»: every question asked, who asked, how it was answered (trained / AI / no answer),
+     filtered by period and downloadable as PDF, Excel or CSV. */
+function qaNewChat() { S.qaChat = []; const i = document.getElementById('qa-ask-q'); if (i) i.value = ''; }
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-go="ask"],[data-act="rd-bot"],[data-act="qa-new-chat"]');
+  if (!t) return;
+  qaNewChat();
+  if (t.dataset.act === 'qa-new-chat') { e.preventDefault(); e.stopPropagation(); render(); setTimeout(() => { const i = document.getElementById('qa-ask-q'); if (i) i.focus(); }, 30); }
+}, true);
+
+let QA_LOG = null, QA_LOG_LOADING = false;
+const QA_SRC = { trained: 'إجابة مدرّبة', ai: 'ذكاء اصطناعي', none: 'بدون إجابة' };
+async function qaLogLoad() {
+  if (QA_LOG_LOADING) return; QA_LOG_LOADING = true;
+  try {
+    if (rdServer()) { const p = new URLSearchParams(); if (S.qlFrom) p.set('from', S.qlFrom); if (S.qlTo) p.set('to', S.qlTo); QA_LOG = await api('GET', '/api/qa/log' + (p.toString() ? '?' + p : '')); }
+    else { const L = (S.qaLog || []).filter(x => (!S.qlFrom || x.at.slice(0, 10) >= S.qlFrom) && (!S.qlTo || x.at.slice(0, 10) <= S.qlTo)), all = S.qaLog || []; QA_LOG = { log: L, totals: { n: all.length, trained: all.filter(x => x.source === 'trained').length, ai: all.filter(x => x.source === 'ai').length, none: all.filter(x => x.source === 'none').length } }; }
+  } catch (e) { QA_LOG = { log: [], totals: { n: 0, trained: 0, ai: 0, none: 0 }, err: e.message }; }
+  QA_LOG_LOADING = false; if (S.route === 'feed') render();
+}
+const qlWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+function qaLogCard() {
+  if (!QA_LOG) { setTimeout(qaLogLoad, 0); return `<section class="card"><h2 class="h-sec">سجل كل الأسئلة</h2><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  const T = QA_LOG.totals, L = QA_LOG.log, shown = L.slice(0, 25);
+  return `<section class="card" style="gap:12px" id="qa-log-card"><div class="row between" style="gap:8px"><div class="stack" style="gap:2px"><h2 class="h-sec">سجل كل الأسئلة</h2><span class="faint" style="font-size:12px">كل ما سُئل لنايوش، من سأله، وكيف أُجيب — للإدارة فقط</span></div>
+      <span class="fx-menu"><button type="button" class="btn sm" data-act="ql-menu" aria-expanded="${S.qlOpen ? 'true' : 'false'}">${ic('down', 14)}تنزيل السجل ▾</button>${S.qlOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="ql-export" data-k="pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="ql-export" data-k="xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="ql-export" data-k="csv">${ic('clip', 14)}CSV</button></span>` : ''}</span></div>
+    ${anKpis([['كل الأسئلة', T.n], ['أجاب من التدريب', T.trained, 'good'], ['أجاب بالذكاء الاصطناعي', T.ai], ['بدون إجابة', T.none, T.none ? 'bad' : 'good']])}
+    <div class="row" style="gap:8px;align-items:end"><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">من تاريخ</span><input type="date" id="ql-from" dir="ltr" value="${esc(S.qlFrom || '')}"></label><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">إلى تاريخ</span><input type="date" id="ql-to" dir="ltr" value="${esc(S.qlTo || '')}"></label>${S.qlFrom || S.qlTo ? `<button type="button" class="btn link sm" data-act="ql-clear">كل الفترات</button>` : ''}<span class="faint" style="font-size:12px;margin-inline-start:auto">${L.length} سؤال في الفترة${L.length > shown.length ? ' · يظهر آخر ' + shown.length + ' والتنزيل يشمل الكل' : ''}</span></div>
+    ${shown.length ? `<div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>السائل</th><th>السؤال</th><th>كيف أُجيب</th><th>الإجابة</th></tr></thead><tbody>${shown.map(x => `<tr><td style="font-size:12px;white-space:nowrap">${qlWhen(x.at)}</td><td style="font-size:12.5px">${esc(x.user_name || '—')}${x.user_email ? `<span class="faint" style="display:block;font-size:11px;direction:ltr;text-align:right">${esc(x.user_email)}</span>` : ''}</td><td style="font-size:12.5px">${esc(x.question)}</td><td style="font-size:12px;white-space:nowrap"><span class="tag ${x.source === 'trained' ? 't-s' : x.source === 'ai' ? 't-i' : 't-m'}">${QA_SRC[x.source] || x.source}</span>${x.score != null ? ` <span class="faint mono">${x.score}%</span>` : ''}</td><td style="font-size:12px;max-width:320px">${x.answer ? esc(String(x.answer).slice(0, 140)) + (String(x.answer).length > 140 ? '…' : '') : '<span class="faint">—</span>'}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted" style="margin:0;font-size:13px">${QA_LOG.err ? esc(QA_LOG.err) : 'لا أسئلة في هذه الفترة بعد.'}</p>`}
+  </section>`;
+}
+const qlLocal = (iso) => { const d = new Date(iso), z = (n) => String(n).padStart(2, '0'); return isNaN(d) ? iso : `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+function qlRows() { return (QA_LOG ? QA_LOG.log : []).map(x => [qlLocal(x.at), x.user_name || '', x.user_email || '', x.question, QA_SRC[x.source] || x.source, x.score != null ? String(x.score) + '%' : '', x.matched || '', x.answer || '']); }
+const QL_COLS = ['الوقت', 'السائل', 'البريد', 'السؤال', 'كيف أُجيب', 'التطابق', 'السؤال المدرّب المطابق', 'الإجابة'];
+async function qlExport(fmt) {
+  S.qlOpen = false; render();
+  if (!QA_LOG || !QA_LOG.log.length) { toast('لا أسئلة في السجل لهذه الفترة'); return; }
+  const period = (S.qlFrom || S.qlTo) ? `${S.qlFrom || 'البداية'} → ${S.qlTo || 'اليوم'}` : 'كل الفترات', stamp = new Date().toISOString().slice(0, 10), name = `NAIOSH_ask_questions_${stamp}.${fmt}`;
+  try {
+    if (fmt === 'csv') { await saveFile(name, new Blob(['﻿' + anRowsToCSV([QL_COLS].concat(qlRows()))], { type: 'text/csv;charset=utf-8' })); return; }
+    toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+    const T = QA_LOG.totals, L = QA_LOG.log;
+    const rep = { code: 'ASK_LOG', title: 'سجل أسئلة «اسأل نايوش»', audience: 'إدارة نايوش', ref: 'ASK-LOG', sections: [
+      { h: 'ملخص', kv: [['الفترة', period], ['أسئلة الفترة', String(L.length)], ['أجاب من التدريب', String(L.filter(x => x.source === 'trained').length)], ['أجاب بالذكاء الاصطناعي', String(L.filter(x => x.source === 'ai').length)], ['بدون إجابة', String(L.filter(x => x.source === 'none').length)], ['إجمالي السجل', String(T.n)], ['تاريخ التنزيل', stamp]] },
+      { h: 'الأسئلة', cols: fmt === 'pdf' ? ['الوقت', 'السائل', 'السؤال', 'كيف أُجيب', 'الإجابة'] : QL_COLS, rows: fmt === 'pdf' ? qlRows().map(r => [r[0], r[1], r[3], r[4] + (r[5] ? ' ' + r[5] : ''), String(r[7]).slice(0, 220)]) : qlRows() }] };
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(name, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر التنزيل'); }
+}
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'ql-from' || e.target.id === 'ql-to') { S[e.target.id === 'ql-from' ? 'qlFrom' : 'qlTo'] = e.target.value; QA_LOG = null; render(); }
+});
+document.addEventListener('click', (e) => { if (S.qlOpen && !(e.target.closest && e.target.closest('#qa-log-card .fx-menu'))) { S.qlOpen = false; const p = document.querySelector('#qa-log-card .fx-pop'); if (p) p.remove(); } }, true);
+const _qlH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'qa-new-chat') { qaNewChat(); render(); return true; }
+  if (act === 'ql-menu') { S.qlOpen = !S.qlOpen; render(); return true; }
+  if (act === 'ql-export') { qlExport(k); return true; }
+  if (act === 'ql-clear') { S.qlFrom = ''; S.qlTo = ''; QA_LOG = null; render(); return true; }
+  return _qlH(act, k, el);
+};
+// refresh the log whenever the admin opens تغذية البيانات
+document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-go="feed"]'); if (t) QA_LOG = null; }, true);
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -9082,7 +9208,7 @@ async function serverBoot() {
   try {
     const st = await api('GET', '/api/state');
     S = Object.assign(freshState(), st.state || {}, { menu: false });
-    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false;
+    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false && !(window.innerWidth < 700);
     if (S.askStage === 1) S.askShown = ASK_STEPS.length;
   } catch (e) { S = freshState(); }
   if (S.req) { S.req.files = []; S.req.videos = []; }
