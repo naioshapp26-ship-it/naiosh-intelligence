@@ -31,7 +31,7 @@ function claim(ids) { for (const id of ids) db.run(`UPDATE uploads SET kind = 'q
 // Removes answer files no longer referenced by any entry.
 function release(ids) {
   if (!ids.length) return;
-  const used = new Set(db.all('SELECT attachments FROM qa_entries').flatMap(attIds));
+  const used = new Set(db.all('SELECT attachments FROM qa_entries UNION ALL SELECT attachments FROM kb_feeds').flatMap(attIds));
   for (const id of ids) if (!used.has(id)) { const u = db.get(`SELECT stored_name FROM uploads WHERE id = ? AND kind = 'qa'`, id); if (u) { fs.rm(path.join(uploadDir(), u.stored_name), { force: true }, () => {}); db.run('DELETE FROM uploads WHERE id = ?', id); } }
 }
 
@@ -45,6 +45,20 @@ function body(b) {
   return e;
 }
 const logQ = (uid, q, source, entryId, score, answer) => db.run('INSERT INTO qa_log (at, user_id, question, source, entry_id, score, answer) VALUES (?,?,?,?,?,?,?)', db.nowIso(), uid, q, source, entryId || null, score ?? null, answer ? String(answer).slice(0, 4000) : null);
+// ---------- تغذية محاور التحليل / مركز المعلومات / أنظمة نايوش هوب ----------
+const SCOPES = { axis: 'محاور التحليل', info: 'مركز المعلومات', hub: 'أنظمة نايوش هوب' };
+const feedRow = (r) => ({ id: r.id, scope: r.scope, target: r.target, targetLabel: r.target_label, body: r.body, keywords: r.keywords || '', link: r.link || '', active: !!r.active, attachments: attMeta(attIds(r)), updatedAt: r.updated_at });
+function feedBody(b) {
+  const e = { scope: str(b.scope, 10), target: str(b.target, 80) || 'all', targetLabel: str(b.targetLabel, 160), body: typeof b.body === 'string' ? b.body.trim().slice(0, 50000) : '', keywords: str(b.keywords, 400), link: str(b.link, 500), active: b.active !== false };
+  const errors = {};
+  if (!SCOPES[e.scope]) errors.scope = 'نوع التغذية غير معروف.';
+  if (e.body.length < 3) errors.body = 'اكتب الشرح أو الصق النص.';
+  if (e.link && !/^https?:\/\/\S+$/i.test(e.link)) errors.link = 'الرابط يجب أن يبدأ بـ https://';
+  if (!e.targetLabel) e.targetLabel = e.target === 'all' ? 'الكل' : e.target;
+  if (Object.keys(errors).length) throw bad('validation', 'تحقق من الحقول.', { errors });
+  return e;
+}
+const activeFeeds = () => db.all('SELECT * FROM kb_feeds WHERE active = 1 ORDER BY id DESC').map(feedRow);
 const ASK = new Map(); // user → timestamps (60 per 10 min)
 
 module.exports = (r) => {
@@ -77,13 +91,39 @@ module.exports = (r) => {
     audit.write({ user: me, action: 'qa.delete', detail: 'حذف سؤالًا مدرّبًا: ' + old.question.slice(0, 80), ip: clientIp(req) });
     send(res, 200, { ok: true });
   });
+  r.add('GET', '/api/feeds', async (req, res) => { requirePerm(req, 'config.edit'); send(res, 200, { feeds: db.all('SELECT * FROM kb_feeds ORDER BY id DESC').map(feedRow) }); });
+  r.add('POST', '/api/feeds', async (req, res) => {
+    const me = requirePerm(req, 'config.edit'), b = await readJson(req, 256 * 1024), e = feedBody(b), atts = takeAttachments(b.attachments, me), at = db.nowIso();
+    const info = db.run('INSERT INTO kb_feeds (scope, target, target_label, body, keywords, link, attachments, active, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)', e.scope, e.target, e.targetLabel, e.body, e.keywords, e.link, JSON.stringify(atts), e.active ? 1 : 0, me.id, at, at);
+    claim(atts);
+    audit.write({ user: me, action: 'feed.create', detail: `تغذية ${SCOPES[e.scope]}: ${e.targetLabel}`, ip: clientIp(req) });
+    send(res, 201, { feed: feedRow(db.get('SELECT * FROM kb_feeds WHERE id = ?', Number(info.lastInsertRowid))) });
+  });
+  r.add('PATCH', '/api/feeds/:id', async (req, res, p) => {
+    const me = requirePerm(req, 'config.edit'), old = db.get('SELECT * FROM kb_feeds WHERE id = ?', +p.id);
+    if (!old) throw new HttpError(404, 'not_found', 'غير موجود');
+    const b = await readJson(req, 256 * 1024), e = feedBody({ ...feedRow(old), ...b }), before = attIds(old);
+    const atts = b.attachments === undefined ? before : takeAttachments(b.attachments, me);
+    db.run('UPDATE kb_feeds SET scope = ?, target = ?, target_label = ?, body = ?, keywords = ?, link = ?, attachments = ?, active = ?, updated_at = ? WHERE id = ?', e.scope, e.target, e.targetLabel, e.body, e.keywords, e.link, JSON.stringify(atts), e.active ? 1 : 0, db.nowIso(), old.id);
+    claim(atts); release(before.filter(id => !atts.includes(id)));
+    audit.write({ user: me, action: 'feed.update', detail: `عدّل تغذية ${SCOPES[e.scope]}: ${e.targetLabel}`, ip: clientIp(req) });
+    send(res, 200, { feed: feedRow(db.get('SELECT * FROM kb_feeds WHERE id = ?', old.id)) });
+  });
+  r.add('DELETE', '/api/feeds/:id', async (req, res, p) => {
+    const me = requirePerm(req, 'config.edit'), old = db.get('SELECT * FROM kb_feeds WHERE id = ?', +p.id);
+    if (!old) throw new HttpError(404, 'not_found', 'غير موجود');
+    db.run('DELETE FROM kb_feeds WHERE id = ?', old.id); release(attIds(old));
+    audit.write({ user: me, action: 'feed.delete', detail: `حذف تغذية ${SCOPES[old.scope] || old.scope}: ${old.target_label}`, ip: clientIp(req) });
+    send(res, 200, { ok: true });
+  });
+
   r.add('DELETE', '/api/qa/unanswered/:id', async (req, res, p) => { requirePerm(req, 'config.edit'); db.run('DELETE FROM qa_unanswered WHERE id = ?', +p.id); send(res, 200, { ok: true }); });
 
   // A file attached to a trained answer: any signed-in user while the answer is active; admins always.
   r.add('GET', '/api/qa/file/:id', async (req, res, p) => {
     const me = requireUser(req), id = String(p.id);
     const u = db.get(`SELECT * FROM uploads WHERE id = ? AND kind = 'qa'`, id);
-    const live = u && db.all('SELECT attachments, active FROM qa_entries').some(x => (x.active || can(me, 'config.edit')) && attIds(x).includes(id));
+    const live = u && db.all('SELECT attachments, active FROM qa_entries UNION ALL SELECT attachments, active FROM kb_feeds').some(x => (x.active || can(me, 'config.edit')) && attIds(x).includes(id));
     if (!live) throw new HttpError(404, 'not_found', 'File not found');
     serveUpload(req, res, u, INLINE.has(u.mime));
   });
@@ -114,7 +154,7 @@ module.exports = (r) => {
     const n = QA.norm(q), at = db.nowIso(), suggestions = top.filter(x => x.s >= QA.SUGGEST).map(x => ({ id: x.e.id, question: x.e.question }));
     // Phase 1 AI: answer from the trained answers only; the question still goes to the admin with the AI's answer for review.
     let aiAnswer = null;
-    if (!ai.blocked('ask', me.id)) { try { aiAnswer = await ai.askNaiosh(q, entries, me.id); } catch (e) { console.warn('[ai] ask failed:', e.message); } }
+    if (!ai.blocked('ask', me.id)) { try { aiAnswer = await ai.askNaiosh(q, entries, me.id, activeFeeds()); } catch (e) { console.warn('[ai] ask failed:', e.message); } }
     db.run(`INSERT INTO qa_unanswered (norm, question, user_id, first_at, last_at, ai_answer) VALUES (?,?,?,?,?,?) ON CONFLICT(norm) DO UPDATE SET count = count + 1, last_at = excluded.last_at, ai_answer = COALESCE(excluded.ai_answer, qa_unanswered.ai_answer)`, n, q, me.id, at, at, aiAnswer);
     logQ(me.id, q, aiAnswer ? 'ai' : 'none', null, null, aiAnswer);
     if (aiAnswer) return send(res, 200, { found: true, ai: true, answer: aiAnswer, question: q, suggestions });
