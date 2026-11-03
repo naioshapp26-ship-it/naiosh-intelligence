@@ -1,0 +1,113 @@
+<style>
+.fd-mode{display:flex;gap:8px;flex-wrap:wrap}
+.fd-mode button{height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-weight:700}
+.fd-mode button[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow);background:var(--yellowbg)}
+.fd-body{min-height:220px;resize:vertical;line-height:1.8}
+.fd-item{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--sunk)}
+.fd-item.off{opacity:.55}
+.fd-item p{margin:0;font-size:12.5px;line-height:1.75;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fd-item .kw{display:flex;flex-wrap:wrap;gap:4px}.fd-item .kw span{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--raised);border:1px solid var(--line2);color:var(--muted)}
+</style>
+<script data-app="">
+/* ================= تغذية البيانات → محاور التحليل · مركز المعلومات · أنظمة نايوش هوب =================
+   As Dr. Adnan described it: choose «تغذية جميع …» or «اختر تغذية …» (a list), then write or paste the explanation,
+   keywords, an optional link and optional files, active, «حفظ التغذية». The right column lists what was fed
+   («المحاور المدربة» …). No question field and no import/export here — questions for an axis are fed in the analysis.
+   «اسأل نايوش» and the AI phases use every active feed as reference. */
+const FD_SCOPE = {
+  axis: { title: 'تغذية محاور التحليل', all: 'تغذية جميع المحاور', pick: 'اختر تغذية محور', allLabel: 'جميع المحاور', list: 'المحاور المدربة', item: 'محور', empty: 'لم تُغذَّ أي محاور بعد.' },
+  info: { title: 'تغذية مركز المعلومات', all: 'تغذية كل مركز المعلومات', pick: 'اختر قسمًا', allLabel: 'كل مركز المعلومات', list: 'أقسام مركز المعلومات المدربة', item: 'قسم', empty: 'لم تُغذَّ أقسام مركز المعلومات بعد.' },
+  hub: { title: 'تغذية أنظمة نايوش هوب', all: 'تغذية جميع الأنظمة', pick: 'اختر نظامًا', allLabel: 'جميع أنظمة نايوش هوب', list: 'الأنظمة المدربة', item: 'نظام', empty: 'لم تُغذَّ أنظمة نايوش هوب بعد.' }
+};
+const FD_INFO = [['about', 'عن نايوش'], ['how', 'كيف تعمل نايوش — رحلة التحليل'], ['principles', 'مبادئ المنظومة'], ['privacy', 'الخصوصية وحماية البيانات'], ['terms', 'الشروط والأحكام'], ['faq', 'الأسئلة الشائعة'], ['verify', 'التحقق من التقارير'], ['points', 'النقاط والدفع'], ['contact', 'التواصل والشكاوى والمقترحات']];
+const FD_HUB = [['services', 'الخدمات'], ['wallet', 'المحفظة والنقاط'], ['packs', 'الباقات'], ['offers', 'العروض'], ['payment', 'طرق الدفع وأكواد الخصم']];
+const FD_NOT_AXIS = ['home', 'ask', 'request', 'results', 'myreqs', 'settings', 'feed', 'system', 'governance', 'integration', 'knowledge', 'agents', 'reports', 'architecture', 'axes', 'hub', 'info', 'contact', 'register', 'verify', 'denied'];
+function fdAxisGroups() {
+  const tops = (typeof DASH_TOPICS !== 'undefined' ? DASH_TOPICS : []).map(t => ['t:' + t.id, 'تحليل ' + t.name]);
+  const items = NAV.flatMap(g => g.items.map(([id, l]) => [id, l, g.t])).filter(([id]) => !FD_NOT_AXIS.includes(id) && !String(id).startsWith('t:'));
+  const groups = []; if (tops.length) groups.push(['تحليل البيانات حسب الموضوع', tops]);
+  [...new Set(items.map(x => x[2]))].forEach(g => groups.push([g, items.filter(x => x[2] === g).map(([id, l]) => [id, l])]));
+  return groups;
+}
+function fdOptions(scope) { return scope === 'axis' ? fdAxisGroups() : [[FD_SCOPE[scope].pick, scope === 'info' ? FD_INFO : FD_HUB]]; }
+const fdLabelOf = (scope, target) => { if (target === 'all') return FD_SCOPE[scope].allLabel; for (const [, L] of fdOptions(scope)) { const x = L.find(([k]) => k === target); if (x) return x[1]; } return target; };
+
+let FD_SV = null, FD_ERR = {};
+async function fdLoad() { if (!rdServer()) return; try { FD_SV = (await api('GET', '/api/feeds')).feeds; } catch (e) { FD_SV = []; toast(e.message); } if (S.route === 'feed') render(); }
+const fdAll = () => rdServer() ? (FD_SV || []) : (S.feeds || (S.feeds = []));
+const fdFresh = (scope) => ({ id: null, scope, mode: 'all', target: 'all', body: '', keywords: '', link: '', active: true, attachments: [] });
+
+function fdScopeView(scope) {
+  if (rdServer() && !FD_SV) { setTimeout(fdLoad, 0); return `<section class="card"><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  const C = FD_SCOPE[scope], f = (S.fdForm && S.fdForm.scope === scope) ? S.fdForm : (S.fdForm = fdFresh(scope)), E = FD_ERR;
+  const mine = fdAll().filter(x => x.scope === scope), q = (S.fdFilter || '').trim();
+  const list = q ? mine.filter(x => (x.targetLabel + ' ' + x.body + ' ' + x.keywords).includes(q)) : mine;
+  const opts = fdOptions(scope);
+  const form = `<section class="card" style="gap:14px" id="fd-form-card"><div class="row between"><h2 class="h-sec">${f.id ? 'تعديل التغذية' : C.title}</h2>${f.id ? `<button type="button" class="btn link sm" data-act="fd-new">إلغاء التعديل</button>` : ''}</div>
+    <div class="fd-mode" role="group" aria-label="${C.title}"><button type="button" data-act="fd-mode" data-k="all" aria-pressed="${f.mode === 'all'}">${C.all}</button><button type="button" data-act="fd-mode" data-k="pick" aria-pressed="${f.mode === 'pick'}">${C.pick}</button></div>
+    ${f.mode === 'pick' ? `<label class="stack" style="gap:5px"><span class="lbl">${C.pick} *</span><select id="fd-target" style="${egSelStyle};min-height:46px"><option value="">— اختر —</option>${opts.map(([g, L]) => `<optgroup label="${esc(g)}">${L.map(([k, l]) => `<option value="${esc(k)}" ${f.target === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>${E.target ? `<span style="color:#FF6B81;font-size:12px">${E.target}</span>` : ''}</label>` : `<div class="banner y" style="font-size:12.5px">${ic('info', 15)}<span>هذه التغذية تنطبق على ${C.allLabel}.</span></div>`}
+    <label class="stack" style="gap:5px"><span class="lbl">اكتب الشرح أو الصق النص *</span><textarea id="fd-body" class="fd-body" placeholder="اكتب شرحًا هنا، أو الصق نصًا كاملًا من مصدر خارجي…">${esc(f.body)}</textarea><span class="faint" style="font-size:11px">${(f.body || '').length.toLocaleString('ar')} حرف · المربع قابل للتمديد من زاويته</span>${E.body ? `<span style="color:#FF6B81;font-size:12px">${E.body}</span>` : ''}</label>
+    <div class="grid g2"><label class="stack" style="gap:5px"><span class="lbl">كلمات مفتاحية (بفاصلة)</span><input type="text" id="fd-keywords" value="${esc(f.keywords)}" placeholder="مثال: الجدول الزمني، الميزانية، المخاطر"></label>
+      <label class="stack" style="gap:5px"><span class="lbl">رابط خارجي (اختياري)</span><input type="url" id="fd-link" dir="ltr" value="${esc(f.link)}" placeholder="https://">${E.link ? `<span style="color:#FF6B81;font-size:12px">${E.link}</span>` : ''}</label></div>
+    ${typeof qaAttachField === 'function' ? qaAttachField(f, { key: 'fdForm', label: 'ملفات (اختياري) — PDF، صور، Excel، Word، فيديو، أي ملف' }) : ''}
+    <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" id="fd-active" ${f.active ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13.5px">مفعّل — يستخدمه نايوش</span></label>
+    <div class="row"><button type="button" class="btn primary" data-act="fd-save">${ic('check', 16)}حفظ التغذية</button></div></section>`;
+  const listHtml = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">${C.list} (${mine.length})</h2></div>
+    ${mine.length > 3 ? `<input type="search" id="fd-filter" placeholder="ابحث في التغذية…" value="${esc(S.fdFilter || '')}">` : ''}
+    ${list.length ? list.map(x => `<div class="fd-item ${x.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><b style="font-size:13.5px">${x.target === 'all' ? ic('axes', 14, 'style="color:var(--yellow)"') + ' ' : ''}${esc(x.targetLabel)}</b><span class="tag ${x.active ? 't-s' : 't-m'}">${x.active ? 'مفعّل' : 'موقوف'}</span></div>
+        <p>${esc(x.body)}</p>
+        ${x.keywords ? `<div class="kw">${x.keywords.split(/[,،]/).map(k => k.trim()).filter(Boolean).slice(0, 8).map(k => `<span>${esc(k)}</span>`).join('')}</div>` : ''}
+        <div class="row between" style="gap:6px"><span class="faint" style="font-size:11px">${(x.attachments || []).length ? (x.attachments.length + ' مرفق · ') : ''}${x.link ? 'رابط · ' : ''}${x.body.length.toLocaleString('ar')} حرف</span><span class="row nowrap" style="gap:4px"><button type="button" class="btn sm" data-act="fd-edit" data-k="${x.id}">تعديل</button><button type="button" class="btn link sm" data-act="fd-toggle" data-k="${x.id}">${x.active ? 'إيقاف' : 'تفعيل'}</button><button type="button" class="btn link sm" data-act="fd-del" data-k="${x.id}" style="color:var(--redsoft)">حذف</button></span></div></div>`).join('')
+      : `<p class="muted" style="margin:0;font-size:13px">${q ? 'لا نتائج.' : C.empty}</p>`}</section>`;
+  return `<div class="fd-grid"><div class="stack" style="gap:16px">${form}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
+    ${egNote('ما يُكتب هنا يصبح مرجعًا لنايوش: يستخدمه «اسأل نايوش» عند تشغيل الذكاء الاصطناعي، وتعتمد عليه مراحل التحليل القادمة. تغذية المحور بالأسئلة تكون داخل التحليل نفسه وليس هنا.')}`;
+}
+function fdRead() {
+  const f = S.fdForm; if (!f) return;
+  const v = (id) => { const e = document.getElementById(id); return e ? e.value : undefined; };
+  ['body', 'keywords', 'link'].forEach(k => { const x = v('fd-' + k); if (x !== undefined) f[k] = x; });
+  const t = v('fd-target'); if (t !== undefined) f.target = t;
+  const a = document.getElementById('fd-active'); if (a) f.active = a.checked;
+}
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'fd-filter') { S.fdFilter = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('fd-filter'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
+  if (/^fd-(body|keywords|link)$/.test(e.target.id)) fdRead();
+});
+document.addEventListener('change', (e) => { if (e.target.id === 'fd-target' || e.target.id === 'fd-active') fdRead(); });
+async function fdSave() {
+  fdRead(); const f = S.fdForm, scope = f.scope; FD_ERR = {};
+  if (f.mode === 'pick' && !f.target) FD_ERR.target = 'اختر من القائمة.';
+  if ((f.body || '').trim().length < 3) FD_ERR.body = 'اكتب الشرح أو الصق النص.';
+  if (f.link && !/^https?:\/\/\S+$/i.test(f.link.trim())) FD_ERR.link = 'الرابط يجب أن يبدأ بـ https://';
+  if ((f.attachments || []).some(a => a.pending)) { toast('انتظر انتهاء رفع الملفات'); return; }
+  if (Object.keys(FD_ERR).length) { render(); return; }
+  const target = f.mode === 'all' ? 'all' : f.target, x = { scope, target, targetLabel: fdLabelOf(scope, target), body: f.body.trim(), keywords: f.keywords.trim(), link: f.link.trim(), active: f.active, attachments: (f.attachments || []).map(a => rdServer() ? a.id : { ...a }) };
+  try {
+    if (rdServer()) { if (f.id) await api('PATCH', '/api/feeds/' + f.id, x); else await api('POST', '/api/feeds', x); await fdLoad(); }
+    else { const L = fdAll(), now = new Date().toISOString(); if (f.id) Object.assign(L.find(y => y.id === f.id) || {}, x, { updatedAt: now }); else L.unshift({ id: Date.now(), ...x, updatedAt: now }); }
+    toast(f.id ? 'حُدّثت التغذية' : 'حُفظت التغذية — نايوش تعلّمها'); S.fdForm = fdFresh(scope); render();
+  } catch (e) { if (e.errors) { FD_ERR = e.errors; render(); } toast(e.message); }
+}
+async function fdToggle(id) {
+  const x = fdAll().find(y => String(y.id) === String(id)); if (!x) return;
+  if (rdServer()) { try { await api('PATCH', '/api/feeds/' + x.id, { active: !x.active }); await fdLoad(); } catch (e) { toast(e.message); } } else { x.active = !x.active; render(); }
+}
+async function fdDelete(id) {
+  const x = fdAll().find(y => String(y.id) === String(id)); if (!x || !confirm(`حذف تغذية «${x.targetLabel}»؟`)) return;
+  if (rdServer()) { try { await api('DELETE', '/api/feeds/' + x.id); await fdLoad(); } catch (e) { toast(e.message); } } else { S.feeds = fdAll().filter(y => y !== x); render(); }
+  toast('حُذفت التغذية');
+}
+const _fdH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  switch (act) {
+    case 'fd-mode': fdRead(); S.fdForm.mode = k; if (k === 'all') S.fdForm.target = 'all'; else if (S.fdForm.target === 'all') S.fdForm.target = ''; FD_ERR = {}; render(); return true;
+    case 'fd-save': fdSave(); return true;
+    case 'fd-new': S.fdForm = fdFresh(S.fdForm ? S.fdForm.scope : 'axis'); FD_ERR = {}; render(); return true;
+    case 'fd-edit': { const x = fdAll().find(y => String(y.id) === String(k)); if (!x) return true; S.fdForm = { id: x.id, scope: x.scope, mode: x.target === 'all' ? 'all' : 'pick', target: x.target, body: x.body, keywords: x.keywords || '', link: x.link || '', active: x.active, attachments: (x.attachments || []).map(a => ({ ...a })) }; FD_ERR = {}; render(); const c = document.getElementById('fd-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+    case 'fd-toggle': fdToggle(k); return true;
+    case 'fd-del': fdDelete(k); return true;
+    case 'fd-tab': S.fdFilter = ''; FD_ERR = {}; if (['axis', 'info', 'hub'].includes(k) && rdServer()) FD_SV = null; break;
+  }
+  return _fdH(act, k, el);
+};
+</script>

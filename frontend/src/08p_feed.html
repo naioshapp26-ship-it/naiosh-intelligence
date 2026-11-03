@@ -93,9 +93,10 @@ VIEWS.feed = () => {
   if (rdServer() && typeof svCan === 'function' && !svCan('config.edit')) return `<section class="card"><h2 class="h-sec">${ic('lock', 18, 'style="color:var(--red)"')} تغذية البيانات لمدير النظام فقط</h2></section>`;
   if (rdServer() && !QA_SV) { qaLoad().then(() => { if (S.route === 'feed') render(); }); return `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`; }
   const tab = S.fdTab || 'ask', D = qaData();
-  const tabs = [['ask', 'تغذية «اسأل نايوش»', 'ask', ''], ['kb', 'قاعدة المعرفة', 'knowledge', 'قريبًا'], ['bench', 'المضاعفات والمراجع القطاعية', 'chart', 'قريبًا'], ['src', 'مصادر البيانات', 'data', 'قريبًا']];
+  const tabs = [['ask', 'تغذية «اسأل نايوش»', 'ask', ''], ['axis', 'تغذية محاور التحليل', 'axes', ''], ['info', 'تغذية مركز المعلومات', 'info', ''], ['hub', 'تغذية أنظمة نايوش هوب', 'hub', ''], ['kb', 'قاعدة المعرفة', 'knowledge', 'قريبًا'], ['bench', 'المضاعفات والمراجع القطاعية', 'chart', 'قريبًا'], ['src', 'مصادر البيانات', 'data', 'قريبًا']];
   const head = `<section class="stack" style="gap:6px"><h2 class="pg-title">تغذية البيانات</h2><p class="lead" style="margin:0">علّم المنظومة: أضف الأسئلة وإجاباتها، وراجع ما سأل عنه المستخدمون ولم يجد إجابة. للإدارة فقط.</p></section>
     <div class="fd-tabs" role="tablist">${tabs.map(([id, l, i, soon]) => `<button type="button" role="tab" data-act="fd-tab" data-k="${id}" aria-selected="${tab === id}">${ic(i, 16)}${l}${soon ? `<span class="soon-tag">${soon}</span>` : ''}</button>`).join('')}</div>`;
+  if (typeof fdScopeView === 'function' && ['axis', 'info', 'hub'].includes(tab)) return head + fdScopeView(tab);
   if (tab !== 'ask') return head + `<section class="card" style="align-items:center;text-align:center;padding:40px 20px;gap:10px">${ic('feed', 36, 'style="color:var(--faint)"')}<h2 class="h-sec">قريبًا</h2><p class="muted" style="margin:0">نبدأ بتغذية «اسأل نايوش». هذا القسم يُبنى في المرحلة التالية.</p></section>`;
   const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
   const qf = (S.qaFilter || '').trim(), qn = qaNorm(qf);

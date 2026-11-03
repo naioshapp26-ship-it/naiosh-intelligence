@@ -44,15 +44,16 @@ function qaAttachView(list) {
       : `<span class="f" title="الملف غير متاح في هذه الجلسة">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></span>`;
   }).join('')}</div>`;
 }
-function qaAttachField(f) {
+function qaAttachField(f, o = {}) {
+  const key = o.key || 'qaForm';
   const L = f.attachments || [];
-  return `<div class="stack" style="gap:6px"><span class="lbl">مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)</span>
-    <label class="qa-drop">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="qa-att-in" multiple hidden></label>
-    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
+  return `<div class="stack" style="gap:6px"><span class="lbl">${o.label || 'مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)'}</span>
+    <label class="qa-drop" data-key="${key}">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="${key === 'qaForm' ? 'qa-att-in' : 'att-in-' + key}" data-att-key="${key}" multiple hidden></label>
+    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${key}|${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
     ${!rdServer() && L.some(a => !a.data) ? '<span class="faint" style="font-size:11px">في نسخة العرض تبقى الملفات الأكبر من 900KB حتى إغلاق الصفحة؛ على الخادم تُحفظ دائمًا.</span>' : ''}</div>`;
 }
-async function qaAddFiles(files) {
-  const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
+async function qaAddFiles(files, key = 'qaForm') {
+  const f = S[key] || (S[key] = key !== 'qaForm' ? { attachments: [] } : { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
   f.attachments = f.attachments || [];
   for (const file of files) {
     if (file.size > 50 * 1048576) { toast('«' + file.name + '» أكبر من 50MB'); continue; }
@@ -68,11 +69,11 @@ async function qaAddFiles(files) {
     if (file.size <= QA_INLINE_MAX) a.data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(''); fr.readAsDataURL(file); });
     f.attachments.push(a);
   }
-  render(); toast('أُرفقت الملفات — احفظ السؤال لتثبيتها');
+  render(); toast('أُرفقت الملفات — اضغط «حفظ» لتثبيتها');
 }
-document.addEventListener('change', (e) => { if (e.target.id === 'qa-att-in' && e.target.files.length) qaAddFiles([...e.target.files]); });
+document.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.attKey; if (k && e.target.files.length) { qaAddFiles([...e.target.files], k); e.target.value = ''; } });
 document.addEventListener('dragover', (e) => { if (e.target.closest && e.target.closest('.qa-drop')) e.preventDefault(); });
-document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files]); });
+document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files], d.dataset.key || 'qaForm'); });
 
 /* ---------- export ---------- */
 function qaReport(fmt) {
@@ -190,7 +191,7 @@ function qaFeedHandle(act, k) {
     case 'fx-menu': S.fxOpen = !S.fxOpen; render(); return true;
     case 'qa-export-pdf': qaExport('pdf'); return true;
     case 'qa-export-xlsx': qaExport('xlsx'); return true;
-    case 'qa-att-rm': { const f = S.qaForm; if (f && f.attachments) f.attachments.splice(+k, 1); render(); return true; }
+    case 'qa-att-rm': { const [key, i] = String(k).includes('|') ? String(k).split('|') : ['qaForm', k]; const f = S[key]; if (f && f.attachments) f.attachments.splice(+i, 1); render(); return true; }
     case 'qi-close': QI = null; qaImportDialog(); return true;
     case 'qi-all': { const all = QI.items.every(x => x.on); QI.items.forEach(x => { x.on = !all; }); qaImportDialog(); return true; }
     case 'qi-add': if (QI && QI.items.some(x => x.on)) qaImportAdd(); return true;
