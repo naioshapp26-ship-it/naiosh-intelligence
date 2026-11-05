@@ -96,7 +96,7 @@ function buildXlsx(rep) {
   const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
   const sheets = [];
   // cover sheet: title, metadata, summary text and every key/value section
-  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(rep.by || expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(rep.by || expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], ['أساس التحليل', EXP_TXT(rep.basis || EXP_BASIS)], []];
   const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
   for (const sec of rep.sections) {
     if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
@@ -143,6 +143,7 @@ const PDF_W = 595.28, PDF_H = 841.89, PDF_K = 2.2;           // A4 in points, re
 const PDF_FONT = '"IBM Plex Sans Arabic","Readex Pro","Segoe UI",Tahoma,Arial,sans-serif';
 let LOGO_EL = null;
 async function logoImage() { if (LOGO_EL) return LOGO_EL; const im = new Image(); im.src = LOGO_SRC; try { await im.decode(); } catch (e) {} LOGO_EL = im; return im; }
+const EXP_BASIS = 'صدر هذا التحليل بناءً على البيانات المرفقة أو التي تم تزويدنا بها، ودقّته مرتبطة باكتمالها وصحتها.';
 async function buildPdf(rep) {
   const LOGO = await logoImage();
   try { await Promise.all(['400 12px "IBM Plex Sans Arabic"', '700 12px "IBM Plex Sans Arabic"', '700 12px "Readex Pro"'].map(f => document.fonts.load(f))); } catch (e) {}
@@ -176,6 +177,7 @@ async function buildPdf(rep) {
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
       { const t = `${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, maxW = R - (L + 94 + 16); let sz = 9.5; while (sz > 6.5 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 400); } ctx.fillText(t, R, 86); }
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
+      { const w0 = ctx.measureText('داخلي — سري').width + 12, t = EXP_TXT(rep.basis || EXP_BASIS), maxW = R - (L + 94 + 16) - w0; ctx.fillStyle = yel; let sz = 8.5; font(sz, 600); while (sz > 6 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 600); } ctx.fillText(t, R - w0, 104); }
       y = bandH + 26;
     } else {
       ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — ' + (rep.ref || 'CNS-001'), R, 24);

@@ -422,7 +422,7 @@ function rdMyReqs() { return (S.requests || []).filter(q => !rdServer() || q.min
 function rdJob(ref) {
   const J = rdJobs(); let j = J[ref];
   const q = (S.requests || []).find(x => x.ref === ref);
-  if (q && q.report && (!j || j.state !== 'done')) j = J[ref] = { ...(j || {}), stage: 4, state: 'done', code: q.report.code, sha: q.report.sha256, at: q.report.at };
+  if (q && q.report && (!j || (j.state !== 'done' && !j.rerun))) j = J[ref] = { ...(j || {}), stage: 4, state: 'done', code: q.report.code, sha: q.report.sha256, at: q.report.at };
   if (!j) j = J[ref] = { stage: 0, state: 'run', t0: Date.now() };
   return j;
 }
@@ -474,6 +474,7 @@ function rdSealedReport(ref, code, fmt) {
   rep.title = 'تقرير التحليل — ' + (q.axisLabel || q.title || ref);
   rep.ref = ref; rep.code = 'REPORT'; rep.audience = me.name; rep.by = 'محرك التحليل الآلي — منظومة نايوش';
   rep.sections.unshift({ h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', q.axisLabel || q.title || '—'], ['مقدّم الطلب', me.name], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', fmt === 'xlsx' ? 'نسخة عمل غير موثّقة — المرجع الرسمي هو ملف PDF' : 'نسخة موثّقة — محفوظة لدى نايوش ولا تُعدَّل']] });
+  rep.sections.splice(1, 0, { h: 'أساس التحليل', text: EXP_BASIS + ' حُلّل الملف المرفق «' + (((S.res || {}).src || {}).name || '—') + '»، وأي نقص أو خطأ في البيانات ينعكس على النتائج.' });
   if (fmt !== 'xlsx') rep.seal = { code, ref, client: me.name, date };
   return rep;
 }
@@ -485,16 +486,20 @@ async function rdRunJob(ref) {
     j.state = 'run'; j.err = '';
     j.stage = 0; rdJobRender(); await rdWait(700);
     j.stage = 1; rdJobRender(); await rdWait(600);
-    const loaded = await rdLoadData(ref);
-    if (!loaded) { const q = (S.requests || []).find(x => x.ref === ref) || {}; j.state = (q.files || 0) + (q.videos || 0) > 0 || (q.extra || []).length ? 'manual' : 'wait'; j.stage = 1; rdJobRender(); return; }
-    j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900);
+    // Attaching a data file is optional: with no file (or one that cannot be read as a table) the report is issued
+    // from what the client gave in the request, and says so.
+    let loaded = null, why = '';
+    try { loaded = await rdLoadData(ref); } catch (e) { why = (e && e.message) || ''; }
+    j.brief = !loaded; j.why = why;
+    if (loaded) { j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900); }
+    else { j.stage = 2; j.rows = 0; rdJobRender(); await rdBriefPrep(ref); await rdWait(700); }
     j.stage = 3; rdJobRender();
     let code = rdCode(), blob, sha, at = new Date().toISOString();
     for (let tries = 0; tries < 3; tries++) {
-      blob = await buildPdf(rdSealedReport(ref, code, 'pdf')); sha = await rdSha(blob);
+      blob = await buildPdf(j.brief ? rdBriefReport(ref, code, 'pdf') : rdSealedReport(ref, code, 'pdf')); sha = await rdSha(blob);
       if (!rdServer()) break;
       const q = (S.requests || []).find(x => x.ref === ref);
-      const res = await fetch('/api/requests/' + q.id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
+      const res = await fetch('/api/requests/' + q.id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code, ...(j.rerun ? { 'X-Report-Update': '1' } : {}) }, body: blob });
       const d = await res.json().catch(() => ({}));
       if (res.ok) { sha = d.sha256; at = d.at; q.report = { code, sha256: sha, at }; break; }
       if (d.error === 'code_taken') { code = rdCode(); continue; }
@@ -522,8 +527,10 @@ async function rdAttach(ref, files) {
   q.extra = (q.extra || []).concat(files.map(f => f.name));
   const data = files.find(f => RD_TAB_RE.test(f.name));
   toast('أُرفق ' + files.length + ' ملف');
-  if (data) { RD_FILES[ref] = data; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref); return; }
-  const j = rdJob(ref); j.state = 'manual'; j.stage = 1; save(); rdJobRender();
+  // new data after a report → an updated sealed report; other files are simply kept with the request
+  const was = rdJob(ref).state === 'done';
+  if (data) { RD_FILES[ref] = data; delete RD_BLOBS[ref]; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now(), rerun: was }; rdRunJob(ref); return; }
+  if (was) { save(); rdJobRender(); return; } rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref);
 }
 document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files.length) rdAttach(r, e.target.files); });
 
@@ -534,7 +541,8 @@ VIEWS.myreqs = () => {
   const head = `<section class="row between" style="gap:12px;align-items:flex-end"><div class="stack" style="gap:6px"><h2 class="pg-title">طلباتي وتقاريري</h2><p class="lead" style="margin:0">${wp}</p></div>
     <div class="row" style="gap:8px"><button type="button" class="btn" data-act="rd-hub" data-k="wallet">${ic('wallet', 16)}المحفظة</button><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></div></section>`;
   if (!list.length) return head + `<section class="card" style="align-items:center;text-align:center;gap:12px;padding:40px 20px">${ic('myreqs', 40, 'style="color:var(--faint)"')}<h2 class="h-sec">لا طلبات بعد</h2><p class="muted" style="margin:0">اختر محور التحليل، املأ النموذج، ووافق على الخصوصية — ويبدأ التحليل فورًا.</p><button type="button" class="btn primary" data-go="axes">اختر محور التحليل</button></section>`;
-  list.forEach(q => { const j = rdJob(q.ref); if (j.state === 'run' && !RD_ACTIVE.has(q.ref)) setTimeout(() => rdRunJob(q.ref), 30); });
+  // requests that used to wait for a data file now get their report straight away
+  list.forEach(q => { const j = rdJob(q.ref); if (j.state === 'wait' || j.state === 'manual') { j.state = 'run'; j.stage = 0; } if (j.state === 'run' && !RD_ACTIVE.has(q.ref)) setTimeout(() => rdRunJob(q.ref), 30); });
   const promise = (CFG.commerce || {}).promise || '';
   return head + list.map(q => rdReqCard(q, sel, promise)).join('');
 };
@@ -557,7 +565,7 @@ function rdReqCard(q, sel, promise) {
           </div>
           <button type="button" class="btn primary" style="min-height:50px" data-act="rd-export" data-k="${esc(q.ref)}">${ic('upload', 17)}حفظ باسم… (Save As)</button>
           <span class="faint" style="font-size:11.5px">تظهر نافذة لاختيار اسم الملف ومكان حفظه (Chrome وEdge). في المتصفحات الأخرى يُنزَّل الملف مباشرة، ويبقى متاحًا هنا في أي وقت.</span>${seal}
-          <button type="button" class="btn link sm" style="align-self:flex-start" data-act="rd-view-results" data-k="${esc(q.ref)}">${ic('chart', 14)}عرض لوحة التحليل التفاعلية</button></div>`;
+          ${j.brief ? `<span class="faint" style="font-size:12px">${ic('info', 13)} صدر هذا التقرير من معلومات الطلب دون ملف بيانات. لتحليل كمّي أدق أرفق ملف Excel أو CSV على نفس الطلب ويصدر تقرير محدّث.</span><label class="btn sm" style="cursor:pointer;align-self:flex-start">${ic('clip', 14)}إرفاق ملف بيانات لتقرير محدّث<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label>` : `<button type="button" class="btn link sm" style="align-self:flex-start" data-act="rd-view-results" data-k="${esc(q.ref)}">${ic('chart', 14)}عرض لوحة التحليل التفاعلية</button>`}</div>`;
     }
     return `<article class="mr ${sel === q.ref ? 'sel' : ''}" id="mr-${esc(q.ref)}"><div class="mr-top"><div class="stack" style="gap:3px"><span class="row nowrap" style="gap:8px"><code style="font:700 12.5px var(--f-mono);color:var(--yellow);direction:ltr">${esc(q.ref)}</code><span class="tag ${L[0]}">${L[1]}</span></span><b style="font-size:16px">${esc(q.axisLabel || q.title)}</b><span class="faint" style="font-size:12px">${esc(q.title)} · ${esc(q.typesLabel || '')} · ${esc(String(q.at || q.date || '').slice(0, 10))}${q.cost ? ' · ' + rdNum(q.cost) + ' نقطة' : ''}</span></div></div>${trk}${body}</article>`;
   }
@@ -580,12 +588,13 @@ async function rdExport(ref) {
     if (fmt === 'pdf') {
       let blob = RD_BLOBS[ref];
       if (!blob && rdServer()) { const q = (S.requests || []).find(x => x.ref === ref); const res = await fetch('/api/requests/' + q.id + '/report', { credentials: 'same-origin' }); if (!res.ok) throw new Error('تعذّر جلب التقرير'); blob = await res.blob(); }
-      if (!blob) { toast('جارٍ إعادة إنشاء التقرير…'); if (!(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة في هذا المتصفح'); blob = await buildPdf(rdSealedReport(ref, j.code, 'pdf')); j.sha = await rdSha(blob); }
+      if (!blob) { toast('جارٍ إعادة إنشاء التقرير…'); if (j.brief) { await rdBriefPrep(ref); blob = await buildPdf(rdBriefReport(ref, j.code, 'pdf')); } else { if (!(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة في هذا المتصفح'); blob = await buildPdf(rdSealedReport(ref, j.code, 'pdf')); } j.sha = await rdSha(blob); }
       RD_BLOBS[ref] = blob;
       if (typeof log === 'function') log(rdAcct().name, `نزّل التقرير الموثّق ${j.code} (PDF)`);
       return rdSaveAs(`NAIOSH_${ref}_${j.code}.pdf`, blob, 'pdf');
     }
     toast('جارٍ إعداد ملف Excel…');
+    if (j.brief) { await rdBriefPrep(ref); return rdSaveAs(`NAIOSH_${ref}_${j.code}_working.xlsx`, buildXlsx(rdBriefReport(ref, j.code, 'xlsx')), 'xlsx'); }
     if (!(AN && AN.R && S.res && S.res.src && S.res.src.ref === ref) && !(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة');
     const blob = buildXlsx(rdSealedReport(ref, j.code, 'xlsx'));
     return rdSaveAs(`NAIOSH_${ref}_${j.code}_working.xlsx`, blob, 'xlsx');
@@ -778,8 +787,10 @@ function rdStaffReportCard(q) {
     </div></div>`;
 }
 async function rdStaffUpload(id, ref, blob, code) {
-  const res = await fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
-  const d = await res.json().catch(() => ({}));
+  const post = (upd) => fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code, ...(upd ? { 'X-Report-Update': '1' } : {}) }, body: blob });
+  let res = await post(false), d = await res.json().catch(() => ({}));
+  // the automatic report was already issued (e.g. from the request answers) → the team's report becomes the updated version
+  if (res.status === 409 && d.error === 'report_exists') { res = await post(true); d = await res.json().catch(() => ({})); }
   if (!res.ok) throw new Error(d.message || 'تعذّر حفظ التقرير');
   toast('صدر التقرير الموثّق ' + code + ' — وصل للعميل');
   if (SV.detail) delete SV.detail[id];

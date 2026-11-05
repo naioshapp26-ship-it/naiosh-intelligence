@@ -1,0 +1,47 @@
+<script data-app="">
+/* ================= Request report without a data file =================
+   Dr. Adnan: attaching a file or a link is optional — the analysis must never stop because no file was attached.
+   When a request has no data file (or the file cannot be read as a table), the sealed report is issued at once from
+   what the client entered in the request, and its header and first section say it is based on the data provided. */
+async function rdBriefPrep(ref) {
+  const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
+  if (rdServer() && q.id && !q.payload) {
+    try { const d = await api('GET', '/api/requests/' + q.id); q.payload = d.request.payload || {}; q.fileList = (d.request.files || []).map(f => ({ name: f.name, kind: f.kind })); } catch (e) { q.payload = q.payload || {}; }
+  }
+  if (!q.fileList) q.fileList = [...((q.payload || {}).files || []).map(n => ({ name: n, kind: 'file' })), ...((q.payload || {}).videos || []).filter(Boolean).map(n => ({ name: n, kind: 'video' })), ...(q.extra || []).map(n => ({ name: n, kind: 'file' }))];
+}
+const rdLbl = (list, v) => (list.find(x => x[0] === v) || [, v || '—'])[1];
+function rdBriefReport(ref, code, fmt) {
+  const q = (S.requests || []).find(x => x.ref === ref) || {}, p = q.payload || {}, j = rdJob(ref), me = rdAcct(), date = new Date().toISOString().slice(0, 10);
+  const types = RQ_TYPES.filter(t => (p.types || q.types || []).includes(t.id)), need = [...new Set(types.flatMap(t => t.need))], have = p.have || [];
+  const files = q.fileList || [], topic = q.axisLabel || p.axisLabel || q.title || p.title || ref;
+  const ctx = [['متى بدأت المشكلة أو الحاجة', p.since], ['أين تحدث', p.where], ['من المتأثر', p.who], ['ما الذي جُرّب سابقًا', p.tried], ['القرار الذي سيدعمه التحليل', p.decision], ['المؤشر المرتبط', p.kpi], ['الفترة', p.from || p.to ? `${p.from || '—'} → ${p.to || '—'}` : '']].filter(([, v]) => String(v || '').trim());
+  const why = j.why ? `تعذّرت قراءة الملف المرفق كجدول بيانات (${j.why}). ` : files.length ? 'المرفقات المستلمة ليست جداول بيانات قابلة للتحليل الآلي (مثل الصور أو الفيديو أو المستندات النصية)، وتبقى محفوظة مع الطلب. ' : 'لم يُرفق ملف بيانات مع الطلب. ';
+  const sections = [
+    { h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', topic], ['مقدّم الطلب', me.name || p.name || '—'], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', fmt === 'xlsx' ? 'نسخة عمل — غير موثّقة' : 'نسخة رسمية موثّقة']] },
+    { h: 'أساس التحليل', text: `${EXP_BASIS} ${why}لذلك بُني هذا التقرير على المعلومات الواردة في نموذج الطلب فقط، دون مؤشرات رقمية محسوبة. للحصول على تحليل كمّي أدق، زوّدنا ببيانات مكتملة (يفضّل Excel أو CSV) وسيصدر تقرير محدّث.` },
+    { h: 'موضوع الطلب', kv: [['العنوان', p.title || q.title || '—'], ['السؤال المطلوب إجابته', p.question || '—'], ['المجال', rdLbl(RQ_DOMAINS, p.domain || q.domain)], ['أنواع التحليل', types.map(t => t.label).join('، ') || q.typesLabel || '—'], ['الأولوية', p.priority || q.priority || '—'], ['مستوى القرار', rdLbl(RQ_LEVEL, p.level)], ['الموعد المطلوب', p.due || '—'], ['الجهة', [p.org, p.branch].filter(Boolean).join(' — ') || '—']] }
+  ];
+  if (ctx.length) sections.push({ h: 'السياق كما ورد في الطلب', kv: ctx });
+  if (types.length) sections.push({ h: 'ما يجيب عنه كل نوع تحليل مطلوب', cols: ['نوع التحليل', 'السؤال الذي يجيب عنه', 'البيانات التي يحتاجها'], rows: types.map(t => [t.label, t.q, t.need.join('، ')]) });
+  if (need.length) sections.push({ h: 'البيانات المتوفرة لدى الجهة مقابل المطلوب', cols: ['البيان', 'الحالة كما أفاد مقدّم الطلب'], rows: need.map(n => [n, have.includes(n) ? 'متوفر — لم يُرفق بعد' : 'غير متوفر أو غير محدد']) });
+  const avail = need.filter(n => have.includes(n)), miss = need.filter(n => !have.includes(n));
+  sections.push({ h: 'القراءة الأولية', bullets: [
+    `موضوع الطلب «${topic}»، والسؤال المطروح: ${p.question ? '«' + p.question + '»' : 'غير محدد'}.`,
+    types.length ? `المطلوب ${types.length} ${types.length > 2 ? 'أنواع' : 'نوع'} تحليل: ${types.map(t => t.label + ' (' + t.q + ')').join('، ')}.` : 'لم يُحدَّد نوع التحليل.',
+    need.length ? `أفاد مقدّم الطلب بتوفّر ${avail.length} من ${need.length} بيانات يحتاجها هذا التحليل${avail.length ? ': ' + avail.join('، ') : ''}.` : 'لا توجد قائمة بيانات محددة لهذا النوع.',
+    p.decision ? `القرار الذي سيبنى على التحليل: ${p.decision}. لا يُنصح باتخاذه قبل استكمال البيانات الأساسية.` : 'لم يُحدَّد القرار الذي سيبنى على التحليل — تحديده يوجّه التحليل نحو ما يهم فعلًا.',
+    'هذه قراءة أولية مبنية على الوصف فقط، ولا تتضمن أرقامًا أو نتائج محسوبة لأن البيانات لم تُرفق.'
+  ] });
+  sections.push({ h: 'الخطوات التالية لاستكمال التحليل', bullets: [
+    ...(miss.length ? [`تجهيز البيانات غير المتوفرة: ${miss.join('، ')}.`] : []),
+    ...(avail.length ? [`إرفاق البيانات المتوفرة لديكم: ${avail.join('، ')} — بصيغة Excel أو CSV.`] : ['إرفاق ملف بيانات بصيغة Excel أو CSV يغطي الفترة المطلوبة.']),
+    'من «طلباتي وتقاريري» ← «طلباتي» ← «إرفاق ملف بيانات لتقرير محدّث» على نفس الطلب، فيصدر تقرير محدّث آليًا.',
+    'للاستفسار: «اسأل نايوش» أو «اتصل بنا».'
+  ] });
+  if (files.length) sections.push({ h: 'المرفقات المستلمة', cols: ['الملف', 'النوع'], rows: files.map(f => [f.name, f.kind === 'video' ? 'فيديو' : 'ملف']) });
+  const rep = { code: 'REPORT', title: 'تقرير التحليل — ' + topic, ref, audience: me.name || p.name || '', by: 'محرك التحليل الآلي — منظومة نايوش', basis: 'صدر هذا التحليل بناءً على المعلومات التي تم تزويدنا بها في الطلب — دون ملف بيانات.', sections };
+  if (fmt !== 'xlsx') rep.seal = { code, ref, client: me.name || p.name || '', date };
+  return rep;
+}
+</script>

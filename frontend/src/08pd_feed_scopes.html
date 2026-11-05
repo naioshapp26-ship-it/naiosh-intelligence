@@ -32,13 +32,14 @@ function fdAxisGroups() {
 function fdOptions(scope) { return scope === 'axis' ? fdAxisGroups() : [[FD_SCOPE[scope].pick, scope === 'info' ? FD_INFO : FD_HUB]]; }
 const fdLabelOf = (scope, target) => { if (target === 'all') return FD_SCOPE[scope].allLabel; for (const [, L] of fdOptions(scope)) { const x = L.find(([k]) => k === target); if (x) return x[1]; } return target; };
 
-let FD_SV = null, FD_ERR = {};
-async function fdLoad() { if (!rdServer()) return; try { FD_SV = (await api('GET', '/api/feeds')).feeds; } catch (e) { FD_SV = []; toast(e.message); } if (S.route === 'feed') render(); }
+let FD_SV = null, FD_ERR = {}, FD_OLD = false;
+async function fdLoad() { if (!rdServer()) return; try { FD_SV = (await api('GET', '/api/feeds')).feeds; FD_OLD = false; } catch (e) { FD_SV = []; if (e.status === 404) FD_OLD = true; else toast(e.message); } if (S.route === 'feed') render(); }
 const fdAll = () => rdServer() ? (FD_SV || []) : (S.feeds || (S.feeds = []));
 const fdFresh = (scope) => ({ id: null, scope, mode: 'all', target: 'all', body: '', keywords: '', link: '', active: true, attachments: [] });
 
 function fdScopeView(scope) {
   if (rdServer() && !FD_SV) { setTimeout(fdLoad, 0); return `<section class="card"><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  if (FD_OLD) return `<section class="card" style="gap:10px"><div class="banner" style="font-size:13px;background:rgba(255,46,77,.08);border:1px solid rgba(255,46,77,.35);align-items:flex-start">${ic('warn', 16, 'style="color:var(--redsoft);margin-top:2px"')}<span><b>الواجهة محدّثة لكن الخادم ما زال على نسخة قديمة.</b> هذا القسم يحتاج رفع ملفات الخادم إلى GitHub: <code dir="ltr">src/routes/qa.js</code> و <code dir="ltr">src/ai.js</code> و <code dir="ltr">migrations/008_kb_feeds.sql</code>، ثم انتظار إعادة النشر على Railway.</span></div><button type="button" class="btn" data-act="fd-retry" style="align-self:flex-start">إعادة المحاولة</button></section>`;
   const C = FD_SCOPE[scope], f = (S.fdForm && S.fdForm.scope === scope) ? S.fdForm : (S.fdForm = fdFresh(scope)), E = FD_ERR;
   const mine = fdAll().filter(x => x.scope === scope), q = (S.fdFilter || '').trim();
   const list = q ? mine.filter(x => (x.targetLabel + ' ' + x.body + ' ' + x.keywords).includes(q)) : mine;
@@ -102,6 +103,7 @@ analyticsHandle = function (act, k, el) {
   switch (act) {
     case 'fd-mode': fdRead(); S.fdForm.mode = k; if (k === 'all') S.fdForm.target = 'all'; else if (S.fdForm.target === 'all') S.fdForm.target = ''; FD_ERR = {}; render(); return true;
     case 'fd-save': fdSave(); return true;
+    case 'fd-retry': FD_SV = null; FD_OLD = false; render(); return true;
     case 'fd-new': S.fdForm = fdFresh(S.fdForm ? S.fdForm.scope : 'axis'); FD_ERR = {}; render(); return true;
     case 'fd-edit': { const x = fdAll().find(y => String(y.id) === String(k)); if (!x) return true; S.fdForm = { id: x.id, scope: x.scope, mode: x.target === 'all' ? 'all' : 'pick', target: x.target, body: x.body, keywords: x.keywords || '', link: x.link || '', active: x.active, attachments: (x.attachments || []).map(a => ({ ...a })) }; FD_ERR = {}; render(); const c = document.getElementById('fd-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     case 'fd-toggle': fdToggle(k); return true;

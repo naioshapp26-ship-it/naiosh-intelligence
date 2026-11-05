@@ -275,7 +275,7 @@ document.addEventListener('submit', (e) => {
   S.requests = S.requests || [];
   const ref = 'DAR-2026-' + String(101 + S.requests.length).padStart(3, '0');
   const d = new Date();
-  S.requests.unshift({ ref, title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
+  S.requests.unshift({ ref, payload: JSON.parse(JSON.stringify({ ...r, files: (r.files || []).map(f => f.n), videos: (r.videos || []).map(v => v.n || v.name || '') })), title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
   log(r.name.trim(), `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`);
   log('المنسّق', `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, 'sys');
   anCapture(r, ref); S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);

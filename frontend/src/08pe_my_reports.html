@@ -1,0 +1,108 @@
+<style>
+.mr-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.mr-tabs button{height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.mr-tabs button[aria-selected="true"]{border-color:var(--yellow);color:var(--yellow);background:var(--yellowbg)}
+.mr-tabs .n{font:700 11px var(--f-mono);padding:1px 7px;border-radius:99px;background:var(--sunk)}
+.rp-list{display:flex;flex-direction:column;gap:10px}
+.rp{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--raised)}
+.rp .ri{width:44px;height:44px;border-radius:11px;display:grid;place-items:center}
+.rp b{font-size:14px;line-height:1.5}.rp .m{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px}
+.rp .a{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:640px){.rp{grid-template-columns:40px minmax(0,1fr)}.rp .a{grid-column:1/-1;justify-content:flex-start}}
+</style>
+<script data-app="">
+/* ================= «طلباتي وتقاريري» → «تقاريري» =================
+   Every report a user produces is kept and listed in one place:
+   • sealed reports of their analysis requests (and requests still being prepared),
+   • every PDF / Excel report generated from an analysis engine, the analysis results, the legal final report …
+     (archived automatically when the report is built — on the server per user; in the demo in this browser). */
+let MR_SV = null, MR_LOADING = false; const MR_MEM = [];
+const MR_SKIP = (rep) => !rep || rep.seal || /^ASK/i.test(String(rep.code || '')) || rep.noArchive || (typeof rdMyReqs === 'function' && rep.ref && rdMyReqs().some(q => q.ref === rep.ref));
+// ---- demo storage: IndexedDB (falls back to memory) ----
+function mrIdb() { return new Promise((res) => { try { const q = indexedDB.open('naiosh-reports', 1); q.onupgradeneeded = () => q.result.createObjectStore('r', { keyPath: 'id' }); q.onsuccess = () => res(q.result); q.onerror = () => res(null); } catch (e) { res(null); } }); }
+async function mrIdbAll() { const d = await mrIdb(); if (!d) return MR_MEM.slice(); return new Promise((res) => { try { const q = d.transaction('r').objectStore('r').getAll(); q.onsuccess = () => res(q.result.sort((a, b) => b.id - a.id)); q.onerror = () => res(MR_MEM.slice()); } catch (e) { res(MR_MEM.slice()); } }); }
+async function mrIdbPut(x) { MR_MEM.unshift(x); const d = await mrIdb(); if (!d) return; try { d.transaction('r', 'readwrite').objectStore('r').put(x); } catch (e) {} }
+async function mrIdbDel(id) { const i = MR_MEM.findIndex(x => x.id === id); if (i >= 0) MR_MEM.splice(i, 1); const d = await mrIdb(); if (!d) return; try { d.transaction('r', 'readwrite').objectStore('r').delete(id); } catch (e) {} }
+
+async function mrLoad() {
+  if (MR_LOADING) return; MR_LOADING = true;
+  try { MR_SV = rdServer() ? (await api('GET', '/api/my-reports')).reports : (await mrIdbAll()).map(({ blob, ...m }) => m); }
+  catch (e) { MR_SV = []; if (e.status !== 404) toast(e.message); }
+  MR_LOADING = false; if (S.route === 'myreqs') render();
+}
+let MR_LAST = { k: '', t: 0 };
+async function mrArchive(rep, blob, format) {
+  if (MR_SKIP(rep) || !blob || (rdServer() && (typeof ME === 'undefined' || !ME))) return;
+  const title = String(rep.title || 'تقرير').slice(0, 200), k = title + '|' + format + '|' + blob.size;
+  if (MR_LAST.k === k && Date.now() - MR_LAST.t < 8000) return; MR_LAST = { k, t: Date.now() };
+  const source = (TITLES[S.route] || [])[1] || '', ref = String(rep.ref || '').slice(0, 60);
+  try {
+    if (rdServer()) {
+      const r = await fetch('/api/my-reports', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/octet-stream', 'X-Report-Title': encodeURIComponent(title), 'X-Report-Ref': encodeURIComponent(ref), 'X-Report-Source': encodeURIComponent(source), 'X-Report-Format': format }, body: blob });
+      if (!r.ok) return;
+    } else await mrIdbPut({ id: Date.now(), title, ref, source, format, size: blob.size, createdAt: new Date().toISOString(), blob });
+    MR_SV = null; setTimeout(() => toast('حُفظت نسخة في «تقاريري»'), 1600);
+  } catch (e) { /* archiving must never break the export itself */ }
+}
+const _mrBuildPdf = buildPdf;
+buildPdf = async function (rep) { const b = await _mrBuildPdf(rep); mrArchive(rep, b, 'pdf'); return b; };
+const _mrBuildXlsx = buildXlsx;
+buildXlsx = function (rep) { const b = _mrBuildXlsx(rep); mrArchive(rep, b, 'xlsx'); return b; };
+
+const mrFileName = (x) => `NAIOSH_${String(x.ref || 'report').replace(/[^A-Za-z0-9_-]+/g, '') || 'report'}_${String(x.createdAt).slice(0, 10)}.${x.format}`;
+const mrWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+const mrSize = (b) => !b ? '' : b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+function mrReportsTab() {
+  if (!MR_SV) { setTimeout(mrLoad, 0); return `<section class="card"><p class="muted" style="margin:0">جارٍ تحميل تقاريرك…</p></section>`; }
+  const reqs = (typeof rdMyReqs === 'function' ? rdMyReqs() : []).map(q => ({ q, j: rdJob(q.ref) }));
+  const items = [
+    ...reqs.map(({ q, j }) => ({ kind: 'req', at: j.at || q.createdAt || q.date || '', q, j })),
+    ...MR_SV.map(x => ({ kind: 'gen', at: x.createdAt, x }))
+  ].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  const f = (S.mrFind || '').trim(), flt = S.mrKind || 'all';
+  const shown = items.filter(it => (flt === 'all' || it.kind === flt) && (!f || (it.kind === 'req' ? (it.q.title + ' ' + it.q.ref) : (it.x.title + ' ' + it.x.source + ' ' + it.x.ref)).includes(f)));
+  const nReady = reqs.filter(r => r.j.state === 'done').length;
+  const row = (it) => {
+    if (it.kind === 'req') {
+      const { q, j } = it, done = j.state === 'done', L = rdJobLabel(q.ref);
+      return `<div class="rp"><span class="ri" style="background:${done ? 'rgba(52,199,89,.12);color:var(--greenfg)' : 'var(--sunk);color:var(--faint)'}">${ic(done ? 'verify' : 'clock', 22)}</span>
+        <div style="min-width:0"><b>${esc(q.title || q.axisLabel || 'طلب تحليل')}</b><div class="m"><span class="mono" style="color:var(--yellow)">${esc(q.ref)}</span><span>تقرير طلب تحليل${done ? ' · موثّق' : ''}</span>${done && j.code ? `<span>رمز التحقق <span class="mono">${esc(j.code)}</span></span>` : ''}${j.at ? `<span>${mrWhen(j.at)}</span>` : ''}<span class="tag ${L[0]}" style="font-size:10.5px">${L[1]}</span></div></div>
+        <div class="a">${done ? `<button type="button" class="btn sm primary" data-act="mr-req-dl" data-k="pdf|${esc(q.ref)}">${ic('reports', 14)}PDF</button>${(CFG.commerce || {}).allowExcel !== false ? `<button type="button" class="btn sm" data-act="mr-req-dl" data-k="xlsx|${esc(q.ref)}">${ic('chart', 14)}Excel</button>` : ''}${j.brief ? '' : `<button type="button" class="btn sm" data-act="rd-view-results" data-k="${esc(q.ref)}">لوحة التحليل</button>`}` : `<button type="button" class="btn sm" data-act="mr-tab" data-k="reqs">متابعة الطلب</button>`}</div></div>`;
+    }
+    const x = it.x;
+    return `<div class="rp"><span class="ri" style="background:${x.format === 'pdf' ? 'rgba(255,46,77,.1);color:var(--redsoft)' : 'rgba(52,199,89,.12);color:var(--greenfg)'}">${ic(x.format === 'pdf' ? 'reports' : 'chart', 22)}</span>
+      <div style="min-width:0"><b>${esc(x.title)}</b><div class="m">${x.ref ? `<span class="mono" style="color:var(--yellow)">${esc(x.ref)}</span>` : ''}${x.source ? `<span>${esc(x.source)}</span>` : ''}<span>${x.format === 'pdf' ? 'PDF' : 'Excel'}${x.size ? ' · ' + mrSize(x.size) : ''}</span><span>${mrWhen(x.createdAt)}</span></div></div>
+      <div class="a">${rdServer() ? `<a class="btn sm primary" href="/api/my-reports/${x.id}/file" download="${mrFileName(x)}">${ic('down', 14)}تنزيل</a>` : `<button type="button" class="btn sm primary" data-act="mr-dl" data-k="${x.id}">${ic('down', 14)}تنزيل</button>`}<button type="button" class="btn link sm" data-act="mr-del" data-k="${x.id}" style="color:var(--redsoft)">حذف</button></div></div>`;
+  };
+  return `<section class="card" style="gap:12px">
+    ${anKpis([['كل التقارير', items.length], ['تقارير طلبات موثّقة', nReady, 'good'], ['قيد الإعداد', reqs.length - nReady], ['تقارير أصدرتها', MR_SV.length]])}
+    <div class="row" style="gap:8px;align-items:center"><input type="search" id="mr-find" placeholder="ابحث باسم التقرير أو رقمه…" value="${esc(f)}" style="flex:1;min-width:200px">
+      <div class="row nowrap" style="gap:6px">${[['all', 'الكل'], ['req', 'طلبات التحليل'], ['gen', 'تقارير أصدرتها']].map(([k, l]) => choice('mr-kind', '', k, flt === k, l)).join('')}</div></div>
+    ${shown.length ? `<div class="rp-list">${shown.map(row).join('')}</div>` : `<div class="stack" style="align-items:center;text-align:center;gap:10px;padding:30px 10px">${ic('reports', 36, 'style="color:var(--faint)"')}<b>${f || flt !== 'all' ? 'لا نتائج' : 'لا تقارير بعد'}</b><p class="muted" style="margin:0;font-size:13px">كل تقرير تطلبه أو تصدره (PDF أو Excel) يُحفظ هنا تلقائيًا وتعود إليه متى شئت.</p><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></div>`}
+    ${egNote(rdServer() ? 'التقارير محفوظة في حسابك على خادم نايوش، وتظهر لك وحدك. تقارير الطلبات الموثّقة مختومة برمز تحقق ولا تتغير.' : 'في نسخة العرض تُحفظ التقارير في هذا المتصفح فقط. على الموقع الحقيقي تُحفظ في حسابك على الخادم.')}
+  </section>`;
+}
+const _mrView = VIEWS.myreqs;
+VIEWS.myreqs = () => {
+  const tab = S.mrTab || 'reports', nReq = typeof rdMyReqs === 'function' ? rdMyReqs().length : 0, nRep = (MR_SV ? MR_SV.length : 0) + (typeof rdMyReqs === 'function' ? rdMyReqs().filter(q => rdJob(q.ref).state === 'done').length : 0);
+  const tabs = `<div class="mr-tabs" role="tablist"><button type="button" role="tab" data-act="mr-tab" data-k="reports" aria-selected="${tab === 'reports'}">${ic('reports', 17)}تقاريري${MR_SV ? `<span class="n">${nRep}</span>` : ''}</button><button type="button" role="tab" data-act="mr-tab" data-k="reqs" aria-selected="${tab === 'reqs'}">${ic('myreqs', 17)}طلباتي<span class="n">${nReq}</span></button></div>`;
+  if (tab === 'reqs') { const h = _mrView(); const i = h.indexOf('</section>') + 10; return h.slice(0, i) + tabs + h.slice(i); }
+  return `<section class="row between" style="gap:12px;align-items:flex-end"><div class="stack" style="gap:6px"><h2 class="pg-title">طلباتي وتقاريري</h2><p class="lead" style="margin:0">كل التقارير التي طلبتها أو أصدرتها، في مكان واحد.</p></div><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></section>${tabs}${mrReportsTab()}`;
+};
+TITLES.myreqs = ['التقارير · الطلبات · التحليل الآلي', 'طلباتي وتقاريري'];
+document.addEventListener('input', (e) => { if (e.target.id === 'mr-find') { S.mrFind = e.target.value; const p = e.target.selectionStart; render(); const n = document.getElementById('mr-find'); if (n) { n.focus(); n.setSelectionRange(p, p); } } });
+document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-go="myreqs"]'); if (t) MR_SV = null; }, true);
+const _mrH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'mr-tab') { S.mrTab = k; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'mr-kind') { S.mrKind = String(k).replace(/^\|/, ''); render(); return true; }
+  if (act === 'mr-req-dl') { const [fmt, ref] = String(k).split('|'); S.mrFmt = fmt; if (typeof rdExport === 'function') rdExport(ref); return true; }
+  if (act === 'mr-dl') { mrIdbAll().then(L => { const x = L.find(y => String(y.id) === String(k)); if (!x || !x.blob) { toast('الملف غير متاح في هذا المتصفح'); return; } saveFile(mrFileName(x), x.blob); }); return true; }
+  if (act === 'mr-del') {
+    const x = (MR_SV || []).find(y => String(y.id) === String(k)); if (!x || !confirm(`حذف «${x.title}» من تقاريري؟`)) return true;
+    (rdServer() ? api('DELETE', '/api/my-reports/' + x.id) : mrIdbDel(x.id)).then(() => { toast('حُذف التقرير'); MR_SV = null; render(); }).catch(err => toast(err.message));
+    return true;
+  }
+  return _mrH(act, k, el);
+};
+</script>

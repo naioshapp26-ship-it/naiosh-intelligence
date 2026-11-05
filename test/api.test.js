@@ -349,6 +349,74 @@ test('«اسأل نايوش»: every question is logged and only the admin can d
   assert.equal((await anon('GET', '/api/qa/log')).status, 401);
 });
 
+test('تغذية المحاور ومركز المعلومات ونايوش هوب: admin feeds knowledge, AI uses it, files and permissions', async () => {
+  let r = await admin('POST', '/api/feeds', { scope: 'axis', target: 'pmo', targetLabel: 'مكتب إدارة المشاريع', body: 'محور مكتب إدارة المشاريع يقيس التقدم الفعلي مقابل المخطط ومؤشر أداء الجدول SPI.', keywords: 'PMO, SPI', link: 'https://example.com/pmo' });
+  assert.equal(r.status, 201); const id = r.body.feed.id; assert.equal(r.body.feed.targetLabel, 'مكتب إدارة المشاريع');
+  r = await admin('POST', '/api/feeds', { scope: 'axis', target: 'all', targetLabel: 'جميع المحاور', body: 'كل تقرير يُراجع بشريًا قبل اعتماده.' }); assert.equal(r.status, 201);
+  r = await admin('POST', '/api/feeds', { scope: 'info', target: 'privacy', targetLabel: 'الخصوصية', body: 'لا تُشارك بيانات العملاء مع أي جهة.' }); assert.equal(r.status, 201);
+  assert.equal((await admin('POST', '/api/feeds', { scope: 'axis', body: '' })).status, 400);
+  assert.equal((await admin('POST', '/api/feeds', { scope: 'nope', body: 'نص كافٍ' })).status, 400);
+  assert.equal((await admin('POST', '/api/feeds', { scope: 'hub', body: 'نص كافٍ', link: 'javascript:alert(1)' })).status, 400);
+  assert.equal((await clientA('POST', '/api/feeds', { scope: 'hub', body: 'نص كافٍ' })).status, 403);
+  assert.equal((await clientA('GET', '/api/feeds')).status, 403);
+  r = await admin('GET', '/api/feeds'); assert.equal(r.body.feeds.length, 3);
+  // the AI receives the active feeds as knowledge
+  fakeCalls = []; await analyst('POST', '/api/qa/ask', { q: 'ما هو مؤشر SPI في المشاريع؟' });
+  assert.equal(fakeCalls.length, 1); const sys = JSON.stringify(fakeCalls[0].body.system); assert.match(sys, /SPI/); assert.match(sys, /الخصوصية/);
+  // pause one → no longer sent
+  r = await admin('PATCH', '/api/feeds/' + id, { active: false }); assert.equal(r.body.feed.active, false); assert.equal(r.body.feed.body.length > 10, true);
+  fakeCalls = []; await analyst('POST', '/api/qa/ask', { q: 'سؤال آخر عن المشاريع والجدول' }); assert.doesNotMatch(JSON.stringify(fakeCalls[0].body.system), /SPI/);
+  // attachment on a feed is served to signed-in users while active; deleting the feed removes the file
+  const up = await admin('POST', '/api/uploads', Buffer.from('%PDF-1.4 feed'), { 'X-File-Name': 'pmo-guide.pdf', 'X-Upload-Kind': 'file', 'Content-Type': 'application/octet-stream' });
+  r = await admin('PATCH', '/api/feeds/' + id, { active: true, attachments: [up.body.id] }); assert.equal(r.body.feed.attachments[0].name, 'pmo-guide.pdf');
+  assert.equal((await analyst('GET', '/api/qa/file/' + up.body.id)).status, 200);
+  r = await admin('DELETE', '/api/feeds/' + id); assert.equal(r.status, 200);
+  assert.equal(db.get('SELECT id FROM uploads WHERE id = ?', up.body.id), undefined);
+  assert.equal((await analyst('GET', '/api/qa/file/' + up.body.id)).status, 404);
+});
+
+test('«تقاريري»: generated reports are kept per user and can be downloaded again', async () => {
+  const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(3000, 66)]);
+  const H = (t, f) => ({ 'Content-Type': 'application/octet-stream', 'X-Report-Title': encodeURIComponent(t), 'X-Report-Ref': 'DIA-LEGAL', 'X-Report-Source': encodeURIComponent('التحليل القانوني'), 'X-Report-Format': f });
+  let r = await clientA('POST', '/api/my-reports', pdf, H('تقرير التحليل القانوني — LEG-C001', 'pdf'));
+  assert.equal(r.status, 201); const id = r.body.report.id; assert.equal(r.body.report.title, 'تقرير التحليل القانوني — LEG-C001'); assert.equal(r.body.report.source, 'التحليل القانوني');
+  assert.equal((await clientA('POST', '/api/my-reports', Buffer.from('<html>'), H('x', 'pdf'))).status, 400);
+  assert.equal((await clientA('POST', '/api/my-reports', pdf, H('x', 'exe'))).status, 400);
+  assert.equal((await anon('POST', '/api/my-reports', pdf, H('x', 'pdf'))).status, 401);
+  r = await clientA('GET', '/api/my-reports'); assert.equal(r.body.reports.length, 1); assert.equal(r.body.reports[0].size, pdf.length);
+  r = await clientA('GET', `/api/my-reports/${id}/file`); assert.equal(r.status, 200); assert.match(r.headers.get('content-disposition'), /^attachment/);
+  // another client cannot see or delete it; the admin can open it
+  assert.equal((await analyst('GET', `/api/my-reports/${id}/file`)).status, 404);
+  assert.equal((await analyst('GET', '/api/my-reports')).body.reports.length, 0);
+  assert.equal((await admin('GET', `/api/my-reports/${id}/file`)).status, 200);
+  assert.equal((await analyst('DELETE', `/api/my-reports/${id}`)).status, 404);
+  // the orphan cleanup never removes archived reports
+  db.run(`UPDATE uploads SET created_at = '2000-01-01T00:00:00.000Z' WHERE kind = 'myreport'`); require('../src/routes/requests').cleanupOrphans();
+  assert.equal((await clientA('GET', `/api/my-reports/${id}/file`)).status, 200);
+  r = await clientA('DELETE', `/api/my-reports/${id}`); assert.equal(r.status, 200);
+  assert.equal((await clientA('GET', '/api/my-reports')).body.reports.length, 0);
+});
+
+test('a request without a data file still gets its report; attaching data later issues an updated sealed report', async () => {
+  const payload = { name: 'سارة', email: 's@x.com', domain: 'D06', types: ['desc'], title: 'تحليل المواهب', question: 'ما فجوات المهارات؟', consent: true, axis: 'skills', axisLabel: 'تحليل المهارات' };
+  let r = await clientA('POST', '/api/requests', { payload, summary: { suff: 0 }, uploads: [] }); assert.equal(r.status, 201); const rid = r.body.request.id;
+  const pdf = (n) => Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(500, n)]);
+  r = await clientA('POST', `/api/requests/${rid}/report`, pdf(65), { 'Content-Type': 'application/pdf', 'X-Report-Code': 'BRF23-AAAAA' }); assert.equal(r.status, 201); assert.equal(r.body.update, false);
+  // data attached after the first report is accepted
+  const up = await clientA('POST', '/api/uploads', Buffer.from('a,b\n1,2'), { 'X-File-Name': 'data.csv', 'X-Upload-Kind': 'file', 'Content-Type': 'application/octet-stream' });
+  r = await clientA('POST', `/api/requests/${rid}/files`, { uploads: [up.body.id] }); assert.equal(r.status, 200);
+  // a second report without the update header is still refused; with it, a new sealed version is issued
+  assert.equal((await clientA('POST', `/api/requests/${rid}/report`, pdf(66), { 'Content-Type': 'application/pdf', 'X-Report-Code': 'UPD23-BBBBB' })).status, 409);
+  r = await clientA('POST', `/api/requests/${rid}/report`, pdf(66), { 'Content-Type': 'application/pdf', 'X-Report-Code': 'UPD23-BBBBB', 'X-Report-Update': '1' }); assert.equal(r.status, 201); assert.equal(r.body.update, true);
+  r = await clientA('GET', '/api/requests'); const q = r.body.requests.find(x => x.id === rid); assert.equal(q.report.code, 'UPD23-BBBBB');
+  r = await clientA('GET', `/api/requests/${rid}/report`); assert.equal(r.status, 200); assert.equal(Buffer.from(r.body).at(-1), 66);
+  // both codes stay verifiable; the first says it was superseded
+  r = await anon('GET', '/api/public/reports/BRF23-AAAAA'); assert.equal(r.status, 200); assert.equal(r.body.superseded, true);
+  r = await anon('GET', '/api/public/reports/UPD23-BBBBB'); assert.equal(r.body.superseded, false); assert.equal(r.body.revision, 1);
+  assert.throws(() => db.run('DELETE FROM report_updates'), /immutable/);
+  assert.equal((await clientB('POST', `/api/requests/${rid}/report`, pdf(67), { 'Content-Type': 'application/pdf', 'X-Report-Code': 'XXX23-CCCCC', 'X-Report-Update': '1' })).status === 201, false);
+});
+
 test('password change and login throttling', async () => {
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'nope', next: 'NewPassword2026' })).status, 400);
   assert.equal((await clientA('POST', '/api/auth/password', { current: 'Password2026', next: 'short' })).status, 400);

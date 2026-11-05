@@ -512,7 +512,7 @@ function freshState() {
     choice: null, why: '', decided: false, req: null, reqDone: null, requests: [],
     measured: false, lessonApproved: false,
     consultTab: 'all', setTab: 'identity', kq: '', reports: [], govTab: 'rules', archTab: 'map',
-    tour: { on: CFG.identity.tourDefault !== false, i: 0 },
+    tour: { on: CFG.identity.tourDefault !== false && !(window.innerWidth < 700), i: 0 },
     audit: [
       { t: '18:42', who: 'محرك الشذوذ', what: 'اكتشف انحرافًا غير طبيعي في مؤشر أداء الفرع الشمالي (−17%)', kind: 'sys' },
       { t: '18:43', who: 'نظام الإنذار المبكر', what: 'أصدر تنبيهًا حرجًا وفتح استشارة استباقية CNS-001', kind: 'sys' },
@@ -613,7 +613,7 @@ function renderTop() {
     <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
     <label class="search">${ic('search', 16, 'style="color:var(--faint)"')}<input id="global-search" type="search" aria-label="البحث الموحّد" placeholder="ابحث في الاستشارات، البيانات، المخاطر، الحلول، المعرفة…"></label>
     <div class="top-end">
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
       <button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>
       <button type="button" class="icon-btn" data-go="governance" aria-label="سجل الأحداث">${ic('bell', 18)}<span class="dot"></span></button>
       <button type="button" class="icon-btn" data-go="settings" aria-label="الإعدادات" title="الإعدادات">${ic('settings', 18)}</button>
@@ -648,6 +648,8 @@ const TOUR = [
 ];
 function renderTour() {
   const el = document.getElementById('tour');
+  // live server: the presenter guide (CNS-001 demo story) is for the system owner only — never for clients or visitors
+  if (window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) { S.tour.on = false; el.innerHTML = ''; document.getElementById('app').classList.remove('touring'); return; }
   if (!S.tour.on) { el.innerHTML = (window.NAIOSH_SERVER && typeof svCan === 'function' && !svCan('config.edit')) ? '' : `<button type="button" class="btn sm y tour-min" data-act="tour-open" aria-label="العرض الموجّه" title="العرض الموجّه">${ic('play', 14)}<span class="tour-lbl">العرض الموجّه</span></button>`; return; }
   const i = S.tour.i, st = TOUR[i];
   el.innerHTML = `<section class="tour" aria-label="العرض الموجّه">
@@ -1732,7 +1734,7 @@ document.addEventListener('submit', (e) => {
   S.requests = S.requests || [];
   const ref = 'DAR-2026-' + String(101 + S.requests.length).padStart(3, '0');
   const d = new Date();
-  S.requests.unshift({ ref, title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
+  S.requests.unshift({ ref, payload: JSON.parse(JSON.stringify({ ...r, files: (r.files || []).map(f => f.n), videos: (r.videos || []).map(v => v.n || v.name || '') })), title: r.title.trim(), typesLabel: c.sel.map(t => t.label).join(' + '), domain: r.domain, domainLabel: dom ? dom[0] + ' ' + dom[1] : '', suff: c.suff, priority: r.priority, missing: c.missing.slice(0, 3).join('، ') || '—', output: (r.outputs[0] || 'تقرير تحليلي'), files: r.files.length, videos: (r.videos || []).length, status: c.suff >= 80 ? 'جاهز للتحليل' : 'جمع البيانات', owner: r.name.trim(), date: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') });
   log(r.name.trim(), `أرسل طلب تحليل بيانات ${ref}: ${r.title.trim()}`);
   log('المنسّق', `أنشأ عقد بيانات لـ ${ref} — الكفاية ${c.suff}%`, 'sys');
   anCapture(r, ref); S.reqDone = ref; S.req = freshReq(); Object.keys(RQ_VIDEO_URLS).forEach(k2 => delete RQ_VIDEO_URLS[k2]);
@@ -2173,7 +2175,7 @@ function buildXlsx(rep) {
   const sheetName = (n) => { let b = String(n).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28).trim() || 'Sheet', x = b, i = 2; while (used.has(x)) x = b.slice(0, 25) + ' ' + i++; used.add(x); return x; };
   const sheets = [];
   // cover sheet: title, metadata, summary text and every key/value section
-  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(rep.by || expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], []];
+  const cover = [[rep.title + ' — ' + EXP_TXT(CFG.identity.brandAr)], [rep.ref ? 'المرجع' : 'الاستشارة', rep.ref || 'CNS-001'], ['الجهة المستهدفة', EXP_TXT(rep.audience || '—')], ['أُعدّ بواسطة', EXP_TXT(rep.by || expUser())], ['تاريخ الإصدار', expNow()], ['التصنيف', 'داخلي — سري'], ['أساس التحليل', EXP_TXT(rep.basis || EXP_BASIS)], []];
   const coverStyle = {}, coverMerge = [0], coverH = { 0: 24 };
   for (const sec of rep.sections) {
     if (sec.text) { const t = EXP_TXT(sec.text); coverH[cover.length] = Math.max(18, Math.ceil(t.length / 80) * 15 + 8); cover.push([EXP_TXT(sec.h), t]); cover.push([]); }
@@ -2220,6 +2222,7 @@ const PDF_W = 595.28, PDF_H = 841.89, PDF_K = 2.2;           // A4 in points, re
 const PDF_FONT = '"IBM Plex Sans Arabic","Readex Pro","Segoe UI",Tahoma,Arial,sans-serif';
 let LOGO_EL = null;
 async function logoImage() { if (LOGO_EL) return LOGO_EL; const im = new Image(); im.src = LOGO_SRC; try { await im.decode(); } catch (e) {} LOGO_EL = im; return im; }
+const EXP_BASIS = 'صدر هذا التحليل بناءً على البيانات المرفقة أو التي تم تزويدنا بها، ودقّته مرتبطة باكتمالها وصحتها.';
 async function buildPdf(rep) {
   const LOGO = await logoImage();
   try { await Promise.all(['400 12px "IBM Plex Sans Arabic"', '700 12px "IBM Plex Sans Arabic"', '700 12px "Readex Pro"'].map(f => document.fonts.load(f))); } catch (e) {}
@@ -2253,6 +2256,7 @@ async function buildPdf(rep) {
       ctx.fillStyle = '#B9B9C2'; font(9.5, 400);
       { const t = `${EXP_TXT(CFG.identity.brandAr)} · ${rep.audience ? 'الجهة المستهدفة: ' + EXP_TXT(rep.audience) + ' · ' : ''}أُعدّ بواسطة: ${EXP_TXT(rep.by || expUser())} · ${expNow()}`, maxW = R - (L + 94 + 16); let sz = 9.5; while (sz > 6.5 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 400); } ctx.fillText(t, R, 86); }
       ctx.fillStyle = red; font(8.5, 700); ctx.fillText('داخلي — سري', R, 104);
+      { const w0 = ctx.measureText('داخلي — سري').width + 12, t = EXP_TXT(rep.basis || EXP_BASIS), maxW = R - (L + 94 + 16) - w0; ctx.fillStyle = yel; let sz = 8.5; font(sz, 600); while (sz > 6 && ctx.measureText(t).width > maxW) { sz -= 0.25; font(sz, 600); } ctx.fillText(t, R - w0, 104); }
       y = bandH + 26;
     } else {
       ctx.fillStyle = '#fff'; font(10, 700); ctx.fillText(EXP_TXT(rep.title) + ' — ' + (rep.ref || 'CNS-001'), R, 24);
@@ -2672,9 +2676,9 @@ VIEWS.safety = () => {
     <div class="card" style="gap:4px"><div class="row between"><h2 class="h-sec">الاستبيان الذكي — SAF-02</h2><span class="tag ${m.maturity[1]}">نضج الإدارة: ${m.maturity[0]}</span></div>${qs}
       <div class="stack" style="gap:8px;padding-top:12px"><div class="row between"><h3 class="h-sec" style="font-size:14px">أسئلة تكميلية ولّدها النظام من إجاباتك</h3><span class="chip">${m.rows.length + m.extra.length} سؤال</span></div>${follow || '<p class="muted" style="font-size:13px">اختر المخاطر المعروفة لتظهر الأسئلة التكميلية.</p>'}
       <p class="faint" style="font-size:11.5px;line-height:1.7">اختيار إجابة لا يثبت الامتثال؛ يُسجَّل كإقرار أولي حتى تقديم الأدلة. «غير منطبق» ≠ «غير معروف» ≠ «غير ممتثل».</p></div></div>
-    <div class="stack" style="gap:16px">
+    <div class="stack" style="gap:16px;min-width:0">
       <div class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">مصفوفة المخاطر 5×5</h2><div class="tabs" role="tablist" style="margin:0"><button type="button" role="tab" aria-selected="${key === 'inh'}" data-act="saf-view" data-k="inh">قبل الضوابط</button><button type="button" role="tab" aria-selected="${key === 'res'}" data-act="saf-view" data-k="res">المتبقي</button></div></div>
-        <div class="row nowrap" style="gap:6px;align-items:stretch"><span class="faint" style="writing-mode:vertical-rl;font-size:11px;text-align:center">الاحتمال ←</span><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;max-width:360px">${matrix}</div></div>
+        <div class="row nowrap" style="gap:6px;align-items:stretch"><span class="faint" style="writing-mode:vertical-rl;font-size:11px;text-align:center">الاحتمال ←</span><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;flex:1;min-width:0;max-width:360px">${matrix}</div></div>
         <span class="faint" style="font-size:11px;text-align:center">الشدة ←</span>
         <div class="sub" style="border-color:var(--redline)"><span style="font-size:12px;line-height:1.7"><b style="color:var(--red)">قاعدة حاكمة:</b> الأخطار التي قد تسبب وفاة أو انهيارًا أو تعرضًا غير مسيطر عليه لطاقة خطرة تستدعي ضوابط إلزامية أو إيقاف العمل حتى لو كانت درجتها منخفضة. النقطة الحمراء = يتطلب إيقافًا أو تصعيدًا.</span></div></div>
       ${sel ? `<div class="card" style="gap:8px"><div class="row between"><h2 class="h-sec">${sel.n}</h2><span class="tag ${PR[sel.pr][1]}">${PR[sel.pr][0]}</span></div>
@@ -3642,7 +3646,9 @@ async function anTablesFromPDF(buf) {
     const cr = pg.dict.match(/\/Contents\s*(\[([^\]]*)\]|(\d+)\s+0\s+R)/); if (!cr) continue;
     const ids = cr[2] ? [...cr[2].matchAll(/(\d+)\s+0\s+R/g)].map(x => x[1]) : [cr[3]];
     let content = ''; for (const id of ids) { const b = await streamOf(objs[id]); if (b) content += new TextDecoder('latin1').decode(b) + '\n'; }
-    let font = null, size = 10, tms = 1, tx = 0, ty = 0, lx = 0, ly = 0, lead = 0; const ctm = [1, 0, 0, 1, 0, 0];
+    let font = null, size = 10, tms = 1, tx = 0, ty = 0, lx = 0, ly = 0, lead = 0; let ctm = [1, 0, 0, 1, 0, 0]; const gs = [];
+    // full current transformation matrix (q/Q save-restore, cm composed) so positions and sizes share one scale
+    const P = (x, y) => [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]], K = () => Math.hypot(ctm[2], ctm[3]) || 1;
     const toks = content.match(/\((?:\\.|[^\\)])*\)|<[0-9a-fA-F\s]*>|\[|\]|\/[^\s/<>\[\]()]+|-?\d*\.?\d+|[A-Za-z'"*]+/g) || [];
     const stack = [];
     const decodeStr = async (t) => {
@@ -3668,9 +3674,11 @@ async function anTablesFromPDF(buf) {
       else if (t === 'TL') { lead = +stack.pop(); stack.length = 0; }
       else if (t === 'T*') { ly -= lead; tx = lx; ty = ly; }
       else if (t === 'BT') { tx = lx = 0; ty = ly = 0; stack.length = 0; }
-      else if (t === 'cm') { const v = stack.splice(-6).map(Number); ctm.splice(0, 6, ...v); stack.length = 0; }
-      else if (t === 'Tj' || t === "'" || t === '"') { if (t !== 'Tj') { ly -= lead; tx = lx; ty = ly; } const s = stack.pop(); if (s) { const txt = fixOrder(await decodeStr(s)); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; } stack.length = 0; }
-      else if (t === 'TJ') { let i = stack.lastIndexOf('['), arr = stack.splice(i); let gl = []; for (const a of arr.slice(1)) { if (a[0] === '(' || a[0] === '<') gl.push(...await decodeStr(a)); else if (+a < -180) gl.push(' '); } const txt = fixOrder(gl); runs.push({ pg: pi, x: tx * ctm[0] + ctm[4], y: ty * ctm[3] + ctm[5], t: txt, sz: size * tms }); tx += txt.length * size * 0.5; stack.length = 0; }
+      else if (t === 'cm') { const [a, b, c, d, e, f] = stack.splice(-6).map(Number), m = ctm; ctm = [a * m[0] + b * m[2], a * m[1] + b * m[3], c * m[0] + d * m[2], c * m[1] + d * m[3], e * m[0] + f * m[2] + m[4], e * m[1] + f * m[3] + m[5]]; stack.length = 0; }
+      else if (t === 'q') { gs.push(ctm.slice()); stack.length = 0; }
+      else if (t === 'Q') { if (gs.length) ctm = gs.pop(); stack.length = 0; }
+      else if (t === 'Tj' || t === "'" || t === '"') { if (t !== 'Tj') { ly -= lead; tx = lx; ty = ly; } const s = stack.pop(); if (s) { const txt = fixOrder(await decodeStr(s)); runs.push({ pg: pi, x: P(tx, ty)[0], y: P(tx, ty)[1], t: txt, sz: size * tms * K() }); tx += txt.length * size * 0.5; } stack.length = 0; }
+      else if (t === 'TJ') { let i = stack.lastIndexOf('['), arr = stack.splice(i); let gl = []; for (const a of arr.slice(1)) { if (a[0] === '(' || a[0] === '<') gl.push(...await decodeStr(a)); else if (+a < -180) gl.push(' '); } const txt = fixOrder(gl); runs.push({ pg: pi, x: P(tx, ty)[0], y: P(tx, ty)[1], t: txt, sz: size * tms * K() }); tx += txt.length * size * 0.5; stack.length = 0; }
       else if (/^[A-Za-z'"*]+$/.test(t) && t !== 'true' && t !== 'false' && t !== 'null') stack.length = 0;
       else stack.push(t);
     }
@@ -7086,8 +7094,8 @@ renderTop = function () {
       ${(R !== 'home' || (S.hist || []).length) ? `<button type="button" class="btn sm back-btn" data-act="back" aria-label="رجوع خطوة واحدة" title="رجوع خطوة واحدة">${ic('back', 16)}<span>رجوع</span></button>` : ''}
       <div class="crumb"><span>${crumb}</span><h1>${title}</h1></div>
       ${rdSearchBox('global-search', 'ابحث في المحاور، الاستشارات، المخاطر…')}
-      ${CFG.identity.demoBadge !== false ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
-      ${guest || !admin ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
+      ${CFG.identity.demoBadge !== false && !(window.NAIOSH_SERVER && !(typeof svCan === 'function' && svCan('config.edit'))) ? '<span class="demo-chip">بيانات تجريبية</span>' : ''}
+      ${guest ? '' : `<button type="button" class="btn sm y ask-top" data-go="ask" aria-label="اسأل نايوش">${ic('ask', 16)}<span class="ask-lbl">اسأل نايوش</span></button>`}
     </div>`;
   document.getElementById('top').innerHTML = `${rdTicker()}
     <div class="tb-row">
@@ -7106,7 +7114,7 @@ renderSide = function () {
 };
 function rdBot() {
   let b = document.getElementById('rd-bot');
-  const show = !S.tour.on && effRoute() !== 'ask' && (typeof rdIsAdmin !== 'function' || rdIsAdmin());
+  const show = !S.tour.on && effRoute() !== 'ask' && !rdGuest();
   if (!show) { if (b) b.remove(); return; }
   if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'rd-bot'; b.className = 'hm-bot'; b.setAttribute('aria-label', 'اسأل نايوش'); b.title = 'اسأل نايوش'; b.dataset.act = 'rd-bot'; document.body.appendChild(b); }
   b.innerHTML = ic('bot', 26);
@@ -7908,7 +7916,7 @@ function rdMyReqs() { return (S.requests || []).filter(q => !rdServer() || q.min
 function rdJob(ref) {
   const J = rdJobs(); let j = J[ref];
   const q = (S.requests || []).find(x => x.ref === ref);
-  if (q && q.report && (!j || j.state !== 'done')) j = J[ref] = { ...(j || {}), stage: 4, state: 'done', code: q.report.code, sha: q.report.sha256, at: q.report.at };
+  if (q && q.report && (!j || (j.state !== 'done' && !j.rerun))) j = J[ref] = { ...(j || {}), stage: 4, state: 'done', code: q.report.code, sha: q.report.sha256, at: q.report.at };
   if (!j) j = J[ref] = { stage: 0, state: 'run', t0: Date.now() };
   return j;
 }
@@ -7960,6 +7968,7 @@ function rdSealedReport(ref, code, fmt) {
   rep.title = 'تقرير التحليل — ' + (q.axisLabel || q.title || ref);
   rep.ref = ref; rep.code = 'REPORT'; rep.audience = me.name; rep.by = 'محرك التحليل الآلي — منظومة نايوش';
   rep.sections.unshift({ h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', q.axisLabel || q.title || '—'], ['مقدّم الطلب', me.name], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', fmt === 'xlsx' ? 'نسخة عمل غير موثّقة — المرجع الرسمي هو ملف PDF' : 'نسخة موثّقة — محفوظة لدى نايوش ولا تُعدَّل']] });
+  rep.sections.splice(1, 0, { h: 'أساس التحليل', text: EXP_BASIS + ' حُلّل الملف المرفق «' + (((S.res || {}).src || {}).name || '—') + '»، وأي نقص أو خطأ في البيانات ينعكس على النتائج.' });
   if (fmt !== 'xlsx') rep.seal = { code, ref, client: me.name, date };
   return rep;
 }
@@ -7971,16 +7980,20 @@ async function rdRunJob(ref) {
     j.state = 'run'; j.err = '';
     j.stage = 0; rdJobRender(); await rdWait(700);
     j.stage = 1; rdJobRender(); await rdWait(600);
-    const loaded = await rdLoadData(ref);
-    if (!loaded) { const q = (S.requests || []).find(x => x.ref === ref) || {}; j.state = (q.files || 0) + (q.videos || 0) > 0 || (q.extra || []).length ? 'manual' : 'wait'; j.stage = 1; rdJobRender(); return; }
-    j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900);
+    // Attaching a data file is optional: with no file (or one that cannot be read as a table) the report is issued
+    // from what the client gave in the request, and says so.
+    let loaded = null, why = '';
+    try { loaded = await rdLoadData(ref); } catch (e) { why = (e && e.message) || ''; }
+    j.brief = !loaded; j.why = why;
+    if (loaded) { j.stage = 2; j.rows = loaded.n; rdJobRender(); await rdWait(900); }
+    else { j.stage = 2; j.rows = 0; rdJobRender(); await rdBriefPrep(ref); await rdWait(700); }
     j.stage = 3; rdJobRender();
     let code = rdCode(), blob, sha, at = new Date().toISOString();
     for (let tries = 0; tries < 3; tries++) {
-      blob = await buildPdf(rdSealedReport(ref, code, 'pdf')); sha = await rdSha(blob);
+      blob = await buildPdf(j.brief ? rdBriefReport(ref, code, 'pdf') : rdSealedReport(ref, code, 'pdf')); sha = await rdSha(blob);
       if (!rdServer()) break;
       const q = (S.requests || []).find(x => x.ref === ref);
-      const res = await fetch('/api/requests/' + q.id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
+      const res = await fetch('/api/requests/' + q.id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code, ...(j.rerun ? { 'X-Report-Update': '1' } : {}) }, body: blob });
       const d = await res.json().catch(() => ({}));
       if (res.ok) { sha = d.sha256; at = d.at; q.report = { code, sha256: sha, at }; break; }
       if (d.error === 'code_taken') { code = rdCode(); continue; }
@@ -8008,8 +8021,10 @@ async function rdAttach(ref, files) {
   q.extra = (q.extra || []).concat(files.map(f => f.name));
   const data = files.find(f => RD_TAB_RE.test(f.name));
   toast('أُرفق ' + files.length + ' ملف');
-  if (data) { RD_FILES[ref] = data; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref); return; }
-  const j = rdJob(ref); j.state = 'manual'; j.stage = 1; save(); rdJobRender();
+  // new data after a report → an updated sealed report; other files are simply kept with the request
+  const was = rdJob(ref).state === 'done';
+  if (data) { RD_FILES[ref] = data; delete RD_BLOBS[ref]; rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now(), rerun: was }; rdRunJob(ref); return; }
+  if (was) { save(); rdJobRender(); return; } rdJobs()[ref] = { stage: 0, state: 'run', t0: Date.now() }; rdRunJob(ref);
 }
 document.addEventListener('change', (e) => { const r = e.target.dataset && e.target.dataset.rdAttach; if (r && e.target.files && e.target.files.length) rdAttach(r, e.target.files); });
 
@@ -8020,7 +8035,8 @@ VIEWS.myreqs = () => {
   const head = `<section class="row between" style="gap:12px;align-items:flex-end"><div class="stack" style="gap:6px"><h2 class="pg-title">طلباتي وتقاريري</h2><p class="lead" style="margin:0">${wp}</p></div>
     <div class="row" style="gap:8px"><button type="button" class="btn" data-act="rd-hub" data-k="wallet">${ic('wallet', 16)}المحفظة</button><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></div></section>`;
   if (!list.length) return head + `<section class="card" style="align-items:center;text-align:center;gap:12px;padding:40px 20px">${ic('myreqs', 40, 'style="color:var(--faint)"')}<h2 class="h-sec">لا طلبات بعد</h2><p class="muted" style="margin:0">اختر محور التحليل، املأ النموذج، ووافق على الخصوصية — ويبدأ التحليل فورًا.</p><button type="button" class="btn primary" data-go="axes">اختر محور التحليل</button></section>`;
-  list.forEach(q => { const j = rdJob(q.ref); if (j.state === 'run' && !RD_ACTIVE.has(q.ref)) setTimeout(() => rdRunJob(q.ref), 30); });
+  // requests that used to wait for a data file now get their report straight away
+  list.forEach(q => { const j = rdJob(q.ref); if (j.state === 'wait' || j.state === 'manual') { j.state = 'run'; j.stage = 0; } if (j.state === 'run' && !RD_ACTIVE.has(q.ref)) setTimeout(() => rdRunJob(q.ref), 30); });
   const promise = (CFG.commerce || {}).promise || '';
   return head + list.map(q => rdReqCard(q, sel, promise)).join('');
 };
@@ -8043,7 +8059,7 @@ function rdReqCard(q, sel, promise) {
           </div>
           <button type="button" class="btn primary" style="min-height:50px" data-act="rd-export" data-k="${esc(q.ref)}">${ic('upload', 17)}حفظ باسم… (Save As)</button>
           <span class="faint" style="font-size:11.5px">تظهر نافذة لاختيار اسم الملف ومكان حفظه (Chrome وEdge). في المتصفحات الأخرى يُنزَّل الملف مباشرة، ويبقى متاحًا هنا في أي وقت.</span>${seal}
-          <button type="button" class="btn link sm" style="align-self:flex-start" data-act="rd-view-results" data-k="${esc(q.ref)}">${ic('chart', 14)}عرض لوحة التحليل التفاعلية</button></div>`;
+          ${j.brief ? `<span class="faint" style="font-size:12px">${ic('info', 13)} صدر هذا التقرير من معلومات الطلب دون ملف بيانات. لتحليل كمّي أدق أرفق ملف Excel أو CSV على نفس الطلب ويصدر تقرير محدّث.</span><label class="btn sm" style="cursor:pointer;align-self:flex-start">${ic('clip', 14)}إرفاق ملف بيانات لتقرير محدّث<input type="file" multiple data-rd-attach="${esc(q.ref)}" hidden></label>` : `<button type="button" class="btn link sm" style="align-self:flex-start" data-act="rd-view-results" data-k="${esc(q.ref)}">${ic('chart', 14)}عرض لوحة التحليل التفاعلية</button>`}</div>`;
     }
     return `<article class="mr ${sel === q.ref ? 'sel' : ''}" id="mr-${esc(q.ref)}"><div class="mr-top"><div class="stack" style="gap:3px"><span class="row nowrap" style="gap:8px"><code style="font:700 12.5px var(--f-mono);color:var(--yellow);direction:ltr">${esc(q.ref)}</code><span class="tag ${L[0]}">${L[1]}</span></span><b style="font-size:16px">${esc(q.axisLabel || q.title)}</b><span class="faint" style="font-size:12px">${esc(q.title)} · ${esc(q.typesLabel || '')} · ${esc(String(q.at || q.date || '').slice(0, 10))}${q.cost ? ' · ' + rdNum(q.cost) + ' نقطة' : ''}</span></div></div>${trk}${body}</article>`;
   }
@@ -8066,12 +8082,13 @@ async function rdExport(ref) {
     if (fmt === 'pdf') {
       let blob = RD_BLOBS[ref];
       if (!blob && rdServer()) { const q = (S.requests || []).find(x => x.ref === ref); const res = await fetch('/api/requests/' + q.id + '/report', { credentials: 'same-origin' }); if (!res.ok) throw new Error('تعذّر جلب التقرير'); blob = await res.blob(); }
-      if (!blob) { toast('جارٍ إعادة إنشاء التقرير…'); if (!(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة في هذا المتصفح'); blob = await buildPdf(rdSealedReport(ref, j.code, 'pdf')); j.sha = await rdSha(blob); }
+      if (!blob) { toast('جارٍ إعادة إنشاء التقرير…'); if (j.brief) { await rdBriefPrep(ref); blob = await buildPdf(rdBriefReport(ref, j.code, 'pdf')); } else { if (!(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة في هذا المتصفح'); blob = await buildPdf(rdSealedReport(ref, j.code, 'pdf')); } j.sha = await rdSha(blob); }
       RD_BLOBS[ref] = blob;
       if (typeof log === 'function') log(rdAcct().name, `نزّل التقرير الموثّق ${j.code} (PDF)`);
       return rdSaveAs(`NAIOSH_${ref}_${j.code}.pdf`, blob, 'pdf');
     }
     toast('جارٍ إعداد ملف Excel…');
+    if (j.brief) { await rdBriefPrep(ref); return rdSaveAs(`NAIOSH_${ref}_${j.code}_working.xlsx`, buildXlsx(rdBriefReport(ref, j.code, 'xlsx')), 'xlsx'); }
     if (!(AN && AN.R && S.res && S.res.src && S.res.src.ref === ref) && !(await rdLoadData(ref))) throw new Error('بيانات الطلب غير متاحة');
     const blob = buildXlsx(rdSealedReport(ref, j.code, 'xlsx'));
     return rdSaveAs(`NAIOSH_${ref}_${j.code}_working.xlsx`, blob, 'xlsx');
@@ -8162,7 +8179,7 @@ const _rd2H = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && rd2Handle(act, k, el)) return true; return _rd2H(act, k, el); };
 
 /* ---------- side menu: hidden for everyone, opened from the menu icon by the NAIOSH team only ---------- */
-const RD_CLIENT_OK = ['home', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
+const RD_CLIENT_OK = ['home', 'ask', 'axes', 'request', 'myreqs', 'results', 'hub', 'info', 'contact', 'verify', 'self', 'account', 'denied', 'register'];
 function rdIsAdmin() {
   if (rdGuest()) return false;
   if (rdServer()) return typeof ME !== 'undefined' && !!ME && ME.role !== 'client';
@@ -8264,8 +8281,10 @@ function rdStaffReportCard(q) {
     </div></div>`;
 }
 async function rdStaffUpload(id, ref, blob, code) {
-  const res = await fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code }, body: blob });
-  const d = await res.json().catch(() => ({}));
+  const post = (upd) => fetch('/api/requests/' + id + '/report', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/pdf', 'X-Report-Code': code, ...(upd ? { 'X-Report-Update': '1' } : {}) }, body: blob });
+  let res = await post(false), d = await res.json().catch(() => ({}));
+  // the automatic report was already issued (e.g. from the request answers) → the team's report becomes the updated version
+  if (res.status === 409 && d.error === 'report_exists') { res = await post(true); d = await res.json().catch(() => ({})); }
   if (!res.ok) throw new Error(d.message || 'تعذّر حفظ التقرير');
   toast('صدر التقرير الموثّق ' + code + ' — وصل للعميل');
   if (SV.detail) delete SV.detail[id];
@@ -8428,9 +8447,10 @@ VIEWS.feed = () => {
   if (rdServer() && typeof svCan === 'function' && !svCan('config.edit')) return `<section class="card"><h2 class="h-sec">${ic('lock', 18, 'style="color:var(--red)"')} تغذية البيانات لمدير النظام فقط</h2></section>`;
   if (rdServer() && !QA_SV) { qaLoad().then(() => { if (S.route === 'feed') render(); }); return `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`; }
   const tab = S.fdTab || 'ask', D = qaData();
-  const tabs = [['ask', 'تغذية «اسأل نايوش»', 'ask', ''], ['kb', 'قاعدة المعرفة', 'knowledge', 'قريبًا'], ['bench', 'المضاعفات والمراجع القطاعية', 'chart', 'قريبًا'], ['src', 'مصادر البيانات', 'data', 'قريبًا']];
+  const tabs = [['ask', 'تغذية «اسأل نايوش»', 'ask', ''], ['axis', 'تغذية محاور التحليل', 'axes', ''], ['info', 'تغذية مركز المعلومات', 'info', ''], ['hub', 'تغذية أنظمة نايوش هوب', 'hub', ''], ['kb', 'قاعدة المعرفة', 'knowledge', 'قريبًا'], ['bench', 'المضاعفات والمراجع القطاعية', 'chart', 'قريبًا'], ['src', 'مصادر البيانات', 'data', 'قريبًا']];
   const head = `<section class="stack" style="gap:6px"><h2 class="pg-title">تغذية البيانات</h2><p class="lead" style="margin:0">علّم المنظومة: أضف الأسئلة وإجاباتها، وراجع ما سأل عنه المستخدمون ولم يجد إجابة. للإدارة فقط.</p></section>
     <div class="fd-tabs" role="tablist">${tabs.map(([id, l, i, soon]) => `<button type="button" role="tab" data-act="fd-tab" data-k="${id}" aria-selected="${tab === id}">${ic(i, 16)}${l}${soon ? `<span class="soon-tag">${soon}</span>` : ''}</button>`).join('')}</div>`;
+  if (typeof fdScopeView === 'function' && ['axis', 'info', 'hub'].includes(tab)) return head + fdScopeView(tab);
   if (tab !== 'ask') return head + `<section class="card" style="align-items:center;text-align:center;padding:40px 20px;gap:10px">${ic('feed', 36, 'style="color:var(--faint)"')}<h2 class="h-sec">قريبًا</h2><p class="muted" style="margin:0">نبدأ بتغذية «اسأل نايوش». هذا القسم يُبنى في المرحلة التالية.</p></section>`;
   const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
   const qf = (S.qaFilter || '').trim(), qn = qaNorm(qf);
@@ -8454,7 +8474,7 @@ VIEWS.feed = () => {
     ${QA_TEST ? (QA_TEST.best && QA_TEST.best.s >= QA_TH ? `<div class="banner g" style="align-items:flex-start">${ic('check', 16, 'style="color:var(--green);margin-top:3px"')}<div class="stack" style="gap:4px"><b>يجيب من: «${esc(QA_TEST.best.e.question)}» · تطابق ${Math.round(QA_TEST.best.s * 100)}%</b><span class="soft" style="font-size:12.5px;white-space:pre-wrap">${esc(QA_TEST.best.e.answer)}</span></div></div>`
       : `<div class="banner y" style="align-items:flex-start">${ic('warn', 16, 'style="color:var(--yellow);margin-top:3px"')}<div class="stack" style="gap:6px"><b>لا توجد إجابة مدرّبة لهذا السؤال${QA_TEST.best && QA_TEST.best.s > 0 ? ' (أقرب سؤال «' + esc(QA_TEST.best.e.question) + '» بتطابق ' + Math.round(QA_TEST.best.s * 100) + '%)' : ''}</b><span class="row" style="gap:6px"><button type="button" class="btn sm primary" data-act="qa-train-test">${ic('plus', 14)}درّبه الآن</button>${QA_TEST.best && QA_TEST.best.s > 0 ? `<button type="button" class="btn sm" data-act="qa-add-variant" data-k="${QA_TEST.best.e.id}">أضفه صيغةً للسؤال الأقرب</button>` : ''}</span></div></div>`) : '<span class="faint" style="font-size:12px">يُظهر الاختبار السؤال المدرّب الذي سيجيب منه نايوش ونسبة التطابق.</span>'}</section>`;
   const un = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">أسئلة لم يجد لها نايوش إجابة</h2><span class="tag ${D.unanswered.length ? 't-m' : 't-s'}">${D.unanswered.length}</span></div>
-    ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">درّبه</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
+    ${D.unanswered.length ? D.unanswered.map(u => `<div class="fd-un"><b>${esc(u.question)}${u.aiAnswer ? `<span style="display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:4px">${ic('ask', 12)} إجابة الذكاء الاصطناعي: ${esc(u.aiAnswer)}</span>` : ''}</b><span class="faint" style="font-size:11.5px">${u.count > 1 ? '×' + u.count : ''}</span><button type="button" class="btn sm primary" data-act="qa-train-un" data-k="${u.id}">${u.aiAnswer ? 'راجعها واعتمدها' : 'درّبه'}</button><button type="button" class="btn link sm" data-act="qa-dismiss" data-k="${u.id}">تجاهل</button></div>`).join('') : '<p class="faint" style="margin:0;font-size:12.5px">لا أسئلة معلّقة — كل ما سُئل وجد إجابة.</p>'}</section>`;
   const listHtml = `<section class="card" style="gap:10px"><div class="row between" style="gap:8px"><h2 class="h-sec">الأسئلة المدرّبة (${D.entries.length})</h2><span class="row nowrap" style="gap:6px"><span class="fx-menu"><button type="button" class="btn sm" data-act="fx-menu" aria-expanded="${S.fxOpen ? 'true' : 'false'}">${ic('upload', 14)}تصدير ▾</button>${S.fxOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="qa-export-pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="qa-export-xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="qa-export">${ic('clip', 14)}CSV</button></span>` : ''}</span><label class="btn sm" style="cursor:pointer">${ic('plus', 14)}استيراد من ملف<input type="file" id="qa-import2" multiple hidden></label></span></div>
     <input type="search" id="qa-filter" placeholder="ابحث في الأسئلة والإجابات…" value="${esc(S.qaFilter || '')}">
     ${list.length ? list.map(e => `<div class="fd-row ${e.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><span class="q">${esc(e.question)}</span><span class="row nowrap" style="gap:6px"><span class="tag t-i">${esc(e.category || 'عام')}</span>${e.uses ? `<span class="faint" style="font-size:11px">استُخدم ${e.uses}</span>` : ''}</span></div>
@@ -8464,6 +8484,7 @@ VIEWS.feed = () => {
     <span class="faint" style="font-size:11px">الاستيراد يقبل أي ملف: Excel وCSV وWord وPDF ونصوص وJSON (جدول بأعمدة السؤال والإجابة، أو نص بصيغة «س: … ج: …» أو سؤال ينتهي بـ ؟ وتحته إجابته)، والصور والفيديو تُرفق بإجابة. الأعمدة: السؤال، الإجابة، التصنيف، الصيغ الأخرى (مفصولة بـ |).</span></section>`;
   return head + `${anKpis([['أسئلة مدرّبة', D.entries.length], ['مفعّلة', active], ['مرات الإجابة', uses], ['بانتظار التدريب', D.unanswered.length, D.unanswered.length ? 'bad' : 'good']])}
     <div class="fd-grid"><div class="stack" style="gap:16px">${form}${test}${un}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
+    ${typeof qaLogCard === 'function' ? qaLogCard() : ''}
     ${egNote('التدريب هنا قواعد مطابقة: نايوش يقارن سؤال المستخدم بالأسئلة وصيغها ويختار الأقرب، ولا يؤلف إجابات من عنده. عند ربط الذكاء الاصطناعي لاحقًا تصبح هذه الأسئلة والإجابات مرجعه الأول.')}`;
 };
 document.addEventListener('input', (e) => {
@@ -8513,7 +8534,7 @@ function qaHandle(act, k) {
     case 'qa-edit': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; S.qaForm = { id: x.id, question: x.question, variants: (x.variants || []).join('\n'), answer: x.answer, category: x.category || 'عام', keywords: x.keywords || '', link: x.link || '', active: x.active, fromUn: null, attachments: (x.attachments || []).map(a => ({ ...a })) }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     case 'qa-toggle': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x) return true; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { active: !x.active }).then(qaLoad).then(render).catch(err => toast(err.message)); else { x.active = !x.active; render(); } return true; }
     case 'qa-del': if (!confirm('حذف هذا السؤال المدرّب؟')) return true; if (rdServer()) api('DELETE', '/api/qa/' + k).then(qaLoad).then(() => { S.qaForm = null; render(); }).catch(err => toast(err.message)); else { S.qa = D.entries.filter(y => String(y.id) !== String(k)); S.qaForm = null; render(); } toast('حُذف السؤال'); return true;
-    case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
+    case 'qa-train-un': { const u = D.unanswered.find(y => String(y.id) === String(k)); if (!u) return true; S.qaForm = { id: null, question: u.question, variants: '', answer: u.aiAnswer || '', category: 'عام', keywords: '', link: '', active: true, fromUn: u.id }; QA_ERR = {}; render(); const c = document.getElementById('qa-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); return true; }
     case 'qa-train-test': S.qaForm = { id: null, question: QA_TEST.q, variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null }; QA_TEST = null; render(); { const a = document.querySelector('[data-qa="answer"]'); if (a) a.focus(); } return true;
     case 'qa-add-variant': { const x = D.entries.find(y => String(y.id) === String(k)); if (!x || !QA_TEST) return true; const vs = [...(x.variants || []), QA_TEST.q]; if (rdServer()) api('PATCH', '/api/qa/' + x.id, { variants: vs }).then(qaLoad).then(() => { QA_TEST = null; render(); toast('أُضيفت الصيغة'); }).catch(err => toast(err.message)); else { x.variants = vs; QA_TEST = null; toast('أُضيفت الصيغة'); render(); } return true; }
     case 'qa-dismiss': if (rdServer()) api('DELETE', '/api/qa/unanswered/' + k).then(qaLoad).then(render); else { S.qaUn = D.unanswered.filter(u => String(u.id) !== String(k)); render(); } return true;
@@ -8535,23 +8556,25 @@ async function qaAsk(q) {
     if (m.best && m.best.s >= QA_TH) { m.best.e.uses = (m.best.e.uses || 0) + 1; r = { found: true, answer: m.best.e.answer, question: m.best.e.question, score: Math.round(m.best.s * 100), link: m.best.e.link, attachments: m.best.e.attachments || [] }; }
     else { const n = qaNorm(q), u = D.unanswered.find(x => qaNorm(x.question) === n); if (u) u.count++; else D.unanswered.unshift({ id: Date.now(), question: q, count: 1, at: new Date().toISOString() }); r = { found: false, suggestions: m.top.filter(x => x.s >= QA_SUG).map(x => ({ id: x.e.id, question: x.e.question })) }; }
   }
+  if (!rdServer()) { S.qaLog = S.qaLog || []; S.qaLog.unshift({ id: Date.now(), at: new Date().toISOString(), question: q, source: r.found ? (r.ai ? 'ai' : 'trained') : 'none', score: r.score ?? null, answer: r.found ? r.answer : null, matched: r.found ? r.question : null, user_name: (S.acct && S.acct.name) || (typeof CFG !== 'undefined' ? CFG.identity.user : ''), user_email: (S.acct && S.acct.email) || '' }); S.qaLog = S.qaLog.slice(0, 2000); }
+  if (typeof QA_LOG !== 'undefined') QA_LOG = null;
   H.push({ me: false, r }); S.qaChat = H.slice(-30); render(); qaScroll();
 }
 function qaScroll() { setTimeout(() => { const c = document.getElementById('qa-chat'); if (c) c.scrollTop = c.scrollHeight; }, 20); }
 function qaChatCard() {
   const H = S.qaChat || [];
   const msg = (m) => m.me ? `<div class="qa-msg me">${esc(m.t)}</div>` : m.r.found
-    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}${typeof qaAttachView === 'function' ? qaAttachView(m.r.attachments) : ''}<span class="meta">من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%</span></div>`
+    ? `<div class="qa-msg bot">${esc(m.r.answer)}${m.r.link && TITLES[m.r.link] ? `<div style="margin-top:8px"><button type="button" class="btn sm" data-act="qa-ask-link" data-k="${esc(m.r.link)}">${esc(TITLES[m.r.link][1])}${ic('chev', 13)}</button></div>` : ''}${typeof qaAttachView === 'function' ? qaAttachView(m.r.attachments) : ''}<span class="meta">${m.r.ai ? 'إجابة مولّدة بالذكاء الاصطناعي من معلومات نايوش المعتمدة — تراجعها الإدارة' : `من الإجابات المدرّبة · «${esc(m.r.question)}» · تطابق ${m.r.score}%`}</span></div>`
     : `<div class="qa-msg bot">${m.r.err ? esc(m.r.err) : 'لم أتعلّم إجابة هذا السؤال بعد. سجّلته ليُضاف إلى تدريبي.'}${(m.r.suggestions || []).length ? `<div class="stack" style="gap:4px;margin-top:8px"><span class="faint" style="font-size:12px">هل تقصد:</span>${m.r.suggestions.map(sg => `<button type="button" class="btn sm" style="justify-content:flex-start" data-act="qa-sug" data-k="${sg.id}">${esc(sg.question)}</button>`).join('')}</div>` : ''}</div>`;
   const ideas = qaData().entries.filter(e => e.active).slice(0, 4).map(e => e.question);
-  return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div>${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</div>
+  return `<section class="card" style="gap:12px"><div class="row between"><div class="stack" style="gap:2px"><span class="eyebrow">ASK NAIOSH · من الإجابات المدرّبة</span><h2 class="h-sec">اسأل نايوش</h2></div><span class="row nowrap" style="gap:6px">${H.length ? `<button type="button" class="btn sm" data-act="qa-new-chat">${ic('plus', 15)}محادثة جديدة</button>` : ''}${rdIsAdmin() ? `<button type="button" class="btn sm" data-go="feed">${ic('feed', 15)}تغذية الإجابات</button>` : ''}</span></div>
     <div class="qa-chat" id="qa-chat">${H.length ? H.map(msg).join('') : `<div class="qa-msg bot">مرحبًا، اسألني عن نايوش والطلبات والنقاط والتقارير.</div>`}</div>
     ${!H.length && ideas.length ? `<div class="row" style="gap:6px">${ideas.map(t => `<button type="button" class="chip" data-act="qa-q" data-k="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
     <form id="qa-ask" class="qa-in" novalidate><input type="text" id="qa-ask-q" placeholder="اكتب سؤالك…" autocomplete="off"><button type="submit" class="btn primary">${ic('ask', 16)}اسأل</button></form></section>`;
 }
 document.addEventListener('submit', (e) => { if (e.target.id !== 'qa-ask') return; e.preventDefault(); const i = document.getElementById('qa-ask-q'); const q = i ? i.value : ''; qaAsk(q).then(() => { const j = document.getElementById('qa-ask-q'); if (j) j.focus(); }); });
 const _qaAskView = VIEWS.ask;
-VIEWS.ask = () => qaChatCard() + `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`;
+VIEWS.ask = () => qaChatCard() + (!rdIsAdmin() ? '' : `<details class="hm-more"><summary>${ic('consult', 18, 'style="color:var(--yellow)"')}<span style="flex:1">عرض الاستشارة التجريبية CNS-001 (السيناريو الموجّه)</span><span class="faint" style="font-size:12px">عرض ▾</span></summary><div>${_qaAskView()}</div></details>`);
 const _qaH = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act === 'qa-q') { qaAsk(k); return true; } if (act && (act.startsWith('qa-') || act === 'fd-tab') && qaHandle(act, k)) return true; return _qaH(act, k, el); };
 </script>
@@ -8601,15 +8624,16 @@ function qaAttachView(list) {
       : `<span class="f" title="الملف غير متاح في هذه الجلسة">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small></span>`;
   }).join('')}</div>`;
 }
-function qaAttachField(f) {
+function qaAttachField(f, o = {}) {
+  const key = o.key || 'qaForm';
   const L = f.attachments || [];
-  return `<div class="stack" style="gap:6px"><span class="lbl">مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)</span>
-    <label class="qa-drop">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="qa-att-in" multiple hidden></label>
-    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
+  return `<div class="stack" style="gap:6px"><span class="lbl">${o.label || 'مرفقات الإجابة — PDF، صور، Excel، Word، فيديو، أي ملف (تظهر مع الإجابة)'}</span>
+    <label class="qa-drop" data-key="${key}">${ic('clip', 18, 'style="color:var(--yellow)"')}<span style="font-size:13px">اختر ملفات أو اسحبها هنا</span><span class="faint" style="font-size:11.5px;margin-inline-start:auto">حتى 50MB للملف</span><input type="file" id="${key === 'qaForm' ? 'qa-att-in' : 'att-in-' + key}" data-att-key="${key}" multiple hidden></label>
+    ${L.length ? `<div class="qa-att">${L.map((a, i) => `<span class="f">${ic(qaFileIcon(a), 15)}<span>${esc(a.name)}</span><small>${qaSize(a.size || 0)}</small>${a.pending ? '<small style="color:var(--yellow)">يُرفع…</small>' : ''}<button type="button" data-act="qa-att-rm" data-k="${key}|${i}" aria-label="إزالة ${esc(a.name)}">${ic('x', 13)}</button></span>`).join('')}</div>` : ''}
     ${!rdServer() && L.some(a => !a.data) ? '<span class="faint" style="font-size:11px">في نسخة العرض تبقى الملفات الأكبر من 900KB حتى إغلاق الصفحة؛ على الخادم تُحفظ دائمًا.</span>' : ''}</div>`;
 }
-async function qaAddFiles(files) {
-  const f = S.qaForm || (S.qaForm = { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
+async function qaAddFiles(files, key = 'qaForm') {
+  const f = S[key] || (S[key] = key !== 'qaForm' ? { attachments: [] } : { id: null, question: '', variants: '', answer: '', category: 'عام', keywords: '', link: '', active: true, fromUn: null });
   f.attachments = f.attachments || [];
   for (const file of files) {
     if (file.size > 50 * 1048576) { toast('«' + file.name + '» أكبر من 50MB'); continue; }
@@ -8625,11 +8649,11 @@ async function qaAddFiles(files) {
     if (file.size <= QA_INLINE_MAX) a.data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(''); fr.readAsDataURL(file); });
     f.attachments.push(a);
   }
-  render(); toast('أُرفقت الملفات — احفظ السؤال لتثبيتها');
+  render(); toast('أُرفقت الملفات — اضغط «حفظ» لتثبيتها');
 }
-document.addEventListener('change', (e) => { if (e.target.id === 'qa-att-in' && e.target.files.length) qaAddFiles([...e.target.files]); });
+document.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.attKey; if (k && e.target.files.length) { qaAddFiles([...e.target.files], k); e.target.value = ''; } });
 document.addEventListener('dragover', (e) => { if (e.target.closest && e.target.closest('.qa-drop')) e.preventDefault(); });
-document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files]); });
+document.addEventListener('drop', (e) => { const d = e.target.closest && e.target.closest('.qa-drop'); if (!d) return; e.preventDefault(); if (e.dataTransfer.files.length) qaAddFiles([...e.dataTransfer.files], d.dataset.key || 'qaForm'); });
 
 /* ---------- export ---------- */
 function qaReport(fmt) {
@@ -8747,7 +8771,7 @@ function qaFeedHandle(act, k) {
     case 'fx-menu': S.fxOpen = !S.fxOpen; render(); return true;
     case 'qa-export-pdf': qaExport('pdf'); return true;
     case 'qa-export-xlsx': qaExport('xlsx'); return true;
-    case 'qa-att-rm': { const f = S.qaForm; if (f && f.attachments) f.attachments.splice(+k, 1); render(); return true; }
+    case 'qa-att-rm': { const [key, i] = String(k).includes('|') ? String(k).split('|') : ['qaForm', k]; const f = S[key]; if (f && f.attachments) f.attachments.splice(+i, 1); render(); return true; }
     case 'qi-close': QI = null; qaImportDialog(); return true;
     case 'qi-all': { const all = QI.items.every(x => x.on); QI.items.forEach(x => { x.on = !all; }); qaImportDialog(); return true; }
     case 'qi-add': if (QI && QI.items.some(x => x.on)) qaImportAdd(); return true;
@@ -8758,6 +8782,393 @@ function qaFeedHandle(act, k) {
 const _qaFH = analyticsHandle;
 analyticsHandle = function (act, k, el) { if (act && (act.startsWith('qa-') || act.startsWith('qi-') || act === 'fx-menu') && qaFeedHandle(act, k)) return true; return _qaFH(act, k, el); };
 Object.assign(P, { image: P.image || 'M4 5h16v14H4z M4 15l4-4 4 4 3-3 5 5 M15 9.5h.01' });
+</script>
+<script data-app="">
+/* ================= حالة النظام (admin) =================
+   Storage (is the data on a persistent volume?), automatic backups + download, verification/payment modes,
+   and the AI switch: key present, mode, monthly spend against the cap, pause/resume, connection test. */
+(function () { const g = NAV.find(x => x.items.some(([id]) => id === 'feed')) || NAV[NAV.length - 1]; if (!g.items.some(([id]) => id === 'system')) g.items.splice(1, 0, ['system', 'حالة النظام', 'SYS']); })();
+TITLES.system = ['للإدارة فقط · التخزين والنسخ والذكاء الاصطناعي', 'حالة النظام'];
+Object.assign(P, { system: P.system || 'M4 5h16v10H4z M8 19h8 M12 15v4 M7 9l2 2 3-3 2 2 3-3' });
+let SYS = null, SYS_BUSY = '';
+const sysSize = (b) => b == null ? '—' : b > 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const sysDate = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+async function sysLoad() { try { SYS = await api('GET', '/api/admin/system'); } catch (e) { SYS = { error: e.message }; } if (S.route === 'system') render(); }
+const AI_REASON = { no_key: 'لم يُضف مفتاح ANTHROPIC_API_KEY في متغيرات Railway.', off: 'المفتاح موجود لكن AI_MODE=off — غيّره إلى ask لتشغيل المرحلة الأولى.', paused: 'موقوف مؤقتًا من هذه الصفحة.', cap: 'وصل إنفاق هذا الشهر إلى السقف AI_MONTHLY_USD — يعود مع بداية الشهر أو برفع السقف.' };
+function sysCard(title, tag, body) { return `<section class="card" style="gap:12px"><div class="row between nowrap" style="gap:10px"><h2 class="h-sec">${title}</h2><span class="tag t-i">${tag}</span></div>${body}</section>`; }
+VIEWS.system = () => {
+  const head = `<section class="stack" style="gap:6px"><h2 class="pg-title">حالة النظام</h2><p class="lead" style="margin:0">هل البيانات محفوظة بأمان؟ متى آخر نسخة احتياطية؟ هل الذكاء الاصطناعي يعمل وكم أنفق هذا الشهر؟ للإدارة فقط.</p></section>`;
+  if (!rdServer()) return head + `<section class="card" style="gap:10px"><div class="banner y" style="font-size:13px">${ic('info', 16)}<span>هذه نسخة العرض التجريبي: لا يوجد خادم ولا قاعدة بيانات ولا ذكاء اصطناعي هنا. على الموقع الحقيقي تعرض هذه الصفحة حالة التخزين والنسخ الاحتياطية واستهلاك الذكاء الاصطناعي، مع أزرار «نسخة احتياطية الآن» و«اختبار الاتصال» و«إيقاف مؤقت».</span></div></section>`;
+  if (typeof svCan === 'function' && !svCan('config.edit')) return head + `<section class="card"><p class="muted">هذه الصفحة لمدير النظام فقط.</p></section>`;
+  if (!SYS) { sysLoad(); return head + `<section class="card"><p class="muted">جارٍ التحميل…</p></section>`; }
+  if (SYS.error) return head + `<section class="card"><div class="banner y">${esc(SYS.error)}</div><button type="button" class="btn" data-act="sys-reload">إعادة المحاولة</button></section>`;
+  const st = SYS.storage, a = SYS.ai, last = SYS.backups[0];
+  const persist = st.persistent === true ? `<div class="banner g" style="font-size:13px">${ic('check', 16)}<span><b>البيانات على تخزين دائم${st.volume ? ' (Volume: ' + esc(st.volume) + ')' : ''}.</b> قاعدة البيانات والملفات تبقى بعد كل نشر جديد.</span></div>`
+    : st.persistent === false ? `<div class="banner" style="font-size:13px;background:rgba(255,46,77,.08);border:1px solid rgba(255,46,77,.35);align-items:flex-start">${ic('warn', 16, 'style="color:var(--redsoft);margin-top:2px"')}<span><b>خطر: لا يوجد تخزين دائم.</b> عند أي نشر جديد على Railway تُحذف قاعدة البيانات وكل الملفات المرفوعة. الحل: في Railway أنشئ Volume واربطه بالخدمة على المسار <code>/data</code>، وأضف المتغير <code>RAILWAY_RUN_UID=0</code>، ثم أعد النشر.</span></div>`
+    : `<div class="banner y" style="font-size:13px">${ic('info', 16)}<span>لا يمكن التأكد من أن المجلد دائم (خادم خاص). إذا كان على قرص دائم أضف المتغير <code>DATA_PERSISTENT=1</code>.</span></div>`;
+  const aiState = a.available ? `<div class="banner g" style="font-size:13px">${ic('check', 16)}<span><b>الذكاء الاصطناعي يعمل</b> — «اسأل نايوش» يجيب عن الأسئلة الجديدة من الإجابات المدرّبة فقط، وكل إجابة تصل إليك هنا للمراجعة.</span></div>`
+    : `<div class="banner y" style="font-size:13px">${ic('info', 16)}<span><b>الذكاء الاصطناعي غير مفعّل:</b> ${esc(AI_REASON[a.reason] || a.reason || '')}</span></div>`;
+  const pct = a.capUsd > 0 ? Math.min(100, a.monthUsd / a.capUsd * 100) : 100;
+  return head
+  + sysCard('التخزين وقاعدة البيانات', 'STORAGE', `${persist}${anKpis([['قاعدة البيانات', sysSize(st.dbBytes)], ['الملفات المرفوعة', sysSize(st.uploads.bytes) + ' · ' + st.uploads.files + ' ملف'], ['المساحة المتاحة', sysSize(st.freeBytes)], ['مدة التشغيل', Math.floor(SYS.uptimeSec / 3600) + ' ساعة']])}<span class="faint mono" style="font-size:11px;direction:ltr;text-align:left">${esc(st.dataDir)} · Node ${esc(SYS.node)}</span>`)
+  + sysCard('النسخ الاحتياطية', 'BACKUP', `${anKpis([['آخر نسخة', last ? sysDate(last.at) : 'لا يوجد بعد', last && Date.now() - Date.parse(last.at) < 26 * 3600e3 ? 'good' : 'bad'], ['عدد النسخ المحفوظة', SYS.backups.length + ' من ' + SYS.backupKeep], ['الجدولة', SYS.backupEveryHours > 0 ? 'كل ' + SYS.backupEveryHours + ' ساعة' : 'متوقفة']])}
+      <div class="row" style="gap:8px"><button type="button" class="btn primary" data-act="sys-backup" ${SYS_BUSY === 'backup' ? 'aria-disabled="true"' : ''}>${ic('reports', 16)}${SYS_BUSY === 'backup' ? 'جارٍ النسخ…' : 'نسخة احتياطية الآن'}</button></div>
+      ${SYS.backups.length ? `<div class="tbl-wrap"><table><thead><tr><th>التاريخ</th><th>الحجم</th><th></th></tr></thead><tbody>${SYS.backups.map(b => `<tr><td>${sysDate(b.at)}</td><td class="mono" dir="ltr" style="text-align:right">${sysSize(b.size)}</td><td><a class="btn sm" href="/api/admin/backup/${encodeURIComponent(b.name)}" download="${esc(b.name)}">${ic('down', 14)}تنزيل</a></td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${egNote('النسخة هنا لقاعدة البيانات (المستخدمون، الطلبات، التقارير المختومة، النقاط، الأسئلة المدرّبة) وتُحفظ داخل نفس التخزين. للحماية من فقدان التخزين نفسه: فعّل «Backups» على الـVolume في Railway (يومي وأسبوعي)، ونزّل نسخة أسبوعيًا واحفظها خارج Railway.')}`)
+  + sysCard('الذكاء الاصطناعي (Claude)', 'AI', `${aiState}${anKpis([['المفتاح', a.keySet ? 'مضاف' : 'غير مضاف', a.keySet ? 'good' : 'bad'], ['الوضع AI_MODE', a.mode], ['إنفاق هذا الشهر (دولار)', a.monthUsd.toFixed(2) + ' / ' + a.capUsd, pct >= 90 ? 'bad' : 'good'], ['عدد الاستدعاءات', a.monthCalls], ['حد العميل اليومي', a.userDaily + ' سؤال'], ['النموذج', a.models.fast]])}
+      <div class="stack" style="gap:4px"><div class="row between" style="font-size:12px"><span class="faint">الإنفاق من السقف الشهري</span><b class="mono">${pct.toFixed(0)}%</b></div><div style="height:8px;border-radius:99px;background:var(--sunk);overflow:hidden"><div style="height:100%;width:${Math.max(1, pct)}%;background:${pct >= 90 ? 'var(--redsoft)' : pct >= 70 ? 'var(--yellow)' : 'var(--greenfg)'}"></div></div></div>
+      <div class="row" style="gap:8px"><button type="button" class="btn" data-act="sys-ai-test" ${a.keySet ? '' : 'aria-disabled="true"'}>${ic('play', 16)}${SYS_BUSY === 'test' ? 'جارٍ الاختبار…' : 'اختبار الاتصال'}</button>${a.keySet ? `<button type="button" class="btn ${a.paused ? 'primary' : ''}" data-act="sys-ai-pause" data-k="${a.paused ? '0' : '1'}">${a.paused ? 'استئناف الذكاء الاصطناعي' : 'إيقاف مؤقت فوري'}</button>` : ''}</div>
+      ${SYS.aiTest ? `<div class="banner ${SYS.aiTest.ok ? 'g' : 'y'}" style="font-size:12.5px">${SYS.aiTest.ok ? `الاتصال يعمل — ردّ النموذج «${esc(SYS.aiTest.reply)}» بتكلفة $${(SYS.aiTest.usd || 0).toFixed(5)}` : esc(SYS.aiTest.message || 'تعذّر الاتصال')}</div>` : ''}
+      ${a.recent.length ? anTbl({ h: 'آخر الاستدعاءات', cols: ['الوقت', 'الاستخدام', 'النموذج', 'رموز الدخل', 'رموز الخرج', 'التكلفة', 'الحالة'], rows: a.recent.map(x => [sysDate(x.at), x.feature === 'ask' ? 'اسأل نايوش' : x.feature === 'test' ? 'اختبار' : x.feature, x.model, String(x.in_tokens), String(x.out_tokens), '$' + Number(x.cost_usd).toFixed(5), x.ok ? 'نجح' : 'فشل: ' + (x.error || '')]) }) : ''}
+      ${egNote('المفتاح يبقى على الخادم ولا يصل للمتصفح. «اسأل نايوش» يجيب فقط من الإجابات المدرّبة، وإذا لم يجد الجواب يقول ذلك ولا يخترع. السقف الشهري والحد اليومي يُضبطان من متغيرات Railway: AI_MONTHLY_USD و AI_USER_DAILY.')}`)
+  + sysCard('الخدمات المرتبطة', 'SERVICES', anTbl({ h: 'الوضع الحالي', cols: ['الخدمة', 'الوضع', 'للتشغيل الحقيقي'], rows: [['رموز التحقق (بريد وجوال)', SYS.verifyMode === 'live' ? 'حقيقي' : 'عرض — الرمز يظهر على الشاشة', 'RESEND_API_KEY و MAIL_FROM و TWILIO_SID و TWILIO_TOKEN و TWILIO_FROM ثم VERIFY_MODE=live'], ['الدفع وشحن النقاط', SYS.paymentMode === 'live' ? 'حقيقي' : 'عرض — بدون دفع فعلي', 'يحتاج اختيار بوابة الدفع وربطها'], ['عنوان الموقع APP_ORIGIN', SYS.appOrigin || 'غير مضبوط', 'https://النطاق-الخاص-بكم']] }));
+};
+const _sysH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'sys-reload') { SYS = null; render(); return true; }
+  if (act === 'sys-backup') { if (SYS_BUSY) return true; SYS_BUSY = 'backup'; render(); api('POST', '/api/admin/backup').then(r => { toast('تمت النسخة الاحتياطية · ' + sysSize(r.backup.size)); }).catch(e => toast(e.message)).finally(() => { SYS_BUSY = ''; sysLoad(); }); return true; }
+  if (act === 'sys-ai-test') { if (SYS_BUSY || !SYS.ai.keySet) return true; SYS_BUSY = 'test'; render(); api('POST', '/api/admin/ai/test').then(r => { SYS.aiTest = r; }).catch(e => { SYS.aiTest = { ok: false, message: e.message }; }).finally(() => { SYS_BUSY = ''; const keep = SYS.aiTest; sysLoad().then(() => { if (SYS) SYS.aiTest = keep; render(); }); }); return true; }
+  if (act === 'sys-ai-pause') { api('PATCH', '/api/admin/ai', { paused: k === '1' }).then(r => { SYS.ai = r.ai; toast(k === '1' ? 'أُوقف الذكاء الاصطناعي' : 'عاد الذكاء الاصطناعي للعمل'); render(); }).catch(e => toast(e.message)); return true; }
+  return _sysH(act, k, el);
+};
+</script>
+<script data-app="">
+/* ================= «اسأل نايوش»: new conversation + log of every question (admin) =================
+   • Pressing «اسأل نايوش» (top bar, floating button, menu, home) always opens a fresh conversation;
+     «محادثة جديدة» inside the chat does the same.
+   • تغذية البيانات → «سجل كل الأسئلة»: every question asked, who asked, how it was answered (trained / AI / no answer),
+     filtered by period and downloadable as PDF, Excel or CSV. */
+function qaNewChat() { S.qaChat = []; const i = document.getElementById('qa-ask-q'); if (i) i.value = ''; }
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-go="ask"],[data-act="rd-bot"],[data-act="qa-new-chat"]');
+  if (!t) return;
+  qaNewChat();
+  if (t.dataset.act === 'qa-new-chat') { e.preventDefault(); e.stopPropagation(); render(); setTimeout(() => { const i = document.getElementById('qa-ask-q'); if (i) i.focus(); }, 30); }
+}, true);
+
+let QA_LOG = null, QA_LOG_LOADING = false;
+const QA_SRC = { trained: 'إجابة مدرّبة', ai: 'ذكاء اصطناعي', none: 'بدون إجابة' };
+async function qaLogLoad() {
+  if (QA_LOG_LOADING) return; QA_LOG_LOADING = true;
+  try {
+    if (rdServer()) { const p = new URLSearchParams(); if (S.qlFrom) p.set('from', S.qlFrom); if (S.qlTo) p.set('to', S.qlTo); QA_LOG = await api('GET', '/api/qa/log' + (p.toString() ? '?' + p : '')); }
+    else { const L = (S.qaLog || []).filter(x => (!S.qlFrom || x.at.slice(0, 10) >= S.qlFrom) && (!S.qlTo || x.at.slice(0, 10) <= S.qlTo)), all = S.qaLog || []; QA_LOG = { log: L, totals: { n: all.length, trained: all.filter(x => x.source === 'trained').length, ai: all.filter(x => x.source === 'ai').length, none: all.filter(x => x.source === 'none').length } }; }
+  } catch (e) { QA_LOG = { log: [], totals: { n: 0, trained: 0, ai: 0, none: 0 }, err: e.message }; }
+  QA_LOG_LOADING = false; if (S.route === 'feed') render();
+}
+const qlWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+function qaLogCard() {
+  if (!QA_LOG) { setTimeout(qaLogLoad, 0); return `<section class="card"><h2 class="h-sec">سجل كل الأسئلة</h2><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  const T = QA_LOG.totals, L = QA_LOG.log, shown = L.slice(0, 25);
+  return `<section class="card" style="gap:12px" id="qa-log-card"><div class="row between" style="gap:8px"><div class="stack" style="gap:2px"><h2 class="h-sec">سجل كل الأسئلة</h2><span class="faint" style="font-size:12px">كل ما سُئل لنايوش، من سأله، وكيف أُجيب — للإدارة فقط</span></div>
+      <span class="fx-menu"><button type="button" class="btn sm" data-act="ql-menu" aria-expanded="${S.qlOpen ? 'true' : 'false'}">${ic('down', 14)}تنزيل السجل ▾</button>${S.qlOpen ? `<span class="fx-pop" role="menu"><button type="button" role="menuitem" data-act="ql-export" data-k="pdf">${ic('reports', 14)}PDF</button><button type="button" role="menuitem" data-act="ql-export" data-k="xlsx">${ic('chart', 14)}Excel</button><button type="button" role="menuitem" data-act="ql-export" data-k="csv">${ic('clip', 14)}CSV</button></span>` : ''}</span></div>
+    ${anKpis([['كل الأسئلة', T.n], ['أجاب من التدريب', T.trained, 'good'], ['أجاب بالذكاء الاصطناعي', T.ai], ['بدون إجابة', T.none, T.none ? 'bad' : 'good']])}
+    <div class="row" style="gap:8px;align-items:end"><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">من تاريخ</span><input type="date" id="ql-from" dir="ltr" value="${esc(S.qlFrom || '')}"></label><label class="stack" style="gap:4px"><span class="faint" style="font-size:11.5px">إلى تاريخ</span><input type="date" id="ql-to" dir="ltr" value="${esc(S.qlTo || '')}"></label>${S.qlFrom || S.qlTo ? `<button type="button" class="btn link sm" data-act="ql-clear">كل الفترات</button>` : ''}<span class="faint" style="font-size:12px;margin-inline-start:auto">${L.length} سؤال في الفترة${L.length > shown.length ? ' · يظهر آخر ' + shown.length + ' والتنزيل يشمل الكل' : ''}</span></div>
+    ${shown.length ? `<div class="tbl-wrap"><table><thead><tr><th>الوقت</th><th>السائل</th><th>السؤال</th><th>كيف أُجيب</th><th>الإجابة</th></tr></thead><tbody>${shown.map(x => `<tr><td style="font-size:12px;white-space:nowrap">${qlWhen(x.at)}</td><td style="font-size:12.5px">${esc(x.user_name || '—')}${x.user_email ? `<span class="faint" style="display:block;font-size:11px;direction:ltr;text-align:right">${esc(x.user_email)}</span>` : ''}</td><td style="font-size:12.5px">${esc(x.question)}</td><td style="font-size:12px;white-space:nowrap"><span class="tag ${x.source === 'trained' ? 't-s' : x.source === 'ai' ? 't-i' : 't-m'}">${QA_SRC[x.source] || x.source}</span>${x.score != null ? ` <span class="faint mono">${x.score}%</span>` : ''}</td><td style="font-size:12px;max-width:320px">${x.answer ? esc(String(x.answer).slice(0, 140)) + (String(x.answer).length > 140 ? '…' : '') : '<span class="faint">—</span>'}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted" style="margin:0;font-size:13px">${QA_LOG.err ? esc(QA_LOG.err) : 'لا أسئلة في هذه الفترة بعد.'}</p>`}
+  </section>`;
+}
+const qlLocal = (iso) => { const d = new Date(iso), z = (n) => String(n).padStart(2, '0'); return isNaN(d) ? iso : `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+function qlRows() { return (QA_LOG ? QA_LOG.log : []).map(x => [qlLocal(x.at), x.user_name || '', x.user_email || '', x.question, QA_SRC[x.source] || x.source, x.score != null ? String(x.score) + '%' : '', x.matched || '', x.answer || '']); }
+const QL_COLS = ['الوقت', 'السائل', 'البريد', 'السؤال', 'كيف أُجيب', 'التطابق', 'السؤال المدرّب المطابق', 'الإجابة'];
+async function qlExport(fmt) {
+  S.qlOpen = false; render();
+  if (!QA_LOG || !QA_LOG.log.length) { toast('لا أسئلة في السجل لهذه الفترة'); return; }
+  const period = (S.qlFrom || S.qlTo) ? `${S.qlFrom || 'البداية'} → ${S.qlTo || 'اليوم'}` : 'كل الفترات', stamp = new Date().toISOString().slice(0, 10), name = `NAIOSH_ask_questions_${stamp}.${fmt}`;
+  try {
+    if (fmt === 'csv') { await saveFile(name, new Blob(['﻿' + anRowsToCSV([QL_COLS].concat(qlRows()))], { type: 'text/csv;charset=utf-8' })); return; }
+    toast(fmt === 'pdf' ? 'جارٍ إعداد ملف PDF…' : 'جارٍ إعداد ملف Excel…');
+    const T = QA_LOG.totals, L = QA_LOG.log;
+    const rep = { code: 'ASK_LOG', title: 'سجل أسئلة «اسأل نايوش»', audience: 'إدارة نايوش', ref: 'ASK-LOG', sections: [
+      { h: 'ملخص', kv: [['الفترة', period], ['أسئلة الفترة', String(L.length)], ['أجاب من التدريب', String(L.filter(x => x.source === 'trained').length)], ['أجاب بالذكاء الاصطناعي', String(L.filter(x => x.source === 'ai').length)], ['بدون إجابة', String(L.filter(x => x.source === 'none').length)], ['إجمالي السجل', String(T.n)], ['تاريخ التنزيل', stamp]] },
+      { h: 'الأسئلة', cols: fmt === 'pdf' ? ['الوقت', 'السائل', 'السؤال', 'كيف أُجيب', 'الإجابة'] : QL_COLS, rows: fmt === 'pdf' ? qlRows().map(r => [r[0], r[1], r[3], r[4] + (r[5] ? ' ' + r[5] : ''), String(r[7]).slice(0, 220)]) : qlRows() }] };
+    const blob = fmt === 'pdf' ? await buildPdf(rep) : buildXlsx(rep);
+    await (typeof rdSaveAs === 'function' ? rdSaveAs : saveFile)(name, blob, fmt);
+  } catch (e) { console.error(e); toast('تعذّر التنزيل'); }
+}
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'ql-from' || e.target.id === 'ql-to') { S[e.target.id === 'ql-from' ? 'qlFrom' : 'qlTo'] = e.target.value; QA_LOG = null; render(); }
+});
+document.addEventListener('click', (e) => { if (S.qlOpen && !(e.target.closest && e.target.closest('#qa-log-card .fx-menu'))) { S.qlOpen = false; const p = document.querySelector('#qa-log-card .fx-pop'); if (p) p.remove(); } }, true);
+const _qlH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'qa-new-chat') { qaNewChat(); render(); return true; }
+  if (act === 'ql-menu') { S.qlOpen = !S.qlOpen; render(); return true; }
+  if (act === 'ql-export') { qlExport(k); return true; }
+  if (act === 'ql-clear') { S.qlFrom = ''; S.qlTo = ''; QA_LOG = null; render(); return true; }
+  return _qlH(act, k, el);
+};
+// refresh the log whenever the admin opens تغذية البيانات
+document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-go="feed"]'); if (t) QA_LOG = null; }, true);
+</script>
+<style>
+.fd-mode{display:flex;gap:8px;flex-wrap:wrap}
+.fd-mode button{height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-weight:700}
+.fd-mode button[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow);background:var(--yellowbg)}
+.fd-body{min-height:220px;resize:vertical;line-height:1.8}
+.fd-item{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--sunk)}
+.fd-item.off{opacity:.55}
+.fd-item p{margin:0;font-size:12.5px;line-height:1.75;color:var(--fg2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fd-item .kw{display:flex;flex-wrap:wrap;gap:4px}.fd-item .kw span{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--raised);border:1px solid var(--line2);color:var(--muted)}
+</style>
+<script data-app="">
+/* ================= تغذية البيانات → محاور التحليل · مركز المعلومات · أنظمة نايوش هوب =================
+   As Dr. Adnan described it: choose «تغذية جميع …» or «اختر تغذية …» (a list), then write or paste the explanation,
+   keywords, an optional link and optional files, active, «حفظ التغذية». The right column lists what was fed
+   («المحاور المدربة» …). No question field and no import/export here — questions for an axis are fed in the analysis.
+   «اسأل نايوش» and the AI phases use every active feed as reference. */
+const FD_SCOPE = {
+  axis: { title: 'تغذية محاور التحليل', all: 'تغذية جميع المحاور', pick: 'اختر تغذية محور', allLabel: 'جميع المحاور', list: 'المحاور المدربة', item: 'محور', empty: 'لم تُغذَّ أي محاور بعد.' },
+  info: { title: 'تغذية مركز المعلومات', all: 'تغذية كل مركز المعلومات', pick: 'اختر قسمًا', allLabel: 'كل مركز المعلومات', list: 'أقسام مركز المعلومات المدربة', item: 'قسم', empty: 'لم تُغذَّ أقسام مركز المعلومات بعد.' },
+  hub: { title: 'تغذية أنظمة نايوش هوب', all: 'تغذية جميع الأنظمة', pick: 'اختر نظامًا', allLabel: 'جميع أنظمة نايوش هوب', list: 'الأنظمة المدربة', item: 'نظام', empty: 'لم تُغذَّ أنظمة نايوش هوب بعد.' }
+};
+const FD_INFO = [['about', 'عن نايوش'], ['how', 'كيف تعمل نايوش — رحلة التحليل'], ['principles', 'مبادئ المنظومة'], ['privacy', 'الخصوصية وحماية البيانات'], ['terms', 'الشروط والأحكام'], ['faq', 'الأسئلة الشائعة'], ['verify', 'التحقق من التقارير'], ['points', 'النقاط والدفع'], ['contact', 'التواصل والشكاوى والمقترحات']];
+const FD_HUB = [['services', 'الخدمات'], ['wallet', 'المحفظة والنقاط'], ['packs', 'الباقات'], ['offers', 'العروض'], ['payment', 'طرق الدفع وأكواد الخصم']];
+const FD_NOT_AXIS = ['home', 'ask', 'request', 'results', 'myreqs', 'settings', 'feed', 'system', 'governance', 'integration', 'knowledge', 'agents', 'reports', 'architecture', 'axes', 'hub', 'info', 'contact', 'register', 'verify', 'denied'];
+function fdAxisGroups() {
+  const tops = (typeof DASH_TOPICS !== 'undefined' ? DASH_TOPICS : []).map(t => ['t:' + t.id, 'تحليل ' + t.name]);
+  const items = NAV.flatMap(g => g.items.map(([id, l]) => [id, l, g.t])).filter(([id]) => !FD_NOT_AXIS.includes(id) && !String(id).startsWith('t:'));
+  const groups = []; if (tops.length) groups.push(['تحليل البيانات حسب الموضوع', tops]);
+  [...new Set(items.map(x => x[2]))].forEach(g => groups.push([g, items.filter(x => x[2] === g).map(([id, l]) => [id, l])]));
+  return groups;
+}
+function fdOptions(scope) { return scope === 'axis' ? fdAxisGroups() : [[FD_SCOPE[scope].pick, scope === 'info' ? FD_INFO : FD_HUB]]; }
+const fdLabelOf = (scope, target) => { if (target === 'all') return FD_SCOPE[scope].allLabel; for (const [, L] of fdOptions(scope)) { const x = L.find(([k]) => k === target); if (x) return x[1]; } return target; };
+
+let FD_SV = null, FD_ERR = {}, FD_OLD = false;
+async function fdLoad() { if (!rdServer()) return; try { FD_SV = (await api('GET', '/api/feeds')).feeds; FD_OLD = false; } catch (e) { FD_SV = []; if (e.status === 404) FD_OLD = true; else toast(e.message); } if (S.route === 'feed') render(); }
+const fdAll = () => rdServer() ? (FD_SV || []) : (S.feeds || (S.feeds = []));
+const fdFresh = (scope) => ({ id: null, scope, mode: 'all', target: 'all', body: '', keywords: '', link: '', active: true, attachments: [] });
+
+function fdScopeView(scope) {
+  if (rdServer() && !FD_SV) { setTimeout(fdLoad, 0); return `<section class="card"><p class="muted" style="margin:0">جارٍ التحميل…</p></section>`; }
+  if (FD_OLD) return `<section class="card" style="gap:10px"><div class="banner" style="font-size:13px;background:rgba(255,46,77,.08);border:1px solid rgba(255,46,77,.35);align-items:flex-start">${ic('warn', 16, 'style="color:var(--redsoft);margin-top:2px"')}<span><b>الواجهة محدّثة لكن الخادم ما زال على نسخة قديمة.</b> هذا القسم يحتاج رفع ملفات الخادم إلى GitHub: <code dir="ltr">src/routes/qa.js</code> و <code dir="ltr">src/ai.js</code> و <code dir="ltr">migrations/008_kb_feeds.sql</code>، ثم انتظار إعادة النشر على Railway.</span></div><button type="button" class="btn" data-act="fd-retry" style="align-self:flex-start">إعادة المحاولة</button></section>`;
+  const C = FD_SCOPE[scope], f = (S.fdForm && S.fdForm.scope === scope) ? S.fdForm : (S.fdForm = fdFresh(scope)), E = FD_ERR;
+  const mine = fdAll().filter(x => x.scope === scope), q = (S.fdFilter || '').trim();
+  const list = q ? mine.filter(x => (x.targetLabel + ' ' + x.body + ' ' + x.keywords).includes(q)) : mine;
+  const opts = fdOptions(scope);
+  const form = `<section class="card" style="gap:14px" id="fd-form-card"><div class="row between"><h2 class="h-sec">${f.id ? 'تعديل التغذية' : C.title}</h2>${f.id ? `<button type="button" class="btn link sm" data-act="fd-new">إلغاء التعديل</button>` : ''}</div>
+    <div class="fd-mode" role="group" aria-label="${C.title}"><button type="button" data-act="fd-mode" data-k="all" aria-pressed="${f.mode === 'all'}">${C.all}</button><button type="button" data-act="fd-mode" data-k="pick" aria-pressed="${f.mode === 'pick'}">${C.pick}</button></div>
+    ${f.mode === 'pick' ? `<label class="stack" style="gap:5px"><span class="lbl">${C.pick} *</span><select id="fd-target" style="${egSelStyle};min-height:46px"><option value="">— اختر —</option>${opts.map(([g, L]) => `<optgroup label="${esc(g)}">${L.map(([k, l]) => `<option value="${esc(k)}" ${f.target === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>${E.target ? `<span style="color:#FF6B81;font-size:12px">${E.target}</span>` : ''}</label>` : `<div class="banner y" style="font-size:12.5px">${ic('info', 15)}<span>هذه التغذية تنطبق على ${C.allLabel}.</span></div>`}
+    <label class="stack" style="gap:5px"><span class="lbl">اكتب الشرح أو الصق النص *</span><textarea id="fd-body" class="fd-body" placeholder="اكتب شرحًا هنا، أو الصق نصًا كاملًا من مصدر خارجي…">${esc(f.body)}</textarea><span class="faint" style="font-size:11px">${(f.body || '').length.toLocaleString('ar')} حرف · المربع قابل للتمديد من زاويته</span>${E.body ? `<span style="color:#FF6B81;font-size:12px">${E.body}</span>` : ''}</label>
+    <div class="grid g2"><label class="stack" style="gap:5px"><span class="lbl">كلمات مفتاحية (بفاصلة)</span><input type="text" id="fd-keywords" value="${esc(f.keywords)}" placeholder="مثال: الجدول الزمني، الميزانية، المخاطر"></label>
+      <label class="stack" style="gap:5px"><span class="lbl">رابط خارجي (اختياري)</span><input type="url" id="fd-link" dir="ltr" value="${esc(f.link)}" placeholder="https://">${E.link ? `<span style="color:#FF6B81;font-size:12px">${E.link}</span>` : ''}</label></div>
+    ${typeof qaAttachField === 'function' ? qaAttachField(f, { key: 'fdForm', label: 'ملفات (اختياري) — PDF، صور، Excel، Word، فيديو، أي ملف' }) : ''}
+    <label class="row nowrap" style="gap:10px;cursor:pointer"><input type="checkbox" id="fd-active" ${f.active ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--action)"><span style="font-size:13.5px">مفعّل — يستخدمه نايوش</span></label>
+    <div class="row"><button type="button" class="btn primary" data-act="fd-save">${ic('check', 16)}حفظ التغذية</button></div></section>`;
+  const listHtml = `<section class="card" style="gap:10px"><div class="row between"><h2 class="h-sec">${C.list} (${mine.length})</h2></div>
+    ${mine.length > 3 ? `<input type="search" id="fd-filter" placeholder="ابحث في التغذية…" value="${esc(S.fdFilter || '')}">` : ''}
+    ${list.length ? list.map(x => `<div class="fd-item ${x.active ? '' : 'off'}"><div class="row between nowrap" style="gap:8px"><b style="font-size:13.5px">${x.target === 'all' ? ic('axes', 14, 'style="color:var(--yellow)"') + ' ' : ''}${esc(x.targetLabel)}</b><span class="tag ${x.active ? 't-s' : 't-m'}">${x.active ? 'مفعّل' : 'موقوف'}</span></div>
+        <p>${esc(x.body)}</p>
+        ${x.keywords ? `<div class="kw">${x.keywords.split(/[,،]/).map(k => k.trim()).filter(Boolean).slice(0, 8).map(k => `<span>${esc(k)}</span>`).join('')}</div>` : ''}
+        <div class="row between" style="gap:6px"><span class="faint" style="font-size:11px">${(x.attachments || []).length ? (x.attachments.length + ' مرفق · ') : ''}${x.link ? 'رابط · ' : ''}${x.body.length.toLocaleString('ar')} حرف</span><span class="row nowrap" style="gap:4px"><button type="button" class="btn sm" data-act="fd-edit" data-k="${x.id}">تعديل</button><button type="button" class="btn link sm" data-act="fd-toggle" data-k="${x.id}">${x.active ? 'إيقاف' : 'تفعيل'}</button><button type="button" class="btn link sm" data-act="fd-del" data-k="${x.id}" style="color:var(--redsoft)">حذف</button></span></div></div>`).join('')
+      : `<p class="muted" style="margin:0;font-size:13px">${q ? 'لا نتائج.' : C.empty}</p>`}</section>`;
+  return `<div class="fd-grid"><div class="stack" style="gap:16px">${form}</div><div class="stack" style="gap:16px">${listHtml}</div></div>
+    ${egNote('ما يُكتب هنا يصبح مرجعًا لنايوش: يستخدمه «اسأل نايوش» عند تشغيل الذكاء الاصطناعي، وتعتمد عليه مراحل التحليل القادمة. تغذية المحور بالأسئلة تكون داخل التحليل نفسه وليس هنا.')}`;
+}
+function fdRead() {
+  const f = S.fdForm; if (!f) return;
+  const v = (id) => { const e = document.getElementById(id); return e ? e.value : undefined; };
+  ['body', 'keywords', 'link'].forEach(k => { const x = v('fd-' + k); if (x !== undefined) f[k] = x; });
+  const t = v('fd-target'); if (t !== undefined) f.target = t;
+  const a = document.getElementById('fd-active'); if (a) f.active = a.checked;
+}
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'fd-filter') { S.fdFilter = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('fd-filter'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
+  if (/^fd-(body|keywords|link)$/.test(e.target.id)) fdRead();
+});
+document.addEventListener('change', (e) => { if (e.target.id === 'fd-target' || e.target.id === 'fd-active') fdRead(); });
+async function fdSave() {
+  fdRead(); const f = S.fdForm, scope = f.scope; FD_ERR = {};
+  if (f.mode === 'pick' && !f.target) FD_ERR.target = 'اختر من القائمة.';
+  if ((f.body || '').trim().length < 3) FD_ERR.body = 'اكتب الشرح أو الصق النص.';
+  if (f.link && !/^https?:\/\/\S+$/i.test(f.link.trim())) FD_ERR.link = 'الرابط يجب أن يبدأ بـ https://';
+  if ((f.attachments || []).some(a => a.pending)) { toast('انتظر انتهاء رفع الملفات'); return; }
+  if (Object.keys(FD_ERR).length) { render(); return; }
+  const target = f.mode === 'all' ? 'all' : f.target, x = { scope, target, targetLabel: fdLabelOf(scope, target), body: f.body.trim(), keywords: f.keywords.trim(), link: f.link.trim(), active: f.active, attachments: (f.attachments || []).map(a => rdServer() ? a.id : { ...a }) };
+  try {
+    if (rdServer()) { if (f.id) await api('PATCH', '/api/feeds/' + f.id, x); else await api('POST', '/api/feeds', x); await fdLoad(); }
+    else { const L = fdAll(), now = new Date().toISOString(); if (f.id) Object.assign(L.find(y => y.id === f.id) || {}, x, { updatedAt: now }); else L.unshift({ id: Date.now(), ...x, updatedAt: now }); }
+    toast(f.id ? 'حُدّثت التغذية' : 'حُفظت التغذية — نايوش تعلّمها'); S.fdForm = fdFresh(scope); render();
+  } catch (e) { if (e.errors) { FD_ERR = e.errors; render(); } toast(e.message); }
+}
+async function fdToggle(id) {
+  const x = fdAll().find(y => String(y.id) === String(id)); if (!x) return;
+  if (rdServer()) { try { await api('PATCH', '/api/feeds/' + x.id, { active: !x.active }); await fdLoad(); } catch (e) { toast(e.message); } } else { x.active = !x.active; render(); }
+}
+async function fdDelete(id) {
+  const x = fdAll().find(y => String(y.id) === String(id)); if (!x || !confirm(`حذف تغذية «${x.targetLabel}»؟`)) return;
+  if (rdServer()) { try { await api('DELETE', '/api/feeds/' + x.id); await fdLoad(); } catch (e) { toast(e.message); } } else { S.feeds = fdAll().filter(y => y !== x); render(); }
+  toast('حُذفت التغذية');
+}
+const _fdH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  switch (act) {
+    case 'fd-mode': fdRead(); S.fdForm.mode = k; if (k === 'all') S.fdForm.target = 'all'; else if (S.fdForm.target === 'all') S.fdForm.target = ''; FD_ERR = {}; render(); return true;
+    case 'fd-save': fdSave(); return true;
+    case 'fd-retry': FD_SV = null; FD_OLD = false; render(); return true;
+    case 'fd-new': S.fdForm = fdFresh(S.fdForm ? S.fdForm.scope : 'axis'); FD_ERR = {}; render(); return true;
+    case 'fd-edit': { const x = fdAll().find(y => String(y.id) === String(k)); if (!x) return true; S.fdForm = { id: x.id, scope: x.scope, mode: x.target === 'all' ? 'all' : 'pick', target: x.target, body: x.body, keywords: x.keywords || '', link: x.link || '', active: x.active, attachments: (x.attachments || []).map(a => ({ ...a })) }; FD_ERR = {}; render(); const c = document.getElementById('fd-form-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
+    case 'fd-toggle': fdToggle(k); return true;
+    case 'fd-del': fdDelete(k); return true;
+    case 'fd-tab': S.fdFilter = ''; FD_ERR = {}; if (['axis', 'info', 'hub'].includes(k) && rdServer()) FD_SV = null; break;
+  }
+  return _fdH(act, k, el);
+};
+</script>
+<style>
+.mr-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.mr-tabs button{height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2);background:var(--raised);color:var(--fg2);font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.mr-tabs button[aria-selected="true"]{border-color:var(--yellow);color:var(--yellow);background:var(--yellowbg)}
+.mr-tabs .n{font:700 11px var(--f-mono);padding:1px 7px;border-radius:99px;background:var(--sunk)}
+.rp-list{display:flex;flex-direction:column;gap:10px}
+.rp{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--raised)}
+.rp .ri{width:44px;height:44px;border-radius:11px;display:grid;place-items:center}
+.rp b{font-size:14px;line-height:1.5}.rp .m{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px}
+.rp .a{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:640px){.rp{grid-template-columns:40px minmax(0,1fr)}.rp .a{grid-column:1/-1;justify-content:flex-start}}
+</style>
+<script data-app="">
+/* ================= «طلباتي وتقاريري» → «تقاريري» =================
+   Every report a user produces is kept and listed in one place:
+   • sealed reports of their analysis requests (and requests still being prepared),
+   • every PDF / Excel report generated from an analysis engine, the analysis results, the legal final report …
+     (archived automatically when the report is built — on the server per user; in the demo in this browser). */
+let MR_SV = null, MR_LOADING = false; const MR_MEM = [];
+const MR_SKIP = (rep) => !rep || rep.seal || /^ASK/i.test(String(rep.code || '')) || rep.noArchive || (typeof rdMyReqs === 'function' && rep.ref && rdMyReqs().some(q => q.ref === rep.ref));
+// ---- demo storage: IndexedDB (falls back to memory) ----
+function mrIdb() { return new Promise((res) => { try { const q = indexedDB.open('naiosh-reports', 1); q.onupgradeneeded = () => q.result.createObjectStore('r', { keyPath: 'id' }); q.onsuccess = () => res(q.result); q.onerror = () => res(null); } catch (e) { res(null); } }); }
+async function mrIdbAll() { const d = await mrIdb(); if (!d) return MR_MEM.slice(); return new Promise((res) => { try { const q = d.transaction('r').objectStore('r').getAll(); q.onsuccess = () => res(q.result.sort((a, b) => b.id - a.id)); q.onerror = () => res(MR_MEM.slice()); } catch (e) { res(MR_MEM.slice()); } }); }
+async function mrIdbPut(x) { MR_MEM.unshift(x); const d = await mrIdb(); if (!d) return; try { d.transaction('r', 'readwrite').objectStore('r').put(x); } catch (e) {} }
+async function mrIdbDel(id) { const i = MR_MEM.findIndex(x => x.id === id); if (i >= 0) MR_MEM.splice(i, 1); const d = await mrIdb(); if (!d) return; try { d.transaction('r', 'readwrite').objectStore('r').delete(id); } catch (e) {} }
+
+async function mrLoad() {
+  if (MR_LOADING) return; MR_LOADING = true;
+  try { MR_SV = rdServer() ? (await api('GET', '/api/my-reports')).reports : (await mrIdbAll()).map(({ blob, ...m }) => m); }
+  catch (e) { MR_SV = []; if (e.status !== 404) toast(e.message); }
+  MR_LOADING = false; if (S.route === 'myreqs') render();
+}
+let MR_LAST = { k: '', t: 0 };
+async function mrArchive(rep, blob, format) {
+  if (MR_SKIP(rep) || !blob || (rdServer() && (typeof ME === 'undefined' || !ME))) return;
+  const title = String(rep.title || 'تقرير').slice(0, 200), k = title + '|' + format + '|' + blob.size;
+  if (MR_LAST.k === k && Date.now() - MR_LAST.t < 8000) return; MR_LAST = { k, t: Date.now() };
+  const source = (TITLES[S.route] || [])[1] || '', ref = String(rep.ref || '').slice(0, 60);
+  try {
+    if (rdServer()) {
+      const r = await fetch('/api/my-reports', { method: 'POST', credentials: 'same-origin', headers: { 'X-Naiosh': '1', 'Content-Type': 'application/octet-stream', 'X-Report-Title': encodeURIComponent(title), 'X-Report-Ref': encodeURIComponent(ref), 'X-Report-Source': encodeURIComponent(source), 'X-Report-Format': format }, body: blob });
+      if (!r.ok) return;
+    } else await mrIdbPut({ id: Date.now(), title, ref, source, format, size: blob.size, createdAt: new Date().toISOString(), blob });
+    MR_SV = null; setTimeout(() => toast('حُفظت نسخة في «تقاريري»'), 1600);
+  } catch (e) { /* archiving must never break the export itself */ }
+}
+const _mrBuildPdf = buildPdf;
+buildPdf = async function (rep) { const b = await _mrBuildPdf(rep); mrArchive(rep, b, 'pdf'); return b; };
+const _mrBuildXlsx = buildXlsx;
+buildXlsx = function (rep) { const b = _mrBuildXlsx(rep); mrArchive(rep, b, 'xlsx'); return b; };
+
+const mrFileName = (x) => `NAIOSH_${String(x.ref || 'report').replace(/[^A-Za-z0-9_-]+/g, '') || 'report'}_${String(x.createdAt).slice(0, 10)}.${x.format}`;
+const mrWhen = (iso) => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('ar', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+const mrSize = (b) => !b ? '' : b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+function mrReportsTab() {
+  if (!MR_SV) { setTimeout(mrLoad, 0); return `<section class="card"><p class="muted" style="margin:0">جارٍ تحميل تقاريرك…</p></section>`; }
+  const reqs = (typeof rdMyReqs === 'function' ? rdMyReqs() : []).map(q => ({ q, j: rdJob(q.ref) }));
+  const items = [
+    ...reqs.map(({ q, j }) => ({ kind: 'req', at: j.at || q.createdAt || q.date || '', q, j })),
+    ...MR_SV.map(x => ({ kind: 'gen', at: x.createdAt, x }))
+  ].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  const f = (S.mrFind || '').trim(), flt = S.mrKind || 'all';
+  const shown = items.filter(it => (flt === 'all' || it.kind === flt) && (!f || (it.kind === 'req' ? (it.q.title + ' ' + it.q.ref) : (it.x.title + ' ' + it.x.source + ' ' + it.x.ref)).includes(f)));
+  const nReady = reqs.filter(r => r.j.state === 'done').length;
+  const row = (it) => {
+    if (it.kind === 'req') {
+      const { q, j } = it, done = j.state === 'done', L = rdJobLabel(q.ref);
+      return `<div class="rp"><span class="ri" style="background:${done ? 'rgba(52,199,89,.12);color:var(--greenfg)' : 'var(--sunk);color:var(--faint)'}">${ic(done ? 'verify' : 'clock', 22)}</span>
+        <div style="min-width:0"><b>${esc(q.title || q.axisLabel || 'طلب تحليل')}</b><div class="m"><span class="mono" style="color:var(--yellow)">${esc(q.ref)}</span><span>تقرير طلب تحليل${done ? ' · موثّق' : ''}</span>${done && j.code ? `<span>رمز التحقق <span class="mono">${esc(j.code)}</span></span>` : ''}${j.at ? `<span>${mrWhen(j.at)}</span>` : ''}<span class="tag ${L[0]}" style="font-size:10.5px">${L[1]}</span></div></div>
+        <div class="a">${done ? `<button type="button" class="btn sm primary" data-act="mr-req-dl" data-k="pdf|${esc(q.ref)}">${ic('reports', 14)}PDF</button>${(CFG.commerce || {}).allowExcel !== false ? `<button type="button" class="btn sm" data-act="mr-req-dl" data-k="xlsx|${esc(q.ref)}">${ic('chart', 14)}Excel</button>` : ''}${j.brief ? '' : `<button type="button" class="btn sm" data-act="rd-view-results" data-k="${esc(q.ref)}">لوحة التحليل</button>`}` : `<button type="button" class="btn sm" data-act="mr-tab" data-k="reqs">متابعة الطلب</button>`}</div></div>`;
+    }
+    const x = it.x;
+    return `<div class="rp"><span class="ri" style="background:${x.format === 'pdf' ? 'rgba(255,46,77,.1);color:var(--redsoft)' : 'rgba(52,199,89,.12);color:var(--greenfg)'}">${ic(x.format === 'pdf' ? 'reports' : 'chart', 22)}</span>
+      <div style="min-width:0"><b>${esc(x.title)}</b><div class="m">${x.ref ? `<span class="mono" style="color:var(--yellow)">${esc(x.ref)}</span>` : ''}${x.source ? `<span>${esc(x.source)}</span>` : ''}<span>${x.format === 'pdf' ? 'PDF' : 'Excel'}${x.size ? ' · ' + mrSize(x.size) : ''}</span><span>${mrWhen(x.createdAt)}</span></div></div>
+      <div class="a">${rdServer() ? `<a class="btn sm primary" href="/api/my-reports/${x.id}/file" download="${mrFileName(x)}">${ic('down', 14)}تنزيل</a>` : `<button type="button" class="btn sm primary" data-act="mr-dl" data-k="${x.id}">${ic('down', 14)}تنزيل</button>`}<button type="button" class="btn link sm" data-act="mr-del" data-k="${x.id}" style="color:var(--redsoft)">حذف</button></div></div>`;
+  };
+  return `<section class="card" style="gap:12px">
+    ${anKpis([['كل التقارير', items.length], ['تقارير طلبات موثّقة', nReady, 'good'], ['قيد الإعداد', reqs.length - nReady], ['تقارير أصدرتها', MR_SV.length]])}
+    <div class="row" style="gap:8px;align-items:center"><input type="search" id="mr-find" placeholder="ابحث باسم التقرير أو رقمه…" value="${esc(f)}" style="flex:1;min-width:200px">
+      <div class="row nowrap" style="gap:6px">${[['all', 'الكل'], ['req', 'طلبات التحليل'], ['gen', 'تقارير أصدرتها']].map(([k, l]) => choice('mr-kind', '', k, flt === k, l)).join('')}</div></div>
+    ${shown.length ? `<div class="rp-list">${shown.map(row).join('')}</div>` : `<div class="stack" style="align-items:center;text-align:center;gap:10px;padding:30px 10px">${ic('reports', 36, 'style="color:var(--faint)"')}<b>${f || flt !== 'all' ? 'لا نتائج' : 'لا تقارير بعد'}</b><p class="muted" style="margin:0;font-size:13px">كل تقرير تطلبه أو تصدره (PDF أو Excel) يُحفظ هنا تلقائيًا وتعود إليه متى شئت.</p><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></div>`}
+    ${egNote(rdServer() ? 'التقارير محفوظة في حسابك على خادم نايوش، وتظهر لك وحدك. تقارير الطلبات الموثّقة مختومة برمز تحقق ولا تتغير.' : 'في نسخة العرض تُحفظ التقارير في هذا المتصفح فقط. على الموقع الحقيقي تُحفظ في حسابك على الخادم.')}
+  </section>`;
+}
+const _mrView = VIEWS.myreqs;
+VIEWS.myreqs = () => {
+  const tab = S.mrTab || 'reports', nReq = typeof rdMyReqs === 'function' ? rdMyReqs().length : 0, nRep = (MR_SV ? MR_SV.length : 0) + (typeof rdMyReqs === 'function' ? rdMyReqs().filter(q => rdJob(q.ref).state === 'done').length : 0);
+  const tabs = `<div class="mr-tabs" role="tablist"><button type="button" role="tab" data-act="mr-tab" data-k="reports" aria-selected="${tab === 'reports'}">${ic('reports', 17)}تقاريري${MR_SV ? `<span class="n">${nRep}</span>` : ''}</button><button type="button" role="tab" data-act="mr-tab" data-k="reqs" aria-selected="${tab === 'reqs'}">${ic('myreqs', 17)}طلباتي<span class="n">${nReq}</span></button></div>`;
+  if (tab === 'reqs') { const h = _mrView(); const i = h.indexOf('</section>') + 10; return h.slice(0, i) + tabs + h.slice(i); }
+  return `<section class="row between" style="gap:12px;align-items:flex-end"><div class="stack" style="gap:6px"><h2 class="pg-title">طلباتي وتقاريري</h2><p class="lead" style="margin:0">كل التقارير التي طلبتها أو أصدرتها، في مكان واحد.</p></div><button type="button" class="btn primary" data-go="axes">${ic('plus', 16)}طلب تحليل جديد</button></section>${tabs}${mrReportsTab()}`;
+};
+TITLES.myreqs = ['التقارير · الطلبات · التحليل الآلي', 'طلباتي وتقاريري'];
+document.addEventListener('input', (e) => { if (e.target.id === 'mr-find') { S.mrFind = e.target.value; const p = e.target.selectionStart; render(); const n = document.getElementById('mr-find'); if (n) { n.focus(); n.setSelectionRange(p, p); } } });
+document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-go="myreqs"]'); if (t) MR_SV = null; }, true);
+const _mrH = analyticsHandle;
+analyticsHandle = function (act, k, el) {
+  if (act === 'mr-tab') { S.mrTab = k; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'mr-kind') { S.mrKind = String(k).replace(/^\|/, ''); render(); return true; }
+  if (act === 'mr-req-dl') { const [fmt, ref] = String(k).split('|'); S.mrFmt = fmt; if (typeof rdExport === 'function') rdExport(ref); return true; }
+  if (act === 'mr-dl') { mrIdbAll().then(L => { const x = L.find(y => String(y.id) === String(k)); if (!x || !x.blob) { toast('الملف غير متاح في هذا المتصفح'); return; } saveFile(mrFileName(x), x.blob); }); return true; }
+  if (act === 'mr-del') {
+    const x = (MR_SV || []).find(y => String(y.id) === String(k)); if (!x || !confirm(`حذف «${x.title}» من تقاريري؟`)) return true;
+    (rdServer() ? api('DELETE', '/api/my-reports/' + x.id) : mrIdbDel(x.id)).then(() => { toast('حُذف التقرير'); MR_SV = null; render(); }).catch(err => toast(err.message));
+    return true;
+  }
+  return _mrH(act, k, el);
+};
+</script>
+<script data-app="">
+/* ================= Request report without a data file =================
+   Dr. Adnan: attaching a file or a link is optional — the analysis must never stop because no file was attached.
+   When a request has no data file (or the file cannot be read as a table), the sealed report is issued at once from
+   what the client entered in the request, and its header and first section say it is based on the data provided. */
+async function rdBriefPrep(ref) {
+  const q = (S.requests || []).find(x => x.ref === ref); if (!q) return;
+  if (rdServer() && q.id && !q.payload) {
+    try { const d = await api('GET', '/api/requests/' + q.id); q.payload = d.request.payload || {}; q.fileList = (d.request.files || []).map(f => ({ name: f.name, kind: f.kind })); } catch (e) { q.payload = q.payload || {}; }
+  }
+  if (!q.fileList) q.fileList = [...((q.payload || {}).files || []).map(n => ({ name: n, kind: 'file' })), ...((q.payload || {}).videos || []).filter(Boolean).map(n => ({ name: n, kind: 'video' })), ...(q.extra || []).map(n => ({ name: n, kind: 'file' }))];
+}
+const rdLbl = (list, v) => (list.find(x => x[0] === v) || [, v || '—'])[1];
+function rdBriefReport(ref, code, fmt) {
+  const q = (S.requests || []).find(x => x.ref === ref) || {}, p = q.payload || {}, j = rdJob(ref), me = rdAcct(), date = new Date().toISOString().slice(0, 10);
+  const types = RQ_TYPES.filter(t => (p.types || q.types || []).includes(t.id)), need = [...new Set(types.flatMap(t => t.need))], have = p.have || [];
+  const files = q.fileList || [], topic = q.axisLabel || p.axisLabel || q.title || p.title || ref;
+  const ctx = [['متى بدأت المشكلة أو الحاجة', p.since], ['أين تحدث', p.where], ['من المتأثر', p.who], ['ما الذي جُرّب سابقًا', p.tried], ['القرار الذي سيدعمه التحليل', p.decision], ['المؤشر المرتبط', p.kpi], ['الفترة', p.from || p.to ? `${p.from || '—'} → ${p.to || '—'}` : '']].filter(([, v]) => String(v || '').trim());
+  const why = j.why ? `تعذّرت قراءة الملف المرفق كجدول بيانات (${j.why}). ` : files.length ? 'المرفقات المستلمة ليست جداول بيانات قابلة للتحليل الآلي (مثل الصور أو الفيديو أو المستندات النصية)، وتبقى محفوظة مع الطلب. ' : 'لم يُرفق ملف بيانات مع الطلب. ';
+  const sections = [
+    { h: 'توثيق التقرير', kv: [['رقم الطلب', ref], ['موضوع التحليل', topic], ['مقدّم الطلب', me.name || p.name || '—'], ['تاريخ الإصدار', date], ['رمز التحقق', code], ['الحالة', fmt === 'xlsx' ? 'نسخة عمل — غير موثّقة' : 'نسخة رسمية موثّقة']] },
+    { h: 'أساس التحليل', text: `${EXP_BASIS} ${why}لذلك بُني هذا التقرير على المعلومات الواردة في نموذج الطلب فقط، دون مؤشرات رقمية محسوبة. للحصول على تحليل كمّي أدق، زوّدنا ببيانات مكتملة (يفضّل Excel أو CSV) وسيصدر تقرير محدّث.` },
+    { h: 'موضوع الطلب', kv: [['العنوان', p.title || q.title || '—'], ['السؤال المطلوب إجابته', p.question || '—'], ['المجال', rdLbl(RQ_DOMAINS, p.domain || q.domain)], ['أنواع التحليل', types.map(t => t.label).join('، ') || q.typesLabel || '—'], ['الأولوية', p.priority || q.priority || '—'], ['مستوى القرار', rdLbl(RQ_LEVEL, p.level)], ['الموعد المطلوب', p.due || '—'], ['الجهة', [p.org, p.branch].filter(Boolean).join(' — ') || '—']] }
+  ];
+  if (ctx.length) sections.push({ h: 'السياق كما ورد في الطلب', kv: ctx });
+  if (types.length) sections.push({ h: 'ما يجيب عنه كل نوع تحليل مطلوب', cols: ['نوع التحليل', 'السؤال الذي يجيب عنه', 'البيانات التي يحتاجها'], rows: types.map(t => [t.label, t.q, t.need.join('، ')]) });
+  if (need.length) sections.push({ h: 'البيانات المتوفرة لدى الجهة مقابل المطلوب', cols: ['البيان', 'الحالة كما أفاد مقدّم الطلب'], rows: need.map(n => [n, have.includes(n) ? 'متوفر — لم يُرفق بعد' : 'غير متوفر أو غير محدد']) });
+  const avail = need.filter(n => have.includes(n)), miss = need.filter(n => !have.includes(n));
+  sections.push({ h: 'القراءة الأولية', bullets: [
+    `موضوع الطلب «${topic}»، والسؤال المطروح: ${p.question ? '«' + p.question + '»' : 'غير محدد'}.`,
+    types.length ? `المطلوب ${types.length} ${types.length > 2 ? 'أنواع' : 'نوع'} تحليل: ${types.map(t => t.label + ' (' + t.q + ')').join('، ')}.` : 'لم يُحدَّد نوع التحليل.',
+    need.length ? `أفاد مقدّم الطلب بتوفّر ${avail.length} من ${need.length} بيانات يحتاجها هذا التحليل${avail.length ? ': ' + avail.join('، ') : ''}.` : 'لا توجد قائمة بيانات محددة لهذا النوع.',
+    p.decision ? `القرار الذي سيبنى على التحليل: ${p.decision}. لا يُنصح باتخاذه قبل استكمال البيانات الأساسية.` : 'لم يُحدَّد القرار الذي سيبنى على التحليل — تحديده يوجّه التحليل نحو ما يهم فعلًا.',
+    'هذه قراءة أولية مبنية على الوصف فقط، ولا تتضمن أرقامًا أو نتائج محسوبة لأن البيانات لم تُرفق.'
+  ] });
+  sections.push({ h: 'الخطوات التالية لاستكمال التحليل', bullets: [
+    ...(miss.length ? [`تجهيز البيانات غير المتوفرة: ${miss.join('، ')}.`] : []),
+    ...(avail.length ? [`إرفاق البيانات المتوفرة لديكم: ${avail.join('، ')} — بصيغة Excel أو CSV.`] : ['إرفاق ملف بيانات بصيغة Excel أو CSV يغطي الفترة المطلوبة.']),
+    'من «طلباتي وتقاريري» ← «طلباتي» ← «إرفاق ملف بيانات لتقرير محدّث» على نفس الطلب، فيصدر تقرير محدّث آليًا.',
+    'للاستفسار: «اسأل نايوش» أو «اتصل بنا».'
+  ] });
+  if (files.length) sections.push({ h: 'المرفقات المستلمة', cols: ['الملف', 'النوع'], rows: files.map(f => [f.name, f.kind === 'video' ? 'فيديو' : 'ملف']) });
+  const rep = { code: 'REPORT', title: 'تقرير التحليل — ' + topic, ref, audience: me.name || p.name || '', by: 'محرك التحليل الآلي — منظومة نايوش', basis: 'صدر هذا التحليل بناءً على المعلومات التي تم تزويدنا بها في الطلب — دون ملف بيانات.', sections };
+  if (fmt !== 'xlsx') rep.seal = { code, ref, client: me.name || p.name || '', date };
+  return rep;
+}
 </script>
 <script data-app="">
 /* ================= Server mode (active only when served by the NAIOSH backend) =================
@@ -9095,7 +9506,7 @@ async function serverBoot() {
   try {
     const st = await api('GET', '/api/state');
     S = Object.assign(freshState(), st.state || {}, { menu: false });
-    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false;
+    if (!st.state) S.tour.on = CFG.identity.tourDefault !== false && !(window.innerWidth < 700);
     if (S.askStage === 1) S.askShown = ASK_STEPS.length;
   } catch (e) { S = freshState(); }
   if (S.req) { S.req.files = []; S.req.videos = []; }
