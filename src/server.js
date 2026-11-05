@@ -18,6 +18,7 @@ require('./routes/messages')(router);
 require('./routes/accounts')(router);
 require('./routes/qa')(router);
 require('./routes/admin')(router);
+require('./routes/reports')(router);
 const system = require('./system');
 const requests = require('./routes/requests');
 requests(router);

@@ -50,7 +50,7 @@ const LIST_SQL = `SELECT r.*, u.name AS owner_name,
   (SELECT COUNT(*) FROM uploads x WHERE x.request_id = r.id AND x.kind = 'file')  AS n_files,
   (SELECT COUNT(*) FROM uploads x WHERE x.request_id = r.id AND x.kind = 'video') AS n_videos,
   rp.code AS rep_code, rp.created_at AS rep_at, rp.sha256 AS rep_sha
-  FROM analysis_requests r JOIN users u ON u.id = r.created_by LEFT JOIN reports rp ON rp.request_id = r.id`;
+  FROM analysis_requests r JOIN users u ON u.id = r.created_by LEFT JOIN all_reports rp ON rp.request_id = r.id AND rp.rev = (SELECT MAX(rev) FROM all_reports z WHERE z.request_id = r.id)`;
 
 module.exports = (r) => {
   // Raw upload: body is the file itself. Headers: X-File-Name (URI-encoded), X-Upload-Kind: video|file
@@ -183,7 +183,6 @@ module.exports = (r) => {
     const me = requireUser(req);
     const row = db.get('SELECT * FROM analysis_requests WHERE id = ?', +p.id);
     if (!row || row.created_by !== me.id) throw new HttpError(404, 'not_found', 'Request not found');
-    if (db.get('SELECT 1 FROM reports WHERE request_id = ?', row.id)) throw bad('closed', 'صدر تقرير هذا الطلب ولا يمكن تعديل مرفقاته.');
     const b = await readJson(req, 16 * 1024);
     const ups = arr(b.uploads, 5, 64).map(id => db.get('SELECT * FROM uploads WHERE id = ?', id));
     if (!ups.length || ups.some(u => !u || u.owner_id !== me.id || u.request_id)) throw bad('invalid_upload', 'أحد المرفقات غير صالح أو مستخدم مسبقًا.');
@@ -200,10 +199,12 @@ module.exports = (r) => {
     const me = requireUser(req);
     const row = db.get('SELECT * FROM analysis_requests WHERE id = ?', +p.id);
     if (!row || !(row.created_by === me.id || can(me, 'requests.manage'))) throw new HttpError(404, 'not_found', 'Request not found');
-    if (db.get('SELECT 1 FROM reports WHERE request_id = ?', row.id)) throw new HttpError(409, 'report_exists', 'صدر تقرير هذا الطلب مسبقًا.');
+    // X-Report-Update: 1 → an updated report after new data was attached; otherwise only the first report is accepted
+    const exists = !!db.get('SELECT 1 FROM reports WHERE request_id = ?', row.id), isUpdate = exists && req.headers['x-report-update'] === '1';
+    if (exists && !isUpdate) throw new HttpError(409, 'report_exists', 'صدر تقرير هذا الطلب مسبقًا.');
     const code = String(req.headers['x-report-code'] || '');
     if (!/^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw bad('invalid_code', 'رمز التحقق غير صالح.');
-    if (db.get('SELECT 1 FROM reports WHERE code = ?', code)) throw new HttpError(409, 'code_taken', 'الرمز مستخدم — أعد المحاولة.');
+    if (db.get('SELECT 1 FROM all_reports WHERE code = ?', code)) throw new HttpError(409, 'code_taken', 'الرمز مستخدم — أعد المحاولة.');
     const max = 30 * 1048576, chunks = []; let size = 0;
     for await (const ch of req) { size += ch.length; if (size > max) throw new HttpError(413, 'too_large', 'التقرير أكبر من 30MB.'); chunks.push(ch); }
     const buf = Buffer.concat(chunks);
@@ -215,17 +216,18 @@ module.exports = (r) => {
     const at = db.nowIso(), name = `NAIOSH_${row.ref}_${code}.pdf`;
     db.tx(() => {
       db.run(`INSERT INTO uploads (id, owner_id, request_id, kind, original_name, mime, size, sha256, stored_name) VALUES (?, ?, ?, 'report', ?, 'application/pdf', ?, ?, ?)`, id, row.created_by, row.id, name, buf.length, sha, stored);
-      db.run('INSERT INTO reports (request_id, upload_id, code, sha256, size, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', row.id, id, code, sha, buf.length, me.id, at);
+      if (isUpdate) db.run('INSERT INTO report_updates (request_id, rev, upload_id, code, sha256, size, created_by, created_at) VALUES (?, (SELECT COALESCE(MAX(rev), 0) + 1 FROM report_updates WHERE request_id = ?), ?, ?, ?, ?, ?, ?)', row.id, row.id, id, code, sha, buf.length, me.id, at);
+      else db.run('INSERT INTO reports (request_id, upload_id, code, sha256, size, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', row.id, id, code, sha, buf.length, me.id, at);
       db.run('UPDATE analysis_requests SET status = ?, updated_at = ? WHERE id = ?', 'done', at, row.id);
-      db.run('INSERT INTO request_events (request_id, user_id, status_from, status_to, note) VALUES (?, ?, ?, ?, ?)', row.id, me.id, row.status, 'done', 'صدر التقرير الموثّق ' + code);
-      audit.write({ user: me, action: 'report.issue', detail: `${row.ref}: تقرير موثّق ${code} — SHA-256 ${sha.slice(0, 16)}…`, ip: clientIp(req) });
+      db.run('INSERT INTO request_events (request_id, user_id, status_from, status_to, note) VALUES (?, ?, ?, ?, ?)', row.id, me.id, row.status, 'done', (isUpdate ? 'صدر تقرير محدّث موثّق ' : 'صدر التقرير الموثّق ') + code);
+      audit.write({ user: me, action: 'report.issue', detail: `${row.ref}: ${isUpdate ? 'تقرير محدّث' : 'تقرير'} موثّق ${code} — SHA-256 ${sha.slice(0, 16)}…`, ip: clientIp(req) });
     });
-    send(res, 201, { ok: true, code, sha256: sha, at, size: buf.length });
+    send(res, 201, { ok: true, code, sha256: sha, at, size: buf.length, update: isUpdate });
   });
 
   r.add('GET', '/api/requests/:id/report', async (req, res, p) => {
     const me = requireUser(req);
-    const row = db.get('SELECT r.created_by, r.ref, rp.code, x.stored_name, x.original_name, x.size FROM reports rp JOIN analysis_requests r ON r.id = rp.request_id JOIN uploads x ON x.id = rp.upload_id WHERE rp.request_id = ?', +p.id);
+    const row = db.get('SELECT r.created_by, r.ref, rp.code, x.stored_name, x.original_name, x.size FROM all_reports rp JOIN analysis_requests r ON r.id = rp.request_id JOIN uploads x ON x.id = rp.upload_id WHERE rp.request_id = ? ORDER BY rp.rev DESC LIMIT 1', +p.id);
     if (!row || !(row.created_by === me.id || can(me, 'requests.viewAll'))) throw new HttpError(404, 'not_found', 'Report not found');
     audit.write({ user: me, action: 'report.download', detail: `نزّل التقرير ${row.code}`, ip: clientIp(req) });
     res.writeHead(200, { 'Content-Type': 'application/pdf', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store', 'Content-Length': row.size,
@@ -236,9 +238,9 @@ module.exports = (r) => {
   // Public check: is this report genuine? (code → reference, date and fingerprint; no personal data)
   r.add('GET', '/api/public/reports/:code', async (req, res, p) => {
     const code = String(p.code || '').toUpperCase();
-    const row = /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(code) && db.get('SELECT rp.code, rp.sha256, rp.size, rp.created_at, r.ref, r.title FROM reports rp JOIN analysis_requests r ON r.id = rp.request_id WHERE rp.code = ?', code);
+    const row = /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(code) && db.get('SELECT rp.code, rp.sha256, rp.size, rp.created_at, rp.rev, r.ref, r.title, (SELECT MAX(rev) FROM all_reports z WHERE z.request_id = rp.request_id) AS latest FROM all_reports rp JOIN analysis_requests r ON r.id = rp.request_id WHERE rp.code = ?', code);
     if (!row) throw new HttpError(404, 'not_found', 'لا يوجد تقرير بهذا الرمز.');
-    send(res, 200, { code: row.code, ref: row.ref, title: row.title, issuedAt: row.created_at, sha256: row.sha256, size: row.size });
+    send(res, 200, { code: row.code, ref: row.ref, title: row.title, issuedAt: row.created_at, sha256: row.sha256, size: row.size, revision: row.rev, superseded: row.rev < row.latest });
   });
 
   // Download / stream an attachment (owner of the request or anyone allowed to view all requests).
